@@ -1,0 +1,40 @@
+# Python
+*.py[cod]
+__pycache__/
+*.so
+
+# Virtualenv
+venv/
+ENV/
+env/
+.venv/
+env.bak/
+venv.bak/
+
+# FastAPI
+*.log
+*.sqlite3
+
+# VS Code
+.vscode/
+
+# Pytest
+.cache/
+*.pytest_cache/
+
+# MyPy
+.mypy_cache/
+
+# Coverage reports
+htmlcov/
+.coverage
+.coverage.*
+
+# Jupyter Notebook
+.ipynb_checkpoints/
+
+# macOS
+.DS_Store
+
+# Docker
+docker-compose.override.yml
