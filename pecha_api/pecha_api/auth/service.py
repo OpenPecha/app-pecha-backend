@@ -1,7 +1,7 @@
 from .models import CreateUserRequest,UserLoginResponse,RefreshTokenResponse
 from ..users.models import Users
 from ..db.database import SessionLocal
-from ..users.repository import get_user_by_email, save_user
+from ..users.repository import get_user_by_email, save_user, get_user_by_username
 from .repository import get_hashed_password, verify_password, create_access_token, create_refresh_token, generate_token_data,decode_token
 from fastapi import HTTPException
 from fastapi.responses import JSONResponse
@@ -12,9 +12,7 @@ import jwt
 def create_user(create_user_request: CreateUserRequest):
     db_session = SessionLocal()
     try:
-        exising_user = get_user_by_email(db=db_session, email=create_user_request.email)
-        if exising_user:
-            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST , detail='Email or password is not match')
+        validate_user_already_exist(email=create_user_request.email, username=create_user_request.username)
         new_user = Users(**create_user_request.model_dump())
         hashed_password = get_hashed_password(new_user.password)
         new_user.password = hashed_password
@@ -22,6 +20,16 @@ def create_user(create_user_request: CreateUserRequest):
     finally:
         db_session.close()
 
+
+def validate_user_already_exist(email: str, username: str):
+    db_session = SessionLocal()
+    try:
+        existing_user_by_email = get_user_by_email(db=db_session, email=email)
+        existing_user_by_username = get_user_by_username(db=db_session, username=username)
+        if existing_user_by_email or existing_user_by_username:
+            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail='Email or username already exists')
+    finally:
+        db_session.close()
 
 def authenticate_and_generate_tokens(email: str, password: str):
     try:
