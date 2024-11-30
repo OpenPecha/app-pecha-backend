@@ -1,6 +1,4 @@
-from typing import Optional
 import jwt
-from sqlalchemy.orm import Session
 from passlib.context import CryptContext
 from datetime import datetime, timedelta,timezone
 
@@ -14,18 +12,6 @@ PECHA_JWT_ISSUER = "https://pecha.org"
 PECHA_JWT_AUD = "https://pecha.org"  # Replace with your actual audience
 
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
-
-
-def save_user(db: Session, user: Users):
-    db.add(user)
-    db.commit()
-    db.refresh(user)
-    return user
-
-
-def get_user_by_email(db: Session, email: str):
-    return db.query(Users).filter(Users.email == email).first()
-
 
 def get_hashed_password(password):
     return pwd_context.hash(password)
