@@ -3,7 +3,12 @@
 This is the backend API for the Pecha application.
 
 
+<!--
+This section provides instructions for installing the necessary components or dependencies for the project. Follow the steps outlined below to set up the project on your local machine.
+-->
 ### Installation
+
+Follow these steps to set up the project on your local machine:
 
 1. Clone the repository:
     ```sh
@@ -20,13 +25,18 @@ This is the backend API for the Pecha application.
 
 ### Database Setup
 
-```sh
-  cd local_setup
-  docker-compose up -d
-```
-```sh
- poetry run alembic upgrade
-```
+1. Navigate to the local setup directory:
+    ```sh
+    cd local_setup
+    ```
+2. Start the database using Docker:
+    ```sh
+    docker-compose up -d
+    ```
+3. Apply database migrations:
+    ```sh
+    poetry run alembic upgrade head
+    ```
 
 ### Running the Application
 
@@ -37,14 +47,28 @@ This is the backend API for the Pecha application.
 
 The application will be available at `http://127.0.0.1:8000/`.
 
+### API Documentation
+
+You can access the Swagger UI for the API documentation at `http://127.0.0.1:8000/docs`.  ```sh
+    poetry install
+    ```
+
 ### Running Tests
 
 To run tests, execute the following command:
-```sh
-poetry run pytest
-```
+    ```sh
+    poetry run pytest
+    ```
 
-To check the coverage
-```sh
-poetry run pytest --cov=pecha_api
-```
+To check the coverage:
+    ```sh
+    poetry run pytest --cov=pecha_api
+    ```
+    ```sh
+    poetry run coverage html 
+    ```
+
+Open the coverage report:
+    ```sh
+    open htmlcov/index.html  
+    ```
