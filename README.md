@@ -71,4 +71,31 @@ To check the coverage:
 Open the coverage report:
     ```sh
     open htmlcov/index.html  
-    ```
+    ### Alembic Commands
+
+    Alembic is used for handling database migrations. Here are some common commands:
+
+    1. Create a new migration:
+        ```sh
+        poetry run alembic revision --autogenerate -m "description of migration"
+        ```
+
+    2. Apply the latest migrations:
+        ```sh
+        poetry run alembic upgrade head
+        ```
+
+    3. Downgrade to a previous migration:
+        ```sh
+        poetry run alembic downgrade -1
+        ```
+
+    4. View the current migration history:
+        ```sh
+        poetry run alembic history
+        ```
+
+    5. Show the current migration state:
+        ```sh
+        poetry run alembic current
+        ```

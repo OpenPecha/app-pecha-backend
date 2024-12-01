@@ -1,7 +1,7 @@
 from fastapi import APIRouter
 from ..db import database
 from starlette import status
-from .service import create_user, authenticate_and_generate_tokens,refresh_access_token
+from .service import authenticate_and_generate_tokens, refresh_access_token, register_user_with_source
 from .models import CreateUserRequest, UserLoginRequest
 from .enums import RegistrationSource
 
@@ -20,7 +20,7 @@ def get_db():
 
 @auth_router.post("/register", status_code=status.HTTP_201_CREATED)
 def register_user(create_user_request: CreateUserRequest):
-    return create_user(
+    return register_user_with_source(
         create_user_request=create_user_request, 
         registration_source=RegistrationSource.EMAIL
     )

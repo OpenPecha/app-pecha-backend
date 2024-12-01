@@ -10,17 +10,28 @@ from starlette import status
 import jwt
 
 
-def create_user(create_user_request: CreateUserRequest, registration_source: RegistrationSource):
+def register_user_with_source(create_user_request: CreateUserRequest, registration_source: RegistrationSource):
+    try:
+        registered_user =  create_user(
+        create_user_request=create_user_request, 
+        registration_source=registration_source
+        )
+        return generate_token_user(registered_user)
+    except HTTPException as exception:
+        return JSONResponse(status_code=exception.status_code,
+                            content={"message": exception.detail})
+
+def create_user(create_user_request: CreateUserRequest, registration_source: RegistrationSource) -> Users:
     db_session = SessionLocal()
     try:
-        validate_user_already_exist(email=create_user_request.email, username=create_user_request.username)
         new_user = Users(**create_user_request.model_dump())
         if registration_source == RegistrationSource.EMAIL:
             validate_password(new_user.password)
             hashed_password = get_hashed_password(new_user.password)
             new_user.password = hashed_password
         new_user.registration_source = registration_source.value
-        save_user(db=db_session, user=new_user)
+        saved_user = save_user(db=db_session, user=new_user)
+        return saved_user
     finally:
         db_session.close()
 
@@ -44,7 +55,14 @@ def validate_user_already_exist(email: str, username: str):
 def authenticate_and_generate_tokens(email: str, password: str):
     try:
         user = authenticate_user(email=email, password=password)
-        data = generate_token_data(user)
+        return generate_token_user(user)
+    except HTTPException as exception:
+        return JSONResponse(status_code=exception.status_code,
+                            content={"message": exception.detail})
+
+def generate_token_user(user: Users):
+    try:
+        data =  generate_token_data(user)
         access_token = create_access_token(data)
         refresh_token = create_refresh_token(data)
         return UserLoginResponse(
@@ -55,8 +73,7 @@ def authenticate_and_generate_tokens(email: str, password: str):
     except HTTPException as exception:
         return JSONResponse(status_code=exception.status_code,
                             content={"message": exception.detail})
-
-
+    
 def authenticate_user(email: str, password: str):
     db_session = SessionLocal()
     try:
