@@ -1,0 +1,34 @@
+[tool.poetry]
+name = "pecha-api"
+version = "0.1.0"
+description = ""
+authors = ["tenzinsamten <iamsamten>"]
+readme = "README.md"
+
+[tool.poetry.dependencies]
+python = "^3.12"
+alembic = "^1.14.0"
+bcrypt = "^4.2.1"
+fastapi = "^0.115.5"
+passlib = "^1.7.4"
+psycopg2-binary = "^2.9.10"
+pyjwt = "^2.10.0"
+pydantic = "^2.10.1"
+python-dotenv = "^1.0.1"
+python-jose = "^3.3.0"
+pytest = "^8.3.3"
+sqlalchemy = "^2.0.36"
+starlette = "^0.41.3"
+uvicorn = {extras = ["standard"], version = "^0.32.1"}
+
+
+[tool.poetry.group.dev.dependencies]
+coverage = "^7.6.8"
+pytest-cov = "^6.0.0"
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
+
+[tool.poetry.scripts]
+start = "uvicorn:main"
