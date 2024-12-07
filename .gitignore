@@ -38,6 +38,3 @@ htmlcov/
 
 # Docker
 docker-compose.override.yml
-
-local_setup/*
-.local_setup/*
