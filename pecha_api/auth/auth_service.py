@@ -1,11 +1,11 @@
 import jwt
-from .models import CreateUserRequest, UserLoginResponse, RefreshTokenResponse
+from .auth_models import CreateUserRequest, UserLoginResponse, RefreshTokenResponse
 from ..users.models import Users
 from ..db.database import SessionLocal
 from ..users.repository import get_user_by_email, save_user
-from .repository import get_hashed_password, verify_password, create_access_token, create_refresh_token, \
+from .auth_repository import get_hashed_password, verify_password, create_access_token, create_refresh_token, \
     generate_token_data, decode_token
-from .enums import RegistrationSource
+from .auth_enums import RegistrationSource
 from fastapi import HTTPException
 from fastapi.responses import JSONResponse
 from starlette import status

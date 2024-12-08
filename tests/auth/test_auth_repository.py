@@ -1,7 +1,7 @@
 import jwt
 from datetime import datetime, timezone, timedelta
 from pecha_api.users.models import Users
-from pecha_api.auth.repository import (
+from pecha_api.auth.auth_repository import (
     get_hashed_password, 
     verify_password,
     create_access_token,

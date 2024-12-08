@@ -1,6 +1,6 @@
 from fastapi import FastAPI
 from starlette import status
-from pecha_api.auth import views
+from pecha_api.auth import auth_views
 import uvicorn
 
 api = FastAPI(
@@ -10,7 +10,7 @@ api = FastAPI(
     openapi_url="/docs/openapi.json",
     redoc_url="/docs"
 )
-api.include_router(views.auth_router)
+api.include_router(auth_views.auth_router)
 
 
 @api.get("/health", status_code=status.HTTP_204_NO_CONTENT)
