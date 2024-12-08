@@ -13,11 +13,13 @@ from pecha_api.auth.repository import (
 PECHA_JWT_ISSUER = "https://pecha.org"
 PECHA_JWT_AUD = "https://pecha.org"
 
+
 def test_verify_password_success():
     plain_password = "mysecretpassword"
     hashed_password = get_hashed_password(plain_password)
         
     assert verify_password(plain_password, hashed_password) == True
+
 
 def test_verify_password_fail():
     plain_password = "mysecretpassword"
@@ -46,16 +48,19 @@ def test_get_hashed_password():
     assert hashed_password != plain_password
     assert verify_password(plain_password, hashed_password) == True
 
+
 def test_get_hashed_password_empty_password():
     plain_password = ""
     hashed_password = get_hashed_password(plain_password)
     
     assert hashed_password == None
 
+
 def test_get_hashed_password_none_password():
     plain_password = None
     hashed_password = get_hashed_password(plain_password)
     assert hashed_password == None
+
 
 def test_get_hashed_password_different_passwords():
     plain_password1 = "mysecretpassword"
@@ -69,11 +74,13 @@ def test_get_hashed_password_different_passwords():
     assert verify_password(plain_password1, hashed_password2) == False
     assert verify_password(plain_password2, hashed_password1) == False
 
+
 def test_verify_password_with_valid_password():
     plain_password = "validpassword"
     hashed_password = get_hashed_password(plain_password)
         
     assert verify_password(plain_password, hashed_password) == True
+
 
 def test_verify_password_with_invalid():
     plain_password = "validpassword"
@@ -89,10 +96,11 @@ def test_verify_password_with_invalid():
     assert verify_password("", None) == False
     assert verify_password(None, "") == False
 
+
 def test_create_access_token():
     data = {
         "sub": "test@example.com",
-        "name":  "John Doe ",
+        "name":  "John Doe",
         "iss": PECHA_JWT_ISSUER,
         "aud": PECHA_JWT_AUD,
         "iat": datetime.now(timezone.utc)
@@ -103,6 +111,7 @@ def test_create_access_token():
     decoded_data = decode_token(token)
     assert decoded_data["sub"] == "test@example.com"
     assert "exp" in decoded_data
+
 
 def test_create_access_token_with_custom_expiry():
     data = {
@@ -121,10 +130,13 @@ def test_create_access_token_with_custom_expiry():
     assert "exp" in decoded_data
     assert decoded_data["exp"] == int((datetime.now(timezone.utc) + expires_delta).timestamp())
 
+
 def test_create_access_token_with_no_data():
     token = create_access_token(None)
         
     assert token is None
+
+
 def test_create_refresh_token():
     data = {
         "sub": "test@example.com",
@@ -139,6 +151,7 @@ def test_create_refresh_token():
     decoded_data = decode_token(token)
     assert decoded_data["sub"] == "test@example.com"
     assert "exp" in decoded_data
+
 
 def test_create_refresh_token_with_custom_expiry():
     data = {
@@ -157,10 +170,12 @@ def test_create_refresh_token_with_custom_expiry():
     assert "exp" in decoded_data
     assert decoded_data["exp"] == int((datetime.now(timezone.utc) + expires_delta).timestamp())
 
+
 def test_create_refresh_token_with_no_data():
     token = create_refresh_token(None)
             
     assert token is None
+
 
 def test_generate_token_data_success():
     user = Users(
@@ -177,6 +192,7 @@ def test_generate_token_data_success():
     assert token_data["aud"] == PECHA_JWT_AUD
     assert "iat" in token_data
 
+
 def test_generate_token_data_missing_email():
     user = Users(
         email=None, 
@@ -186,6 +202,7 @@ def test_generate_token_data_missing_email():
     token_data = generate_token_data(user)
         
     assert token_data is None
+
 
 def test_generate_token_data_missing_firstname():
     user = Users(
@@ -197,6 +214,7 @@ def test_generate_token_data_missing_firstname():
         
     assert token_data is None
 
+
 def test_generate_token_data_missing_lastname():
     user = Users(
         email="test@example.com", 
@@ -207,11 +225,14 @@ def test_generate_token_data_missing_lastname():
         
     assert token_data is None
 
+
 def test_generate_token_data_all_fields_missing():
     user = Users(email=None, firstname=None, lastname=None)
     token_data = generate_token_data(user)
         
     assert token_data is None
+
+
 def test_decode_token_success():
     data = {
         "sub": "test@example.com",
@@ -230,6 +251,7 @@ def test_decode_token_success():
     assert decoded_data["aud"] == PECHA_JWT_AUD
     assert "exp" in decoded_data
 
+
 def test_decode_token_invalid_signature():
     data = {
         "sub": "test@example.com",
@@ -246,6 +268,7 @@ def test_decode_token_invalid_signature():
         assert False, "Expected jwt.exceptions.InvalidSignatureError"
     except jwt.exceptions.InvalidSignatureError:
         pass
+
 
 def test_decode_token_expired():
     data = {
@@ -264,6 +287,7 @@ def test_decode_token_expired():
     except jwt.exceptions.ExpiredSignatureError:
         pass
 
+
 def test_decode_token_invalid_audience():
     data = {
         "sub": "test@example.com",
@@ -279,6 +303,7 @@ def test_decode_token_invalid_audience():
         assert False, "Expected jwt.exceptions.InvalidAudienceError"
     except jwt.exceptions.InvalidAudienceError:
         pass
+
 
 def test_decode_token_invalid_issuer():
     data = {
