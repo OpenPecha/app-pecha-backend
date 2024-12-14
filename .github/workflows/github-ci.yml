@@ -64,7 +64,9 @@ jobs:
         run: echo ${{ env.IMAGE_TAG }}
       - name: Build Docker image in Github container registry
         run: |
-          docker build -t ghcr.io/${{ github.repository_owner | toLower }}/pecha-backend:${{ env.IMAGE_TAG }} .
+          lower_owner=$(echo "${{ github.repository_owner }}" | tr '[:upper:]' '[:lower:]')
+          docker build -t ghcr.io/$lower_owner/pecha-backend:${{ env.IMAGE_TAG }} .
       - name: Push Docker image to GHCR
         run: |
-          docker push ghcr.io/${{ github.repository_owner | toLower }}/pecha-backend:${{ env.IMAGE_TAG }}
+          lower_owner=$(echo "${{ github.repository_owner }}" | tr '[:upper:]' '[:lower:]')
+          docker push ghcr.io/$lower_owner/pecha-backend:${{ env.IMAGE_TAG }}
