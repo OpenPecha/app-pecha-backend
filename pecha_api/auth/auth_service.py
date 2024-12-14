@@ -1,14 +1,22 @@
+import uuid
+from datetime import datetime, timedelta, timezone
+
 import jwt
+from ..notification.email_provider import send_message
 from .auth_models import CreateUserRequest, UserLoginResponse, RefreshTokenResponse, TokenResponse, UserInfo
-from ..users.users_models import Users
+from ..users.users_models import Users, PasswordReset
 from ..db.database import SessionLocal
 from ..users.user_repository import get_user_by_email, save_user
 from .auth_repository import get_hashed_password, verify_password, create_access_token, create_refresh_token, \
     generate_token_data, decode_token
+from .password_reset_repository import save_password_reset
 from .auth_enums import RegistrationSource
 from fastapi import HTTPException
 from fastapi.responses import JSONResponse
 from starlette import status
+from jinja2 import Template
+
+APP_BASE_URL = "https://pech.org"
 
 
 def register_user_with_source(create_user_request: CreateUserRequest, registration_source: RegistrationSource):
@@ -126,6 +134,43 @@ def refresh_access_token(refresh_token: str):
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Refresh token expired")
     except jwt.PyJWTError:
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid refresh token")
+
+
+def request_reset_password(email: str):
+    db_session = SessionLocal()
+    current_user = get_user_by_email(
+        db=db_session,
+        email=email
+    )
+    if current_user is None:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User not found")
+    reset_token = str(uuid.uuid4())
+    token_expiry = datetime.now(timezone.utc) + timedelta(minutes=30)
+    password_reset = PasswordReset(
+        email=email,
+        reset_token=reset_token,
+        token_expiry=token_expiry
+    )
+    save_password_reset(
+        db=db_session,
+        password_reset=password_reset
+    )
+    reset_link = f"{APP_BASE_URL}/reset-password?token={reset_token}"
+    send_reset_email(email=email,reset_link=reset_link)
+    return {"message": "If the email exists in our system, a password reset email has been sent."}
+
+
+def send_reset_email(email: str, reset_link: str):
+    with open("reset_password_template.html", "r") as f:
+        template = Template(f.read())
+    html_content = template.render(reset_link=reset_link)
+
+    send_message(
+        to_email=email,
+        subject="Pecha Password Reset",
+        message=html_content
+    )
+
 
 
 def _get_user_avatar(user: Users):
