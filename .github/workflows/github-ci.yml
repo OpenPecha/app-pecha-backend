@@ -1,6 +1,6 @@
 name: app-pecha-backend
 
-on: [pcush, pull_request]
+on: [push, pull_request]
 
 jobs:
   sonarQube:
