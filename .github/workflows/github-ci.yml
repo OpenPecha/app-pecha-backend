@@ -1,9 +1,11 @@
 name: app-pecha-backend
 
-on: [push, pull_request]
+on: [push, pull_request,workflow_dispatch]
 
 jobs:
   sonarQube:
+    if: github.event_name == 'workflow_dispatch'
+    name: SonarQube Scan
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
