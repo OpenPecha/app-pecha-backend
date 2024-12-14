@@ -114,7 +114,8 @@ def test_generate_token_user_success():
     user = MagicMock()
     user.id = 1
     user.email = "test@example.com"
-    user.username = "testuser"
+    user.firstname = "John"
+    user.lastname = "Doe"
 
     with patch('pecha_api.auth.auth_service.generate_token_data') as mock_generate_token_data, \
             patch('pecha_api.auth.auth_service.create_access_token') as mock_create_access_token, \
@@ -128,9 +129,12 @@ def test_generate_token_user_success():
         mock_generate_token_data.assert_called_once_with(user)
         mock_create_access_token.assert_called_once_with({"sub": user.email})
         mock_create_refresh_token.assert_called_once_with({"sub": user.email})
-        assert response.access_token == "fake_access_token"
-        assert response.refresh_token == "fake_refresh_token"
-        assert response.token_type == "Bearer"
+        assert response.user.name == "John Doe"
+        assert response.user.avatar_url == ""
+        assert response.auth.token_type == "Bearer"
+        assert response.auth.access_token == "fake_access_token"
+        assert response.auth.refresh_token == "fake_refresh_token"
+        assert response.auth.token_type == "Bearer"
 
 
 def test_generate_token_user_http_exception():

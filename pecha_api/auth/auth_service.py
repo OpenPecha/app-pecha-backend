@@ -1,5 +1,5 @@
 import jwt
-from .auth_models import CreateUserRequest, UserLoginResponse, RefreshTokenResponse
+from .auth_models import CreateUserRequest, UserLoginResponse, RefreshTokenResponse, TokenResponse, UserInfo
 from ..users.users_models import Users
 from ..db.database import SessionLocal
 from ..users.user_repository import get_user_by_email, save_user
@@ -70,10 +70,18 @@ def generate_token_user(user: Users):
         data = generate_token_data(user)
         access_token = create_access_token(data)
         refresh_token = create_refresh_token(data)
-        return UserLoginResponse(
+
+        token_response = TokenResponse(
             access_token=access_token,
             refresh_token=refresh_token,
             token_type="Bearer"
+        )
+        return UserLoginResponse(
+            user=UserInfo(
+                name=user.firstname + " " + user.lastname,
+                avatar_url=_get_user_avatar(user=user)
+            ),
+            auth=token_response
         )
     except HTTPException as exception:
         return JSONResponse(status_code=exception.status_code,
@@ -118,3 +126,7 @@ def refresh_access_token(refresh_token: str):
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Refresh token expired")
     except jwt.PyJWTError:
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid refresh token")
+
+
+def _get_user_avatar(user: Users):
+    return ""

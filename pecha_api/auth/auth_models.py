@@ -13,10 +13,20 @@ class UserLoginRequest(BaseModel):
     password: str
 
 
-class UserLoginResponse(BaseModel):
+class TokenResponse(BaseModel):
     access_token: str
     refresh_token: str
     token_type: str
+
+
+class UserInfo(BaseModel):
+    name: str
+    avatar_url: str
+
+
+class UserLoginResponse(BaseModel):
+    user: UserInfo
+    auth: TokenResponse
 
 
 class RefreshTokenRequest(BaseModel):
