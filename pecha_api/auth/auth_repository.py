@@ -1,7 +1,7 @@
 import jwt
 from passlib.context import CryptContext
 from datetime import datetime, timedelta, timezone
-from ..users.models import Users
+from ..users.users_models import Users
 
 SECRET_KEY = "oJvUxI5jY7nXaD4sC_kFGoM0_qAuewVxg3p6F8CH-tI"
 ALGORITHM = "HS256"

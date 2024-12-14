@@ -1,5 +1,5 @@
 from sqlalchemy.orm import Session
-from .models import Users
+from .users_models import Users
 
 
 def save_user(db: Session, user: Users):

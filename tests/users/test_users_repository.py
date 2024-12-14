@@ -2,8 +2,8 @@ import pytest
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 from pecha_api.auth.auth_enums import RegistrationSource
-from pecha_api.users.models import Base, Users
-from pecha_api.users.repository import save_user, get_user_by_email
+from pecha_api.users.users_models import Base, Users
+from pecha_api.users.user_repository import save_user, get_user_by_email
 
 DATABASE_URL = "sqlite:///./test.db"
 

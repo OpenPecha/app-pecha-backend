@@ -5,7 +5,7 @@ from sqlalchemy import pool
 
 from alembic import context
 from pecha_api.db.database import Base
-from pecha_api.users.models import Users
+from pecha_api.users.users_models import Users
 
 # this is the Alembic Config object, which provides
 # access to the values within the .ini file in use.
