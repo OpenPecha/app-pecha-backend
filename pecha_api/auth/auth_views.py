@@ -1,10 +1,12 @@
-from fastapi import APIRouter
+from fastapi import APIRouter, Header, Depends
 from ..db import database
 from starlette import status
 from .auth_service import authenticate_and_generate_tokens, refresh_access_token, register_user_with_source, \
-    request_reset_password
-from .auth_models import CreateUserRequest, UserLoginRequest, RefreshTokenRequest, PasswordResetRequest
+    request_reset_password, update_password
+from .auth_models import CreateUserRequest, UserLoginRequest, RefreshTokenRequest, PasswordResetRequest, \
+    ResetPasswordRequest
 from .auth_enums import RegistrationSource
+from fastapi import HTTPException
 
 auth_router = APIRouter(
     prefix="/auth",
@@ -18,6 +20,12 @@ def get_db():
         yield db
     finally:
         db.close()
+
+
+def get_token_from_header(authorization: str = Header(...)) -> str:
+    if not authorization.startswith("Bearer "):
+        raise HTTPException(status_code=401, detail="Invalid or missing Authorization header")
+    return authorization.split(" ")[1]
 
 
 @auth_router.post("/register", status_code=status.HTTP_201_CREATED)
@@ -41,11 +49,11 @@ def refresh_token(refresh_token_request: RefreshTokenRequest):
     return refresh_access_token(refresh_token_request.token)
 
 
-@auth_router.post("/reset-password", status_code=status.HTTP_202_ACCEPTED)
-def password_reset_request(password_reset_request: PasswordResetRequest):
-    request_reset_password(email=password_reset_request.email)
+@auth_router.post("/request-reset-password", status_code=status.HTTP_202_ACCEPTED)
+def password_reset_request(reset_request: PasswordResetRequest):
+    request_reset_password(email=reset_request.email)
 
 
-@auth_router.post("/", status_code=status.HTTP_202_ACCEPTED)
-def password_reset(password_reset_request: PasswordResetRequest):
-    request_reset_password(email=password_reset_request.email)
+@auth_router.post("/reset-password", status_code=status.HTTP_200_OK)
+def password_reset(reset_password_request: ResetPasswordRequest, token: str = Depends(get_token_from_header)):
+    update_password(token=token, password=reset_password_request.password)

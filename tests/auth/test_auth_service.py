@@ -178,13 +178,13 @@ def test_authenticate_user_invalid_email():
     password = "password123"
 
     with patch('pecha_api.auth.auth_service.get_user_by_email') as mock_get_user_by_email:
-        mock_get_user_by_email.return_value = None
-
+        mock_get_user_by_email.side_effect = HTTPException(status_code=status.HTTP_404_NOT_FOUND,
+                                                      detail="User not found")
         try:
             authenticate_user(email, password)
         except HTTPException as e:
-            assert e.status_code == status.HTTP_401_UNAUTHORIZED
-            assert e.detail == 'Invalid email or password'
+            assert e.status_code == status.HTTP_404_NOT_FOUND
+            assert e.detail == 'User not found'
 
         mock_get_user_by_email.assert_called_once_with(db=ANY, email=email)
 
@@ -272,13 +272,14 @@ def test_refresh_access_token_user_not_found():
     with patch('pecha_api.auth.auth_service.decode_token') as mock_decode_token, \
             patch('pecha_api.auth.auth_service.get_user_by_email') as mock_get_user_by_email:
         mock_decode_token.return_value = {"sub": "test@example.com"}
-        mock_get_user_by_email.return_value = None
+        mock_get_user_by_email.side_effect = HTTPException(status_code=status.HTTP_404_NOT_FOUND,
+                                                      detail="User not found")
 
         try:
             refresh_access_token(refresh_token)
         except HTTPException as e:
-            assert e.status_code == status.HTTP_401_UNAUTHORIZED
-            assert e.detail == "Invalid refresh token"
+            assert e.status_code == status.HTTP_404_NOT_FOUND
+            assert e.detail == "User not found"
 
         mock_decode_token.assert_called_once_with(refresh_token)
         mock_get_user_by_email.assert_called_once_with(db=ANY, email="test@example.com")
