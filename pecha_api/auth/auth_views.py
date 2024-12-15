@@ -7,6 +7,7 @@ from .auth_models import CreateUserRequest, UserLoginRequest, RefreshTokenReques
     ResetPasswordRequest
 from .auth_enums import RegistrationSource
 from fastapi import HTTPException
+from typing import Annotated
 
 auth_router = APIRouter(
     prefix="/auth",
@@ -55,5 +56,5 @@ def password_reset_request(reset_request: PasswordResetRequest):
 
 
 @auth_router.post("/reset-password", status_code=status.HTTP_200_OK)
-def password_reset(reset_password_request: ResetPasswordRequest, token: str = Depends(get_token_from_header)):
+def password_reset(reset_password_request: ResetPasswordRequest, token: Annotated[str, Depends(get_token_from_header)]):
     update_password(token=token, password=reset_password_request.password)

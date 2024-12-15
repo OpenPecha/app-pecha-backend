@@ -3,7 +3,7 @@ from datetime import datetime, timedelta, timezone
 
 import jwt
 from ..config import get
-from ..notification.email_provider import send_message
+from ..notification.email_provider import send_email
 from .auth_models import CreateUserRequest, UserLoginResponse, RefreshTokenResponse, TokenResponse, UserInfo
 from ..users.users_models import Users, PasswordReset
 from ..db.database import SessionLocal
@@ -16,6 +16,7 @@ from fastapi import HTTPException
 from fastapi.responses import JSONResponse
 from starlette import status
 from jinja2 import Template
+from pathlib import Path
 
 
 def register_user_with_source(create_user_request: CreateUserRequest, registration_source: RegistrationSource):
@@ -174,11 +175,12 @@ def update_password(token: str, password: str):
 
 
 def send_reset_email(email: str, reset_link: str):
-    with open("reset_password_template.html", "r") as f:
+    template_path = Path(__file__).parent / "templates" / "reset_password_template.html"
+    with open(template_path, "r") as f:
         template = Template(f.read())
     html_content = template.render(reset_link=reset_link)
 
-    send_message(
+    send_email(
         to_email=email,
         subject="Pecha Password Reset",
         message=html_content

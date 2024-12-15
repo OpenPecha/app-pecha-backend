@@ -1,3 +1,5 @@
+import logging
+
 import jwt
 from passlib.context import CryptContext
 from datetime import datetime, timedelta, timezone
@@ -17,6 +19,7 @@ def verify_password(plain_password, hashed_password):
     try:
         return pwd_context.verify(plain_password, hashed_password)
     except Exception as exception:
+        logging.error(exception)
         return False
 
 
