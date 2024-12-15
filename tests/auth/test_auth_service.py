@@ -1,7 +1,7 @@
 import uuid
 import jwt
-from unittest.mock import patch, MagicMock, ANY
-
+from unittest.mock import patch, MagicMock, ANY, mock_open
+from datetime import datetime, timedelta, timezone
 from starlette import status
 
 from pecha_api.auth.auth_service import (
@@ -12,7 +12,12 @@ from pecha_api.auth.auth_service import (
     refresh_access_token,
     _create_user,
     validate_user_already_exist,
-    authenticate_and_generate_tokens
+    authenticate_and_generate_tokens,
+    request_reset_password,
+    update_password,
+    send_reset_email,
+    _validate_password,
+    _get_user_avatar
 )
 from pecha_api.auth.auth_models import CreateUserRequest
 from pecha_api.auth.auth_enums import RegistrationSource
@@ -179,7 +184,7 @@ def test_authenticate_user_invalid_email():
 
     with patch('pecha_api.auth.auth_service.get_user_by_email') as mock_get_user_by_email:
         mock_get_user_by_email.side_effect = HTTPException(status_code=status.HTTP_404_NOT_FOUND,
-                                                      detail="User not found")
+                                                           detail="User not found")
         try:
             authenticate_user(email, password)
         except HTTPException as e:
@@ -273,7 +278,7 @@ def test_refresh_access_token_user_not_found():
             patch('pecha_api.auth.auth_service.get_user_by_email') as mock_get_user_by_email:
         mock_decode_token.return_value = {"sub": "test@example.com"}
         mock_get_user_by_email.side_effect = HTTPException(status_code=status.HTTP_404_NOT_FOUND,
-                                                      detail="User not found")
+                                                           detail="User not found")
 
         try:
             refresh_access_token(refresh_token)
@@ -459,3 +464,161 @@ def test_authenticate_and_generate_tokens_internal_server_error():
         assert response.status_code == status.HTTP_500_INTERNAL_SERVER_ERROR
         error_message = json.loads(response.body)
         assert error_message == {"message": "Internal Server Error"}
+
+
+def test_request_reset_password_success():
+    email = "test@example.com"
+    user = MagicMock()
+    user.email = email
+
+    with patch('pecha_api.auth.auth_service.get_user_by_email') as mock_get_user_by_email, \
+            patch('pecha_api.auth.auth_service.save_password_reset') as mock_save_password_reset, \
+            patch('pecha_api.auth.auth_service.send_reset_email') as mock_send_reset_email:
+        mock_get_user_by_email.return_value = user
+
+        response = request_reset_password(email)
+
+        mock_get_user_by_email.assert_called_once_with(db=ANY, email=email)
+        mock_save_password_reset.assert_called_once()
+        mock_send_reset_email.assert_called_once()
+        assert response == {"message": "If the email exists in our system, a password reset email has been sent."}
+
+
+def test_request_reset_password_user_not_found():
+    email = "nonexistent@example.com"
+    with patch('pecha_api.auth.auth_service.get_user_by_email') as mock_get_user_by_email:
+        mock_get_user_by_email.side_effect = HTTPException(status_code=status.HTTP_404_NOT_FOUND,
+                                                           detail="User not found")
+        try:
+            request_reset_password(email)
+        except HTTPException as e:
+            assert e.status_code == status.HTTP_404_NOT_FOUND
+            assert e.detail == 'User not found'
+        mock_get_user_by_email.assert_called_once_with(db=ANY, email=email)
+
+
+def test_update_password_success():
+    token = "valid_token"
+    password = "newpassword123"
+    reset_entry = MagicMock()
+    reset_entry.email = "test@example.com"
+    reset_entry.token_expiry = datetime.now(timezone.utc) + timedelta(minutes=30)
+    user = MagicMock()
+    user.email = reset_entry.email
+    user.password = "hashed_oldpassword123"
+
+    updated_user = MagicMock()
+    updated_user.email = reset_entry.email
+    updated_user.password = "hashed_newpassword123"
+
+    with patch('pecha_api.auth.auth_service.get_password_reset_by_token') as mock_get_password_reset_by_token, \
+            patch('pecha_api.auth.auth_service.get_user_by_email') as mock_get_user_by_email, \
+            patch('pecha_api.auth.auth_service.get_hashed_password') as mock_get_hashed_password, \
+            patch('pecha_api.auth.auth_service.save_user') as mock_save_user:
+        mock_get_password_reset_by_token.return_value = reset_entry
+        mock_get_user_by_email.return_value = user
+        mock_get_hashed_password.return_value = "hashed_newpassword123"
+        mock_save_user.return_value = updated_user
+
+        response = update_password(token, password)
+
+        mock_get_password_reset_by_token.assert_called_once_with(db=ANY, token=token)
+        mock_get_user_by_email.assert_called_once_with(db=ANY, email=reset_entry.email)
+        mock_get_hashed_password.assert_called_once_with(password)
+        mock_save_user.assert_called_once_with(db=ANY, user=user)
+        assert response.email == user.email
+        assert response.password == user.password
+
+
+def test_update_password_invalid_token():
+    token = "invalid_token"
+    password = "newpassword123"
+
+    with patch('pecha_api.auth.auth_service.get_password_reset_by_token') as mock_get_password_reset_by_token:
+        mock_get_password_reset_by_token.return_value = None
+
+        try:
+            update_password(token, password)
+        except HTTPException as e:
+            assert e.status_code == status.HTTP_400_BAD_REQUEST
+            assert e.detail == "Invalid or expired token"
+
+        mock_get_password_reset_by_token.assert_called_once_with(db=ANY, token=token)
+
+
+def test_update_password_expired_token():
+    token = "expired_token"
+    password = "newpassword123"
+    reset_entry = MagicMock()
+    reset_entry.token_expiry = datetime.now(timezone.utc) - timedelta(minutes=1)
+
+    with patch('pecha_api.auth.auth_service.get_password_reset_by_token') as mock_get_password_reset_by_token:
+        mock_get_password_reset_by_token.return_value = reset_entry
+
+        try:
+            update_password(token, password)
+        except HTTPException as e:
+            assert e.status_code == status.HTTP_400_BAD_REQUEST
+            assert e.detail == "Invalid or expired token"
+
+        mock_get_password_reset_by_token.assert_called_once_with(db=ANY, token=token)
+
+
+def test_send_reset_email():
+    email = "test@example.com"
+    reset_link = "http://example.com/reset-password?token=valid_token"
+
+    with patch('pecha_api.auth.auth_service.send_email') as mock_send_email, \
+            patch('pecha_api.auth.auth_service.Template.render') as mock_render:
+        mock_render.return_value = "rendered_html_content"
+
+        send_reset_email(email, reset_link)
+
+        mock_render.assert_called_once_with(reset_link=reset_link)
+        mock_send_email.assert_called_once_with(
+            to_email=email,
+            subject="Pecha Password Reset",
+            message="rendered_html_content"
+        )
+
+
+def test__validate_password_empty_password():
+    password = ""
+
+    try:
+        _validate_password(password)
+    except HTTPException as e:
+        assert e.status_code == status.HTTP_400_BAD_REQUEST
+        assert e.detail == "Password cannot be empty"
+
+
+def test__validate_password_short_password():
+    password = "short"
+
+    try:
+        _validate_password(password)
+    except HTTPException as e:
+        assert e.status_code == status.HTTP_400_BAD_REQUEST
+        assert e.detail == "Password must be between 8 and 20 characters"
+
+
+def test__validate_password_long_password():
+    password = "a" * 21
+
+    try:
+        _validate_password(password)
+    except HTTPException as e:
+        assert e.status_code == status.HTTP_400_BAD_REQUEST
+        assert e.detail == "Password must be between 8 and 20 characters"
+
+
+def test__validate_password_valid_password():
+    password = "validpassword"
+
+    _validate_password(password)
+
+
+def test__get_user_avatar():
+    user = MagicMock()
+    avatar_url = _get_user_avatar(user)
+    assert avatar_url == ""

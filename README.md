@@ -71,6 +71,7 @@ To check the coverage:
 Open the coverage report:
     ```sh
     open htmlcov/index.html  
+    ```
     ### Alembic Commands
 
     Alembic is used for handling database migrations. Here are some common commands:
