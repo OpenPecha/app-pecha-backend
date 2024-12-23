@@ -8,9 +8,8 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
-
       - name: Run Gitleaks
-        uses: zricethezav/gitleaks-action@v2
+        uses: dhsathiya/gitleaks-action@main
         with:
           config: .gitleaks.toml  # Optional: Use a custom config file if available
           fail: true             # Fail workflow if secrets are detected
