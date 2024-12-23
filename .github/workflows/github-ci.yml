@@ -62,6 +62,7 @@ jobs:
   sonarQube:
     if: github.event_name == 'workflow_dispatch'
     name: SonarQube Scan
+    needs: [buildDockerImage]
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
