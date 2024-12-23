@@ -7,7 +7,7 @@ from ..notification.email_provider import send_email
 from .auth_models import CreateUserRequest, UserLoginResponse, RefreshTokenResponse, TokenResponse, UserInfo
 from ..users.users_models import Users, PasswordReset
 from ..db.database import SessionLocal
-from ..users.user_repository import get_user_by_email, save_user
+from ..users.users_repository import get_user_by_email, save_user
 from .auth_repository import get_hashed_password, verify_password, create_access_token, create_refresh_token, \
     generate_token_data, decode_token
 from .password_reset_repository import save_password_reset, get_password_reset_by_token
