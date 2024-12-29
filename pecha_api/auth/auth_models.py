@@ -36,3 +36,11 @@ class RefreshTokenRequest(BaseModel):
 class RefreshTokenResponse(BaseModel):
     access_token: str
     token_type: str
+
+
+class PasswordResetRequest(BaseModel):
+    email: str
+
+
+class ResetPasswordRequest(BaseModel):
+    password: str
