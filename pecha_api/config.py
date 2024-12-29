@@ -5,6 +5,7 @@ DEFAULTS = dict(
     APP_NAME="Pecha Backend",
     BASE_URL="https://pech.org",
     DEPLOYMENT_MODE="DEBUG",
+    DATABASE_URL="postgresql://admin:pechaAdmin@localhost:5434/pecha",
     JWT_ALGORITHM="HS256",
     JWT_AUD="https://pecha.org",
     JWT_ISSUER="https://pecha.org",
@@ -12,9 +13,7 @@ DEFAULTS = dict(
     REFRESH_TOKEN_EXPIRE_DAYS=30,
     SENDGRID_API_KEY="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",
     SENDGRID_SENDER_EMAIL="samten@esukhia.org",
-    DATABASE_URL="postgresql://admin:pechaAdmin@localhost:5434/pecha",
     VERSION="0.0.1"
-
 )
 
 
@@ -30,5 +29,3 @@ def get_float(key: str) -> float:
         return float(get(key))
     except (TypeError, ValueError) as e:
         raise ValueError(f"Could not convert the value for key '{key}' to float: {e}")
-
-
