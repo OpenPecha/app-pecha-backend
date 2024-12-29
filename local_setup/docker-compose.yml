@@ -16,5 +16,24 @@ services:
       - "5434:5432"
     volumes:
       - ./data/database-local:/var/lib/postgresql/data
+    networks:
+      - pecha-network
+  pecha_backend:
+    image: pecha_backend:latest  # Ensure this image exists or is built locally
+    container_name: pecha-backend
+    restart: always
+    environment:
+      - DATABASE_URL=postgresql://admin:pechaAdmin@db-local:5432/pecha
+    ports:
+      - "8000:8000"  # Adjust port based on your app's configuration
+    depends_on:
+      - db-local  # Ensure db-local is up before the backend
+    networks:
+      - pecha-network
+
 volumes:
   dbdata6:
+
+networks:
+  pecha-network:
+    driver: bridge
