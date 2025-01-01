@@ -64,9 +64,19 @@ jobs:
     needs: [buildDockerImage]
     if: success()
     steps:
+      - name: Set short git commit SHA
+        id: vars
+        run: |
+          if [[ -n "${{ github.ref }}" && "${{ github.ref }}" =~ ^refs/tags/ ]]; then
+            tagNumber=$(echo "${{ github.ref }}" | sed 's#refs/tags/##')
+            echo "IMAGE_TAG=$tagNumber" >> $GITHUB_ENV
+          else
+            calculatedSha=$(git rev-parse --short ${{ github.sha }})
+            echo "IMAGE_TAG=${{ github.run_id }}-$calculatedSha" >> $GITHUB_ENV
+          fi
       - name: Trigger Render Deployment
         run: |
-          echo ${{ env.IMAGE_TAG }}
+          echo image tag: ${{ env.IMAGE_TAG }}
           curl -X POST "${{ secrets.RENDER_DEPLOY_HOOK_URL }}&imgURL=ghcr.io/openpecha/pecha-backend:${{ env.IMAGE_TAG }}"
 
   sonarQube:
