@@ -48,7 +48,8 @@ jobs:
             echo "::set-output name=image_tag::$tagNumber"
           else
             calculatedSha=$(git rev-parse --short ${{ github.sha }})
-            echo "IMAGE_TAG=${{ github.run_id }}-$calculatedSha" >> $GITHUB_ENV
+            tagNumber=${{ github.run_id }}-$calculatedSha"
+            echo "IMAGE_TAG=$tagNumber" >> $GITHUB_ENV
             echo "::set-output name=image_tag::$tagNumber"
           fi
       - name: Confirm git commit SHA output
