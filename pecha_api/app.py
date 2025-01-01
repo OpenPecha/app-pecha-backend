@@ -1,5 +1,6 @@
 from fastapi import FastAPI
 from starlette import status
+from fastapi.middleware.cors import CORSMiddleware
 from pecha_api.auth import auth_views
 import uvicorn
 
@@ -11,6 +12,14 @@ api = FastAPI(
     redoc_url="/docs"
 )
 api.include_router(auth_views.auth_router)
+
+api.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
 
 @api.get("/health", status_code=status.HTTP_204_NO_CONTENT)
