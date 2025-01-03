@@ -60,6 +60,7 @@ jobs:
       - name: Trigger Render Deployment
         run: |
           echo "Image tag: ${{ env.IMAGE_TAG }}"
+          echo "deployment tag: ${{ secrets.RENDER_DEPLOY_HOOK_URL }}"
           curl -X POST "${{ secrets.RENDER_DEPLOY_HOOK_URL }}&imgURL=ghcr.io/openpecha/pecha-backend:${{ env.IMAGE_TAG }}"
 
   sonarQube:
