@@ -27,8 +27,6 @@ jobs:
     runs-on: ubuntu-latest
     needs: [ gitleaks ]
     if: success()
-    outputs:
-      image_tag: ${{ steps.set-tag.outputs.image_tag }}
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -45,12 +43,9 @@ jobs:
           if [[ -n "${{ github.ref }}" && "${{ github.ref }}" =~ ^refs/tags/ ]]; then
             tagNumber=$(echo "${{ github.ref }}" | sed 's#refs/tags/##')
             echo "IMAGE_TAG=$tagNumber" >> $GITHUB_ENV
-            echo "::set-output name=image_tag::IMAGE_TAG"
           else
             calculatedSha=$(git rev-parse --short ${{ github.sha }})
-            tagNumber=${{ github.run_id }}-$calculatedSha"
-            echo "IMAGE_TAG=$tagNumber" >> $GITHUB_ENV
-            echo "::set-output name=image_tag::$tagNumber"
+            echo "IMAGE_TAG=${{ github.run_id }}-$calculatedSha" >> $GITHUB_ENV
           fi
       - name: Confirm git commit SHA output
         run: echo ${{ env.IMAGE_TAG }}
@@ -62,17 +57,10 @@ jobs:
         run: |
           lower_owner=$(echo "${{ github.repository_owner }}" | tr '[:upper:]' '[:lower:]')
           docker push ghcr.io/$lower_owner/pecha-backend:${{ env.IMAGE_TAG }}
-
-  deploy:
-    name: Deploy the image
-    runs-on: ubuntu-latest
-    needs: [buildDockerImage]
-    if: success()
-    steps:
       - name: Trigger Render Deployment
         run: |
-          echo "Image tag: ${{ needs.buildDockerImage.outputs.image_tag }}"
-          curl -X POST "${{ secrets.RENDER_DEPLOY_HOOK_URL }}&imgURL=ghcr.io/openpecha/pecha-backend:${{ needs.buildDockerImage.outputs.image_tag }}"
+          echo "Image tag: ${{ env.IMAGE_TAG }}"
+          curl -X POST "${{ secrets.RENDER_DEPLOY_HOOK_URL }}&imgURL=ghcr.io/openpecha/pecha-backend:${{ env.IMAGE_TAG }}"
 
   sonarQube:
     if: github.event_name == 'workflow_dispatch'
