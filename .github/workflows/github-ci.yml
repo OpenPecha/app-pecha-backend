@@ -61,7 +61,7 @@ jobs:
         run: |
           echo "Image tag: ${{ env.IMAGE_TAG }}"
           echo "deployment tag: ${{ secrets.RENDER_DEPLOY_HOOK_URL }}"
-          curl -X POST "${{ secrets.RENDER_DEPLOY_HOOK_URL }}&imgURL=ghcr.io/openpecha/pecha-backend:${{ env.IMAGE_TAG }}"
+          curl -X POST "${{ secrets.RENDER_DEPLOY_HOOK_URL }}"
 
   sonarQube:
     if: github.event_name == 'workflow_dispatch'
