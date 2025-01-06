@@ -9,7 +9,7 @@ COPY pyproject.toml poetry.lock /app/
 
 RUN pip install poetry && \
     poetry config virtualenvs.create false && \
-    poetry install --no-dev
+    poetry install --no-root
 
 # Copy the rest of the application code to the container
 COPY . /app
