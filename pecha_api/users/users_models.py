@@ -3,6 +3,7 @@ from ..db.database import Base
 from _datetime import datetime
 from uuid import uuid4
 import _datetime
+from sqlalchemy.orm import relationship
 
 
 class Users(Base):
@@ -14,10 +15,27 @@ class Users(Base):
     lastname = Column(String(255), nullable=True)
     password = Column(String(255), nullable=True)
     registration_source = Column(String(25), nullable=False)
+    organization = Column(String(255),nullable=True)
+    location = Column(String(255),nullable=True)
+    education = Column(String(255),nullable=True)
+    about_me = Column(String,nullable=True)
     is_active = Column(Boolean, default=True)
     created_at = Column(DateTime, default=datetime.now(_datetime.timezone.utc))
     updated_at = Column(DateTime, default=datetime.now(_datetime.timezone.utc))
 
+    # Define the relationship between users and social media accounts
+    social_media_accounts = relationship("SocialMediaAccount", back_populates="user", cascade="all, delete-orphan")
+
+
+class SocialMediaAccount(Base):
+    __tablename__ = "social_media_accounts"
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid4)
+    user_id = Column(UUID(as_uuid=True), ForeignKey('users.id', ondelete='CASCADE'), nullable=False)
+    platform_name = Column(String(100), nullable=False)
+    profile_url = Column(String(255), nullable=False)
+    created_at = Column(DateTime, default=datetime.now(_datetime.timezone.utc))
+    updated_at = Column(DateTime, default=datetime.now(_datetime.timezone.utc))
+    user = relationship("Users", back_populates="social_media_accounts")
 
 class PasswordReset(Base):
     __tablename__ = "password_resets"
