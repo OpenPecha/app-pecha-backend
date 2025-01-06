@@ -1,5 +1,5 @@
 from sqlalchemy.orm import Session
-from .users_models import Users
+from .users_models import Users, SocialMediaAccount
 from fastapi import HTTPException
 from starlette import status
 
@@ -16,3 +16,8 @@ def get_user_by_email(db: Session, email: str):
     if user is None:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User not found")
     return user
+
+
+def get_user_social_account(db: Session, user_id: str):
+    social_accounts = db.query(SocialMediaAccount).filter(SocialMediaAccount.user_id == user_id)
+    return social_accounts
