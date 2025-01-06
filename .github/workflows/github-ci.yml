@@ -66,8 +66,7 @@ jobs:
   deploy:
     name: Deploy the image
     runs-on: ubuntu-latest
-    needs: [buildDockerImage]
-    if: success()
+    if: ${{ github.event_name == 'workflow_dispatch' }}
     steps:
       - name: Trigger Render Deployment
         run: |
