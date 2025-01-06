@@ -13,6 +13,7 @@ class Users(Base):
     email = Column(String, unique=True, index=True, nullable=False)
     firstname = Column(String(255), nullable=False)
     lastname = Column(String(255), nullable=True)
+    username = Column(String(255), nullable=True)
     password = Column(String(255), nullable=True)
     registration_source = Column(String(25), nullable=False)
     title = Column(String(255),nullable=True)

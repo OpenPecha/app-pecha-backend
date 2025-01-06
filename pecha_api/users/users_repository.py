@@ -17,6 +17,12 @@ def get_user_by_email(db: Session, email: str):
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User not found")
     return user
 
+def get_user_by_username(db: Session, username: str):
+    user = db.query(Users).filter(Users.username == username).first()
+    if user is None:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User not found")
+    return user
+
 
 def get_user_social_account(db: Session, user_id: str):
     social_accounts = db.query(SocialMediaAccount).filter(SocialMediaAccount.user_id == user_id)

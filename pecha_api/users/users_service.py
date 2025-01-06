@@ -4,8 +4,9 @@ from starlette.responses import JSONResponse
 from .user_response_models import UserInfoResponse, SocialMediaProfile
 from .users_models import Users
 from ..auth.auth_repository import decode_token
-from .users_repository import get_user_by_email
+from .users_repository import get_user_by_email, get_user_by_username
 from ..db.database import SessionLocal
+import random
 
 
 def get_user_info(token: str):
@@ -36,12 +37,13 @@ def generate_user_info_response(user: Users):
         user_info_response = UserInfoResponse(
             firstname=user.firstname,
             lastname=user.lastname,
+            username=user.username,
             email=user.email,
             title=user.title,
             organization=user.organization,
             educations=user.education.split(','),
-            avater_url=user.avatar_url,
-            followes=0,
+            avatar_url=user.avatar_url,
+            followers=0,
             following=0,
             social_profiles=social_media_profiles
         )

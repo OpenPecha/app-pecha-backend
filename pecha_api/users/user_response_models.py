@@ -11,6 +11,7 @@ class SocialMediaProfile(BaseModel):
 class UserInfoResponse(BaseModel):
     firstname: str
     lastname: str
+    username: str
     email: str
     title: str
     organization: str
