@@ -3,6 +3,10 @@ import os
 DEFAULTS = dict(
     ACCESS_TOKEN_EXPIRE_MINUTES=30,
     APP_NAME="Pecha Backend",
+    AWS_ACCESS_KEY="",
+    AWS_SECRET_KEY="",
+    AWS_REGION="eu-central-1",
+    AWS_BUCKET_NAME="app-pecha-backend",
     BASE_URL="https://pech.org",
     DEPLOYMENT_MODE="DEBUG",
     DATABASE_URL="postgresql://admin:pechaAdmin@localhost:5434/pecha",
