@@ -16,7 +16,7 @@ from pecha_api.auth.auth_service import (
     request_reset_password,
     update_password,
     send_reset_email,
-    _validate_password
+    _validate_password, validate_username, generate_username, generate_and_validate_username
 )
 from pecha_api.auth.auth_models import CreateUserRequest
 from pecha_api.auth.auth_enums import RegistrationSource
@@ -628,3 +628,63 @@ def test__validate_password_valid_password():
     password = "validpassword"
 
     _validate_password(password)
+
+
+def test_validate_username_user_exists():
+    username = "existing_user"
+
+    with patch('pecha_api.auth.auth_service.get_user_by_username') as mock_get_user_by_username:
+        mock_get_user_by_username.return_value = MagicMock()
+
+        result = validate_username(username)
+
+        mock_get_user_by_username.assert_called_once_with(db=ANY, username=username)
+        assert result is False
+
+
+def test_validate_username_user_does_not_exist():
+    username = "new_user"
+
+    with patch('pecha_api.auth.auth_service.get_user_by_username') as mock_get_user_by_username:
+        mock_get_user_by_username.return_value = None
+
+        result = validate_username(username)
+
+        mock_get_user_by_username.assert_called_once_with(db=ANY, username=username)
+        assert result is True
+
+
+def test_generate_username():
+    first_name = "John"
+    last_name = "Doe"
+
+    username = generate_username(first_name, last_name)
+
+    assert username.startswith("john_doe.")
+    assert len(username.split(".")[1]) == 4
+
+
+def test_generate_and_validate_username_success():
+    first_name = "John"
+    last_name = "Doe"
+
+    with patch('pecha_api.auth.auth_service.validate_username') as mock_validate_username:
+        mock_validate_username.return_value = True
+
+        username = generate_and_validate_username(first_name, last_name)
+
+        mock_validate_username.assert_called()
+        assert username.startswith("john_doe.")
+
+
+def test_generate_and_validate_username_retry():
+    first_name = "John"
+    last_name = "Doe"
+
+    with patch('pecha_api.auth.auth_service.validate_username') as mock_validate_username:
+        mock_validate_username.side_effect = [False, True]
+
+        username = generate_and_validate_username(first_name, last_name)
+
+        assert mock_validate_username.call_count == 2
+        assert username.startswith("john_doe.")

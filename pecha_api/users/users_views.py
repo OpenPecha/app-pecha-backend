@@ -27,5 +27,5 @@ def get_user_information(authentication_credential: Annotated[HTTPAuthorizationC
     return get_user_info(token=authentication_credential.credentials)
 
 @user_router.post("/info", status_code=status.HTTP_201_CREATED)
-def get_user_information(authentication_credential: Annotated[HTTPAuthorizationCredentials, Depends(oauth2_scheme)], user_info_request: UserInfoRequest):
+def update_user_information(authentication_credential: Annotated[HTTPAuthorizationCredentials, Depends(oauth2_scheme)], user_info_request: UserInfoRequest):
     return update_user_info(token=authentication_credential.credentials,user_info_request=user_info_request)

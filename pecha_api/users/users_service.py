@@ -4,6 +4,7 @@ from fastapi import HTTPException, status
 from starlette.responses import JSONResponse
 
 from .user_response_models import UserInfoRequest, UserInfoResponse, SocialMediaProfile
+from .users_enums import SocialProfile
 from .users_models import Users
 from ..auth.auth_repository import decode_token
 from .users_repository import get_user_by_email,save_user
@@ -30,7 +31,7 @@ def generate_user_info_response(user: Users):
         social_media_profiles = []
         for account in user.social_media_accounts:
             social_media_profile = SocialMediaProfile(
-                account=account.platform_name,
+                account=get_social_profile(value=account.platform_name),
                 url=account.profile_url
             )
             social_media_profiles.append(social_media_profile)
@@ -74,3 +75,10 @@ def update_user_info(token: str, user_info_request: UserInfoRequest):
     except HTTPException as exception:
         return JSONResponse(status_code=exception.status_code,
                             content={"message": exception.detail})
+
+
+def get_social_profile(value: str) -> SocialProfile:
+    try:
+        return SocialProfile(value.lower())
+    except ValueError:
+        raise ValueError(f"'{value}' is not a valid SocialProfile")
