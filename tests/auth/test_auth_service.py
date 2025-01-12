@@ -16,8 +16,7 @@ from pecha_api.auth.auth_service import (
     request_reset_password,
     update_password,
     send_reset_email,
-    _validate_password,
-    _get_user_avatar
+    _validate_password, validate_username, generate_username, generate_and_validate_username
 )
 from pecha_api.auth.auth_models import CreateUserRequest
 from pecha_api.auth.auth_enums import RegistrationSource
@@ -121,6 +120,7 @@ def test_generate_token_user_success():
     user.email = "test@example.com"
     user.firstname = "John"
     user.lastname = "Doe"
+    user.avatar_url = "avatar"
 
     with patch('pecha_api.auth.auth_service.generate_token_data') as mock_generate_token_data, \
             patch('pecha_api.auth.auth_service.create_access_token') as mock_create_access_token, \
@@ -135,7 +135,7 @@ def test_generate_token_user_success():
         mock_create_access_token.assert_called_once_with({"sub": user.email})
         mock_create_refresh_token.assert_called_once_with({"sub": user.email})
         assert response.user.name == "John Doe"
-        assert response.user.avatar_url == ""
+        assert response.user.avatar_url == "avatar"
         assert response.auth.token_type == "Bearer"
         assert response.auth.access_token == "fake_access_token"
         assert response.auth.refresh_token == "fake_refresh_token"
@@ -147,6 +147,7 @@ def test_generate_token_user_http_exception():
     user.id = uuid.UUID
     user.email = "test@example.com"
     user.username = "testuser"
+    user.avatar_url = "avatar"
 
     with patch('pecha_api.auth.auth_service.generate_token_data') as mock_generate_token_data:
         mock_generate_token_data.side_effect = HTTPException(status_code=500, detail="Internal Server Error")
@@ -165,6 +166,7 @@ def test_authenticate_user_success():
     user = MagicMock()
     user.email = email
     user.password = get_hashed_password(password)
+    user.avatar_url = "avatar"
 
     with patch('pecha_api.auth.auth_service.get_user_by_email') as mock_get_user_by_email, \
             patch('pecha_api.auth.auth_service.verify_password') as mock_verify_password:
@@ -200,6 +202,7 @@ def test_authenticate_user_invalid_password():
     user = MagicMock()
     user.email = email
     user.password = get_hashed_password("correctpassword")
+    user.avatar_url = "avatar"
 
     with patch('pecha_api.auth.auth_service.get_user_by_email') as mock_get_user_by_email, \
             patch('pecha_api.auth.auth_service.verify_password') as mock_verify_password:
@@ -221,6 +224,7 @@ def test_refresh_access_token_success():
     user.email = "test@example.com"
     user.firstname = "firstname"
     user.lastname = "lastname"
+    user.avatar_url = "avatar"
 
     with patch('pecha_api.auth.auth_service.decode_token') as mock_decode_token, \
             patch('pecha_api.auth.auth_service.get_user_by_email') as mock_get_user_by_email, \
@@ -300,10 +304,12 @@ def test_create_user_with_email_success():
     registration_source = RegistrationSource.EMAIL
 
     with patch('pecha_api.auth.auth_service.save_user') as mock_save_user, \
-            patch('pecha_api.auth.auth_service.get_hashed_password') as mock_get_hashed_password:
+            patch('pecha_api.auth.auth_service.get_hashed_password') as mock_get_hashed_password, \
+            patch('pecha_api.auth.auth_service.generate_and_validate_username') as mock_generate_and_validate_username:
         mock_user = MagicMock()
         mock_save_user.return_value = mock_user
         mock_get_hashed_password.return_value = "hashed_password123"
+        mock_generate_and_validate_username.return_value = 'john_doe.0003'
 
         response = _create_user(create_user_request, registration_source)
 
@@ -321,9 +327,11 @@ def test_create_user_with_google_success():
     )
     registration_source = RegistrationSource.GOOGLE
 
-    with patch('pecha_api.auth.auth_service.save_user') as mock_save_user:
+    with patch('pecha_api.auth.auth_service.save_user') as mock_save_user, \
+            patch('pecha_api.auth.auth_service.generate_and_validate_username') as mock_generate_and_validate_username:
         mock_user = MagicMock()
         mock_save_user.return_value = mock_user
+        mock_generate_and_validate_username.return_value = 'john_doe.0003'
 
         response = _create_user(create_user_request, registration_source)
 
@@ -340,9 +348,11 @@ def test_create_user_with_facebook_success():
     )
     registration_source = RegistrationSource.FACEBOOK
 
-    with patch('pecha_api.auth.auth_service.save_user') as mock_save_user:
+    with patch('pecha_api.auth.auth_service.save_user') as mock_save_user, \
+            patch('pecha_api.auth.auth_service.generate_and_validate_username') as mock_generate_and_validate_username:
         mock_user = MagicMock()
         mock_save_user.return_value = mock_user
+        mock_generate_and_validate_username.return_value = 'john_doe.0003'
 
         response = _create_user(create_user_request, registration_source)
 
@@ -358,12 +368,13 @@ def test_create_user_with_empty_password():
         password=""
     )
     registration_source = RegistrationSource.EMAIL
-
-    try:
-        _create_user(create_user_request, registration_source)
-    except HTTPException as e:
-        assert e.status_code == status.HTTP_400_BAD_REQUEST
-        assert e.detail == "Password cannot be empty"
+    with patch('pecha_api.auth.auth_service.generate_and_validate_username') as mock_generate_and_validate_username:
+        try:
+            mock_generate_and_validate_username.return_value = 'john_doe.0003'
+            _create_user(create_user_request, registration_source)
+        except HTTPException as e:
+            assert e.status_code == status.HTTP_400_BAD_REQUEST
+            assert e.detail == "Password cannot be empty"
 
 
 def test_create_user_with_short_password():
@@ -374,12 +385,13 @@ def test_create_user_with_short_password():
         password="short"
     )
     registration_source = RegistrationSource.EMAIL
-
-    try:
-        _create_user(create_user_request, registration_source)
-    except HTTPException as e:
-        assert e.status_code == status.HTTP_400_BAD_REQUEST
-        assert e.detail == "Password must be between 8 and 20 characters"
+    with patch('pecha_api.auth.auth_service.generate_and_validate_username') as mock_generate_and_validate_username:
+        try:
+            mock_generate_and_validate_username.return_value = 'john_doe.0003'
+            _create_user(create_user_request, registration_source)
+        except HTTPException as e:
+            assert e.status_code == status.HTTP_400_BAD_REQUEST
+            assert e.detail == "Password must be between 8 and 20 characters"
 
 
 def test_validate_user_already_exist_user_exists():
@@ -618,7 +630,61 @@ def test__validate_password_valid_password():
     _validate_password(password)
 
 
-def test__get_user_avatar():
-    user = MagicMock()
-    avatar_url = _get_user_avatar(user)
-    assert avatar_url == ""
+def test_validate_username_user_exists():
+    username = "existing_user"
+
+    with patch('pecha_api.auth.auth_service.get_user_by_username') as mock_get_user_by_username:
+        mock_get_user_by_username.return_value = MagicMock()
+
+        result = validate_username(username)
+
+        mock_get_user_by_username.assert_called_once_with(db=ANY, username=username)
+        assert result is False
+
+
+def test_validate_username_user_does_not_exist():
+    username = "new_user"
+
+    with patch('pecha_api.auth.auth_service.get_user_by_username') as mock_get_user_by_username:
+        mock_get_user_by_username.return_value = None
+
+        result = validate_username(username)
+
+        mock_get_user_by_username.assert_called_once_with(db=ANY, username=username)
+        assert result is True
+
+
+def test_generate_username():
+    first_name = "John"
+    last_name = "Doe"
+
+    username = generate_username(first_name, last_name)
+
+    assert username.startswith("john_doe.")
+    assert len(username.split(".")[1]) == 4
+
+
+def test_generate_and_validate_username_success():
+    first_name = "John"
+    last_name = "Doe"
+
+    with patch('pecha_api.auth.auth_service.validate_username') as mock_validate_username:
+        mock_validate_username.return_value = True
+
+        username = generate_and_validate_username(first_name, last_name)
+
+        mock_validate_username.assert_called()
+        assert username.startswith("john_doe.")
+
+
+def test_generate_and_validate_username_retry():
+    first_name = "John"
+    last_name = "Doe"
+
+    with patch('pecha_api.auth.auth_service.validate_username') as mock_validate_username:
+        mock_validate_username.side_effect = [False, True]
+
+        username = generate_and_validate_username(first_name, last_name)
+
+        assert mock_validate_username.call_count == 2
+        assert username.startswith("john_doe.")

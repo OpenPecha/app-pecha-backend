@@ -1,10 +1,13 @@
-from fastapi import APIRouter, Header, Depends
+from fastapi import APIRouter, Depends
+from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from starlette import status
-from ..db import database
-from fastapi import HTTPException
-from typing import Annotated
-from .users_service import get_user_info
 
+from .user_response_models import UserInfoRequest
+from ..db import database
+from typing import Annotated
+from .users_service import get_user_info, update_user_info
+
+oauth2_scheme = HTTPBearer()
 user_router = APIRouter(
     prefix="/users",
     tags=["User Profile"]
@@ -19,12 +22,10 @@ def get_db():
         db.close()
 
 
-def get_token_from_header(authorization: str = Header(...)) -> str:
-    if not authorization.startswith("Bearer "):
-        raise HTTPException(status_code=401, detail="Invalid or missing Authorization header")
-    return authorization.split(" ")[1]
-
-
 @user_router.get("/info", status_code=status.HTTP_200_OK)
-def get_user_information(token: Annotated[str, Depends(get_token_from_header)]):
-    return get_user_info(token=token)
+def get_user_information(authentication_credential: Annotated[HTTPAuthorizationCredentials, Depends(oauth2_scheme)]):
+    return get_user_info(token=authentication_credential.credentials)
+
+@user_router.post("/info", status_code=status.HTTP_201_CREATED)
+def update_user_information(authentication_credential: Annotated[HTTPAuthorizationCredentials, Depends(oauth2_scheme)], user_info_request: UserInfoRequest):
+    return update_user_info(token=authentication_credential.credentials,user_info_request=user_info_request)

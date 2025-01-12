@@ -1,3 +1,5 @@
+from typing import Optional
+
 from pydantic import BaseModel
 
 
@@ -21,7 +23,7 @@ class TokenResponse(BaseModel):
 
 class UserInfo(BaseModel):
     name: str
-    avatar_url: str
+    avatar_url: Optional[str] = None
 
 
 class UserLoginResponse(BaseModel):

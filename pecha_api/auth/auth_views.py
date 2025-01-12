@@ -1,4 +1,6 @@
-from fastapi import APIRouter, Header, Depends
+from fastapi import APIRouter, Depends
+from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
+
 from ..db import database
 from starlette import status
 from .auth_service import authenticate_and_generate_tokens, refresh_access_token, register_user_with_source, \
@@ -6,9 +8,9 @@ from .auth_service import authenticate_and_generate_tokens, refresh_access_token
 from .auth_models import CreateUserRequest, UserLoginRequest, RefreshTokenRequest, PasswordResetRequest, \
     ResetPasswordRequest
 from .auth_enums import RegistrationSource
-from fastapi import HTTPException
 from typing import Annotated
 
+oauth2_scheme = HTTPBearer()
 auth_router = APIRouter(
     prefix="/auth",
     tags=["Authentications"],
@@ -21,12 +23,6 @@ def get_db():
         yield db
     finally:
         db.close()
-
-
-def get_token_from_header(authorization: str = Header(...)) -> str:
-    if not authorization.startswith("Bearer "):
-        raise HTTPException(status_code=401, detail="Invalid or missing Authorization header")
-    return authorization.split(" ")[1]
 
 
 @auth_router.post("/register", status_code=status.HTTP_201_CREATED)
@@ -56,5 +52,5 @@ def password_reset_request(reset_request: PasswordResetRequest):
 
 
 @auth_router.post("/reset-password", status_code=status.HTTP_200_OK)
-def password_reset(reset_password_request: ResetPasswordRequest, token: Annotated[str, Depends(get_token_from_header)]):
-    update_password(token=token, password=reset_password_request.password)
+def password_reset(reset_password_request: ResetPasswordRequest, authentication_credential: Annotated[HTTPAuthorizationCredentials, Depends(oauth2_scheme)]):
+    update_password(token=authentication_credential.credentials, password=reset_password_request.password)
