@@ -1,7 +1,7 @@
+from typing import List, Optional
+
 from pydantic import BaseModel
-
-from users.users_enums import SocialProfile
-
+from .users_enums import SocialProfile
 
 class SocialMediaProfile(BaseModel):
     account: SocialProfile
@@ -10,23 +10,23 @@ class SocialMediaProfile(BaseModel):
 class UserInfoRequest(BaseModel):
     firstname: str
     lastname: str
-    title: str
-    organization: str
-    educations: [str]
-    avatar_url: str
-    about_me: str
-    social_profiles: [SocialMediaProfile]
+    title: Optional[str] = None
+    organization: Optional[str] = None
+    educations: List[str]
+    avatar_url : Optional[str] = None
+    about_me: Optional[str] = None
+    social_profiles: List[SocialMediaProfile]
 
 class UserInfoResponse(BaseModel):
     firstname: str
     lastname: str
     username: str
     email: str
-    title: str
-    organization: str
-    educations: [str]
-    avatar_url: str
-    about_me: str
+    title: Optional[str] = None
+    organization: Optional[str] = None
+    educations: List[str]
+    avatar_url: Optional[str] = None
+    about_me: Optional[str] = None
     followers: int
     following: int
-    social_profiles: [SocialMediaProfile]
+    social_profiles: List[SocialMediaProfile]

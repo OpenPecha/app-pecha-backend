@@ -1,7 +1,9 @@
+from typing import List
+
 from fastapi import HTTPException, status
 from starlette.responses import JSONResponse
 
-from .user_response_models import UserInfoResponse, SocialMediaProfile, UserInfoRequest
+from .user_response_models import UserInfoRequest, UserInfoResponse, SocialMediaProfile
 from .users_models import Users
 from ..auth.auth_repository import decode_token
 from .users_repository import get_user_by_email,save_user
@@ -40,7 +42,7 @@ def generate_user_info_response(user: Users):
             email=user.email,
             title=user.title,
             organization=user.organization,
-            educations=user.education.split(','),
+            educations=user.education.split(',') if user.education else [],
             avatar_url=user.avatar_url,
             about_me=user.about_me,
             followers=0,

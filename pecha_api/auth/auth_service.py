@@ -90,7 +90,7 @@ def generate_token_user(user: Users):
         return UserLoginResponse(
             user=UserInfo(
                 name=user.firstname + " " + user.lastname,
-                avatar_url=user.avatar_url or ""
+                avatar_url=user.avatar_url
             ),
             auth=token_response
         )
