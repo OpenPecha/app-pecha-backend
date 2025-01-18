@@ -2,7 +2,7 @@ from fastapi import APIRouter, Depends, UploadFile, File
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from starlette import status
 
-from .user_response_models import UserInfoRequest
+from .user_response_models import UserInfoRequest, UserInfoResponse
 from ..db import database
 from typing import Annotated
 from .users_service import get_user_info, update_user_info, upload_user_image
@@ -23,7 +23,7 @@ def get_db():
 
 
 @user_router.get("/info", status_code=status.HTTP_200_OK)
-def get_user_information(authentication_credential: Annotated[HTTPAuthorizationCredentials, Depends(oauth2_scheme)]):
+def get_user_information(authentication_credential: Annotated[HTTPAuthorizationCredentials, Depends(oauth2_scheme)])  -> UserInfoResponse:
     return get_user_info(token=authentication_credential.credentials)
 
 
