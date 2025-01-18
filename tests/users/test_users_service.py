@@ -97,9 +97,9 @@ def test_update_user_info_success():
 
     with patch("pecha_api.users.users_service.decode_token", return_value={"sub": "john.doe@example.com"}):
         with patch("pecha_api.users.users_service.get_user_by_email", return_value=user):
-            with patch("pecha_api.users.users_service.save_user") as mock_save_user:
+            with patch("pecha_api.users.users_service.update_user") as mock_update_user:
                 update_user_info(token, user_info_request)
-                mock_save_user.assert_called_once()
+                mock_update_user.assert_called_once()
 
 
 def test_update_user_info_invalid_token():
