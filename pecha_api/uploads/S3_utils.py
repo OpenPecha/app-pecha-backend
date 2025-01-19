@@ -38,7 +38,7 @@ def upload_file(bucket_name: str, s3_key: str, file: UploadFile) -> str:
 def upload_bytes(bucket_name: str, s3_key: str, file: BytesIO, content_type: str) -> str:
     try:
         if not isinstance(file, BytesIO):
-            raise ValueError("The 'file' parameter must be a BytesIO object.")
+            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="The 'file' parameter must be a BytesIO object")
         s3_client.upload_fileobj(
             Fileobj=file,
             Bucket=bucket_name,

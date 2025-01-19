@@ -43,6 +43,7 @@ def generate_user_info_response(user: Users):
             email=user.email,
             title=user.title,
             organization=user.organization,
+            location=user.location,
             educations=user.education.split(',') if user.education else [],
             avatar_url=user.avatar_url,
             about_me=user.about_me,
@@ -61,6 +62,7 @@ def update_user_info(token: str, user_info_request: UserInfoRequest):
             current_user.lastname = user_info_request.lastname
             current_user.title = user_info_request.title
             current_user.organization = user_info_request.organization
+            current_user.location = user_info_request.location
             current_user.educations = ','.join(user_info_request.educations)
             current_user.avatar_url = user_info_request.avatar_url
             current_user.about_me = user_info_request.about_me
@@ -77,7 +79,7 @@ def upload_user_image(token: str, file: UploadFile):
     try:
         user_info = validate_and_extract_user_details(token=token)
         # Validate and compress the uploaded image
-        compressed_image = validate_and_compress_image(file)
+        compressed_image = validate_and_compress_image(file=file, content_type=file.content_type)
         file_path = f'images/profile_images/{user_info.id}.jpg'
         delete_file(file_path=file_path)
         upload_key = upload_bytes(
@@ -118,10 +120,10 @@ def get_social_profile(value: str) -> SocialProfile:
         raise ValueError(f"'{value}' is not a valid SocialProfile")
 
 
-def validate_and_compress_image(file: UploadFile) -> io.BytesIO:
+def validate_and_compress_image(file: UploadFile, content_type: str) -> io.BytesIO:
     max_file_size = get_int("MAX_FILE_SIZE_MB")
     MAX_FILE_SIZE_BYTES = max_file_size * 1024 * 1024
-    if not file.content_type.startswith("image/"):
+    if not content_type.startswith("image/"):
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="Only image files are allowed."
@@ -130,7 +132,7 @@ def validate_and_compress_image(file: UploadFile) -> io.BytesIO:
     file_size = file.file.tell()
     if file_size > MAX_FILE_SIZE_BYTES:
         raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
+            status_code=status.HTTP_413_REQUEST_ENTITY_TOO_LARGE,
             detail=f"File size exceeds {max_file_size} MB limit."
         )
     file.file.seek(0)  # Reset file pointer

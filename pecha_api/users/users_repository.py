@@ -1,6 +1,5 @@
-from sqlite3 import IntegrityError
 
-from sqlalchemy.exc import InvalidRequestError
+from sqlalchemy.exc import InvalidRequestError, IntegrityError
 from sqlalchemy.orm import Session
 from .users_models import Users, SocialMediaAccount
 from fastapi import HTTPException

@@ -12,6 +12,7 @@ class UserInfoRequest(BaseModel):
     lastname: str
     title: Optional[str] = None
     organization: Optional[str] = None
+    location: Optional[str] = None
     educations: List[str]
     avatar_url : Optional[str] = None
     about_me: Optional[str] = None
@@ -24,6 +25,7 @@ class UserInfoResponse(BaseModel):
     email: str
     title: Optional[str] = None
     organization: Optional[str] = None
+    location: Optional[str] = None
     educations: List[str]
     avatar_url: Optional[str] = None
     about_me: Optional[str] = None
