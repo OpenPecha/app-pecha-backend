@@ -44,14 +44,14 @@ def test_upload_bytes_invalid_file(mock_s3_client):
 
 def test_generate_presigned_upload_url_success(mock_s3_client):
     mock_s3_client.generate_presigned_url.return_value = "http://example.com"
-    result = generate_presigned_upload_url("test-bucket", "test-key", "text/plain")
+    result = generate_presigned_upload_url("test-bucket", "test-key")
     assert result == "http://example.com"
 
 
 def test_generate_presigned_upload_url_client_error(mock_s3_client):
     mock_s3_client.generate_presigned_url.side_effect = Exception("ClientError")
     with pytest.raises(Exception):
-        generate_presigned_upload_url("test-bucket", "test-key", "text/plain")
+        generate_presigned_upload_url("test-bucket", "test-key")
 
 
 def test_delete_file_success(mock_s3_client):

@@ -1,3 +1,4 @@
+from http import HTTPMethod
 from io import BytesIO
 
 import boto3
@@ -38,7 +39,8 @@ def upload_file(bucket_name: str, s3_key: str, file: UploadFile) -> str:
 def upload_bytes(bucket_name: str, s3_key: str, file: BytesIO, content_type: str) -> str:
     try:
         if not isinstance(file, BytesIO):
-            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="The 'file' parameter must be a BytesIO object")
+            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST,
+                                detail="The 'file' parameter must be a BytesIO object")
         s3_client.upload_fileobj(
             Fileobj=file,
             Bucket=bucket_name,
@@ -54,22 +56,17 @@ def upload_bytes(bucket_name: str, s3_key: str, file: BytesIO, content_type: str
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="An unexpected error occurred.")
 
 
-def generate_presigned_upload_url(bucket_name: str, s3_key: str,content_type: str):
-    try:
-        # Generate a presigned URL for uploading an object
-        presigned_url = s3_client.generate_presigned_url(
-            ClientMethod="put_object",
-            Params={
-                "Bucket": bucket_name,
-                "Key": s3_key,
-                "ContentType": content_type
-            },
-            ExpiresIn=get_int("IMAGE_EXPIRATION_IN_SEC")
-        )
-        return presigned_url
-
-    except ClientError as e:
-        raise Exception(f"Failed to generate presigned upload URL: {e}")
+def generate_presigned_upload_url(bucket_name: str, s3_key: str):
+    # Generate a presigned URL for uploading an object
+    presigned_url = s3_client.generate_presigned_url(
+        ClientMethod="get_object",
+        Params={
+            "Bucket": bucket_name,
+            "Key": s3_key
+        },
+        ExpiresIn=3600
+    )
+    return presigned_url
 
 
 def delete_file(file_path: str):

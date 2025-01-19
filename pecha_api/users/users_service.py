@@ -90,8 +90,7 @@ def upload_user_image(token: str, file: UploadFile):
         )
         presigned_url = generate_presigned_upload_url(
             bucket_name=get("AWS_BUCKET_NAME"),
-            s3_key=upload_key,
-            content_type=file.content_type
+            s3_key=upload_key
         )
         return presigned_url
     except HTTPException as exception:
