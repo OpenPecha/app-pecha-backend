@@ -1,5 +1,6 @@
 import io
 import logging
+from urllib.parse import urlparse
 
 from fastapi import HTTPException, status, UploadFile
 from jwt import ExpiredSignatureError
@@ -45,7 +46,7 @@ def generate_user_info_response(user: Users):
             organization=user.organization,
             location=user.location,
             educations=user.education.split(',') if user.education else [],
-            avatar_url=user.avatar_url,
+            avatar_url=generate_presigned_upload_url(bucket_name=get("AWS_BUCKET_NAME"), s3_key=user.avatar_url),
             about_me=user.about_me,
             followers=0,
             following=0,
@@ -64,7 +65,7 @@ def update_user_info(token: str, user_info_request: UserInfoRequest):
             current_user.organization = user_info_request.organization
             current_user.location = user_info_request.location
             current_user.educations = ','.join(user_info_request.educations)
-            current_user.avatar_url = user_info_request.avatar_url
+            current_user.avatar_url = extract_s3_key(presigned_url=user_info_request.avatar_url)
             current_user.about_me = user_info_request.about_me
             current_user.social_profiles = user_info_request.social_profiles
             db_session = SessionLocal()
@@ -108,7 +109,7 @@ def validate_and_extract_user_details(token: str) -> Users:
         user = get_user_by_email(db=db_session, email=email)
         return user
     except ExpiredSignatureError as exception:
-        logging.debug("exception",exception)
+        logging.debug("exception", exception)
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid token")
 
 
@@ -117,6 +118,17 @@ def get_social_profile(value: str) -> SocialProfile:
         return SocialProfile(value.lower())
     except ValueError:
         raise ValueError(f"'{value}' is not a valid SocialProfile")
+
+
+def extract_s3_key(presigned_url: str) -> str:
+    if not presigned_url:
+        return ""
+    parsed_url = urlparse(presigned_url)
+    # Extract the path and remove the leading '/'
+    s3_key = parsed_url.path.lstrip('/')
+    if not s3_key:
+        return ""
+    return s3_key
 
 
 def validate_and_compress_image(file: UploadFile, content_type: str) -> io.BytesIO:
