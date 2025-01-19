@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "pecha-api"
-version = "0.1.0"
+version = "0.1.1"
 description = ""
 authors = ["tenzinsamten <iamsamten>"]
 readme = "README.md"
