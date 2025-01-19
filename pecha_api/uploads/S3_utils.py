@@ -57,16 +57,18 @@ def upload_bytes(bucket_name: str, s3_key: str, file: BytesIO, content_type: str
 
 
 def generate_presigned_upload_url(bucket_name: str, s3_key: str):
-    # Generate a presigned URL for uploading an object
-    presigned_url = s3_client.generate_presigned_url(
-        ClientMethod="get_object",
-        Params={
-            "Bucket": bucket_name,
-            "Key": s3_key
-        },
-        ExpiresIn=3600
-    )
-    return presigned_url
+    if isinstance(s3_key, str) and s3_key.strip():
+        # Generate a presigned URL for uploading an object
+        presigned_url = s3_client.generate_presigned_url(
+            ClientMethod="get_object",
+            Params={
+                "Bucket": bucket_name,
+                "Key": s3_key
+            },
+            ExpiresIn=3600
+        )
+        return presigned_url
+    return ""
 
 
 def delete_file(file_path: str):
