@@ -2,6 +2,8 @@ from typing import Optional
 
 from pydantic import BaseModel
 
+from pecha_api.auth.auth_enums import RegistrationSource
+
 
 class CreateUserRequest(BaseModel):
     firstname: str
@@ -9,6 +11,9 @@ class CreateUserRequest(BaseModel):
     email: str
     password: str
 
+class CreateSocialUserRequest(BaseModel):
+    create_user_request: CreateUserRequest
+    platform: RegistrationSource
 
 class UserLoginRequest(BaseModel):
     email: str

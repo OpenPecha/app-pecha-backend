@@ -22,7 +22,7 @@ from pathlib import Path
 
 def register_user_with_source(create_user_request: CreateUserRequest, registration_source: RegistrationSource):
     try:
-        registered_user = _create_user(
+        registered_user = create_user(
             create_user_request=create_user_request,
             registration_source=registration_source
         )
@@ -32,7 +32,7 @@ def register_user_with_source(create_user_request: CreateUserRequest, registrati
                             content={"message": exception.detail})
 
 
-def _create_user(create_user_request: CreateUserRequest, registration_source: RegistrationSource) -> Users:
+def create_user(create_user_request: CreateUserRequest, registration_source: RegistrationSource) -> Users:
     db_session = SessionLocal()
     try:
         new_user = Users(**create_user_request.model_dump())
