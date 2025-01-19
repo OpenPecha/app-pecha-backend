@@ -8,27 +8,37 @@ client = TestClient(api)
 
 def test_register_user():
     with patch("pecha_api.auth.auth_views.register_user_with_source") as mock_register_user_with_source:
-        mock_register_user_with_source.return_value = {"access_token": "test_token",
-                                                       "refresh_token": "test_refresh_token", "token_type": "Bearer"}
+        mock_register_user_with_source.return_value = { "user": {"name": "tenzin samten","avatar_url": ""},
+                                           "auth": {
+                                               "access_token": "test_token",
+                                               "refresh_token": "test_refresh_token",
+                                               "token_type": "Bearer"
+                                           }
+                                           }
         response = client.post("/auth/register", json={"email": "testuser@example.com", "firstname": "testfirstname",
                                                        "lastname": "testlastname", "password": "testpass"})
 
         assert response.status_code == 201
-        assert response.json()["access_token"] == "test_token"
-        assert response.json()["refresh_token"] == "test_refresh_token"
-        assert response.json()["token_type"] == "Bearer"
+        assert response.json()["auth"]["access_token"] == "test_token"
+        assert response.json()["auth"]["refresh_token"] == "test_refresh_token"
+        assert response.json()["auth"]["token_type"] == "Bearer"
 
 
 def test_login_user():
     with patch("pecha_api.auth.auth_views.authenticate_and_generate_tokens") as mock_authenticate:
-        mock_authenticate.return_value = {"access_token": "test_token", "refresh_token": "test_refresh_token",
-                                          "token_type": "Bearer"}
+        mock_authenticate.return_value = { "user": {"name": "tenzin samten","avatar_url": ""},
+                                           "auth": {
+                                               "access_token": "test_token",
+                                               "refresh_token": "test_refresh_token",
+                                               "token_type": "Bearer"
+                                           }
+                                           }
         response = client.post("/auth/login", json={"email": "testuser@example.com", "password": "testpass"})
 
         assert response.status_code == 200
-        assert response.json()["access_token"] == "test_token"
-        assert response.json()["refresh_token"] == "test_refresh_token"
-        assert response.json()["token_type"] == "Bearer"
+        assert response.json()["auth"]["access_token"] == "test_token"
+        assert response.json()["auth"]["refresh_token"] == "test_refresh_token"
+        assert response.json()["auth"]["token_type"] == "Bearer"
 
 
 def test_refresh_token():

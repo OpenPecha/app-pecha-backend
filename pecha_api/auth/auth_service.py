@@ -1,4 +1,5 @@
 import uuid
+import random
 from datetime import datetime, timedelta, timezone
 
 import jwt
@@ -7,7 +8,7 @@ from ..notification.email_provider import send_email
 from .auth_models import CreateUserRequest, UserLoginResponse, RefreshTokenResponse, TokenResponse, UserInfo
 from ..users.users_models import Users, PasswordReset
 from ..db.database import SessionLocal
-from ..users.users_repository import get_user_by_email, save_user
+from ..users.users_repository import get_user_by_email, save_user, get_user_by_username
 from .auth_repository import get_hashed_password, verify_password, create_access_token, create_refresh_token, \
     generate_token_data, decode_token
 from .password_reset_repository import save_password_reset, get_password_reset_by_token
@@ -35,6 +36,8 @@ def _create_user(create_user_request: CreateUserRequest, registration_source: Re
     db_session = SessionLocal()
     try:
         new_user = Users(**create_user_request.model_dump())
+        username = generate_and_validate_username(first_name=create_user_request.firstname,last_name=create_user_request.lastname)
+        new_user.username = username
         if registration_source == RegistrationSource.EMAIL:
             _validate_password(new_user.password)
             hashed_password = get_hashed_password(new_user.password)
@@ -87,7 +90,7 @@ def generate_token_user(user: Users):
         return UserLoginResponse(
             user=UserInfo(
                 name=user.firstname + " " + user.lastname,
-                avatar_url=_get_user_avatar(user=user)
+                avatar_url=user.avatar_url
             ),
             auth=token_response
         )
@@ -187,5 +190,21 @@ def send_reset_email(email: str, reset_link: str):
     )
 
 
-def _get_user_avatar(user: Users):
-    return ""
+def validate_username(username: str) -> bool:
+    db_session = SessionLocal()
+    user = get_user_by_username(db=db_session, username=username)
+    if user:
+        return False
+    return True
+
+
+def generate_username(first_name: str, last_name: str) -> str:
+    random_suffix = str(random.randint(1, 9999)).zfill(4)
+    return f"{first_name.lower()}_{last_name.lower()}.{random_suffix}"
+
+
+def generate_and_validate_username(first_name: str, last_name: str) -> str:
+    while True:  # Loop until a valid username is generated
+        username = generate_username(first_name=first_name, last_name=last_name)
+        if validate_username(username=username):
+            return username

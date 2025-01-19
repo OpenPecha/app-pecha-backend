@@ -1,14 +1,16 @@
-from fastapi import APIRouter, Header, Depends
+from fastapi import APIRouter, Depends
+from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
+
 from ..db import database
 from starlette import status
 from .auth_service import authenticate_and_generate_tokens, refresh_access_token, register_user_with_source, \
     request_reset_password, update_password
 from .auth_models import CreateUserRequest, UserLoginRequest, RefreshTokenRequest, PasswordResetRequest, \
-    ResetPasswordRequest
+    ResetPasswordRequest, UserLoginResponse, RefreshTokenResponse
 from .auth_enums import RegistrationSource
-from fastapi import HTTPException
 from typing import Annotated
 
+oauth2_scheme = HTTPBearer()
 auth_router = APIRouter(
     prefix="/auth",
     tags=["Authentications"],
@@ -23,14 +25,8 @@ def get_db():
         db.close()
 
 
-def get_token_from_header(authorization: str = Header(...)) -> str:
-    if not authorization.startswith("Bearer "):
-        raise HTTPException(status_code=401, detail="Invalid or missing Authorization header")
-    return authorization.split(" ")[1]
-
-
 @auth_router.post("/register", status_code=status.HTTP_201_CREATED)
-def register_user(create_user_request: CreateUserRequest):
+def register_user(create_user_request: CreateUserRequest) -> UserLoginResponse:
     return register_user_with_source(
         create_user_request=create_user_request,
         registration_source=RegistrationSource.EMAIL
@@ -38,7 +34,7 @@ def register_user(create_user_request: CreateUserRequest):
 
 
 @auth_router.post("/login", status_code=status.HTTP_200_OK)
-def login_user(user_login_request: UserLoginRequest):
+def login_user(user_login_request: UserLoginRequest) -> UserLoginResponse:
     return authenticate_and_generate_tokens(
         email=user_login_request.email,
         password=user_login_request.password
@@ -46,7 +42,7 @@ def login_user(user_login_request: UserLoginRequest):
 
 
 @auth_router.post("/refresh-token", status_code=status.HTTP_200_OK)
-def refresh_token(refresh_token_request: RefreshTokenRequest):
+def refresh_token(refresh_token_request: RefreshTokenRequest) -> RefreshTokenResponse:
     return refresh_access_token(refresh_token_request.token)
 
 
@@ -56,5 +52,5 @@ def password_reset_request(reset_request: PasswordResetRequest):
 
 
 @auth_router.post("/reset-password", status_code=status.HTTP_200_OK)
-def password_reset(reset_password_request: ResetPasswordRequest, token: Annotated[str, Depends(get_token_from_header)]):
-    update_password(token=token, password=reset_password_request.password)
+def password_reset(reset_password_request: ResetPasswordRequest, authentication_credential: Annotated[HTTPAuthorizationCredentials, Depends(oauth2_scheme)]):
+    update_password(token=authentication_credential.credentials, password=reset_password_request.password)
