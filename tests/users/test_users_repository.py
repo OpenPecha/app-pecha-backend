@@ -6,7 +6,8 @@ from starlette import status
 
 from pecha_api.auth.auth_enums import RegistrationSource
 from pecha_api.users.users_models import Base, Users, SocialMediaAccount
-from pecha_api.users.users_repository import save_user, get_user_by_email, get_user_by_username, get_user_social_account
+from pecha_api.users.users_repository import save_user, get_user_by_email, get_user_by_username, \
+    get_user_social_account, update_user
 
 DATABASE_URL = "sqlite:///./test.db"
 
@@ -34,6 +35,30 @@ def test_save_user(db):
     saved_user = save_user(db, user)
     assert saved_user.id is not None
     assert saved_user.email == "testuser@example.com"
+
+
+def test_save_user_integrity_error(db):
+    user1 = Users(
+        email="duplicate@example.com",
+        username="user1",
+        firstname='firstname',
+        lastname='lastname',
+        password='password',
+        registration_source=RegistrationSource.EMAIL.name
+    )
+    user2 = Users(
+        email="duplicate@example.com",  # Duplicate email should cause an integrity error
+        username="user2",
+        firstname='firstname',
+        lastname='lastname',
+        password='password',
+        registration_source=RegistrationSource.EMAIL.name
+    )
+    save_user(db, user1)
+    with pytest.raises(HTTPException) as exc_info:
+        save_user(db, user2)
+    assert exc_info.value.status_code == status.HTTP_404_NOT_FOUND
+    assert exc_info.value.detail == "User not found"
 
 
 def test_get_user_by_email(db):
@@ -94,3 +119,61 @@ def test_get_user_by_email_not_found(db):
         get_user_by_email(db, "nonexistent@example.com")
     assert exc_info.value.status_code == status.HTTP_404_NOT_FOUND
     assert exc_info.value.detail == "User not found"
+
+
+def test_update_user(db):
+    user = Users(
+        email="testuser5@example.com",
+        username="testuser5",
+        firstname='firstname',
+        lastname='lastname',
+        password='password',
+        registration_source=RegistrationSource.EMAIL.name
+    )
+    saved_user = save_user(db, user)
+    saved_user.firstname = "updated_firstname"
+    updated_user = update_user(db, saved_user)
+    assert updated_user.firstname == "updated_firstname"
+
+
+def test_update_user_invalid_request(db):
+    user = Users(
+        email="testuser6@example.com",
+        username="testuser6",
+        firstname='firstname',
+        lastname='lastname',
+        password='password',
+        registration_source=RegistrationSource.EMAIL.name
+    )
+    save_user(db, user)
+    user.id = None  # Invalid update request
+    with pytest.raises(HTTPException) as exc_info:
+        update_user(db, user)
+    assert exc_info.value.status_code == status.HTTP_400_BAD_REQUEST
+    assert exc_info.value.detail == "User update issue"
+
+
+def test_update_user_integrity_error(db):
+    user1 = Users(
+        email="testuser7@example.com",
+        username="testuser7",
+        firstname='firstname',
+        lastname='lastname',
+        password='password',
+        registration_source=RegistrationSource.EMAIL.name
+    )
+    user2 = Users(
+        email="testuser8@example.com",
+        username="testuser8",
+        firstname='firstname',
+        lastname='lastname',
+        password='password',
+        registration_source=RegistrationSource.EMAIL.name
+    )
+    save_user(db, user1)
+    save_user(db, user2)
+    user2.email = "testuser7@example.com"  # This should cause an integrity error
+    with pytest.raises(HTTPException) as exc_info:
+        update_user(db, user2)
+    assert exc_info.value.status_code == status.HTTP_400_BAD_REQUEST
+    assert exc_info.value.detail == "User update issue"

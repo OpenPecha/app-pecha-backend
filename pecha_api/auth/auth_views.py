@@ -6,7 +6,7 @@ from starlette import status
 from .auth_service import authenticate_and_generate_tokens, refresh_access_token, register_user_with_source, \
     request_reset_password, update_password
 from .auth_models import CreateUserRequest, UserLoginRequest, RefreshTokenRequest, PasswordResetRequest, \
-    ResetPasswordRequest
+    ResetPasswordRequest, UserLoginResponse, RefreshTokenResponse
 from .auth_enums import RegistrationSource
 from typing import Annotated
 
@@ -26,7 +26,7 @@ def get_db():
 
 
 @auth_router.post("/register", status_code=status.HTTP_201_CREATED)
-def register_user(create_user_request: CreateUserRequest):
+def register_user(create_user_request: CreateUserRequest) -> UserLoginResponse:
     return register_user_with_source(
         create_user_request=create_user_request,
         registration_source=RegistrationSource.EMAIL
@@ -34,7 +34,7 @@ def register_user(create_user_request: CreateUserRequest):
 
 
 @auth_router.post("/login", status_code=status.HTTP_200_OK)
-def login_user(user_login_request: UserLoginRequest):
+def login_user(user_login_request: UserLoginRequest) -> UserLoginResponse:
     return authenticate_and_generate_tokens(
         email=user_login_request.email,
         password=user_login_request.password
@@ -42,7 +42,7 @@ def login_user(user_login_request: UserLoginRequest):
 
 
 @auth_router.post("/refresh-token", status_code=status.HTTP_200_OK)
-def refresh_token(refresh_token_request: RefreshTokenRequest):
+def refresh_token(refresh_token_request: RefreshTokenRequest) -> RefreshTokenResponse:
     return refresh_access_token(refresh_token_request.token)
 
 
