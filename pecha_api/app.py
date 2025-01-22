@@ -1,9 +1,12 @@
 from fastapi import FastAPI
 from starlette import status
 from fastapi.middleware.cors import CORSMiddleware
+
+from auth.auth_models import PropsResponse
 from pecha_api.auth import auth_views
 from pecha_api.users import users_views
 import uvicorn
+from config import get
 
 api = FastAPI(
     title="Pecha API",
@@ -22,6 +25,13 @@ api.add_middleware(
     allow_headers=["*"],
 )
 
+@api.get("/props", status_code=status.HTTP_204_NO_CONTENT)
+async def get_props():
+    props_response = PropsResponse(
+        client_id=get("CLIENT_ID"),
+        domain=get("DOMAIN_NAME")
+    )
+    return props_response
 
 @api.get("/health", status_code=status.HTTP_204_NO_CONTENT)
 async def get_health():
