@@ -24,7 +24,7 @@ api.add_middleware(
     allow_headers=["*"],
 )
 
-@api.get("/props", status_code=status.HTTP_204_NO_CONTENT)
+@api.get("/props", status_code=status.HTTP_200_OK)
 async def get_props():
    return retrieve_client_info()
 
