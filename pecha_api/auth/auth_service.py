@@ -5,7 +5,8 @@ from datetime import datetime, timedelta, timezone
 import jwt
 from ..config import get
 from ..notification.email_provider import send_email
-from .auth_models import CreateUserRequest, UserLoginResponse, RefreshTokenResponse, TokenResponse, UserInfo
+from .auth_models import CreateUserRequest, UserLoginResponse, RefreshTokenResponse, TokenResponse, UserInfo, \
+    PropsResponse
 from ..users.users_models import Users, PasswordReset
 from ..db.database import SessionLocal
 from ..users.users_repository import get_user_by_email, save_user, get_user_by_username
@@ -36,7 +37,8 @@ def create_user(create_user_request: CreateUserRequest, registration_source: Reg
     db_session = SessionLocal()
     try:
         new_user = Users(**create_user_request.model_dump())
-        username = generate_and_validate_username(first_name=create_user_request.firstname,last_name=create_user_request.lastname)
+        username = generate_and_validate_username(first_name=create_user_request.firstname,
+                                                  last_name=create_user_request.lastname)
         new_user.username = username
         if registration_source == RegistrationSource.EMAIL:
             _validate_password(new_user.password)
@@ -208,3 +210,11 @@ def generate_and_validate_username(first_name: str, last_name: str) -> str:
         username = generate_username(first_name=first_name, last_name=last_name)
         if validate_username(username=username):
             return username
+
+
+def retrieve_client_info():
+    props_response = PropsResponse(
+        client_id=get("CLIENT_ID"),
+        domain=get("DOMAIN_NAME")
+    )
+    return props_response
