@@ -6,3 +6,4 @@ class RegistrationSource(Enum):
     FACEBOOK = "facebook"
     APPLE = "apple"
     EMAIL = "email"
+    AUTH0 = "auth0"
