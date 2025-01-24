@@ -2,7 +2,7 @@ from enum import Enum
 
 
 class RegistrationSource(Enum):
-    GOOGLE = "google"
+    GOOGLE = "google-oauth2"
     FACEBOOK = "facebook"
     APPLE = "apple"
     EMAIL = "email"
