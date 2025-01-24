@@ -1,3 +1,4 @@
+import logging
 import uuid
 import random
 from datetime import datetime, timedelta, timezone
@@ -36,6 +37,8 @@ def register_user_with_source(create_user_request: CreateUserRequest, registrati
 def create_user(create_user_request: CreateUserRequest, registration_source: RegistrationSource) -> Users:
     db_session = SessionLocal()
     try:
+        logging.log(registration_source.value)
+        logging.log(create_user_request.firstname)
         new_user = Users(**create_user_request.model_dump())
         username = generate_and_validate_username(first_name=create_user_request.firstname,
                                                   last_name=create_user_request.lastname)
