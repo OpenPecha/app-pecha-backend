@@ -486,6 +486,7 @@ def test_request_reset_password_success():
     email = "test@example.com"
     user = MagicMock()
     user.email = email
+    user.registration_source = 'email'
 
     with patch('pecha_api.auth.auth_service.get_user_by_email') as mock_get_user_by_email, \
             patch('pecha_api.auth.auth_service.save_password_reset') as mock_save_password_reset, \
@@ -498,6 +499,23 @@ def test_request_reset_password_success():
         mock_save_password_reset.assert_called_once()
         mock_send_reset_email.assert_called_once()
         assert response == {"message": "If the email exists in our system, a password reset email has been sent."}
+
+
+def test_request_reset_password_not_from_email_412():
+    email = "test@example.com"
+    user = MagicMock()
+    user.email = email
+    user.registration_source = 'google-oauth2'
+
+    with patch('pecha_api.auth.auth_service.get_user_by_email') as mock_get_user_by_email:
+        mock_get_user_by_email.return_value = user
+        try:
+            request_reset_password(email)
+        except HTTPException as e:
+            assert e.status_code == status.HTTP_412_PRECONDITION_FAILED
+            assert e.detail == "Invalid refresh token"
+
+
 
 
 def test_request_reset_password_user_not_found():
