@@ -4,7 +4,7 @@ from beanie import Document, PydanticObjectId
 from pydantic import BaseModel, Field
 
 
-class Term(Document,BaseModel):
+class Term(Document):
     id: PydanticObjectId = Field(default_factory=PydanticObjectId, alias="_id")
     slug: str
     titles:  Dict[str,str]  # Dictionary with language_id as key and title as value

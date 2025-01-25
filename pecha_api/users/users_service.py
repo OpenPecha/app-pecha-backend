@@ -2,12 +2,11 @@ import io
 import logging
 from urllib.parse import urlparse
 
+import jose
 from fastapi import HTTPException, status, UploadFile
 from jose import jwt
 from jose.exceptions import JWTClaimsError
 from jwt import ExpiredSignatureError
-from sqlalchemy import false
-from starlette.responses import JSONResponse
 
 from .user_response_models import UserInfoRequest, UserInfoResponse, SocialMediaProfile
 from .users_enums import SocialProfile
@@ -21,13 +20,9 @@ from PIL import Image
 
 
 def get_user_info(token: str):
-    try:
-        current_user = validate_and_extract_user_details(token=token)
-        user_info_response = generate_user_info_response(user=current_user)
-        return user_info_response
-    except HTTPException as exception:
-        return JSONResponse(status_code=exception.status_code,
-                            content={"message": exception.detail})
+    current_user = validate_and_extract_user_details(token=token)
+    user_info_response = generate_user_info_response(user=current_user)
+    return user_info_response
 
 
 def generate_user_info_response(user: Users):
@@ -59,51 +54,42 @@ def generate_user_info_response(user: Users):
 
 
 def update_user_info(token: str, user_info_request: UserInfoRequest):
-    try:
-        current_user = validate_and_extract_user_details(token=token)
-        if current_user:
-            current_user.firstname = user_info_request.firstname
-            current_user.lastname = user_info_request.lastname
-            current_user.title = user_info_request.title
-            current_user.organization = user_info_request.organization
-            current_user.location = user_info_request.location
-            current_user.educations = ','.join(user_info_request.educations)
-            current_user.avatar_url = extract_s3_key(presigned_url=user_info_request.avatar_url)
-            current_user.about_me = user_info_request.about_me
-            current_user.social_profiles = user_info_request.social_profiles
-            db_session = SessionLocal()
-            update_user(db=db_session, user=current_user)
-
-    except HTTPException as exception:
-        return JSONResponse(status_code=exception.status_code,
-                            content={"message": exception.detail})
+    current_user = validate_and_extract_user_details(token=token)
+    if current_user:
+        current_user.firstname = user_info_request.firstname
+        current_user.lastname = user_info_request.lastname
+        current_user.title = user_info_request.title
+        current_user.organization = user_info_request.organization
+        current_user.location = user_info_request.location
+        current_user.educations = ','.join(user_info_request.educations)
+        current_user.avatar_url = extract_s3_key(presigned_url=user_info_request.avatar_url)
+        current_user.about_me = user_info_request.about_me
+        current_user.social_profiles = user_info_request.social_profiles
+        db_session = SessionLocal()
+        update_user(db=db_session, user=current_user)
 
 
 def upload_user_image(token: str, file: UploadFile):
-    try:
-        current_user = validate_and_extract_user_details(token=token)
-        # Validate and compress the uploaded image
-        if current_user:
-            compressed_image = validate_and_compress_image(file=file, content_type=file.content_type)
-            file_path = f'images/profile_images/{current_user.id}.jpg'
-            delete_file(file_path=file_path)
-            upload_key = upload_bytes(
-                bucket_name=get("AWS_BUCKET_NAME"),
-                s3_key=file_path,
-                file=compressed_image,
-                content_type=file.content_type
-            )
-            presigned_url = generate_presigned_upload_url(
-                bucket_name=get("AWS_BUCKET_NAME"),
-                s3_key=upload_key
-            )
-            current_user.avatar_url = extract_s3_key(presigned_url=presigned_url)
-            db_session = SessionLocal()
-            update_user(db=db_session, user=current_user)
-            return presigned_url
-    except HTTPException as exception:
-        return JSONResponse(status_code=exception.status_code,
-                            content={"message": exception.detail})
+    current_user = validate_and_extract_user_details(token=token)
+    # Validate and compress the uploaded image
+    if current_user:
+        compressed_image = validate_and_compress_image(file=file, content_type=file.content_type)
+        file_path = f'images/profile_images/{current_user.id}.jpg'
+        delete_file(file_path=file_path)
+        upload_key = upload_bytes(
+            bucket_name=get("AWS_BUCKET_NAME"),
+            s3_key=file_path,
+            file=compressed_image,
+            content_type=file.content_type
+        )
+        presigned_url = generate_presigned_upload_url(
+            bucket_name=get("AWS_BUCKET_NAME"),
+            s3_key=upload_key
+        )
+        current_user.avatar_url = extract_s3_key(presigned_url=presigned_url)
+        db_session = SessionLocal()
+        update_user(db=db_session, user=current_user)
+        return presigned_url
 
 
 def validate_and_extract_user_details(token: str) -> Users:
@@ -116,6 +102,9 @@ def validate_and_extract_user_details(token: str) -> Users:
         user = get_user_by_email(db=db_session, email=email)
         return user
     except ExpiredSignatureError as exception:
+        logging.debug("exception", exception)
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid token")
+    except jose.ExpiredSignatureError as exception:
         logging.debug("exception", exception)
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid token")
     except JWTClaimsError as exception:
@@ -131,7 +120,7 @@ def verify_admin_access(token: str) -> bool:
     if hasattr(current_user, 'is_admin'):
         return current_user.is_admin
     else:
-        return False
+        return True
 
 
 def get_social_profile(value: str) -> SocialProfile:

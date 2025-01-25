@@ -18,28 +18,23 @@ from .auth_repository import get_hashed_password, verify_password, create_access
 from .password_reset_repository import save_password_reset, get_password_reset_by_token
 from .auth_enums import RegistrationSource
 from fastapi import HTTPException
-from fastapi.responses import JSONResponse
 from starlette import status
 from jinja2 import Template
 from pathlib import Path
 
 
 def register_user_with_source(create_user_request: CreateUserRequest, registration_source: RegistrationSource):
-    try:
-        registered_user = create_user(
-            create_user_request=create_user_request,
-            registration_source=registration_source
-        )
-        return generate_token_user(registered_user)
-    except HTTPException as exception:
-        return JSONResponse(status_code=exception.status_code,
-                            content={"message": exception.detail})
+    registered_user = create_user(
+        create_user_request=create_user_request,
+        registration_source=registration_source
+    )
+    return generate_token_user(registered_user)
 
 
 def create_user(create_user_request: CreateUserRequest, registration_source: RegistrationSource) -> Users:
     db_session = SessionLocal()
     try:
-        logging.debug(registration_source.value,)
+        logging.debug(registration_source.value, )
         logging.debug(create_user_request.firstname)
         new_user = Users(**create_user_request.model_dump())
         username = generate_and_validate_username(first_name=create_user_request.firstname,
@@ -75,35 +70,27 @@ def validate_user_already_exist(email: str):
 
 
 def authenticate_and_generate_tokens(email: str, password: str):
-    try:
-        user = authenticate_user(email=email, password=password)
-        return generate_token_user(user)
-    except HTTPException as exception:
-        return JSONResponse(status_code=exception.status_code,
-                            content={"message": exception.detail})
+    user = authenticate_user(email=email, password=password)
+    return generate_token_user(user)
 
 
 def generate_token_user(user: Users):
-    try:
-        data = generate_token_data(user)
-        access_token = create_access_token(data)
-        refresh_token = create_refresh_token(data)
+    data = generate_token_data(user)
+    access_token = create_access_token(data)
+    refresh_token = create_refresh_token(data)
 
-        token_response = TokenResponse(
-            access_token=access_token,
-            refresh_token=refresh_token,
-            token_type="Bearer"
-        )
-        return UserLoginResponse(
-            user=UserInfo(
-                name=user.firstname + " " + user.lastname,
-                avatar_url=user.avatar_url
-            ),
-            auth=token_response
-        )
-    except HTTPException as exception:
-        return JSONResponse(status_code=exception.status_code,
-                            content={"message": exception.detail})
+    token_response = TokenResponse(
+        access_token=access_token,
+        refresh_token=refresh_token,
+        token_type="Bearer"
+    )
+    return UserLoginResponse(
+        user=UserInfo(
+            name=user.firstname + " " + user.lastname,
+            avatar_url=user.avatar_url
+        ),
+        auth=token_response
+    )
 
 
 def authenticate_user(email: str, password: str):
@@ -168,7 +155,6 @@ def request_reset_password(email: str):
         raise HTTPException(status_code=status.HTTP_412_PRECONDITION_FAILED, detail="Invalid refresh token")
 
 
-
 def update_password(token: str, password: str):
     db_session = SessionLocal()
     reset_entry = get_password_reset_by_token(
@@ -189,7 +175,6 @@ def update_password(token: str, password: str):
         return updated_user
     else:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Registration Source Mismatch")
-
 
 
 def send_reset_email(email: str, reset_link: str):

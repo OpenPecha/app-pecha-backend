@@ -7,6 +7,7 @@ from pecha_api.auth.auth_service import retrieve_client_info
 from pecha_api.db.mongo_database import lifespan
 from pecha_api.auth import auth_views
 from pecha_api.users import users_views
+from pecha_api.terms import terms_views
 import uvicorn
 
 api = FastAPI(
@@ -18,6 +19,7 @@ api = FastAPI(
 )
 api.include_router(auth_views.auth_router)
 api.include_router(users_views.user_router)
+api.include_router(terms_views.terms_router)
 
 api.add_middleware(
     CORSMiddleware,
