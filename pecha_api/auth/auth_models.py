@@ -51,3 +51,7 @@ class PasswordResetRequest(BaseModel):
 
 class ResetPasswordRequest(BaseModel):
     password: str
+
+class PropsResponse(BaseModel):
+    client_id: str
+    domain: str

@@ -2,6 +2,8 @@ from fastapi import FastAPI
 from starlette import status
 from fastapi.middleware.cors import CORSMiddleware
 
+from pecha_api.auth.auth_service import retrieve_client_info
+
 from pecha_api.db.mongo_database import lifespan
 from pecha_api.auth import auth_views
 from pecha_api.users import users_views
@@ -25,6 +27,9 @@ api.add_middleware(
     allow_headers=["*"],
 )
 
+@api.get("/props", status_code=status.HTTP_200_OK)
+async def get_props():
+   return retrieve_client_info()
 
 
 @api.get("/health", status_code=status.HTTP_204_NO_CONTENT)
