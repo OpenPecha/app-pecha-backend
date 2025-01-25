@@ -25,7 +25,7 @@ async def create_term(create_term_request: CreateTermRequest) -> Term:
     except AttributeError as e:
         logging.debug(e)
     new_term = Term(slug=create_term_request.slug, titles=create_term_request.titles)
-    saved_term = await new_term.insert_one()
+    saved_term = await new_term.insert()
     return saved_term
 
 

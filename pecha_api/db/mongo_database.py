@@ -1,9 +1,11 @@
 import logging
 from contextlib import asynccontextmanager
 
+from beanie import init_beanie
 from fastapi import FastAPI
 from motor.motor_asyncio import AsyncIOMotorClient
 
+from ..terms.terms_models import Term
 from ..config import get
 
 mongodb_client = None
@@ -20,8 +22,9 @@ async def lifespan(api: FastAPI):
 
     # Initialize collections and indexes if necessary
     try:
-        # Ensure collections are initialized and create any necessary indexes
-        await initialize_collections()
+        await init_beanie(database=mongodb,document_models=[Term])
+        logging.info("Beanie initialized with the 'terms' collection.")
+        
     except Exception as e:
         logging.error(f"Error during collection initialization: {e}")
         raise
@@ -31,17 +34,3 @@ async def lifespan(api: FastAPI):
     # Close the MongoDB connection when the application shuts down
     if mongodb_client:
         mongodb_client.close()
-
-
-async def initialize_collections():
-    term_count = await mongodb.terms.count_documents({})
-    if term_count == 0:
-        logging.info("Term collection is empty and ready for use.")
-    else:
-        logging.info("Term collection is already initialized with data.")
-
-        # Add similar checks for other collections if needed
-
-        # Optional: If you want to set up indexes (e.g., unique index for 'slug' field)
-    await mongodb.terms.create_index([("slug", 1)], unique=True)
-    logging.info("Indexes for 'slug' field created if they didn't exist.")
