@@ -3,13 +3,15 @@ import logging
 from urllib.parse import urlparse
 
 from fastapi import HTTPException, status, UploadFile
+from jose import jwt
+from jose.exceptions import JWTClaimsError
 from jwt import ExpiredSignatureError
 from starlette.responses import JSONResponse
 
 from .user_response_models import UserInfoRequest, UserInfoResponse, SocialMediaProfile
 from .users_enums import SocialProfile
 from .users_models import Users
-from ..auth.auth_repository import decode_token
+from ..auth.auth_repository import verify_auth0_token, decode_backend_token
 from .users_repository import get_user_by_email, update_user
 from ..uploads.S3_utils import delete_file, upload_bytes, generate_presigned_upload_url
 from ..db.database import SessionLocal
@@ -101,7 +103,7 @@ def upload_user_image(token: str, file: UploadFile):
 
 def validate_and_extract_user_details(token: str) -> Users:
     try:
-        payload = decode_token(token)
+        payload = validate_token(token)
         email = payload.get("sub")
         if email is None:
             raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid token")
@@ -110,6 +112,12 @@ def validate_and_extract_user_details(token: str) -> Users:
         return user
     except ExpiredSignatureError as exception:
         logging.debug("exception", exception)
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid token")
+    except JWTClaimsError as exception:
+        logging.debug("exception", exception)
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid token")
+    except ValueError as value_exception:
+        logging.debug("exception", value_exception)
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid token")
 
 
@@ -159,3 +167,10 @@ def validate_and_compress_image(file: UploadFile, content_type: str) -> io.Bytes
             status_code=status.HTTP_400_BAD_REQUEST,
             detail=f"Failed to process the image: {str(e)}"
         )
+
+
+def validate_token(token: str):
+    if get("DOMAIN_NAME") in jwt.get_unverified_claims(token=token)["iss"]:
+        return verify_auth0_token(token)
+    else:
+        return decode_backend_token(token)

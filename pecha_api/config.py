@@ -8,9 +8,9 @@ DEFAULTS = dict(
     AWS_REGION="eu-central-1",
     AWS_BUCKET_NAME="app-pecha-backend",
     BASE_URL="https://pech.org",
-    CLIENT_ID="",
-    COMPRESSED_QUALITY= 80,
-    DOMAIN_NAME="",
+    CLIENT_ID="7SPZ8BDNHuAzdqy1YPdkHh2sxdZNRLXy",
+    COMPRESSED_QUALITY=80,
+    DOMAIN_NAME="dev-pecha-esukhai.us.auth0.com",
     DEPLOYMENT_MODE="DEBUG",
     DATABASE_URL="postgresql://admin:pechaAdmin@localhost:5434/pecha",
     IMAGE_EXPIRATION_IN_SEC=3600,
@@ -18,7 +18,7 @@ DEFAULTS = dict(
     JWT_AUD="https://pecha.org",
     JWT_ISSUER="https://pecha.org",
     JWT_SECRET_KEY="oJvUxI5jY7nXaD4sC_kFGoM0_qAuewVxg3p6F8CH-tI",
-    MAX_FILE_SIZE_MB = 1,
+    MAX_FILE_SIZE_MB=1,
     REFRESH_TOKEN_EXPIRE_DAYS=30,
     SENDGRID_API_KEY="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",
     SENDGRID_SENDER_EMAIL="samten@esukhia.org",
@@ -38,6 +38,7 @@ def get_float(key: str) -> float:
         return float(get(key))
     except (TypeError, ValueError) as e:
         raise ValueError(f"Could not convert the value for key '{key}' to float: {e}")
+
 
 def get_int(key: str) -> float:
     try:

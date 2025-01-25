@@ -4,6 +4,8 @@ import random
 from datetime import datetime, timedelta, timezone
 
 import jwt
+
+from ..users.users_service import validate_token
 from ..config import get
 from ..notification.email_provider import send_email
 from .auth_models import CreateUserRequest, UserLoginResponse, RefreshTokenResponse, TokenResponse, UserInfo, \
@@ -12,7 +14,7 @@ from ..users.users_models import Users, PasswordReset
 from ..db.database import SessionLocal
 from ..users.users_repository import get_user_by_email, save_user, get_user_by_username
 from .auth_repository import get_hashed_password, verify_password, create_access_token, create_refresh_token, \
-    generate_token_data, decode_token
+    generate_token_data
 from .password_reset_repository import save_password_reset, get_password_reset_by_token
 from .auth_enums import RegistrationSource
 from fastapi import HTTPException
@@ -37,8 +39,8 @@ def register_user_with_source(create_user_request: CreateUserRequest, registrati
 def create_user(create_user_request: CreateUserRequest, registration_source: RegistrationSource) -> Users:
     db_session = SessionLocal()
     try:
-        logging.log(registration_source.value)
-        logging.log(create_user_request.firstname)
+        logging.debug(registration_source.value,)
+        logging.debug(create_user_request.firstname)
         new_user = Users(**create_user_request.model_dump())
         username = generate_and_validate_username(first_name=create_user_request.firstname,
                                                   last_name=create_user_request.lastname)
@@ -121,7 +123,7 @@ def authenticate_user(email: str, password: str):
 def refresh_access_token(refresh_token: str):
     try:
         db_session = SessionLocal()
-        payload = decode_token(refresh_token)
+        payload = validate_token(refresh_token)
         email = payload.get("sub")
         if email is None:
             raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid refresh token")
