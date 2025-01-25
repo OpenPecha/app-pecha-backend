@@ -25,7 +25,7 @@ def test_get_user_info_success():
         social_media_accounts=[]
     )
 
-    with patch("pecha_api.users.users_service.validate_token", return_value={"sub": "john.doe@example.com"}):
+    with patch("pecha_api.users.users_service.validate_token", return_value={"email": "john.doe@example.com"}):
         with patch("pecha_api.users.users_service.get_user_by_email", return_value=user):
             response = get_user_info(token)
             assert response.firstname == "John"
@@ -52,7 +52,7 @@ def test_get_user_info_with_social_accounts():
         ]
     )
 
-    with patch("pecha_api.users.users_service.validate_token", return_value={"sub": "john.doe@example.com"}):
+    with patch("pecha_api.users.users_service.validate_token", return_value={"email": "john.doe@example.com"}):
         with patch("pecha_api.users.users_service.get_user_by_email", return_value=user):
             response = get_user_info(token)
             assert response.firstname == "John"
@@ -69,7 +69,7 @@ def test_get_user_info_with_social_accounts():
 def test_get_user_info_invalid_token():
     token = "invalid_token"
 
-    with patch("pecha_api.users.users_service.validate_token", return_value={"sub": None}):
+    with patch("pecha_api.users.users_service.validate_token", return_value={"email": None}):
         response = get_user_info(token)
         assert response.status_code == 401
         assert response.body == b'{"message":"Invalid token"}'
@@ -100,7 +100,7 @@ def test_update_user_info_success():
         social_media_accounts=[]
     )
 
-    with patch("pecha_api.users.users_service.validate_token", return_value={"sub": "john.doe@example.com"}):
+    with patch("pecha_api.users.users_service.validate_token", return_value={"email": "john.doe@example.com"}):
         with patch("pecha_api.users.users_service.get_user_by_email", return_value=user):
             with patch("pecha_api.users.users_service.update_user") as mock_update_user:
                 update_user_info(token, user_info_request)
@@ -120,7 +120,7 @@ def test_update_user_info_invalid_token():
         social_profiles=[]
     )
 
-    with patch("pecha_api.users.users_service.validate_token", return_value={"sub": None}):
+    with patch("pecha_api.users.users_service.validate_token", return_value={"email": None}):
         response = update_user_info(token, user_info_request)
         assert response.status_code == 401
         assert response.body == b'{"message":"Invalid token"}'

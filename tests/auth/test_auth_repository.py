@@ -105,7 +105,7 @@ def test_verify_password_with_invalid():
 
 def test_create_access_token():
     data = {
-        "sub": "test@example.com",
+        "email": "test@example.com",
         "name": "John Doe",
         "iss": PECHA_JWT_ISSUER,
         "aud": PECHA_JWT_AUD,
@@ -115,13 +115,13 @@ def test_create_access_token():
 
     assert token is not None
     decoded_data = validate_token(token)
-    assert decoded_data["sub"] == "test@example.com"
+    assert decoded_data["email"] == "test@example.com"
     assert "exp" in decoded_data
 
 
 def test_create_access_token_with_custom_expiry():
     data = {
-        "sub": "test@example.com",
+        "email": "test@example.com",
         "name": "John Doe ",
         "iss": PECHA_JWT_ISSUER,
         "aud": PECHA_JWT_AUD,
@@ -132,7 +132,7 @@ def test_create_access_token_with_custom_expiry():
 
     assert token is not None
     decoded_data = validate_token(token)
-    assert decoded_data["sub"] == "test@example.com"
+    assert decoded_data["email"] == "test@example.com"
     assert "exp" in decoded_data
     assert decoded_data["exp"] == int((datetime.now(timezone.utc) + expires_delta).timestamp())
 
@@ -145,7 +145,7 @@ def test_create_access_token_with_no_data():
 
 def test_create_refresh_token():
     data = {
-        "sub": "test@example.com",
+        "email": "test@example.com",
         "name": "John Doe ",
         "iss": PECHA_JWT_ISSUER,
         "aud": PECHA_JWT_AUD,
@@ -155,13 +155,13 @@ def test_create_refresh_token():
 
     assert token is not None
     decoded_data = validate_token(token)
-    assert decoded_data["sub"] == "test@example.com"
+    assert decoded_data["email"] == "test@example.com"
     assert "exp" in decoded_data
 
 
 def test_create_refresh_token_with_custom_expiry():
     data = {
-        "sub": "test@example.com",
+        "email": "test@example.com",
         "name": "John Doe ",
         "iss": PECHA_JWT_ISSUER,
         "aud": PECHA_JWT_AUD,
@@ -172,7 +172,7 @@ def test_create_refresh_token_with_custom_expiry():
 
     assert token is not None
     decoded_data = validate_token(token)
-    assert decoded_data["sub"] == "test@example.com"
+    assert decoded_data["email"] == "test@example.com"
     assert "exp" in decoded_data
     assert decoded_data["exp"] == int((datetime.now(timezone.utc) + expires_delta).timestamp())
 
@@ -192,7 +192,7 @@ def test_generate_token_data_success():
     token_data = generate_token_data(user)
 
     assert token_data is not None
-    assert token_data["sub"] == "test@example.com"
+    assert token_data["email"] == "test@example.com"
     assert token_data["name"] == "John Doe"
     assert token_data["iss"] == PECHA_JWT_ISSUER
     assert token_data["aud"] == PECHA_JWT_AUD
@@ -241,7 +241,7 @@ def test_generate_token_data_all_fields_missing():
 
 def test_decode_token_success():
     data = {
-        "sub": "test@example.com",
+        "email": "test@example.com",
         "name": "John Doe",
         "iss": PECHA_JWT_ISSUER,
         "aud": PECHA_JWT_AUD,
@@ -251,7 +251,7 @@ def test_decode_token_success():
     decoded_data = validate_token(token)
 
     assert decoded_data is not None
-    assert decoded_data["sub"] == "test@example.com"
+    assert decoded_data["email"] == "test@example.com"
     assert decoded_data["name"] == "John Doe"
     assert decoded_data["iss"] == PECHA_JWT_ISSUER
     assert decoded_data["aud"] == PECHA_JWT_AUD
@@ -260,7 +260,7 @@ def test_decode_token_success():
 
 def test_decode_token_invalid_signature():
     data = {
-        "sub": "test@example.com",
+        "email": "test@example.com",
         "name": "John Doe",
         "iss": PECHA_JWT_ISSUER,
         "aud": PECHA_JWT_AUD,
@@ -280,7 +280,7 @@ def test_decode_token_invalid_signature():
 
 def test_decode_token_expired():
     data = {
-        "sub": "test@example.com",
+        "email": "test@example.com",
         "name": "John Doe",
         "iss": PECHA_JWT_ISSUER,
         "aud": PECHA_JWT_AUD,
@@ -298,7 +298,7 @@ def test_decode_token_expired():
 
 def test_decode_token_invalid_audience():
     data = {
-        "sub": "test@example.com",
+        "email": "test@example.com",
         "name": "John Doe",
         "iss": PECHA_JWT_ISSUER,
         "aud": "invalid_audience",
@@ -314,7 +314,7 @@ def test_decode_token_invalid_audience():
 
 def test_decode_token_invalid_issuer():
     data = {
-        "sub": "test@example.com",
+        "email": "test@example.com",
         "name": "John Doe",
         "iss": "invalid_issuer",
         "aud": PECHA_JWT_AUD,
@@ -330,7 +330,7 @@ def test_decode_token_invalid_issuer():
 
 def test_decode_backend_token_success():
     data = {
-        "sub": "test@example.com",
+        "email": "test@example.com",
         "name": "John Doe",
         "iss": PECHA_JWT_ISSUER,
         "aud": PECHA_JWT_AUD,
@@ -340,7 +340,7 @@ def test_decode_backend_token_success():
     decoded_data = decode_backend_token(token)
 
     assert decoded_data is not None
-    assert decoded_data["sub"] == "test@example.com"
+    assert decoded_data["email"] == "test@example.com"
     assert decoded_data["name"] == "John Doe"
     assert decoded_data["iss"] == PECHA_JWT_ISSUER
     assert decoded_data["aud"] == PECHA_JWT_AUD
@@ -349,7 +349,7 @@ def test_decode_backend_token_success():
 
 def test_decode_backend_token_invalid_signature():
     data = {
-        "sub": "test@example.com",
+        "email": "test@example.com",
         "name": "John Doe",
         "iss": PECHA_JWT_ISSUER,
         "aud": PECHA_JWT_AUD,
@@ -369,7 +369,7 @@ def test_decode_backend_token_invalid_signature():
 
 def test_decode_backend_token_expired():
     data = {
-        "sub": "test@example.com",
+        "email": "test@example.com",
         "name": "John Doe",
         "iss": PECHA_JWT_ISSUER,
         "aud": PECHA_JWT_AUD,
@@ -387,7 +387,7 @@ def test_decode_backend_token_expired():
 
 def test_decode_backend_token_invalid_audience():
     data = {
-        "sub": "test@example.com",
+        "email": "test@example.com",
         "name": "John Doe",
         "iss": PECHA_JWT_ISSUER,
         "aud": "invalid_audience",

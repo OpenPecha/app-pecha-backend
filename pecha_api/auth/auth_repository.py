@@ -54,7 +54,7 @@ def generate_token_data(user: Users):
     if not all([user.email, user.firstname, user.lastname]):
         return None
     data = {
-        "sub": user.email,
+        "email": user.email,
         "name": user.firstname + " " + user.lastname,
         "iss": get("JWT_ISSUER"),
         "aud": get("JWT_AUD"),

@@ -104,7 +104,7 @@ def upload_user_image(token: str, file: UploadFile):
 def validate_and_extract_user_details(token: str) -> Users:
     try:
         payload = validate_token(token)
-        email = payload.get("sub")
+        email = payload.get("email")
         if email is None:
             raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid token")
         db_session = SessionLocal()
