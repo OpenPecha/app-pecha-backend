@@ -3,7 +3,7 @@ from contextlib import asynccontextmanager
 from fastapi import FastAPI
 from motor.motor_asyncio import AsyncIOMotorClient
 
-from config import get
+from ..config import get
 
 mongodb_client = None
 mongodb = None
