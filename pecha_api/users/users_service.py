@@ -80,22 +80,26 @@ def update_user_info(token: str, user_info_request: UserInfoRequest):
 
 def upload_user_image(token: str, file: UploadFile):
     try:
-        user_info = validate_and_extract_user_details(token=token)
+        current_user = validate_and_extract_user_details(token=token)
         # Validate and compress the uploaded image
-        compressed_image = validate_and_compress_image(file=file, content_type=file.content_type)
-        file_path = f'images/profile_images/{user_info.id}.jpg'
-        delete_file(file_path=file_path)
-        upload_key = upload_bytes(
-            bucket_name=get("AWS_BUCKET_NAME"),
-            s3_key=file_path,
-            file=compressed_image,
-            content_type=file.content_type
-        )
-        presigned_url = generate_presigned_upload_url(
-            bucket_name=get("AWS_BUCKET_NAME"),
-            s3_key=upload_key
-        )
-        return presigned_url
+        if current_user:
+            compressed_image = validate_and_compress_image(file=file, content_type=file.content_type)
+            file_path = f'images/profile_images/{current_user.id}.jpg'
+            delete_file(file_path=file_path)
+            upload_key = upload_bytes(
+                bucket_name=get("AWS_BUCKET_NAME"),
+                s3_key=file_path,
+                file=compressed_image,
+                content_type=file.content_type
+            )
+            presigned_url = generate_presigned_upload_url(
+                bucket_name=get("AWS_BUCKET_NAME"),
+                s3_key=upload_key
+            )
+            current_user.avatar_url = extract_s3_key(presigned_url=presigned_url)
+            db_session = SessionLocal()
+            update_user(db=db_session, user=current_user)
+            return presigned_url
     except HTTPException as exception:
         return JSONResponse(status_code=exception.status_code,
                             content={"message": exception.detail})
