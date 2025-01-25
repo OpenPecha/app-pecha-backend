@@ -6,6 +6,7 @@ from fastapi import HTTPException, status, UploadFile
 from jose import jwt
 from jose.exceptions import JWTClaimsError
 from jwt import ExpiredSignatureError
+from sqlalchemy import false
 from starlette.responses import JSONResponse
 
 from .user_response_models import UserInfoRequest, UserInfoResponse, SocialMediaProfile
@@ -123,6 +124,14 @@ def validate_and_extract_user_details(token: str) -> Users:
     except ValueError as value_exception:
         logging.debug("exception", value_exception)
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid token")
+
+
+def verify_admin_access(token: str) -> bool:
+    current_user = validate_and_extract_user_details(token=token)
+    if hasattr(current_user, 'is_admin'):
+        return current_user.is_admin
+    else:
+        return False
 
 
 def get_social_profile(value: str) -> SocialProfile:

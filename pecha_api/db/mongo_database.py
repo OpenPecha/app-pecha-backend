@@ -3,6 +3,8 @@ from contextlib import asynccontextmanager
 from fastapi import FastAPI
 from motor.motor_asyncio import AsyncIOMotorClient
 
+from config import get
+
 mongodb_client = None
 mongodb = None
 
@@ -11,8 +13,8 @@ mongodb = None
 async def lifespan(api: FastAPI):
     global mongodb_client, mongodb
     # Initialize the MongoDB client and database
-    mongodb_client = AsyncIOMotorClient("mongodb://localhost:27017")
-    mongodb = mongodb_client["your_database"]
+    mongodb_client = AsyncIOMotorClient(get("MONGO_CONNECTION_STRING"))
+    mongodb = mongodb_client[get("MONGO_DATABASE_NAME")]
     api.mongodb = mongodb  # Attach the database instance to the FastAPI app
 
     # Yield control back to FastAPI
