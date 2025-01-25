@@ -540,6 +540,7 @@ def test_update_password_success():
     user = MagicMock()
     user.email = reset_entry.email
     user.password = "hashed_oldpassword123"
+    user.registration_source = 'email'
 
     updated_user = MagicMock()
     updated_user.email = reset_entry.email
@@ -563,6 +564,32 @@ def test_update_password_success():
         assert response.email == user.email
         assert response.password == user.password
 
+def test_update_password_invalid_source_400():
+    token = "valid_token"
+    password = "newpassword123"
+    reset_entry = MagicMock()
+    reset_entry.email = "test@example.com"
+    reset_entry.token_expiry = datetime.now(timezone.utc) + timedelta(minutes=30)
+    user = MagicMock()
+    user.email = reset_entry.email
+    user.password = "hashed_oldpassword123"
+    user.registration_source = 'google-oauth2'
+
+    updated_user = MagicMock()
+    updated_user.email = reset_entry.email
+    updated_user.password = "hashed_newpassword123"
+
+    with patch('pecha_api.auth.auth_service.get_password_reset_by_token') as mock_get_password_reset_by_token, \
+            patch('pecha_api.auth.auth_service.get_user_by_email') as mock_get_user_by_email:
+        mock_get_password_reset_by_token.return_value = reset_entry
+        mock_get_user_by_email.return_value = user
+
+
+        try:
+            update_password(token, password)
+        except HTTPException as e:
+            assert e.status_code == status.HTTP_400_BAD_REQUEST
+            assert e.detail == "Registration Source Mismatch"
 
 def test_update_password_invalid_token():
     token = "invalid_token"
