@@ -23,6 +23,7 @@ class Users(Base):
     about_me = Column(String,nullable=True)
     avatar_url = Column(String(255),nullable=True)
     is_active = Column(Boolean, default=True)
+    is_admin = Column(Boolean, server_default="false",nullable=False)
     created_at = Column(DateTime, default=datetime.now(_datetime.timezone.utc))
     updated_at = Column(DateTime, default=datetime.now(_datetime.timezone.utc))
 

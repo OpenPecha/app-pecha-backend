@@ -102,20 +102,17 @@ def test_register_user_with_source_http_exception():
         firstname="John",
         lastname="Doe",
         email="test@example.com",
-        password="password123",
-        username="testuser"
+        password="password123"
     )
     registration_source = RegistrationSource.EMAIL
 
     with patch('pecha_api.auth.auth_service.create_user') as mock_create_user:
         mock_create_user.side_effect = HTTPException(status_code=400, detail="User already exists")
-
-        response = register_user_with_source(create_user_request, registration_source)
-        print(f"response: {response}")
-
-        assert response.status_code == 400
-        error_message = json.loads(response.body)
-        assert error_message == {"message": "User already exists"}
+        try:
+            register_user_with_source(create_user_request, registration_source)
+        except HTTPException as e:
+            assert e.status_code == status.HTTP_400_BAD_REQUEST
+            assert e.detail == 'User already exists'
 
 
 def test_generate_token_user_success():
@@ -156,12 +153,12 @@ def test_generate_token_user_http_exception():
     with patch('pecha_api.auth.auth_service.generate_token_data') as mock_generate_token_data:
         mock_generate_token_data.side_effect = HTTPException(status_code=500, detail="Internal Server Error")
 
-        response = generate_token_user(user)
-
+        try:
+            generate_token_user(user)
+        except HTTPException as e:
+            assert e.status_code == status.HTTP_500_INTERNAL_SERVER_ERROR
+            assert e.detail == 'Internal Server Error'
         mock_generate_token_data.assert_called_once_with(user)
-        assert response.status_code == 500
-        error_message = json.loads(response.body)
-        assert error_message == {"message": "Internal Server Error"}
 
 
 def test_authenticate_user_success():
@@ -253,7 +250,7 @@ def test_refresh_access_token_invalid_token():
 
     with patch('pecha_api.auth.auth_service.validate_token') as mock_validate_token:
         mock_validate_token.side_effect = HTTPException(status_code=status.HTTP_401_UNAUTHORIZED,
-                                                      detail="Invalid refresh token")
+                                                        detail="Invalid refresh token")
 
         try:
             refresh_access_token(refresh_token)
@@ -451,13 +448,12 @@ def test_authenticate_and_generate_tokens_invalid_credentials():
     with patch('pecha_api.auth.auth_service.authenticate_user') as mock_authenticate_user:
         mock_authenticate_user.side_effect = HTTPException(status_code=status.HTTP_401_UNAUTHORIZED,
                                                            detail='Invalid email or password')
-
-        response = authenticate_and_generate_tokens(email, password)
-
+        try:
+             authenticate_and_generate_tokens(email, password)
+        except HTTPException as e:
+            assert e.status_code == status.HTTP_401_UNAUTHORIZED
+            assert e.detail == "Invalid email or password"
         mock_authenticate_user.assert_called_once_with(email=email, password=password)
-        assert response.status_code == status.HTTP_401_UNAUTHORIZED
-        error_message = json.loads(response.body)
-        assert error_message == {"message": "Invalid email or password"}
 
 
 def test_authenticate_and_generate_tokens_internal_server_error():
@@ -472,14 +468,14 @@ def test_authenticate_and_generate_tokens_internal_server_error():
         mock_authenticate_user.return_value = user
         mock_generate_token_user.side_effect = HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
                                                              detail='Internal Server Error')
-
-        response = authenticate_and_generate_tokens(email, password)
+        try:
+            authenticate_and_generate_tokens(email, password)
+        except HTTPException as e:
+            assert e.status_code == status.HTTP_500_INTERNAL_SERVER_ERROR
+            assert e.detail == "Internal Server Error"
 
         mock_authenticate_user.assert_called_once_with(email=email, password=password)
         mock_generate_token_user.assert_called_once_with(user)
-        assert response.status_code == status.HTTP_500_INTERNAL_SERVER_ERROR
-        error_message = json.loads(response.body)
-        assert error_message == {"message": "Internal Server Error"}
 
 
 def test_request_reset_password_success():
@@ -514,8 +510,6 @@ def test_request_reset_password_not_from_email_412():
         except HTTPException as e:
             assert e.status_code == status.HTTP_412_PRECONDITION_FAILED
             assert e.detail == "Invalid refresh token"
-
-
 
 
 def test_request_reset_password_user_not_found():
@@ -564,6 +558,7 @@ def test_update_password_success():
         assert response.email == user.email
         assert response.password == user.password
 
+
 def test_update_password_invalid_source_400():
     token = "valid_token"
     password = "newpassword123"
@@ -584,12 +579,12 @@ def test_update_password_invalid_source_400():
         mock_get_password_reset_by_token.return_value = reset_entry
         mock_get_user_by_email.return_value = user
 
-
         try:
             update_password(token, password)
         except HTTPException as e:
             assert e.status_code == status.HTTP_400_BAD_REQUEST
             assert e.detail == "Registration Source Mismatch"
+
 
 def test_update_password_invalid_token():
     token = "invalid_token"

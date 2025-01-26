@@ -120,7 +120,7 @@ def verify_admin_access(token: str) -> bool:
     if hasattr(current_user, 'is_admin'):
         return current_user.is_admin
     else:
-        return True
+        return False
 
 
 def get_social_profile(value: str) -> SocialProfile:
