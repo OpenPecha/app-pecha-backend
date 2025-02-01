@@ -1,5 +1,3 @@
-from typing import Union
-
 from starlette import status
 
 from ..config import get
