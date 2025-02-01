@@ -37,6 +37,7 @@ def create_user(create_user_request: CreateUserRequest, registration_source: Reg
         logging.debug(registration_source.value, )
         logging.debug(create_user_request.firstname)
         new_user = Users(**create_user_request.model_dump())
+        new_user.is_admin = False
         username = generate_and_validate_username(first_name=create_user_request.firstname,
                                                   last_name=create_user_request.lastname)
         new_user.username = username

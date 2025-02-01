@@ -9,24 +9,20 @@ from ..users.users_service import verify_admin_access
 from fastapi import HTTPException
 
 
-async def get_all_terms(token: str, language: str) -> TermsResponse:
-    is_admin = verify_admin_access(token=token)
-    if is_admin:
-        terms = await get_terms()
-        if language is None:
-            language = get("DEFAULT_LANGUAGE")
-        term_list = [
-            TermsModel(
-                id=str(term.id),
-                title=term.titles.get(language, ""),
-                slug=term.slug
-            )
-            for term in terms
-        ]
-        term_response = TermsResponse(terms=term_list)
-        return term_response
-    else:
-        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Admin access required")
+async def get_all_terms(language: str) -> TermsResponse:
+    terms = await get_terms()
+    if language is None:
+        language = get("DEFAULT_LANGUAGE")
+    term_list = [
+        TermsModel(
+            id=str(term.id),
+            title=term.titles.get(language, ""),
+            slug=term.slug
+        )
+        for term in terms
+    ]
+    term_response = TermsResponse(terms=term_list)
+    return term_response
 
 
 async def create_new_term(create_term_request: CreateTermRequest, token: str, language: str) -> TermsModel:

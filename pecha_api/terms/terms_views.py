@@ -16,9 +16,8 @@ terms_router = APIRouter(
 
 
 @terms_router.get("", status_code=status.HTTP_200_OK)
-async def read_terms(language: str | None,
-                     authentication_credential: Annotated[HTTPAuthorizationCredentials, Depends(oauth2_scheme)]):
-    return await get_all_terms(token=authentication_credential.credentials, language=language)
+async def read_terms(language: str | None):
+    return await get_all_terms(language=language)
 
 
 @terms_router.post("", status_code=status.HTTP_201_CREATED)
