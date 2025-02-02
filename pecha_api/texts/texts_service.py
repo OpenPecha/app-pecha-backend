@@ -6,9 +6,9 @@ def get_text_by_term(term_id: str, language: str):
     root_text, text_versions = get_texts_by_id()
     if language is None:
         language = get("DEFAULT_LANGUAGE")
-    TextResponse(
+    return TextResponse(
         source=TextModel(
-            id=root_text.id,
+            id=str(root_text.id),
             title=root_text.titles[language],
             summary=root_text.summaries[language],
             language=root_text.default_language,
@@ -17,12 +17,12 @@ def get_text_by_term(term_id: str, language: str):
         ),
         versions=[
             TextModel(
-                id=text.id,
+                id=str(text.id),
                 title=text.titles[text.default_language],
                 summary=text.summaries[text.default_language],
                 language=text.default_language,
                 source='',
-                parent_id=root_text.id
+                parent_id=str(root_text.id)
             )
             for text in text_versions
         ]

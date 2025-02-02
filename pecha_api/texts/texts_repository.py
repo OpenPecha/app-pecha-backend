@@ -8,12 +8,14 @@ def get_texts_by_id():
         id=uuid.uuid4(),
         titles={"en": "Root Text title", "bo": "Root གྲྭ་ཚན"},
         summaries={"en": "Root Summaries", "bo": "Root སྙིང་བསྡུས་"},
+        default_language="bo"
     )
     versions = [
         Text(
             id=uuid.uuid4(),
             titles={"en": f"Version Topic {i}", "bo": f"Version གྲྭ་ཚན {i}"},
-            summaries={"en": f"Version Summaries {i}", "bo": f"Version སྙིང་བསྡུས་ {i}"}
+            summaries={"en": f"Version Summaries {i}", "bo": f"Version སྙིང་བསྡུས་ {i}"},
+            default_language="bo"
         )
         for i in range(1, 6)
     ]
