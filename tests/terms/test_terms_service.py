@@ -15,7 +15,7 @@ async def test_get_all_terms():
             AsyncMock(id="id_1", titles={"en": "Term 1"}, slug="term-1"),
             AsyncMock(id="id_2", titles={"en": "Term 2"}, slug="term-2")
         ]
-        response = await get_all_terms(token="valid_token", language="en")
+        response = await get_all_terms(language="en")
         assert isinstance(response, TermsResponse)
         assert len(response.terms) == 2
         assert response.terms[0].title == "Term 1"
@@ -57,15 +57,6 @@ async def test_delete_existing_term():
         mock_delete_term.return_value = "id_1"
         response = await delete_existing_term(term_id="id_1", token="valid_token")
         assert response == "id_1"
-
-
-@pytest.mark.asyncio
-async def test_get_all_terms_unauthorized():
-    with patch("pecha_api.terms.terms_service.verify_admin_access", return_value=True):
-        try:
-            await get_all_terms(token="invalid_token", language=None)
-        except HTTPException as e:
-            assert e.status_code == status.HTTP_403_FORBIDDEN
 
 
 @pytest.mark.asyncio

@@ -17,5 +17,3 @@ class SheetModel(BaseModel):
 
 class SheetsResponse(BaseModel):
     sheets: List[SheetModel]
-
-

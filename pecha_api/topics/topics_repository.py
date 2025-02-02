@@ -1,4 +1,4 @@
-from topics.topics_models import Topic
+from .topics_models import Topic
 
 
 def get_topics(search: str) -> list[Topic]:

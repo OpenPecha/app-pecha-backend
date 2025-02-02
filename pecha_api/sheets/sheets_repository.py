@@ -1,7 +1,6 @@
 import uuid
 
-from sheets.sheets_models import Sheet
-
+from .sheets_models import Sheet
 
 def get_sheets_by_topic(topic_id : str):
     return [

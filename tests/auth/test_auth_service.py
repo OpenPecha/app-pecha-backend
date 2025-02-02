@@ -508,8 +508,8 @@ def test_request_reset_password_not_from_email_412():
         try:
             request_reset_password(email)
         except HTTPException as e:
-            assert e.status_code == status.HTTP_412_PRECONDITION_FAILED
-            assert e.detail == "Invalid refresh token"
+            assert e.status_code == status.HTTP_400_BAD_REQUEST
+            assert e.detail == "Registration Source Mismatch"
 
 
 def test_request_reset_password_user_not_found():

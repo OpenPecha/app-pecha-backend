@@ -1,4 +1,5 @@
 import logging
+import secrets
 import uuid
 import random
 from datetime import datetime, timedelta, timezone
@@ -32,24 +33,21 @@ def register_user_with_source(create_user_request: CreateUserRequest, registrati
 
 
 def create_user(create_user_request: CreateUserRequest, registration_source: RegistrationSource) -> Users:
-    db_session = SessionLocal()
-    try:
-        logging.debug(registration_source.value, )
-        logging.debug(create_user_request.firstname)
-        new_user = Users(**create_user_request.model_dump())
-        new_user.is_admin = False
-        username = generate_and_validate_username(first_name=create_user_request.firstname,
-                                                  last_name=create_user_request.lastname)
-        new_user.username = username
-        if registration_source == RegistrationSource.EMAIL:
-            _validate_password(new_user.password)
-            hashed_password = get_hashed_password(new_user.password)
-            new_user.password = hashed_password
-        new_user.registration_source = registration_source.value
+    logging.debug(f"RegistrationSource: {registration_source.value}")
+    logging.debug(f"Creating user with first name: {create_user_request.firstname}")
+    new_user = Users(**create_user_request.model_dump())
+    new_user.is_admin = False
+    username = generate_and_validate_username(first_name=create_user_request.firstname,
+                                              last_name=create_user_request.lastname)
+    new_user.username = username
+    if registration_source == RegistrationSource.EMAIL:
+        _validate_password(new_user.password)
+        hashed_password = get_hashed_password(new_user.password)
+        new_user.password = hashed_password
+    new_user.registration_source = registration_source.value
+    with SessionLocal() as db_session:
         saved_user = save_user(db=db_session, user=new_user)
         return saved_user
-    finally:
-        db_session.close()
 
 
 def _validate_password(password: str):
@@ -61,13 +59,10 @@ def _validate_password(password: str):
 
 
 def validate_user_already_exist(email: str):
-    db_session = SessionLocal()
-    try:
+    with SessionLocal() as db_session:
         existing_user_by_email = get_user_by_email(db=db_session, email=email)
         if existing_user_by_email:
             raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail='Email or username already exists')
-    finally:
-        db_session.close()
 
 
 def authenticate_and_generate_tokens(email: str, password: str):
@@ -95,8 +90,7 @@ def generate_token_user(user: Users):
 
 
 def authenticate_user(email: str, password: str):
-    db_session = SessionLocal()
-    try:
+    with SessionLocal() as db_session:
         user = get_user_by_email(db=db_session, email=email)
         if not verify_password(
                 plain_password=password,
@@ -104,27 +98,25 @@ def authenticate_user(email: str, password: str):
         ):
             raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail='Invalid email or password')
         return user
-    finally:
-        db_session.close()
 
 
 def refresh_access_token(refresh_token: str):
     try:
-        db_session = SessionLocal()
         payload = validate_token(refresh_token)
         email = payload.get("sub")
         if email is None:
             raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid refresh token")
-        user = get_user_by_email(
-            db=db_session,
-            email=email
-        )
-        data = generate_token_data(user)
-        access_token = create_access_token(data=data)
-        return RefreshTokenResponse(
-            access_token=access_token,
-            token_type="Bearer"
-        )
+        with SessionLocal() as db_session:
+            user = get_user_by_email(
+                db=db_session,
+                email=email
+            )
+            data = generate_token_data(user)
+            access_token = create_access_token(data=data)
+            return RefreshTokenResponse(
+                access_token=access_token,
+                token_type="Bearer"
+            )
     except jwt.ExpiredSignatureError:
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Refresh token expired")
     except jwt.PyJWTError:
@@ -132,13 +124,15 @@ def refresh_access_token(refresh_token: str):
 
 
 def request_reset_password(email: str):
-    db_session = SessionLocal()
-    current_user = get_user_by_email(
-        db=db_session,
-        email=email
-    )
-    if current_user.registration_source == 'email':
-        reset_token = str(uuid.uuid4())
+    with SessionLocal() as db_session:
+        current_user = get_user_by_email(
+            db=db_session,
+            email=email
+        )
+        if current_user.registration_source != 'email':
+            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Registration Source Mismatch")
+
+        reset_token = secrets.token_urlsafe(32)
         token_expiry = datetime.now(timezone.utc) + timedelta(minutes=30)
         password_reset = PasswordReset(
             email=current_user.email,
@@ -152,30 +146,28 @@ def request_reset_password(email: str):
         reset_link = f"{get('BASE_URL')}/reset-password?token={reset_token}"
         send_reset_email(email=email, reset_link=reset_link)
         return {"message": "If the email exists in our system, a password reset email has been sent."}
-    else:
-        raise HTTPException(status_code=status.HTTP_412_PRECONDITION_FAILED, detail="Invalid refresh token")
 
 
 def update_password(token: str, password: str):
-    db_session = SessionLocal()
-    reset_entry = get_password_reset_by_token(
-        db=db_session,
-        token=token
-    )
-    if reset_entry is None or reset_entry.token_expiry < datetime.now(timezone.utc):
-        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid or expired token")
-    current_user = get_user_by_email(
-        db=db_session,
-        email=reset_entry.email
-    )
-    if current_user.registration_source == 'email':
+    with SessionLocal() as db_session:
+        reset_entry = get_password_reset_by_token(
+            db=db_session,
+            token=token
+        )
+        if reset_entry is None or reset_entry.token_expiry < datetime.now(timezone.utc):
+            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid or expired token")
+        current_user = get_user_by_email(
+            db=db_session,
+            email=reset_entry.email
+        )
+        if current_user.registration_source != 'email':
+            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Registration Source Mismatch")
+
         _validate_password(password)
         hashed_password = get_hashed_password(password)
         current_user.password = hashed_password
         updated_user = save_user(db=db_session, user=current_user)
         return updated_user
-    else:
-        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Registration Source Mismatch")
 
 
 def send_reset_email(email: str, reset_link: str):
@@ -192,11 +184,9 @@ def send_reset_email(email: str, reset_link: str):
 
 
 def validate_username(username: str) -> bool:
-    db_session = SessionLocal()
-    user = get_user_by_username(db=db_session, username=username)
-    if user:
-        return False
-    return True
+    with SessionLocal() as db_session:
+        user = get_user_by_username(db=db_session, username=username)
+        return user is None
 
 
 def generate_username(first_name: str, last_name: str) -> str:

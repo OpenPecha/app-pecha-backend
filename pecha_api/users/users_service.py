@@ -1,5 +1,6 @@
 import io
 import logging
+from typing import List
 from urllib.parse import urlparse
 
 import jose
@@ -10,7 +11,7 @@ from jwt import ExpiredSignatureError
 
 from .user_response_models import UserInfoRequest, UserInfoResponse, SocialMediaProfile
 from .users_enums import SocialProfile
-from .users_models import Users
+from .users_models import Users, SocialMediaAccount
 from ..auth.auth_repository import verify_auth0_token, decode_backend_token
 from .users_repository import get_user_by_email, update_user
 from ..uploads.S3_utils import delete_file, upload_bytes, generate_presigned_upload_url
@@ -28,29 +29,31 @@ def get_user_info(token: str):
 def generate_user_info_response(user: Users):
     if user:
         social_media_profiles = []
-        for account in user.social_media_accounts:
-            social_media_profile = SocialMediaProfile(
-                account=get_social_profile(value=account.platform_name),
-                url=account.profile_url
-            )
-            social_media_profiles.append(social_media_profile)
+        with SessionLocal() as db_session:
+            db_session.add(user)
+            for account in user.social_media_accounts:
+                social_media_profile = SocialMediaProfile(
+                    account=get_social_profile(value=account.platform_name),
+                    url=account.profile_url
+                )
+                social_media_profiles.append(social_media_profile)
 
-        user_info_response = UserInfoResponse(
-            firstname=user.firstname,
-            lastname=user.lastname,
-            username=user.username,
-            email=user.email,
-            title=user.title,
-            organization=user.organization,
-            location=user.location,
-            educations=user.education.split(',') if user.education else [],
-            avatar_url=generate_presigned_upload_url(bucket_name=get("AWS_BUCKET_NAME"), s3_key=user.avatar_url),
-            about_me=user.about_me,
-            followers=0,
-            following=0,
-            social_profiles=social_media_profiles
-        )
-        return user_info_response
+            user_info_response = UserInfoResponse(
+                firstname=user.firstname,
+                lastname=user.lastname,
+                username=user.username,
+                email=user.email,
+                title=user.title,
+                organization=user.organization,
+                location=user.location,
+                educations=user.education.split(',') if user.education else [],
+                avatar_url=generate_presigned_upload_url(bucket_name=get("AWS_BUCKET_NAME"), s3_key=user.avatar_url),
+                about_me=user.about_me,
+                followers=0,
+                following=0,
+                social_profiles=social_media_profiles
+            )
+            return user_info_response
 
 
 def update_user_info(token: str, user_info_request: UserInfoRequest):
@@ -61,12 +64,38 @@ def update_user_info(token: str, user_info_request: UserInfoRequest):
         current_user.title = user_info_request.title
         current_user.organization = user_info_request.organization
         current_user.location = user_info_request.location
-        current_user.educations = ','.join(user_info_request.educations)
+        current_user.education = ','.join(user_info_request.educations)
         current_user.avatar_url = extract_s3_key(presigned_url=user_info_request.avatar_url)
         current_user.about_me = user_info_request.about_me
-        current_user.social_profiles = user_info_request.social_profiles
-        db_session = SessionLocal()
-        update_user(db=db_session, user=current_user)
+        with SessionLocal() as db_session:
+            try:
+                db_session.add(current_user)
+                update_social_profiles(user=current_user,social_profiles=user_info_request.social_profiles)
+                updated_user = update_user(db=db_session, user=current_user)
+                return updated_user
+            except Exception as e:
+                db_session.rollback()
+                logging.error(f"Failed to update user info: {e}")
+                raise HTTPException(status_code=500, detail="Internal Server Error")
+
+
+def update_social_profiles(user: Users, social_profiles: List[SocialMediaProfile]):
+    existing_profiles = {profile.platform_name: profile for profile in user.social_media_accounts}
+
+    for profile_data in social_profiles or []:
+        platform = profile_data.account.name
+        url = profile_data.url
+
+        if platform in existing_profiles:
+            # Update existing profile
+            existing_profiles[platform].profile_url = url
+        else:
+            # Add new profile
+            user.social_media_accounts.append(SocialMediaAccount(
+                user_id=user.id,
+                platform_name=platform,
+                profile_url=url
+            ))
 
 
 def upload_user_image(token: str, file: UploadFile):
@@ -87,9 +116,9 @@ def upload_user_image(token: str, file: UploadFile):
             s3_key=upload_key
         )
         current_user.avatar_url = extract_s3_key(presigned_url=presigned_url)
-        db_session = SessionLocal()
-        update_user(db=db_session, user=current_user)
-        return presigned_url
+        with SessionLocal() as db_session:
+            update_user(db=db_session, user=current_user)
+            return presigned_url
 
 
 def validate_and_extract_user_details(token: str) -> Users:
@@ -98,9 +127,9 @@ def validate_and_extract_user_details(token: str) -> Users:
         email = payload.get("email")
         if email is None:
             raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid token")
-        db_session = SessionLocal()
-        user = get_user_by_email(db=db_session, email=email)
-        return user
+        with SessionLocal() as db_session:
+            user = get_user_by_email(db=db_session, email=email)
+            return user
     except ExpiredSignatureError as exception:
         logging.debug("exception", exception)
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid token")

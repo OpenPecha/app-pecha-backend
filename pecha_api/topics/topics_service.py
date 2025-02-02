@@ -3,10 +3,10 @@ from typing import Optional
 from fastapi import Query
 from starlette import status
 
-from config import get
-from sheets.sheets_service import get_sheets
-from topics.topic_response_models import TopicsResponse, TopicModel
-from topics.topics_repository import get_topics, get_term_by_id
+from pecha_api.config import get
+from pecha_api.sheets.sheets_service import get_sheets
+from .topics_response_models import TopicsResponse, TopicModel
+from .topics_repository import get_topics, get_term_by_id
 from fastapi import HTTPException
 
 

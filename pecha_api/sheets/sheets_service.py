@@ -1,8 +1,8 @@
 import uuid
 
-from config import get
-from sheets.sheets_repository import get_sheets_by_topic
-from sheets.sheets_response_models import SheetModel, Publisher, SheetsResponse
+from pecha_api.config import get
+from .sheets_repository import get_sheets_by_topic
+from .sheets_response_models import SheetModel, Publisher, SheetsResponse
 
 
 def get_sheets(topic_id: str,language: str):

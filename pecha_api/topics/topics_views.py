@@ -3,7 +3,7 @@ from fastapi import APIRouter
 from fastapi.security import HTTPBearer
 from starlette import status
 
-from topics.topics_service import get_all_topics, get_sheets_by_topic
+from .topics_service import get_all_topics, get_sheets_by_topic
 
 oauth2_scheme = HTTPBearer()
 topics_router = APIRouter(
