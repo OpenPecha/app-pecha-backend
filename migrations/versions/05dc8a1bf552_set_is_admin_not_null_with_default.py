@@ -1,8 +1,8 @@
-"""update server default
+"""Set is_admin not null with default
 
-Revision ID: e50ed6d8c309
+Revision ID: 05dc8a1bf552
 Revises: cf828c575680
-Create Date: 2025-01-26 07:45:00.376226
+Create Date: 2025-02-04 07:40:54.832015
 
 """
 from typing import Sequence, Union
@@ -12,7 +12,7 @@ import sqlalchemy as sa
 
 
 # revision identifiers, used by Alembic.
-revision: str = 'e50ed6d8c309'
+revision: str = '05dc8a1bf552'
 down_revision: Union[str, None] = 'cf828c575680'
 branch_labels: Union[str, Sequence[str], None] = None
 depends_on: Union[str, Sequence[str], None] = None
