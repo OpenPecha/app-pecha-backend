@@ -12,5 +12,5 @@ text_router = APIRouter(
 
 
 @text_router.get("", status_code=status.HTTP_200_OK)
-def get_text(term_id: str,language: str | None):
-    return get_text_by_term(term_id=term_id, language=language)
+def get_text(language: str | None):
+    return get_text_by_term(language=language)

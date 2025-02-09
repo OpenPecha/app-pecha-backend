@@ -2,7 +2,7 @@ from .texts_repository import get_texts_by_id
 from .texts_response_models import TextResponse, TextModel
 
 from pecha_api.config import get
-def get_text_by_term(term_id: str, language: str):
+def get_text_by_term(language: str):
     root_text, text_versions = get_texts_by_id()
     if language is None:
         language = get("DEFAULT_LANGUAGE")
