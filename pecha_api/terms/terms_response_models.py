@@ -18,3 +18,6 @@ class TermsModel(BaseModel):
 
 class TermsResponse(BaseModel):
     terms: List[TermsModel]
+    total: int
+    skip: int
+    limit: int

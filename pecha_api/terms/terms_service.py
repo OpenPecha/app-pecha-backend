@@ -1,14 +1,21 @@
+from typing import Optional
+
 from starlette import status
 
 from ..config import get
 from ..terms.terms_response_models import TermsModel, TermsResponse, CreateTermRequest, UpdateTermRequest
-from .terms_repository import get_terms, create_term, update_term_titles, delete_term
+from .terms_repository import get_child_count, get_terms_by_parent, create_term, update_term_titles, delete_term
 from ..users.users_service import verify_admin_access
 from fastapi import HTTPException
 
 
-async def get_all_terms(language: str) -> TermsResponse:
-    terms = await get_terms()
+async def get_all_terms(language: str, parent_id: Optional[str], skip: int, limit: int) -> TermsResponse:
+    total = await get_child_count(parent_id=parent_id)
+    terms = await get_terms_by_parent(
+        parent_id=parent_id,
+        skip=skip,
+        limit=limit
+    )
     if language is None:
         language = get("DEFAULT_LANGUAGE")
     term_list = [
@@ -19,7 +26,7 @@ async def get_all_terms(language: str) -> TermsResponse:
         )
         for term in terms
     ]
-    term_response = TermsResponse(terms=term_list)
+    term_response = TermsResponse(terms=term_list,total=total,skip=skip,limit=limit)
     return term_response
 
 
