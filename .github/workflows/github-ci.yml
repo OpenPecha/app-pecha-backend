@@ -54,7 +54,7 @@ jobs:
           SONAR_HOST_URL: ${{ secrets.SONAR_HOST_URL }}
         with:
           args: >
-            -Dsonar.projectKey=OpenPecha_app-pecha-backend
+            -Dsonar.projectKey=OpenPecha_app-pecha-backend_AZTsfK8ThA6Bv4GoxLVB
             -Dsonar.organization=openpecha
             -Dsonar.python.version=3.12
             -Dsonar.python.coverage.reportPaths=coverage.xml
