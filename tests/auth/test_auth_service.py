@@ -10,13 +10,16 @@ from pecha_api.auth.auth_service import (
     authenticate_user,
     get_hashed_password,
     refresh_access_token,
-    _create_user,
+    create_user,
     validate_user_already_exist,
     authenticate_and_generate_tokens,
     request_reset_password,
     update_password,
     send_reset_email,
-    _validate_password, validate_username, generate_username, generate_and_validate_username
+    _validate_password,
+    validate_username,
+    generate_username,
+    generate_and_validate_username
 )
 from pecha_api.auth.auth_models import CreateUserRequest
 from pecha_api.auth.auth_enums import RegistrationSource
@@ -33,7 +36,7 @@ def test_register_user_with_email_success():
     )
     registration_source = RegistrationSource.EMAIL
 
-    with patch('pecha_api.auth.auth_service._create_user') as mock_create_user, \
+    with patch('pecha_api.auth.auth_service.create_user') as mock_create_user, \
             patch('pecha_api.auth.auth_service.generate_token_user') as mock_generate_token_user:
         mock_user = MagicMock()
         mock_create_user.return_value = mock_user
@@ -53,9 +56,10 @@ def test_register_user_with_google_success():
         lastname="Doe",
         email="test@gmail.com",
         password="",
+        platform=RegistrationSource.GOOGLE.name
     )
     registration_source = RegistrationSource.GOOGLE
-    with patch('pecha_api.auth.auth_service._create_user') as mock_create_user, \
+    with patch('pecha_api.auth.auth_service.create_user') as mock_create_user, \
             patch('pecha_api.auth.auth_service.generate_token_user') as mock_generate_token_user:
         mock_user = MagicMock()
         mock_create_user.return_value = mock_user
@@ -78,7 +82,7 @@ def test_register_user_with_facebook_success():
         password="",
     )
     registration_source = RegistrationSource.FACEBOOK
-    with patch('pecha_api.auth.auth_service._create_user') as mock_create_user, \
+    with patch('pecha_api.auth.auth_service.create_user') as mock_create_user, \
             patch('pecha_api.auth.auth_service.generate_token_user') as mock_generate_token_user:
         mock_user = MagicMock()
         mock_create_user.return_value = mock_user
@@ -103,7 +107,7 @@ def test_register_user_with_source_http_exception():
     )
     registration_source = RegistrationSource.EMAIL
 
-    with patch('pecha_api.auth.auth_service._create_user') as mock_create_user:
+    with patch('pecha_api.auth.auth_service.create_user') as mock_create_user:
         mock_create_user.side_effect = HTTPException(status_code=400, detail="User already exists")
 
         response = register_user_with_source(create_user_request, registration_source)
@@ -226,18 +230,18 @@ def test_refresh_access_token_success():
     user.lastname = "lastname"
     user.avatar_url = "avatar"
 
-    with patch('pecha_api.auth.auth_service.decode_token') as mock_decode_token, \
+    with patch('pecha_api.auth.auth_service.validate_token') as mock_validate_token, \
             patch('pecha_api.auth.auth_service.get_user_by_email') as mock_get_user_by_email, \
             patch('pecha_api.auth.auth_service.generate_token_data') as mock_generate_token_data, \
             patch('pecha_api.auth.auth_service.create_access_token') as mock_create_access_token:
-        mock_decode_token.return_value = {"sub": user.email}
+        mock_validate_token.return_value = {"sub": user.email}
         mock_get_user_by_email.return_value = user
         mock_generate_token_data.return_value = {"sub": user.email}
         mock_create_access_token.return_value = "new_access_token"
 
         response = refresh_access_token(refresh_token)
 
-        mock_decode_token.assert_called_once_with(refresh_token)
+        mock_validate_token.assert_called_once_with(refresh_token)
         mock_get_user_by_email.assert_called_once_with(db=ANY, email=user.email)
         mock_generate_token_data.assert_called_once_with(user)
         assert response.access_token == "new_access_token"
@@ -247,8 +251,8 @@ def test_refresh_access_token_success():
 def test_refresh_access_token_invalid_token():
     refresh_token = "invalid_refresh_token"
 
-    with patch('pecha_api.auth.auth_service.decode_token') as mock_decode_token:
-        mock_decode_token.side_effect = HTTPException(status_code=status.HTTP_401_UNAUTHORIZED,
+    with patch('pecha_api.auth.auth_service.validate_token') as mock_validate_token:
+        mock_validate_token.side_effect = HTTPException(status_code=status.HTTP_401_UNAUTHORIZED,
                                                       detail="Invalid refresh token")
 
         try:
@@ -257,14 +261,14 @@ def test_refresh_access_token_invalid_token():
             assert e.status_code == status.HTTP_401_UNAUTHORIZED
             assert e.detail == "Invalid refresh token"
 
-        mock_decode_token.assert_called_once_with(refresh_token)
+        mock_validate_token.assert_called_once_with(refresh_token)
 
 
 def test_refresh_access_token_expired_token():
     refresh_token = "expired_refresh_token"
 
-    with patch('pecha_api.auth.auth_service.decode_token') as mock_decode_token:
-        mock_decode_token.side_effect = jwt.ExpiredSignatureError
+    with patch('pecha_api.auth.auth_service.validate_token') as mock_validate_token:
+        mock_validate_token.side_effect = jwt.ExpiredSignatureError
 
         try:
             refresh_access_token(refresh_token)
@@ -272,15 +276,15 @@ def test_refresh_access_token_expired_token():
             assert e.status_code == status.HTTP_401_UNAUTHORIZED
             assert e.detail == "Refresh token expired"
 
-        mock_decode_token.assert_called_once_with(refresh_token)
+        mock_validate_token.assert_called_once_with(refresh_token)
 
 
 def test_refresh_access_token_user_not_found():
     refresh_token = "valid_refresh_token"
 
-    with patch('pecha_api.auth.auth_service.decode_token') as mock_decode_token, \
+    with patch('pecha_api.auth.auth_service.validate_token') as mock_validate_token, \
             patch('pecha_api.auth.auth_service.get_user_by_email') as mock_get_user_by_email:
-        mock_decode_token.return_value = {"sub": "test@example.com"}
+        mock_validate_token.return_value = {"sub": "test@example.com"}
         mock_get_user_by_email.side_effect = HTTPException(status_code=status.HTTP_404_NOT_FOUND,
                                                            detail="User not found")
 
@@ -290,7 +294,7 @@ def test_refresh_access_token_user_not_found():
             assert e.status_code == status.HTTP_404_NOT_FOUND
             assert e.detail == "User not found"
 
-        mock_decode_token.assert_called_once_with(refresh_token)
+        mock_validate_token.assert_called_once_with(refresh_token)
         mock_get_user_by_email.assert_called_once_with(db=ANY, email="test@example.com")
 
 
@@ -311,7 +315,7 @@ def test_create_user_with_email_success():
         mock_get_hashed_password.return_value = "hashed_password123"
         mock_generate_and_validate_username.return_value = 'john_doe.0003'
 
-        response = _create_user(create_user_request, registration_source)
+        response = create_user(create_user_request, registration_source)
 
         mock_get_hashed_password.assert_called_once_with("password123")
         mock_save_user.assert_called_once()
@@ -333,7 +337,7 @@ def test_create_user_with_google_success():
         mock_save_user.return_value = mock_user
         mock_generate_and_validate_username.return_value = 'john_doe.0003'
 
-        response = _create_user(create_user_request, registration_source)
+        response = create_user(create_user_request, registration_source)
 
         mock_save_user.assert_called_once()
         assert response == mock_user
@@ -354,7 +358,7 @@ def test_create_user_with_facebook_success():
         mock_save_user.return_value = mock_user
         mock_generate_and_validate_username.return_value = 'john_doe.0003'
 
-        response = _create_user(create_user_request, registration_source)
+        response = create_user(create_user_request, registration_source)
 
         mock_save_user.assert_called_once()
         assert response == mock_user
@@ -371,7 +375,7 @@ def test_create_user_with_empty_password():
     with patch('pecha_api.auth.auth_service.generate_and_validate_username') as mock_generate_and_validate_username:
         try:
             mock_generate_and_validate_username.return_value = 'john_doe.0003'
-            _create_user(create_user_request, registration_source)
+            create_user(create_user_request, registration_source)
         except HTTPException as e:
             assert e.status_code == status.HTTP_400_BAD_REQUEST
             assert e.detail == "Password cannot be empty"
@@ -388,7 +392,7 @@ def test_create_user_with_short_password():
     with patch('pecha_api.auth.auth_service.generate_and_validate_username') as mock_generate_and_validate_username:
         try:
             mock_generate_and_validate_username.return_value = 'john_doe.0003'
-            _create_user(create_user_request, registration_source)
+            create_user(create_user_request, registration_source)
         except HTTPException as e:
             assert e.status_code == status.HTTP_400_BAD_REQUEST
             assert e.detail == "Password must be between 8 and 20 characters"
@@ -482,6 +486,7 @@ def test_request_reset_password_success():
     email = "test@example.com"
     user = MagicMock()
     user.email = email
+    user.registration_source = 'email'
 
     with patch('pecha_api.auth.auth_service.get_user_by_email') as mock_get_user_by_email, \
             patch('pecha_api.auth.auth_service.save_password_reset') as mock_save_password_reset, \
@@ -494,6 +499,23 @@ def test_request_reset_password_success():
         mock_save_password_reset.assert_called_once()
         mock_send_reset_email.assert_called_once()
         assert response == {"message": "If the email exists in our system, a password reset email has been sent."}
+
+
+def test_request_reset_password_not_from_email_412():
+    email = "test@example.com"
+    user = MagicMock()
+    user.email = email
+    user.registration_source = 'google-oauth2'
+
+    with patch('pecha_api.auth.auth_service.get_user_by_email') as mock_get_user_by_email:
+        mock_get_user_by_email.return_value = user
+        try:
+            request_reset_password(email)
+        except HTTPException as e:
+            assert e.status_code == status.HTTP_412_PRECONDITION_FAILED
+            assert e.detail == "Invalid refresh token"
+
+
 
 
 def test_request_reset_password_user_not_found():
@@ -518,6 +540,7 @@ def test_update_password_success():
     user = MagicMock()
     user.email = reset_entry.email
     user.password = "hashed_oldpassword123"
+    user.registration_source = 'email'
 
     updated_user = MagicMock()
     updated_user.email = reset_entry.email
@@ -541,6 +564,32 @@ def test_update_password_success():
         assert response.email == user.email
         assert response.password == user.password
 
+def test_update_password_invalid_source_400():
+    token = "valid_token"
+    password = "newpassword123"
+    reset_entry = MagicMock()
+    reset_entry.email = "test@example.com"
+    reset_entry.token_expiry = datetime.now(timezone.utc) + timedelta(minutes=30)
+    user = MagicMock()
+    user.email = reset_entry.email
+    user.password = "hashed_oldpassword123"
+    user.registration_source = 'google-oauth2'
+
+    updated_user = MagicMock()
+    updated_user.email = reset_entry.email
+    updated_user.password = "hashed_newpassword123"
+
+    with patch('pecha_api.auth.auth_service.get_password_reset_by_token') as mock_get_password_reset_by_token, \
+            patch('pecha_api.auth.auth_service.get_user_by_email') as mock_get_user_by_email:
+        mock_get_password_reset_by_token.return_value = reset_entry
+        mock_get_user_by_email.return_value = user
+
+
+        try:
+            update_password(token, password)
+        except HTTPException as e:
+            assert e.status_code == status.HTTP_400_BAD_REQUEST
+            assert e.detail == "Registration Source Mismatch"
 
 def test_update_password_invalid_token():
     token = "invalid_token"

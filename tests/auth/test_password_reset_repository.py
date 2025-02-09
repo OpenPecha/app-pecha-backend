@@ -1,7 +1,6 @@
 from sqlalchemy.orm import Session
 from pecha_api.auth.password_reset_repository import save_password_reset, get_password_reset_by_token
 from pecha_api.users.users_models import PasswordReset
-import pytest
 from unittest.mock import MagicMock
 
 

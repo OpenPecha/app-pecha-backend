@@ -3,13 +3,15 @@ import logging
 from urllib.parse import urlparse
 
 from fastapi import HTTPException, status, UploadFile
+from jose import jwt
+from jose.exceptions import JWTClaimsError
 from jwt import ExpiredSignatureError
 from starlette.responses import JSONResponse
 
 from .user_response_models import UserInfoRequest, UserInfoResponse, SocialMediaProfile
 from .users_enums import SocialProfile
 from .users_models import Users
-from ..auth.auth_repository import decode_token
+from ..auth.auth_repository import verify_auth0_token, decode_backend_token
 from .users_repository import get_user_by_email, update_user
 from ..uploads.S3_utils import delete_file, upload_bytes, generate_presigned_upload_url
 from ..db.database import SessionLocal
@@ -78,22 +80,26 @@ def update_user_info(token: str, user_info_request: UserInfoRequest):
 
 def upload_user_image(token: str, file: UploadFile):
     try:
-        user_info = validate_and_extract_user_details(token=token)
+        current_user = validate_and_extract_user_details(token=token)
         # Validate and compress the uploaded image
-        compressed_image = validate_and_compress_image(file=file, content_type=file.content_type)
-        file_path = f'images/profile_images/{user_info.id}.jpg'
-        delete_file(file_path=file_path)
-        upload_key = upload_bytes(
-            bucket_name=get("AWS_BUCKET_NAME"),
-            s3_key=file_path,
-            file=compressed_image,
-            content_type=file.content_type
-        )
-        presigned_url = generate_presigned_upload_url(
-            bucket_name=get("AWS_BUCKET_NAME"),
-            s3_key=upload_key
-        )
-        return presigned_url
+        if current_user:
+            compressed_image = validate_and_compress_image(file=file, content_type=file.content_type)
+            file_path = f'images/profile_images/{current_user.id}.jpg'
+            delete_file(file_path=file_path)
+            upload_key = upload_bytes(
+                bucket_name=get("AWS_BUCKET_NAME"),
+                s3_key=file_path,
+                file=compressed_image,
+                content_type=file.content_type
+            )
+            presigned_url = generate_presigned_upload_url(
+                bucket_name=get("AWS_BUCKET_NAME"),
+                s3_key=upload_key
+            )
+            current_user.avatar_url = extract_s3_key(presigned_url=presigned_url)
+            db_session = SessionLocal()
+            update_user(db=db_session, user=current_user)
+            return presigned_url
     except HTTPException as exception:
         return JSONResponse(status_code=exception.status_code,
                             content={"message": exception.detail})
@@ -101,8 +107,8 @@ def upload_user_image(token: str, file: UploadFile):
 
 def validate_and_extract_user_details(token: str) -> Users:
     try:
-        payload = decode_token(token)
-        email = payload.get("sub")
+        payload = validate_token(token)
+        email = payload.get("email")
         if email is None:
             raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid token")
         db_session = SessionLocal()
@@ -110,6 +116,12 @@ def validate_and_extract_user_details(token: str) -> Users:
         return user
     except ExpiredSignatureError as exception:
         logging.debug("exception", exception)
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid token")
+    except JWTClaimsError as exception:
+        logging.debug("exception", exception)
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid token")
+    except ValueError as value_exception:
+        logging.debug("exception", value_exception)
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid token")
 
 
@@ -159,3 +171,10 @@ def validate_and_compress_image(file: UploadFile, content_type: str) -> io.Bytes
             status_code=status.HTTP_400_BAD_REQUEST,
             detail=f"Failed to process the image: {str(e)}"
         )
+
+
+def validate_token(token: str):
+    if get("DOMAIN_NAME") in jwt.get_unverified_claims(token=token)["iss"]:
+        return verify_auth0_token(token)
+    else:
+        return decode_backend_token(token)

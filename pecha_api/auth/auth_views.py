@@ -4,9 +4,9 @@ from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from ..db import database
 from starlette import status
 from .auth_service import authenticate_and_generate_tokens, refresh_access_token, register_user_with_source, \
-    request_reset_password, update_password
+    request_reset_password, update_password, create_user
 from .auth_models import CreateUserRequest, UserLoginRequest, RefreshTokenRequest, PasswordResetRequest, \
-    ResetPasswordRequest, UserLoginResponse, RefreshTokenResponse
+    ResetPasswordRequest, UserLoginResponse, RefreshTokenResponse, CreateSocialUserRequest
 from .auth_enums import RegistrationSource
 from typing import Annotated
 
@@ -27,11 +27,21 @@ def get_db():
 
 @auth_router.post("/register", status_code=status.HTTP_201_CREATED)
 def register_user(create_user_request: CreateUserRequest) -> UserLoginResponse:
+    registration_source = RegistrationSource.EMAIL
     return register_user_with_source(
         create_user_request=create_user_request,
-        registration_source=RegistrationSource.EMAIL
+        registration_source=registration_source
     )
 
+@auth_router.post("/social_register", status_code=status.HTTP_201_CREATED)
+def register_user(create_social_user_request: CreateSocialUserRequest):
+    registration_source = RegistrationSource.EMAIL
+    if create_social_user_request.platform:
+        registration_source =  create_social_user_request.platform
+    return create_user(
+        create_user_request=create_social_user_request.create_user_request,
+        registration_source=registration_source
+    )
 
 @auth_router.post("/login", status_code=status.HTTP_200_OK)
 def login_user(user_login_request: UserLoginRequest) -> UserLoginResponse:
@@ -52,5 +62,6 @@ def password_reset_request(reset_request: PasswordResetRequest):
 
 
 @auth_router.post("/reset-password", status_code=status.HTTP_200_OK)
-def password_reset(reset_password_request: ResetPasswordRequest, authentication_credential: Annotated[HTTPAuthorizationCredentials, Depends(oauth2_scheme)]):
+def password_reset(reset_password_request: ResetPasswordRequest,
+                   authentication_credential: Annotated[HTTPAuthorizationCredentials, Depends(oauth2_scheme)]):
     update_password(token=authentication_credential.credentials, password=reset_password_request.password)
