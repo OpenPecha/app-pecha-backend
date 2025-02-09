@@ -7,15 +7,18 @@ from pecha_api.terms.terms_service import get_all_terms, create_new_term, update
 from pecha_api.terms.terms_response_models import TermsModel, TermsResponse, CreateTermRequest, UpdateTermRequest
 from fastapi import HTTPException
 
+
 @pytest.mark.asyncio
 async def test_get_all_terms():
     with patch("pecha_api.terms.terms_service.verify_admin_access", return_value=True), \
-            patch("pecha_api.terms.terms_service.get_terms", new_callable=AsyncMock) as mock_get_terms:
-        mock_get_terms.return_value = [
+            patch("pecha_api.terms.terms_service.get_terms_by_parent",
+                  new_callable=AsyncMock) as mock_get_terms_by_parent, \
+            patch("pecha_api.terms.terms_service.get_child_count", new_callable=AsyncMock, return_value=2):
+        mock_get_terms_by_parent.return_value = [
             AsyncMock(id="id_1", titles={"en": "Term 1"}, slug="term-1"),
             AsyncMock(id="id_2", titles={"en": "Term 2"}, slug="term-2")
         ]
-        response = await get_all_terms(language="en")
+        response = await get_all_terms(language="en",parent_id=None,skip=0,limit=10)
         assert isinstance(response, TermsResponse)
         assert len(response.terms) == 2
         assert response.terms[0].title == "Term 1"
