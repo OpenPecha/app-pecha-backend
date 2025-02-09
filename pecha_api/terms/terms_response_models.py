@@ -1,0 +1,20 @@
+from typing import Dict, List
+
+from pydantic import BaseModel
+
+
+class CreateTermRequest(BaseModel):
+    slug: str
+    titles: Dict[str, str]
+
+class UpdateTermRequest(BaseModel):
+    titles: Dict[str, str]
+
+class TermsModel(BaseModel):
+    id: str
+    title: str
+    slug: str
+
+
+class TermsResponse(BaseModel):
+    terms: List[TermsModel]

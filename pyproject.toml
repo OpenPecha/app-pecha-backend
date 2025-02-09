@@ -28,6 +28,9 @@ python-multipart = "^0.0.20"
 pillow = "^11.1.0"
 requests = "^2.32.3"
 auth0-python = "^4.7.2"
+motor = "^3.6.1"
+beanie = "^1.29.0"
+pytest-asyncio = "^0.25.2"
 
 
 [tool.poetry.group.dev.dependencies]
