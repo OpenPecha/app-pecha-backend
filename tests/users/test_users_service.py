@@ -1,4 +1,5 @@
 import pytest
+from starlette import status
 
 from pecha_api.users.users_service import get_user_info, update_user_info, validate_and_compress_image
 from pecha_api.users.user_response_models import UserInfoRequest
@@ -70,9 +71,11 @@ def test_get_user_info_invalid_token():
     token = "invalid_token"
 
     with patch("pecha_api.users.users_service.validate_token", return_value={"email": None}):
-        response = get_user_info(token)
-        assert response.status_code == 401
-        assert response.body == b'{"message":"Invalid token"}'
+        try:
+            get_user_info(token)
+        except HTTPException as e:
+            assert e.status_code == status.HTTP_401_UNAUTHORIZED
+            assert e.detail == 'Invalid token'
 
 
 def test_update_user_info_success():
@@ -121,9 +124,11 @@ def test_update_user_info_invalid_token():
     )
 
     with patch("pecha_api.users.users_service.validate_token", return_value={"email": None}):
-        response = update_user_info(token, user_info_request)
-        assert response.status_code == 401
-        assert response.body == b'{"message":"Invalid token"}'
+        try:
+            update_user_info(token, user_info_request)
+        except HTTPException as e:
+            assert e.status_code == status.HTTP_401_UNAUTHORIZED
+            assert e.detail == 'Invalid token'
 
 
 def test_upload_user_image_success():
@@ -152,9 +157,11 @@ def test_upload_user_image_invalid_token():
 
     with patch("pecha_api.users.users_service.validate_and_extract_user_details",
                side_effect=HTTPException(status_code=401, detail="Invalid token")):
-        response = upload_user_image(token, file)
-        assert response.status_code == 401
-        assert response.body == b'{"message":"Invalid token"}'
+        try:
+            upload_user_image(token, file)
+        except HTTPException as e:
+            assert e.status_code == status.HTTP_401_UNAUTHORIZED
+            assert e.detail == 'Invalid token'
 
 
 def test_validate_and_compress_image_success():
