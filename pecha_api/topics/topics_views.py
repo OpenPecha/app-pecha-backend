@@ -1,9 +1,14 @@
 from __future__ import annotations
-from fastapi import APIRouter
-from fastapi.security import HTTPBearer
+
+from typing import Optional
+
+from fastapi import APIRouter, Depends
+from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from starlette import status
 
-from .topics_service import get_all_topics, get_sheets_by_topic
+from .topics_response_models import CreateTopicRequest
+from .topics_service import get_topics, get_sheets_by_topic, create_new_topic
+from typing import Annotated
 
 oauth2_scheme = HTTPBearer()
 topics_router = APIRouter(
@@ -13,8 +18,18 @@ topics_router = APIRouter(
 
 
 @topics_router.get("", status_code=status.HTTP_200_OK)
-def read_topics(language: str | None):
-    return get_all_topics(language=language)
+async def read_topics(parent_id: Optional[str] = None, language: Optional[str] = None):
+    return await get_topics(parent_id=parent_id, language=language)
+
+
+@topics_router.post("", status_code=status.HTTP_201_CREATED)
+async def create_topic(create_topic_request: CreateTopicRequest,
+                       authentication_credential: Annotated[HTTPAuthorizationCredentials, Depends(oauth2_scheme)],
+                       language: Optional[str] = None):
+    return await create_new_topic(
+        create_topic_request=create_topic_request,
+        token=authentication_credential.credentials,
+        language=language)
 
 
 @topics_router.get("{topic_id}/sheets", status_code=status.HTTP_200_OK)

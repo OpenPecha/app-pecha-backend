@@ -1,9 +1,25 @@
 import uuid
-from typing import Dict
+from typing import Dict, Optional, List
 
-from pydantic import BaseModel, Field
+from beanie import PydanticObjectId, Document
+from pydantic import Field
 
 
-class Topic(BaseModel):
-    id: uuid.UUID = Field(default_factory=uuid.uuid4)
-    titles: Dict[str, str] = Field(default_factory={})
+class Topic(Document):
+    id: PydanticObjectId = Field(default_factory=PydanticObjectId, alias="_id")
+    titles: Dict[str, str]
+    parent_id: Optional[PydanticObjectId] = None
+    default_language: str
+
+    class Settings:
+        # Define the collection name in MongoDB
+        collection = "topics"
+
+    class Config:
+        # Config for Pydantic to allow alias to be used
+        populate_by_name = True
+    
+
+    @classmethod
+    async def get_children_by_id(cls, parent_id: PydanticObjectId) -> List["Topic"]:
+        return await cls.find({"parent_id": parent_id}).to_list()

@@ -1,7 +1,7 @@
 from typing import Dict
 
 from beanie import Document, PydanticObjectId
-from pydantic import BaseModel, Field
+from pydantic import  Field
 
 
 class Term(Document):
