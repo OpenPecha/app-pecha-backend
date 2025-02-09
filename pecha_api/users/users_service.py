@@ -154,7 +154,7 @@ def verify_admin_access(token: str) -> bool:
 
 def get_social_profile(value: str) -> SocialProfile:
     try:
-        return SocialProfile(value.lower())
+        return SocialProfile(value.lower().replace("_","."))
     except ValueError:
         raise ValueError(f"'{value}' is not a valid SocialProfile")
 
