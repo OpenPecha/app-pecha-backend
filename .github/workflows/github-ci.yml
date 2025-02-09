@@ -30,6 +30,8 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
       - name: Set up Python version
         uses: actions/setup-python@v4
@@ -52,8 +54,12 @@ jobs:
           SONAR_HOST_URL: ${{ secrets.SONAR_HOST_URL }}
         with:
           args: >
-            -Dsonar.projectKey=OpenPecha_app-pecha-frontend
+            -Dsonar.projectKey=OpenPecha_app-pecha-backend
+            -Dsonar.organization=openpecha
             -Dsonar.python.version=3.12
+            -Dsonar.python.coverage.reportPaths=coverage.xml
+            -Dsonar.sources=pecha
+            -Dsonar.tests=tests
 
   buildDockerImage:
     name: Build and Dockerize
