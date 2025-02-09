@@ -73,9 +73,9 @@ jobs:
           curl -X POST "${{ secrets.RENDER_DEPLOY_HOOK_URL }}"
 
   sonarQube:
-    if: github.event_name == 'workflow_dispatch'
     name: SonarQube Scan
     needs: [buildDockerImage]
+    if: success()
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
@@ -99,10 +99,9 @@ jobs:
         uses: SonarSource/sonarcloud-github-action@v1.10
         env:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+          SONAR_HOST_URL: ${{ secrets.SONAR_HOST_URL }}
         with:
           args: >
-            -Dsonar.projectKey=your_project_key
-            -Dsonar.organization=your_organization
-            -Dsonar.host.url=https://sonarcloud.io
+            -Dsonar.projectKey=OpenPecha_app-pecha-frontend
             -Dsonar.python.version=3.12
     
