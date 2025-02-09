@@ -47,19 +47,10 @@ jobs:
       - name: Run tests with coverage
         run: poetry run pytest --cov=your_package_name --cov-report=xml
 
-      - name: SonarQube Scan
-        uses: sonarsource/sonarqube-scan-action@master
+      - uses: sonarsource/sonarqube-scan-action@master
         env:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
           SONAR_HOST_URL: ${{ secrets.SONAR_HOST_URL }}
-        with:
-          args: >
-            -Dsonar.projectKey=OpenPecha_app-pecha-backend_AZTsfK8ThA6Bv4GoxLVB
-            -Dsonar.organization=OpenPecha
-            -Dsonar.python.version=3.12
-            -Dsonar.python.coverage.reportPaths=coverage.xml
-            -Dsonar.sources=pecha_api
-            -Dsonar.tests=tests
 
   buildDockerImage:
     name: Build and Dockerize
@@ -105,7 +96,7 @@ jobs:
   deploy:
     name: Deploy the image
     runs-on: ubuntu-latest
-    needs: [buildDockerImage]
+    needs: [ buildDockerImage ]
     steps:
       - name: Trigger Render Deployment
         run: |
