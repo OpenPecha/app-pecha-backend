@@ -96,7 +96,7 @@ jobs:
         run: poetry run pytest --cov=your_package_name --cov-report=xml
 
       - name: SonarQube Scan
-        uses: SonarSource/sonarcloud-github-action@v1.10
+        uses: sonarsource/sonarqube-scan-action@master
         env:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
           SONAR_HOST_URL: ${{ secrets.SONAR_HOST_URL }}
