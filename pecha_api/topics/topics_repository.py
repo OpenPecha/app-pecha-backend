@@ -8,24 +8,38 @@ from .topics_models import Topic
 from .topics_response_models import CreateTopicRequest
 
 
-async def get_topics_by_parent(parent_id:Optional[str]) -> list[Topic]:
+async def get_topics_by_parent(
+        parent_id: Optional[str],
+        skip: int,
+        limit: int) -> list[Topic]:
     try:
-        topic_parent_id = None
-        if parent_id is not None:
-            topic_parent_id = PydanticObjectId(parent_id)
-        terms = await Topic.get_children_by_id(parent_id=topic_parent_id)
+        topic_parent_id = get_parent_id(parent_id=parent_id)
+        terms = await Topic.get_children_by_id(parent_id=topic_parent_id, skip=skip, limit=limit)
         return terms
     except CollectionWasNotInitialized as e:
         logging.debug(e)
         return []
 
+
+async def get_child_count(parent_id: Optional[str]) -> int:
+    topic_parent_id = get_parent_id(parent_id=parent_id)
+    count = await Topic.count_children(parent_id=topic_parent_id)
+    return count
+
+
 async def create_topic(create_topic_request: CreateTopicRequest) -> Topic:
-    topic_parent_id = None
-    if create_topic_request.parent_id is not None:
-        topic_parent_id = PydanticObjectId(create_topic_request.parent_id)
-    new_topic= Topic(titles=create_topic_request.titles, parent_id=topic_parent_id,default_language=create_topic_request.default_language)
+    topic_parent_id = get_parent_id(parent_id=create_topic_request.parent_id)
+    new_topic = Topic(titles=create_topic_request.titles, parent_id=topic_parent_id,
+                      default_language=create_topic_request.default_language)
     saved_topic = await new_topic.insert()
     return saved_topic
+
+
+def get_parent_id(parent_id: Optional[str]):
+    topic_parent_id = None
+    if parent_id is not None:
+        topic_parent_id = PydanticObjectId(parent_id)
+    return topic_parent_id
 
 
 def get_term_by_id(topic_id: str):

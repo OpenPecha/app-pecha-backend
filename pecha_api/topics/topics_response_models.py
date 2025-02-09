@@ -14,3 +14,6 @@ class CreateTopicRequest(BaseModel):
 
 class TopicsResponse(BaseModel):
     topics: List[TopicModel]
+    total: int
+    skip: int
+    limit: int

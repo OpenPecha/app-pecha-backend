@@ -21,5 +21,12 @@ class Topic(Document):
     
 
     @classmethod
-    async def get_children_by_id(cls, parent_id: PydanticObjectId) -> List["Topic"]:
-        return await cls.find({"parent_id": parent_id}).to_list()
+    async def get_children_by_id(cls, parent_id: PydanticObjectId,skip: int, limit: int) -> List["Topic"]:
+        return await cls.find({"parent_id": parent_id}).skip(skip).limit(limit).to_list()
+
+    @classmethod
+    async def count_children(cls, parent_id: str) -> int:
+        """
+        Count total number of children for a given parent
+        """
+        return await cls.find({"parent_id": parent_id}).count()

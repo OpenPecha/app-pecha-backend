@@ -1,19 +1,22 @@
 from typing import Optional
 
-from fastapi import Query
 from starlette import status
 
 from pecha_api.config import get
 from pecha_api.sheets.sheets_service import get_sheets
 from ..users.users_service import verify_admin_access
 from .topics_response_models import TopicsResponse, TopicModel, CreateTopicRequest
-from .topics_repository import get_topics_by_parent, get_term_by_id, create_topic
+from .topics_repository import get_topics_by_parent, get_term_by_id, create_topic, get_child_count
 from fastapi import HTTPException
 
 
-async def get_topics(language: str,
-                   parent_id: Optional[str] = Query(None, description="Filter topics by title prefix")) -> TopicsResponse:
-    topics = await get_topics_by_parent(parent_id=parent_id)
+async def get_topics(language: str, parent_id: Optional[str], skip: int, limit: int) -> TopicsResponse:
+    total = await get_child_count(parent_id=parent_id)
+    topics = await get_topics_by_parent(
+        parent_id=parent_id,
+        skip=skip,
+        limit=limit
+    )
     if language is None:
         language = get("DEFAULT_LANGUAGE")
     topic_list = [
@@ -23,8 +26,9 @@ async def get_topics(language: str,
         )
         for topic in topics
     ]
-    topic_response = TopicsResponse(topics=topic_list)
+    topic_response = TopicsResponse(topics=topic_list,total=total,skip=skip,limit=limit)
     return topic_response
+
 
 async def create_new_topic(create_topic_request: CreateTopicRequest, token: str, language: str) -> TopicModel:
     is_admin = verify_admin_access(token=token)
