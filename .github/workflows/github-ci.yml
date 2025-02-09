@@ -55,7 +55,7 @@ jobs:
         with:
           args: >
             -Dsonar.projectKey=OpenPecha_app-pecha-backend_AZTsfK8ThA6Bv4GoxLVB
-            -Dsonar.organization=openpecha
+            -Dsonar.organization=OpenPecha
             -Dsonar.python.version=3.12
             -Dsonar.python.coverage.reportPaths=coverage.xml
             -Dsonar.sources=pecha_api
