@@ -58,7 +58,7 @@ jobs:
             -Dsonar.organization=openpecha
             -Dsonar.python.version=3.12
             -Dsonar.python.coverage.reportPaths=coverage.xml
-            -Dsonar.sources=pecha
+            -Dsonar.sources=pecha_api
             -Dsonar.tests=tests
 
   buildDockerImage:
