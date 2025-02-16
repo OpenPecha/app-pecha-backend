@@ -8,6 +8,7 @@ class Term(Document):
     id: PydanticObjectId = Field(default_factory=PydanticObjectId, alias="_id")
     slug: str
     titles: Dict[str, str]  # Dictionary with language_id as key and title as value
+    descriptions: Dict[str, str]
     parent_id: Optional[PydanticObjectId] = None
 
     class Settings:

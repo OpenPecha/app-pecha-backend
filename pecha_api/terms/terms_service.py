@@ -22,6 +22,7 @@ async def get_all_terms(language: str, parent_id: Optional[str], skip: int, limi
         TermsModel(
             id=str(term.id),
             title=term.titles.get(language, ""),
+            description=  "" if len(term.descriptions) == 0 else  term.descriptions.get(language,""),
             slug=term.slug
         )
         for term in terms
@@ -30,7 +31,7 @@ async def get_all_terms(language: str, parent_id: Optional[str], skip: int, limi
     return term_response
 
 
-async def create_new_term(create_term_request: CreateTermRequest, token: str, language: str) -> TermsModel:
+async def create_new_term(create_term_request: CreateTermRequest, token: str, language: Optional[str]) -> TermsModel:
     is_admin = verify_admin_access(token=token)
     if is_admin:
         new_term = await create_term(create_term_request=create_term_request)
@@ -39,6 +40,7 @@ async def create_new_term(create_term_request: CreateTermRequest, token: str, la
         return TermsModel(
             id=str(new_term.id),
             title=new_term.titles[language],
+            description=  "" if len(new_term.descriptions) == 0 else  new_term.descriptions.get(language,""),
             slug=new_term.slug
         )
     else:
@@ -46,7 +48,7 @@ async def create_new_term(create_term_request: CreateTermRequest, token: str, la
 
 
 async def update_existing_term(term_id: str, update_term_request: UpdateTermRequest, token: str,
-                               language: str) -> TermsModel:
+                               language: Optional[str]) -> TermsModel:
     is_admin = verify_admin_access(token=token)
     if is_admin:
         updated_term = await update_term_titles(term_id=term_id, update_term_request=update_term_request)
@@ -55,6 +57,7 @@ async def update_existing_term(term_id: str, update_term_request: UpdateTermRequ
         return TermsModel(
             id=term_id,
             title=updated_term.titles[language],
+            description=  "" if len(updated_term.descriptions) == 0 else  updated_term.descriptions.get(language,""),
             slug=updated_term.slug
         )
     else:
