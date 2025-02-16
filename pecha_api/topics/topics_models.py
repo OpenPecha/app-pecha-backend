@@ -5,6 +5,8 @@ from beanie import PydanticObjectId, Document
 from pydantic import Field
 
 
+
+
 class Topic(Document):
     id: PydanticObjectId = Field(default_factory=PydanticObjectId, alias="_id")
     titles: Dict[str, str]

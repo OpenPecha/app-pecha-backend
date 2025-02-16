@@ -6,6 +6,7 @@ from beanie.exceptions import CollectionWasNotInitialized
 from fastapi import HTTPException
 from starlette import status
 
+from pecha_api.constants import get_parent_id
 from ..terms.terms_models import Term
 from ..terms.terms_response_models import CreateTermRequest, UpdateTermRequest
 
@@ -58,10 +59,3 @@ async def delete_term(term_id: str):
 
     await existing_term.delete()
     return existing_term
-
-
-def get_parent_id(parent_id: Optional[str]):
-    topic_parent_id = None
-    if parent_id is not None:
-        topic_parent_id = PydanticObjectId(parent_id)
-    return topic_parent_id

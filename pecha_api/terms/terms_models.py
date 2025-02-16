@@ -3,12 +3,11 @@ from typing import Dict, List, Optional
 from beanie import Document, PydanticObjectId
 from pydantic import  Field
 
-
 class Term(Document):
     id: PydanticObjectId = Field(default_factory=PydanticObjectId, alias="_id")
     slug: str
     titles: Dict[str, str]  # Dictionary with language_id as key and title as value
-    descriptions: Dict[str, str]
+    descriptions: Dict[str,str] = Field(default=dict)
     parent_id: Optional[PydanticObjectId] = None
 
     class Settings:
@@ -25,7 +24,7 @@ class Term(Document):
         indexes = [("slug", 1)]
 
     @classmethod
-    async def get_children_by_id(cls, parent_id: PydanticObjectId,skip: int, limit: int) -> List["Topic"]:
+    async def get_children_by_id(cls, parent_id: PydanticObjectId,skip: int, limit: int) -> List["Term"]:
         return await cls.find({"parent_id": parent_id}).skip(skip).limit(limit).to_list()
 
     @classmethod

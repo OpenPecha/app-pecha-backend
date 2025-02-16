@@ -4,6 +4,7 @@ from typing import Optional
 from beanie import PydanticObjectId
 from beanie.exceptions import CollectionWasNotInitialized
 
+from pecha_api.constants import get_parent_id
 from .topics_models import Topic
 from .topics_response_models import CreateTopicRequest
 
@@ -35,8 +36,5 @@ async def create_topic(create_topic_request: CreateTopicRequest) -> Topic:
     return saved_topic
 
 
-def get_parent_id(parent_id: Optional[str]):
-    topic_parent_id = None
-    if parent_id is not None:
-        topic_parent_id = PydanticObjectId(parent_id)
-    return topic_parent_id
+def get_term_by_id(topic_id: str):
+    return Topic(titles={"en": "Topic 1", "bo": "གྲྭ་ཚན 1"},parent_id=PydanticObjectId("60d21b4667d0d8992e610c85"), default_language='en')

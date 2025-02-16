@@ -1,6 +1,6 @@
 from beanie import PydanticObjectId
 
-from pecha_api.topics.topics_repository import  get_parent_id
+from pecha_api.constants import get_parent_id
 
 
 def test_get_parent_id_not_none():
