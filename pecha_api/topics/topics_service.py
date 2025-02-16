@@ -6,11 +6,11 @@ from pecha_api.config import get
 from pecha_api.sheets.sheets_service import get_sheets
 from ..users.users_service import verify_admin_access
 from .topics_response_models import TopicsResponse, TopicModel, CreateTopicRequest
-from .topics_repository import get_topics_by_parent, get_term_by_id, create_topic, get_child_count
+from .topics_repository import get_topics_by_parent, create_topic, get_child_count
 from fastapi import HTTPException
 
 
-async def get_topics(language: str, parent_id: Optional[str], skip: int, limit: int) -> TopicsResponse:
+async def get_topics(language: Optional[str], parent_id: Optional[str], skip: int, limit: int) -> TopicsResponse:
     total = await get_child_count(parent_id=parent_id)
     topics = await get_topics_by_parent(
         parent_id=parent_id,
@@ -30,7 +30,7 @@ async def get_topics(language: str, parent_id: Optional[str], skip: int, limit: 
     return topic_response
 
 
-async def create_new_topic(create_topic_request: CreateTopicRequest, token: str, language: str) -> TopicModel:
+async def create_new_topic(create_topic_request: CreateTopicRequest, token: str, language: Optional[str]) -> TopicModel:
     is_admin = verify_admin_access(token=token)
     if is_admin:
         new_term = await create_topic(create_topic_request=create_topic_request)

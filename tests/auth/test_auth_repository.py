@@ -2,7 +2,6 @@ import jose
 import jwt
 from datetime import datetime, timezone, timedelta
 
-from jose import JWTError
 
 from pecha_api.users.users_models import Users
 from pecha_api.auth.auth_repository import (
@@ -11,7 +10,7 @@ from pecha_api.auth.auth_repository import (
     create_access_token,
     create_refresh_token,
     generate_token_data,
-    decode_backend_token
+    decode_backend_token, verify_auth0_token
 
 )
 from pecha_api.users.users_service import validate_token

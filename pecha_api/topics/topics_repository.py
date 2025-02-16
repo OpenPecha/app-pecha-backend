@@ -40,7 +40,3 @@ def get_parent_id(parent_id: Optional[str]):
     if parent_id is not None:
         topic_parent_id = PydanticObjectId(parent_id)
     return topic_parent_id
-
-
-def get_term_by_id(topic_id: str):
-    return Topic(titles={"en": "Topic 1", "bo": "གྲྭ་ཚན 1"})

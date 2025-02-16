@@ -43,5 +43,8 @@ async def create_topic(create_topic_request: CreateTopicRequest,
 
 
 @topics_router.get("{topic_id}/sheets", status_code=status.HTTP_200_OK)
-def get_sheets_for_topic(topic_id: str, language: str | None):
-    return get_sheets_by_topic(topic_id=topic_id, language=language)
+async def get_sheets_for_topic(topic_id: str, language: Optional[str] = None):
+    return await get_sheets_by_topic(
+        topic_id=topic_id,
+        language=language
+    )
