@@ -5,6 +5,7 @@ from beanie import init_beanie
 from fastapi import FastAPI
 from motor.motor_asyncio import AsyncIOMotorClient
 
+from ..topics.topics_models import Topic
 from ..terms.terms_models import Term
 from ..config import get
 
@@ -22,7 +23,7 @@ async def lifespan(api: FastAPI):
 
     # Initialize collections and indexes if necessary
     try:
-        await init_beanie(database=mongodb,document_models=[Term])
+        await init_beanie(database=mongodb,document_models=[Term, Topic])
         logging.info("Beanie initialized with the 'terms' collection.")
         
     except Exception as e:

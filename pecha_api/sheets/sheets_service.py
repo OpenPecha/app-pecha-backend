@@ -5,7 +5,7 @@ from .sheets_repository import get_sheets_by_topic
 from .sheets_response_models import SheetModel, Publisher, SheetsResponse
 
 
-def get_sheets(topic_id: str,language: str):
+async def get_sheets(topic_id: str,language: str):
     sheets = get_sheets_by_topic(topic_id=topic_id)
     publisher = Publisher(
         id=str(uuid.uuid4()),

@@ -146,7 +146,7 @@ def validate_and_extract_user_details(token: str) -> Users:
 
 def verify_admin_access(token: str) -> bool:
     current_user = validate_and_extract_user_details(token=token)
-    if hasattr(current_user, 'is_admin'):
+    if hasattr(current_user, 'is_admin') and current_user.is_admin is not None:
         return current_user.is_admin
     else:
         return False

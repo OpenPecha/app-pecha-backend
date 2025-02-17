@@ -12,6 +12,7 @@ DEFAULTS = dict(
     COMPRESSED_QUALITY=80,
     DATABASE_URL="postgresql://admin:pechaAdmin@localhost:5434/pecha",
     DEFAULT_LANGUAGE="en",
+    DEFAULT_PAGE_SIZE=10,
     DEPLOYMENT_MODE="DEBUG",
     DOMAIN_NAME="dev-pecha-esukhai.us.auth0.com",
     IMAGE_EXPIRATION_IN_SEC=3600,
