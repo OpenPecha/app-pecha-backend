@@ -7,7 +7,7 @@ from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from starlette import status
 
 from .topics_response_models import CreateTopicRequest
-from .topics_service import get_topics_by_first_letter, get_topics, get_sheets_by_topic, create_new_topic
+from .topics_service import get_topics, get_sheets_by_topic, create_new_topic
 from typing import Annotated
 
 oauth2_scheme = HTTPBearer()
@@ -21,28 +21,14 @@ topics_router = APIRouter(
 async def read_topics(
         parent_id: Optional[str] = Query(None, description="Filter topics by title prefix"),
         language: Optional[str] = None,
+        search: Optional[str] = None,
         skip: int = Query(default=0, ge=0, description="Number of records to skip"),
         limit: int = Query(default=10, ge=1, le=100, description="Number of records to return")
 ):
     return await get_topics(
         parent_id=parent_id,
         language=language,
-        skip=skip,
-        limit=limit
-    )
-
-@topics_router.get("/by_first_letter", status_code=status.HTTP_200_OK)
-async def read_topics_by_first_letter(
-    parent_id: Optional[str] = Query(None, description="Filter topics by title prefix"),
-    language: Optional[str] = None,
-    first_letter: str = Query(None, description="Filter topics by first letter"),
-    skip: int = Query(default=0, ge=0, description="Number of records to skip"),
-    limit: int = Query(default=10, ge=1, le=100, description="Number of records to return")
-):
-    return await get_topics_by_first_letter(
-        parent_id=parent_id,
-        language=language,
-        first_letter=first_letter,
+        search=search,
         skip=skip,
         limit=limit
     )

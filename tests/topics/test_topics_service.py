@@ -18,7 +18,7 @@ async def test_get_topics_without_parent():
             AsyncMock(id="id_2", titles={"en": "Topic English 2", "bo": "Topic Tibetan 2"}, parent_id=None,
                       default_language="en")
         ]
-        response = await get_topics(language=None, parent_id=None, skip=0, limit=10)
+        response = await get_topics(language=None, search=None, parent_id=None, skip=0, limit=10)
         assert response == TopicsResponse(
             topics=[TopicModel(id="id_1", title="Topic English"), TopicModel(id="id_2", title="Topic English 2")],
             total=2, skip=0, limit=10)
@@ -34,7 +34,7 @@ async def test_get_topics_with_parent():
             AsyncMock(id="id_1", titles={"en": "Topic English", "bo": "Topic Tibetan"}, parent_id=None,
                       default_language="en")
         ]
-        response = await get_topics(language=None, parent_id="1", skip=0, limit=10)
+        response = await get_topics(language=None, search=None, parent_id="1", skip=0, limit=10)
         assert response == TopicsResponse(topics=[TopicModel(id="id_1", title="Topic English")], total=1, skip=0,
                                           limit=10)
 
@@ -48,7 +48,7 @@ async def test_get_topics_language_en():
             AsyncMock(id="id_1", titles={"en": "Topic English", "bo": "Topic Tibetan"}, parent_id=None,
                       default_language="en")
         ]
-        response = await get_topics(language="en", parent_id=None, skip=0, limit=10)
+        response = await get_topics(language="en", search=None, parent_id=None, skip=0, limit=10)
         assert response == TopicsResponse(topics=[TopicModel(id="id_1", title="Topic English")], total=1, skip=0,
                                           limit=10)
 
@@ -62,7 +62,7 @@ async def test_get_topics_language_bo():
             AsyncMock(id="id_1", titles={"en": "Topic English", "bo": "Topic Tibetan"}, parent_id=None,
                       default_language="en")
         ]
-        response = await get_topics(language="bo", parent_id=None, skip=0, limit=10)
+        response = await get_topics(language="bo", search=None, parent_id=None, skip=0, limit=10)
         assert response == TopicsResponse(topics=[TopicModel(id="id_1", title="Topic Tibetan")], total=1, skip=0,
                                           limit=10)
 
@@ -77,7 +77,7 @@ async def test_get_topics_pagination():
             AsyncMock(id="id_1", titles={"en": "Topic English", "bo": "Topic Tibetan"}, parent_id=None,
                       default_language="en")
         ]
-        response = await get_topics(language=None, parent_id=None, skip=0, limit=1)
+        response = await get_topics(language=None, search=None, parent_id=None, skip=0, limit=1)
         assert response == TopicsResponse(topics=[TopicModel(id="id_1", title="Topic English")], total=1, skip=0,
                                           limit=1)
 

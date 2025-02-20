@@ -11,7 +11,7 @@ from .topics_repository import get_topics_by_parent, create_topic, get_child_cou
 from fastapi import HTTPException
 
 
-async def get_topics(language: Optional[str], parent_id: Optional[str], skip: int, limit: int) -> TopicsResponse:
+async def get_topics(language: Optional[str], search: Optional[str], parent_id: Optional[str], skip: int, limit: int) -> TopicsResponse:
     total = await get_child_count(parent_id=parent_id)
     topics = await get_topics_by_parent(
         parent_id=parent_id,
@@ -27,30 +27,13 @@ async def get_topics(language: Optional[str], parent_id: Optional[str], skip: in
         )
         for topic in topics
     ]
+    if (search != None):
+        matched_topics = []
+        for topics in topic_list:
+            if topics.title.lower().startswith(search.lower()):
+                matched_topics.append(topics)
+        topic_list = matched_topics
     topic_response = TopicsResponse(topics=topic_list,total=total,skip=skip,limit=limit)
-    return topic_response
-
-async def get_topics_by_first_letter(language: Optional[str], parent_id: Optional[str], first_letter: str, skip: int, limit: int) -> TopicsResponse:
-    total = await get_child_count(parent_id=parent_id)
-    topics = await get_topics_by_parent(
-        parent_id=parent_id,
-        skip=skip,
-        limit=limit
-    )
-    if language is None:
-        language = get("DEFAULT_LANGUAGE")
-    topic_list = [
-        TopicModel(
-            id=str(topic.id),
-            title=get_value_from_dict(values=topic.titles,language=language)
-        )
-        for topic in topics
-    ]
-    first_letter_match_topics = []
-    for topics in topic_list:
-        if topics.title.lower().startswith(first_letter.lower()):
-            first_letter_match_topics.append(topics)
-    topic_response = TopicsResponse(topics=first_letter_match_topics,total=total,skip=skip,limit=limit)
     return topic_response
 
 async def create_new_topic(create_topic_request: CreateTopicRequest, token: str, language: Optional[str]) -> TopicModel:

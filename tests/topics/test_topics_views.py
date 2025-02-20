@@ -19,7 +19,7 @@ async def test_read_topics_without_parent(mocker):
         response = await ac.get("/topics?skip=0&limit=10")
     assert response.status_code == 200
     assert response.json() == mock_response
-    mock_get_topics.assert_called_once_with(parent_id=None, language=None, skip=0, limit=10)
+    mock_get_topics.assert_called_once_with(parent_id=None, search=None, language=None, skip=0, limit=10)
 
 
 @pytest.mark.asyncio
@@ -32,7 +32,7 @@ async def test_read_topics_with_parent(mocker):
         response = await ac.get("/topics?parent_id=1&skip=0&limit=10")
     assert response.status_code == 200
     assert response.json() == mock_response
-    mock_get_topics.assert_called_once_with(parent_id="1", language=None, skip=0, limit=10)
+    mock_get_topics.assert_called_once_with(parent_id="1", search=None, language=None, skip=0, limit=10)
 
 
 @pytest.mark.asyncio
@@ -45,19 +45,7 @@ async def test_read_topics_language_en(mocker):
         response = await ac.get("/topics?language=en&skip=0&limit=10")
     assert response.status_code == 200
     assert response.json() == mock_response
-    mock_get_topics.assert_called_once_with(parent_id=None, language="en", skip=0, limit=10)
-
-@pytest.mark.asyncio
-async def test_read_topics_by_first_letter_language_en(mocker):
-    mock_response = {"topics": [{"id": "1", "title": "Parent Topic"}]}
-    mock_get_topics = mocker.patch('pecha_api.topics.topics_views.get_topics_by_first_letter',
-                                   new_callable=AsyncMock,
-                                   return_value=mock_response)
-    async with AsyncClient(transport=ASGITransport(app=api), base_url="http://test") as ac:
-        response = await ac.get("/topics/by_first_letter?first_letter=p&language=en&skip=0&limit=10")
-    assert response.status_code == 200
-    assert response.json() == mock_response
-    mock_get_topics.assert_called_once_with(parent_id=None, first_letter="p", language="en", skip=0, limit=10)
+    mock_get_topics.assert_called_once_with(parent_id=None, search=None, language="en", skip=0, limit=10)
 
 @pytest.mark.asyncio
 async def test_read_topics_language_bo(mocker):
@@ -69,7 +57,7 @@ async def test_read_topics_language_bo(mocker):
         response = await ac.get("/topics?language=bo&skip=0&limit=10")
     assert response.status_code == 200
     assert response.json() == mock_response
-    mock_get_topics.assert_called_once_with(parent_id=None, language="bo", skip=0, limit=10)
+    mock_get_topics.assert_called_once_with(parent_id=None, search=None, language="bo", skip=0, limit=10)
 
 
 @pytest.mark.asyncio
@@ -82,7 +70,7 @@ async def test_read_topics_pagination(mocker):
         response = await ac.get("/topics?language=en&skip=1&limit=10")
     assert response.status_code == 200
     assert response.json() == mock_response
-    mock_get_topics.assert_called_once_with(parent_id=None, language="en", skip=1, limit=10)
+    mock_get_topics.assert_called_once_with(parent_id=None, search=None, language="en", skip=1, limit=10)
 
 
 @pytest.mark.asyncio
