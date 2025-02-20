@@ -47,6 +47,17 @@ async def test_read_topics_language_en(mocker):
     assert response.json() == mock_response
     mock_get_topics.assert_called_once_with(parent_id=None, language="en", skip=0, limit=10)
 
+@pytest.mark.asyncio
+async def test_read_topics_by_first_letter_language_en(mocker):
+    mock_response = {"topics": [{"id": "1", "title": "Parent Topic"}]}
+    mock_get_topics = mocker.patch('pecha_api.topics.topics_views.get_topics_by_first_letter',
+                                   new_callable=AsyncMock,
+                                   return_value=mock_response)
+    async with AsyncClient(transport=ASGITransport(app=api), base_url="http://test") as ac:
+        response = await ac.get("/topics/by_first_letter?first_letter=p&language=en&skip=0&limit=10")
+    assert response.status_code == 200
+    assert response.json() == mock_response
+    mock_get_topics.assert_called_once_with(parent_id=None, first_letter="p", language="en", skip=0, limit=10)
 
 @pytest.mark.asyncio
 async def test_read_topics_language_bo(mocker):
