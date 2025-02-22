@@ -15,6 +15,7 @@ async def get_topics(language: Optional[str], search: Optional[str], parent_id: 
     total = await get_child_count(parent_id=parent_id)
     topics = await get_topics_by_parent(
         parent_id=parent_id,
+        language=language,
         search=search,
         skip=skip,
         limit=limit
