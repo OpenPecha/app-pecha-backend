@@ -15,6 +15,7 @@ async def get_topics(language: Optional[str], search: Optional[str], parent_id: 
     total = await get_child_count(parent_id=parent_id)
     topics = await get_topics_by_parent(
         parent_id=parent_id,
+        search=search,
         skip=skip,
         limit=limit
     )
@@ -27,12 +28,6 @@ async def get_topics(language: Optional[str], search: Optional[str], parent_id: 
         )
         for topic in topics
     ]
-    if (search != None):
-        matched_topics = []
-        for topics in topic_list:
-            if topics.title.lower().startswith(search.lower()):
-                matched_topics.append(topics)
-        topic_list = matched_topics
     topic_response = TopicsResponse(topics=topic_list,total=total,skip=skip,limit=limit)
     return topic_response
 

@@ -23,8 +23,14 @@ class Topic(Document):
     
 
     @classmethod
-    async def get_children_by_id(cls, parent_id: PydanticObjectId,skip: int, limit: int) -> List["Topic"]:
-        return await cls.find({"parent_id": parent_id}).skip(skip).limit(limit).to_list()
+    async def get_children_by_id(cls, parent_id: PydanticObjectId, search: Optional[str], skip: int, limit: int) -> List["Topic"]:
+
+        query = {"parent_id": parent_id}
+
+        if search:
+            query["title"] = {"$regex": f"^{search}", "$options": "i"}
+
+        return await cls.find(query).skip(skip).limit(limit).to_list()
 
     @classmethod
     async def count_children(cls, parent_id: PydanticObjectId) -> int:
