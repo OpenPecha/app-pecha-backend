@@ -20,7 +20,7 @@ async def test_get_topics_without_parent():
         ]
         response = await get_topics(language=None, search=None, parent_id=None, skip=0, limit=10)
         assert response == TopicsResponse(
-            topics=[TopicModel(id="id_1", title="Topic English"), TopicModel(id="id_2", title="Topic English 2")],
+            topics=[TopicModel(id="id_1", title="Topic English",parent_id=None), TopicModel(id="id_2", title="Topic English 2",parent_id=None)],
             total=2, skip=0, limit=10)
 
 
@@ -34,6 +34,7 @@ async def test_get_topics_with_parent():
             AsyncMock(id="id_1", titles={"en": "Topic English", "bo": "Topic Tibetan"}, parent_id=None,
                       default_language="en")
         ]
+
         response = await get_topics(language=None, search=None, parent_id="1", skip=0, limit=10)
         assert response == TopicsResponse(topics=[TopicModel(id="id_1", title="Topic English")], total=1, skip=0,
                                           limit=10)
@@ -50,6 +51,7 @@ async def test_get_topics_language_en():
         ]
         response = await get_topics(language="en", search=None, parent_id=None, skip=0, limit=10)
         assert response == TopicsResponse(topics=[TopicModel(id="id_1", title="Topic English")], total=1, skip=0,
+             
                                           limit=10)
 
 
@@ -64,6 +66,7 @@ async def test_get_topics_language_bo():
         ]
         response = await get_topics(language="bo", search=None, parent_id=None, skip=0, limit=10)
         assert response == TopicsResponse(topics=[TopicModel(id="id_1", title="Topic Tibetan")], total=1, skip=0,
+
                                           limit=10)
 
 
@@ -93,7 +96,7 @@ async def test_create_new_topic_success():
         create_topic_request = CreateTopicRequest(titles={"en": "Topic English", "bo": "Topic Tibetan"}, parent_id=None,
                                                   default_language="en")
         response = await create_new_topic(create_topic_request=create_topic_request, token="valid_token", language=None)
-        assert response == TopicModel(id="id_1", title="New Topic English")
+        assert response == TopicModel(id="id_1", title="New Topic English",parent_id=None)
 
 
 @pytest.mark.asyncio

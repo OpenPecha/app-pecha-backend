@@ -15,8 +15,8 @@ async def test_get_all_terms():
                   new_callable=AsyncMock) as mock_get_terms_by_parent, \
             patch("pecha_api.terms.terms_service.get_child_count", new_callable=AsyncMock, return_value=2):
         mock_get_terms_by_parent.return_value = [
-            AsyncMock(id="id_1", titles={"en": "Term 1"}, slug="term-1"),
-            AsyncMock(id="id_2", titles={"en": "Term 2"}, descriptions={"en": "Description 2"}, slug="term-2")
+            AsyncMock(id="id_1", titles={"en": "Term 1"}, slug="term-1",parent_id=None),
+            AsyncMock(id="id_2", titles={"en": "Term 2"}, descriptions={"en": "Description 2"}, slug="term-2",parent_id=None)
         ]
         response = await get_all_terms(language="en",parent_id=None,skip=0,limit=10)
         assert isinstance(response, TermsResponse)
@@ -28,8 +28,8 @@ async def test_get_all_terms():
 async def test_create_new_term():
     with patch("pecha_api.terms.terms_service.verify_admin_access", return_value=True), \
             patch("pecha_api.terms.terms_service.create_term", new_callable=AsyncMock) as mock_create_term:
-        mock_create_term.return_value = AsyncMock(titles={"en": "New Term"}, descriptions={"en": "New Description"}, slug="new-term")
-        create_term_request = CreateTermRequest(slug="new-term", titles={"en": "New Term"}, descriptions={"en": "New Description"})
+        mock_create_term.return_value = AsyncMock(titles={"en": "New Term"}, descriptions={"en": "New Description"}, slug="new-term",parent_id=None)
+        create_term_request = CreateTermRequest(slug="new-term", titles={"en": "New Term"}, descriptions={"en": "New Description"},parent_id=None)
         response = await create_new_term(
             create_term_request=create_term_request,
             token="valid_token",
@@ -46,7 +46,7 @@ async def test_update_existing_term():
     with patch("pecha_api.terms.terms_service.verify_admin_access", return_value=True), \
             patch("pecha_api.terms.terms_service.update_term_titles",
                   new_callable=AsyncMock) as mock_update_term_titles:
-        mock_update_term_titles.return_value = AsyncMock(titles={"en": "Updated Term"}, descriptions={"en": "Description 1"}, slug="updated-term")
+        mock_update_term_titles.return_value = AsyncMock(titles={"en": "Updated Term"}, descriptions={"en": "Description 1"}, slug="updated-term",parent_id=None)
         update_term_request = UpdateTermRequest(titles={"en": "Updated Term"}, descriptions={"en": "New Description"})
         response = await update_existing_term(term_id="1", update_term_request=update_term_request, token="valid_token",
                                               language="en")
@@ -66,7 +66,7 @@ async def test_delete_existing_term():
 @pytest.mark.asyncio
 async def test_create_new_term_unauthorized():
     with patch("pecha_api.terms.terms_service.verify_admin_access", return_value=False):
-        create_term_request = CreateTermRequest(slug="new-term", titles={"en": "New Term"},descriptions={"en": "New Description"})
+        create_term_request = CreateTermRequest(slug="new-term", titles={"en": "New Term"},descriptions={"en": "New Description"},parent_id=None)
         try:
             await create_new_term(create_term_request=create_term_request, token="invalid_token", language="en")
         except HTTPException as e:

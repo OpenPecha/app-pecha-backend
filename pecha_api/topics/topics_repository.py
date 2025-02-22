@@ -31,7 +31,8 @@ async def get_child_count(parent_id: Optional[str]) -> int:
 
 async def create_topic(create_topic_request: CreateTopicRequest) -> Topic:
     topic_parent_id = get_parent_id(parent_id=create_topic_request.parent_id)
-    new_topic = Topic(titles=create_topic_request.titles, parent_id=topic_parent_id,
+    new_topic = Topic(titles=create_topic_request.titles,
+                      parent_id=topic_parent_id,
                       default_language=create_topic_request.default_language)
     saved_topic = await new_topic.insert()
     return saved_topic

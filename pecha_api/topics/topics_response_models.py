@@ -6,6 +6,7 @@ from pydantic import BaseModel
 class TopicModel(BaseModel):
     id: str
     title: str
+    parent_id: Optional[str]
 
 class CreateTopicRequest(BaseModel):
     titles: Dict[str, str]
