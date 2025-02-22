@@ -37,7 +37,7 @@ async def create_term(create_term_request: CreateTermRequest) -> Term:
             raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Term with this slug already exists")
     except AttributeError as e:
         logging.debug(e)
-    new_term = Term(slug=create_term_request.slug, titles=create_term_request.titles)
+    new_term = Term(slug=create_term_request.slug, titles=create_term_request.titles,descriptions=create_term_request.descriptions,parent_id=create_term_request.parent_id)
     saved_term = await new_term.insert()
     return saved_term
 

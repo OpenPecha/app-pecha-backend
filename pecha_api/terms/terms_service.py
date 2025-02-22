@@ -24,6 +24,7 @@ async def get_all_terms(language: str, parent_id: Optional[str], skip: int, limi
             id=str(term.id),
             title=get_value_from_dict(values=term.titles, language=language),
             description=get_value_from_dict(values=term.descriptions, language=language),
+            parent_id=str(term.parent_id),
             slug=term.slug
         )
         for term in terms
@@ -43,6 +44,7 @@ async def create_new_term(create_term_request: CreateTermRequest, token: str, la
             id=str(new_term.id),
             title=get_value_from_dict(values=new_term.titles, language=language),
             description=get_value_from_dict(values=new_term.descriptions, language=language),
+            parent_id=str(new_term.parent_id),
             slug=new_term.slug
         )
     else:
@@ -60,6 +62,7 @@ async def update_existing_term(term_id: str, update_term_request: UpdateTermRequ
             id=term_id,
             title=get_value_from_dict(values=updated_term.titles, language=language),
             description=get_value_from_dict(values=updated_term.descriptions, language=language),
+            parent_id=str(updated_term.parent_id),
             slug=updated_term.slug
         )
     else:
