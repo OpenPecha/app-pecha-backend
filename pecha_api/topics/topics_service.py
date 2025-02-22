@@ -27,12 +27,6 @@ async def get_topics(language: Optional[str], search: Optional[str], parent_id: 
         )
         for topic in topics
     ]
-    if (search != None):
-        matched_topics = []
-        for topics in topic_list:
-            if topics.title.lower().startswith(search.lower()):
-                matched_topics.append(topics)
-        topic_list = matched_topics
     topic_response = TopicsResponse(topics=topic_list,total=total,skip=skip,limit=limit)
     return topic_response
 
