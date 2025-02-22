@@ -25,7 +25,8 @@ async def get_topics(language: Optional[str], search: Optional[str], parent_id: 
     topic_list = [
         TopicModel(
             id=str(topic.id),
-            title=get_value_from_dict(values=topic.titles,language=language)
+            title=get_value_from_dict(values=topic.titles,language=language),
+            parent_id=str(topic.parent_id)
         )
         for topic in topics
     ]
@@ -40,7 +41,8 @@ async def create_new_topic(create_topic_request: CreateTopicRequest, token: str,
             language = get("DEFAULT_LANGUAGE")
         return TopicModel(
             id=str(new_term.id),
-            title=get_value_from_dict(values=new_term.titles,language=language)
+            title=get_value_from_dict(values=new_term.titles,language=language),
+            parent_id=str(new_term.parent_id)
         )
     else:
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Admin access required")

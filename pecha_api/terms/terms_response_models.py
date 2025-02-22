@@ -1,4 +1,4 @@
-from typing import Dict, List
+from typing import Dict, List, Optional
 
 from pydantic import BaseModel
 
@@ -7,6 +7,7 @@ class CreateTermRequest(BaseModel):
     slug: str
     titles: Dict[str, str]
     descriptions: Dict[str, str]
+    parent_id: Optional[str]
 
 class UpdateTermRequest(BaseModel):
     titles: Dict[str, str]
@@ -17,6 +18,7 @@ class TermsModel(BaseModel):
     title: str
     description: str
     slug: str
+    parent_id: Optional[str]
 
 
 class TermsResponse(BaseModel):
