@@ -18,7 +18,7 @@ class TermsModel(BaseModel):
     title: str
     description: str
     slug: str
-    parent_id: Optional[str]
+    has_child: bool
 
 
 class TermsResponse(BaseModel):

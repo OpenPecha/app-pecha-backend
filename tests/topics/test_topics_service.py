@@ -14,13 +14,13 @@ async def test_get_topics_without_parent():
             patch('pecha_api.config.get', new_callable=AsyncMock, return_value="en"):
         mock_get_topics_by_parent.return_value = [
             AsyncMock(id="id_1", titles={"en": "Topic English", "bo": "Topic Tibetan"}, parent_id=None,
-                      default_language="en"),
+                      default_language="en",has_sub_child=False),
             AsyncMock(id="id_2", titles={"en": "Topic English 2", "bo": "Topic Tibetan 2"}, parent_id=None,
-                      default_language="en")
+                      default_language="en",has_sub_child=True)
         ]
         response = await get_topics(language=None, parent_id=None, skip=0, limit=10)
         assert response == TopicsResponse(
-            topics=[TopicModel(id="id_1", title="Topic English",parent_id=None), TopicModel(id="id_2", title="Topic English 2",parent_id=None)],
+            topics=[TopicModel(id="id_1", title="Topic English",has_child=False), TopicModel(id="id_2", title="Topic English 2",has_child=True)],
             total=2, skip=0, limit=10)
 
 
@@ -32,10 +32,10 @@ async def test_get_topics_with_parent():
             patch('pecha_api.config.get', return_value="en"):
         mock_get_topics_by_parent.return_value = [
             AsyncMock(id="id_1", titles={"en": "Topic English", "bo": "Topic Tibetan"}, parent_id=None,
-                      default_language="en")
+                      default_language="en",has_sub_child=False)
         ]
         response = await get_topics(language=None, parent_id="1", skip=0, limit=10)
-        assert response == TopicsResponse(topics=[TopicModel(id="id_1", title="Topic English",parent_id=None)], total=1, skip=0,
+        assert response == TopicsResponse(topics=[TopicModel(id="id_1", title="Topic English",has_child=False)], total=1, skip=0,
                                           limit=10)
 
 
@@ -46,10 +46,10 @@ async def test_get_topics_language_en():
                   new_callable=AsyncMock) as mock_get_topics_by_parent:
         mock_get_topics_by_parent.return_value = [
             AsyncMock(id="id_1", titles={"en": "Topic English", "bo": "Topic Tibetan"}, parent_id=None,
-                      default_language="en")
+                      default_language="en",has_sub_child=False)
         ]
         response = await get_topics(language="en", parent_id=None, skip=0, limit=10)
-        assert response == TopicsResponse(topics=[TopicModel(id="id_1", title="Topic English",parent_id=None)], total=1, skip=0,
+        assert response == TopicsResponse(topics=[TopicModel(id="id_1", title="Topic English",has_child=False)], total=1, skip=0,
                                           limit=10)
 
 
@@ -60,10 +60,10 @@ async def test_get_topics_language_bo():
                   new_callable=AsyncMock) as mock_get_topics_by_parent:
         mock_get_topics_by_parent.return_value = [
             AsyncMock(id="id_1", titles={"en": "Topic English", "bo": "Topic Tibetan"}, parent_id=None,
-                      default_language="en")
+                      default_language="en",has_sub_child=False)
         ]
         response = await get_topics(language="bo", parent_id=None, skip=0, limit=10)
-        assert response == TopicsResponse(topics=[TopicModel(id="id_1", title="Topic Tibetan",parent_id=None)], total=1, skip=0,
+        assert response == TopicsResponse(topics=[TopicModel(id="id_1", title="Topic Tibetan",has_child=False)], total=1, skip=0,
                                           limit=10)
 
 
@@ -75,10 +75,10 @@ async def test_get_topics_pagination():
             patch('pecha_api.config.get', return_value="en"):
         mock_get_topics_by_parent.return_value = [
             AsyncMock(id="id_1", titles={"en": "Topic English", "bo": "Topic Tibetan"}, parent_id=None,
-                      default_language="en")
+                      default_language="en",has_sub_child=False)
         ]
         response = await get_topics(language=None, parent_id=None, skip=0, limit=1)
-        assert response == TopicsResponse(topics=[TopicModel(id="id_1", title="Topic English",parent_id=None)], total=1, skip=0,
+        assert response == TopicsResponse(topics=[TopicModel(id="id_1", title="Topic English",has_child=False)], total=1, skip=0,
                                           limit=1)
 
 
@@ -89,11 +89,11 @@ async def test_create_new_topic_success():
                   new_callable=AsyncMock) as mock_create_topic, \
             patch('pecha_api.config.get', return_value="en"):
         mock_create_topic.return_value = AsyncMock(id="id_1", titles={"en": "New Topic English", "bo": "New Topic Tibetan"}, parent_id=None,
-                      default_language="en")
+                      default_language="en",has_sub_child=False)
         create_topic_request = CreateTopicRequest(titles={"en": "Topic English", "bo": "Topic Tibetan"}, parent_id=None,
                                                   default_language="en")
         response = await create_new_topic(create_topic_request=create_topic_request, token="valid_token", language=None)
-        assert response == TopicModel(id="id_1", title="New Topic English",parent_id=None)
+        assert response == TopicModel(id="id_1", title="New Topic English",has_child=False)
 
 
 @pytest.mark.asyncio

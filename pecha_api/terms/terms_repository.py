@@ -10,6 +10,8 @@ from pecha_api.constants import get_parent_id
 from ..terms.terms_models import Term
 from ..terms.terms_response_models import CreateTermRequest, UpdateTermRequest
 
+TERM_NOT_FOUND = 'Term not found'
+
 
 async def get_terms_by_parent(
         parent_id: Optional[str],
@@ -37,15 +39,30 @@ async def create_term(create_term_request: CreateTermRequest) -> Term:
             raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Term with this slug already exists")
     except AttributeError as e:
         logging.debug(e)
-    new_term = Term(slug=create_term_request.slug, titles=create_term_request.titles,descriptions=create_term_request.descriptions,parent_id=create_term_request.parent_id)
+    new_term = Term(slug=create_term_request.slug, titles=create_term_request.titles,
+                    descriptions=create_term_request.descriptions, parent_id=create_term_request.parent_id)
     saved_term = await new_term.insert()
+    if create_term_request.parent_id is not None:
+        await update_term_child_status(term_id=create_term_request.parent_id)
     return saved_term
+
+
+async def update_term_child_status(term_id: str) -> Term:
+    existing_term = await Term.get(term_id)
+    if not existing_term:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=TERM_NOT_FOUND)
+    child_count = await Term.count_children(parent_id=existing_term.id)
+    has_child = child_count > 0
+    if existing_term.has_sub_child != has_child:
+        existing_term.has_sub_child = has_child
+        await existing_term.save()
+    return existing_term
 
 
 async def update_term_titles(term_id: str, update_term_request: UpdateTermRequest) -> Term:
     existing_term = await Term.get(term_id)
     if not existing_term:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Term not found")
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=TERM_NOT_FOUND)
 
     existing_term.titles = update_term_request.titles
     await existing_term.save()
@@ -55,7 +72,9 @@ async def update_term_titles(term_id: str, update_term_request: UpdateTermReques
 async def delete_term(term_id: str):
     existing_term = await Term.get(term_id)
     if not existing_term:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Term not found")
-
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=TERM_NOT_FOUND)
+    parent_id = existing_term.parent_id
     await existing_term.delete()
+    if parent_id is not None:
+        await update_term_child_status(term_id=str(parent_id))
     return existing_term

@@ -9,6 +9,7 @@ class Term(Document):
     titles: Dict[str, str]  # Dictionary with language_id as key and title as value
     descriptions: Dict[str,str] = Field(default=dict)
     parent_id: Optional[PydanticObjectId] = None
+    has_sub_child: bool = False
 
     class Settings:
         # Define the collection name in MongoDB
