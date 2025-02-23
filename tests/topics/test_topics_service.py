@@ -20,8 +20,10 @@ async def test_get_topics_without_parent():
         ]
         response = await get_topics(language=None, parent_id=None, skip=0, limit=10)
         assert response == TopicsResponse(
+            parent=None,
             topics=[TopicModel(id="id_1", title="Topic English",has_child=False), TopicModel(id="id_2", title="Topic English 2",has_child=True)],
-            total=2, skip=0, limit=10)
+            total=2, skip=0, limit=10
+        )
 
 
 @pytest.mark.asyncio
@@ -29,13 +31,21 @@ async def test_get_topics_with_parent():
     with patch('pecha_api.topics.topics_service.get_child_count', new_callable=AsyncMock, return_value=1), \
             patch('pecha_api.topics.topics_service.get_topics_by_parent',
                   new_callable=AsyncMock) as mock_get_topics_by_parent, \
+            patch('pecha_api.topics.topics_service.get_topic_by_id',new_callable=AsyncMock) as mock_get_topic_by_id, \
             patch('pecha_api.config.get', return_value="en"):
         mock_get_topics_by_parent.return_value = [
             AsyncMock(id="id_1", titles={"en": "Topic English", "bo": "Topic Tibetan"}, parent_id=None,
                       default_language="en",has_sub_child=False)
         ]
+        mock_get_topic_by_id.return_value = AsyncMock(id="id_3",
+                                                titles={"en": "Topic English Parent", "bo": "Topic Tibetan Parent"},
+                                                parent_id=None,
+                                                default_language="en",
+                                                has_sub_child=False
+                                                )
+
         response = await get_topics(language=None, parent_id="1", skip=0, limit=10)
-        assert response == TopicsResponse(topics=[TopicModel(id="id_1", title="Topic English",has_child=False)], total=1, skip=0,
+        assert response == TopicsResponse(parent=TopicModel(id="id_3", title="Topic English Parent",has_child=False),topics=[TopicModel(id="id_1", title="Topic English",has_child=False)], total=1, skip=0,
                                           limit=10)
 
 
@@ -49,7 +59,7 @@ async def test_get_topics_language_en():
                       default_language="en",has_sub_child=False)
         ]
         response = await get_topics(language="en", parent_id=None, skip=0, limit=10)
-        assert response == TopicsResponse(topics=[TopicModel(id="id_1", title="Topic English",has_child=False)], total=1, skip=0,
+        assert response == TopicsResponse(parent=None,topics=[TopicModel(id="id_1", title="Topic English",has_child=False)], total=1, skip=0,
                                           limit=10)
 
 
@@ -63,7 +73,7 @@ async def test_get_topics_language_bo():
                       default_language="en",has_sub_child=False)
         ]
         response = await get_topics(language="bo", parent_id=None, skip=0, limit=10)
-        assert response == TopicsResponse(topics=[TopicModel(id="id_1", title="Topic Tibetan",has_child=False)], total=1, skip=0,
+        assert response == TopicsResponse(parent=None,topics=[TopicModel(id="id_1", title="Topic Tibetan",has_child=False)], total=1, skip=0,
                                           limit=10)
 
 
@@ -78,7 +88,7 @@ async def test_get_topics_pagination():
                       default_language="en",has_sub_child=False)
         ]
         response = await get_topics(language=None, parent_id=None, skip=0, limit=1)
-        assert response == TopicsResponse(topics=[TopicModel(id="id_1", title="Topic English",has_child=False)], total=1, skip=0,
+        assert response == TopicsResponse(parent=None,topics=[TopicModel(id="id_1", title="Topic English",has_child=False)], total=1, skip=0,
                                           limit=1)
 
 

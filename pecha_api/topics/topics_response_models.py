@@ -14,6 +14,7 @@ class CreateTopicRequest(BaseModel):
     default_language: str
 
 class TopicsResponse(BaseModel):
+    parent: Optional[TopicModel]
     topics: List[TopicModel]
     total: int
     skip: int

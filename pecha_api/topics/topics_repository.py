@@ -41,6 +41,12 @@ async def create_topic(create_topic_request: CreateTopicRequest) -> Topic:
     return saved_topic
 
 
+async def get_topic_by_id(topic_id: Optional[str]) -> Optional[Topic]:
+    if not topic_id:
+        return None
+    return await Topic.get(topic_id)
+
+
 async def update_term_child_status(topic_id: str) -> Topic:
     existing_topic = await Topic.get(topic_id)
     if not existing_topic:
@@ -52,5 +58,7 @@ async def update_term_child_status(topic_id: str) -> Topic:
         await existing_topic.save()
     return existing_topic
 
+
 def get_term_by_id(topic_id: str):
-    return Topic(titles={"en": "Topic 1", "bo": "གྲྭ་ཚན 1"},parent_id=PydanticObjectId("60d21b4667d0d8992e610c85"), default_language='en')
+    return Topic(titles={"en": "Topic 1", "bo": "གྲྭ་ཚན 1"}, parent_id=PydanticObjectId("60d21b4667d0d8992e610c85"),
+                 default_language='en')
