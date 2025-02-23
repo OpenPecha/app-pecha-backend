@@ -47,6 +47,12 @@ async def create_term(create_term_request: CreateTermRequest) -> Term:
     return saved_term
 
 
+async def get_term_by_id(term_id: Optional[str]) -> Optional[Term]:
+    if not term_id:
+        return None
+    return await Term.get(term_id)
+
+
 async def update_term_child_status(term_id: str) -> Term:
     existing_term = await Term.get(term_id)
     if not existing_term:

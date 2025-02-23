@@ -25,6 +25,10 @@ class Term(Document):
         indexes = [("slug", 1)]
 
     @classmethod
+    async def get_by_id(cls, parent_id: PydanticObjectId) -> "Term":
+        return await cls.find({"parent_id": parent_id})
+
+    @classmethod
     async def get_children_by_id(cls, parent_id: PydanticObjectId,skip: int, limit: int) -> List["Term"]:
         return await cls.find({"parent_id": parent_id}).skip(skip).limit(limit).to_list()
 

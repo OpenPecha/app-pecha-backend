@@ -5,20 +5,22 @@ from starlette import status
 from pecha_api.constants import get_value_from_dict
 from ..config import get
 from ..terms.terms_response_models import TermsModel, TermsResponse, CreateTermRequest, UpdateTermRequest
-from .terms_repository import get_child_count, get_terms_by_parent, create_term, update_term_titles, delete_term
+from .terms_repository import get_child_count, get_terms_by_parent, create_term, update_term_titles, delete_term, \
+    get_term_by_id
 from ..users.users_service import verify_admin_access
 from fastapi import HTTPException
 
 
 async def get_all_terms(language: str, parent_id: Optional[str], skip: int, limit: int) -> TermsResponse:
+    if language is None:
+        language = get("DEFAULT_LANGUAGE")
     total = await get_child_count(parent_id=parent_id)
+    parent_term = await get_term(term_id=parent_id,language=language)
     terms = await get_terms_by_parent(
         parent_id=parent_id,
         skip=skip,
         limit=limit
     )
-    if language is None:
-        language = get("DEFAULT_LANGUAGE")
     term_list = [
         TermsModel(
             id=str(term.id),
@@ -29,9 +31,8 @@ async def get_all_terms(language: str, parent_id: Optional[str], skip: int, limi
         )
         for term in terms
     ]
-    term_response = TermsResponse(terms=term_list, total=total, skip=skip, limit=limit)
+    term_response = TermsResponse(parent=parent_term, terms=term_list, total=total, skip=skip, limit=limit)
     return term_response
-
 
 
 async def create_new_term(create_term_request: CreateTermRequest, token: str, language: Optional[str]) -> TermsModel:
@@ -50,6 +51,17 @@ async def create_new_term(create_term_request: CreateTermRequest, token: str, la
     else:
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Admin access required")
 
+async def get_term(term_id: str,language: str) -> Optional[TermsModel]:
+    selected_term = await get_term_by_id(term_id=term_id)
+    if selected_term:
+        return TermsModel(
+            id=term_id,
+            title=get_value_from_dict(values=selected_term.titles, language=language),
+            description=get_value_from_dict(values=selected_term.descriptions, language=language),
+            has_child=selected_term.has_sub_child,
+            slug=selected_term.slug
+        )
+    return None
 
 async def update_existing_term(term_id: str, update_term_request: UpdateTermRequest, token: str,
                                language: Optional[str]) -> TermsModel:

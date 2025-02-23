@@ -22,6 +22,7 @@ class TermsModel(BaseModel):
 
 
 class TermsResponse(BaseModel):
+    parent: Optional[TermsModel]
     terms: List[TermsModel]
     total: int
     skip: int
