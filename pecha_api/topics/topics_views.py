@@ -22,6 +22,7 @@ async def read_topics(
         parent_id: Optional[str] = Query(None, description="Filter topics by title prefix"),
         language: Optional[str] = None,
         search: Optional[str] = None,
+        heirarchy: Optional[bool] = Query(default=True),
         skip: int = Query(default=0, ge=0, description="Number of records to skip"),
         limit: int = Query(default=10, ge=1, le=100, description="Number of records to return")
 ):
@@ -29,6 +30,7 @@ async def read_topics(
         parent_id=parent_id,
         language=language,
         search=search,
+        heirarchy=heirarchy,
         skip=skip,
         limit=limit
     )

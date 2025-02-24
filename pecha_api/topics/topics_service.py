@@ -11,17 +11,20 @@ from .topics_repository import get_topics_by_parent, create_topic, get_child_cou
 from fastapi import HTTPException
 
 
-async def get_topics(language: Optional[str], search: Optional[str], parent_id: Optional[str], skip: int, limit: int) -> TopicsResponse:
+async def get_topics(language: Optional[str], search: Optional[str], heirarchy: Optional[bool], parent_id: Optional[str], skip: int, limit: int) -> TopicsResponse:
+    if language is None:
+        language = get("DEFAULT_LANGUAGE")
     total = await get_child_count(parent_id=parent_id)
     topics = await get_topics_by_parent(
         parent_id=parent_id,
         language=language,
         search=search,
+        heirarchy=heirarchy,
         skip=skip,
         limit=limit
     )
-    if language is None:
-        language = get("DEFAULT_LANGUAGE")
+    
+
     topic_list = [
         TopicModel(
             id=str(topic.id),

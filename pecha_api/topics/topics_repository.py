@@ -13,11 +13,12 @@ async def get_topics_by_parent(
         parent_id: Optional[str],
         search: Optional[str],
         language: Optional[str],
+        heirarchy: Optional[bool],
         skip: int,
         limit: int) -> list[Topic]:
     try:
         topic_parent_id = get_parent_id(parent_id=parent_id)
-        terms = await Topic.get_children_by_id(parent_id=topic_parent_id, search=search, language=language, skip=skip, limit=limit)
+        terms = await Topic.get_children_by_id(parent_id=topic_parent_id, search=search, heirarchy=heirarchy, language=language, skip=skip, limit=limit)
         return terms
     except CollectionWasNotInitialized as e:
         logging.debug(e)
