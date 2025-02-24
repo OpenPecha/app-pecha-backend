@@ -12,6 +12,7 @@ class Topic(Document):
     titles: Dict[str, str]
     parent_id: Optional[PydanticObjectId] = None
     default_language: str
+    has_sub_child: bool = False
 
     class Settings:
         # Define the collection name in MongoDB

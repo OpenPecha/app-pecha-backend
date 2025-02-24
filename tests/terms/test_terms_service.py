@@ -15,20 +15,21 @@ async def test_get_all_terms():
                   new_callable=AsyncMock) as mock_get_terms_by_parent, \
             patch("pecha_api.terms.terms_service.get_child_count", new_callable=AsyncMock, return_value=2):
         mock_get_terms_by_parent.return_value = [
-            AsyncMock(id="id_1", titles={"en": "Term 1"}, slug="term-1",parent_id=None),
-            AsyncMock(id="id_2", titles={"en": "Term 2"}, descriptions={"en": "Description 2"}, slug="term-2",parent_id=None)
+            AsyncMock(id="id_1", titles={"en": "Term 1"}, slug="term-1",parent_id=None, has_sub_child=False),
+            AsyncMock(id="id_2", titles={"en": "Term 2"}, descriptions={"en": "Description 2"}, slug="term-2",parent_id=None,has_sub_child=False)
         ]
         response = await get_all_terms(language="en",parent_id=None,skip=0,limit=10)
         assert isinstance(response, TermsResponse)
         assert len(response.terms) == 2
         assert response.terms[0].title == "Term 1"
+        assert response.terms[1].has_child == False
 
 
 @pytest.mark.asyncio
 async def test_create_new_term():
     with patch("pecha_api.terms.terms_service.verify_admin_access", return_value=True), \
             patch("pecha_api.terms.terms_service.create_term", new_callable=AsyncMock) as mock_create_term:
-        mock_create_term.return_value = AsyncMock(titles={"en": "New Term"}, descriptions={"en": "New Description"}, slug="new-term",parent_id=None)
+        mock_create_term.return_value = AsyncMock(titles={"en": "New Term"}, descriptions={"en": "New Description"}, slug="new-term",parent_id=None,has_sub_child=False)
         create_term_request = CreateTermRequest(slug="new-term", titles={"en": "New Term"}, descriptions={"en": "New Description"},parent_id=None)
         response = await create_new_term(
             create_term_request=create_term_request,
@@ -39,6 +40,7 @@ async def test_create_new_term():
         assert response.title == "New Term"
         assert response.slug == "new-term"
         assert response.description == "New Description"
+        assert response.has_child == False
 
 
 @pytest.mark.asyncio
