@@ -19,7 +19,7 @@ async def test_read_topics_without_parent(mocker):
         response = await ac.get("/topics?skip=0&limit=10")
     assert response.status_code == 200
     assert response.json() == mock_response
-    mock_get_topics.assert_called_once_with(parent_id=None, search=None, language=None, skip=0, limit=10)
+    mock_get_topics.assert_called_once_with(parent_id=None, search=None, language=None,hierarchy=True, skip=0, limit=10)
 
 
 @pytest.mark.asyncio
@@ -32,7 +32,7 @@ async def test_read_topics_with_parent(mocker):
         response = await ac.get("/topics?parent_id=1&skip=0&limit=10")
     assert response.status_code == 200
     assert response.json() == mock_response
-    mock_get_topics.assert_called_once_with(parent_id="1", search=None, language=None, skip=0, limit=10)
+    mock_get_topics.assert_called_once_with(parent_id="1", search=None, language=None,hierarchy=True, skip=0, limit=10)
 
 
 @pytest.mark.asyncio
@@ -45,7 +45,7 @@ async def test_read_topics_language_en(mocker):
         response = await ac.get("/topics?language=en&skip=0&limit=10")
     assert response.status_code == 200
     assert response.json() == mock_response
-    mock_get_topics.assert_called_once_with(parent_id=None, search=None, language="en", skip=0, limit=10)
+    mock_get_topics.assert_called_once_with(parent_id=None, search=None, language="en",hierarchy=True,  skip=0, limit=10)
 
 @pytest.mark.asyncio
 async def test_read_topics_language_bo(mocker):
@@ -57,7 +57,7 @@ async def test_read_topics_language_bo(mocker):
         response = await ac.get("/topics?language=bo&skip=0&limit=10")
     assert response.status_code == 200
     assert response.json() == mock_response
-    mock_get_topics.assert_called_once_with(parent_id=None, search=None, language="bo", skip=0, limit=10)
+    mock_get_topics.assert_called_once_with(parent_id=None, search=None, language="bo",hierarchy=True,  skip=0, limit=10)
 
 
 @pytest.mark.asyncio
@@ -70,7 +70,7 @@ async def test_read_topics_pagination(mocker):
         response = await ac.get("/topics?language=en&skip=1&limit=10")
     assert response.status_code == 200
     assert response.json() == mock_response
-    mock_get_topics.assert_called_once_with(parent_id=None, search=None, language="en", skip=1, limit=10)
+    mock_get_topics.assert_called_once_with(parent_id=None, search=None, language="en",hierarchy=True,  skip=1, limit=10)
 
 
 @pytest.mark.asyncio

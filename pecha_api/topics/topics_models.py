@@ -24,23 +24,15 @@ class Topic(Document):
     
 
     @classmethod
-    async def get_children_by_id(cls, parent_id: PydanticObjectId, search: Optional[str], heirarchy: Optional[bool], language: Optional[str], skip: int, limit: int) -> List["Topic"]:
+    async def get_children_by_id(cls, parent_id: PydanticObjectId, search: Optional[str], hierarchy: bool, language: str, skip: int, limit: int) -> List["Topic"]:
 
         query = {}
-        if search:
-            if parent_id:
-                query["parent_id"] = parent_id
-                query[f"titles.{language}"] = {"$regex": f"^{search}", "$options": "i"}
-            elif heirarchy:
-                query["parent_id"] = None
-                query[f"titles.{language}"] = {"$regex": f"^{search}", "$options": "i"}
-            else:
-                query[f"titles.{language}"] = {"$regex": f"^{search}", "$options": "i"}
-        elif parent_id:
+        if parent_id is not None:
             query["parent_id"] = parent_id
-        elif heirarchy:
-                query["parent_id"] = None
-
+        elif hierarchy:
+            query["parent_id"] = None
+        if search:
+            query[f"titles.{language}"] = {"$regex": f"^{search}", "$options": "i"}
 
         return await cls.find(query).skip(skip).limit(limit).to_list()
 
