@@ -13,11 +13,14 @@ from .topics_response_models import CreateTopicRequest
 
 async def get_topics_by_parent(
         parent_id: Optional[str],
+        search: Optional[str],
+        language: str,
+        hierarchy: bool,
         skip: int,
         limit: int) -> list[Topic]:
     try:
         topic_parent_id = get_parent_id(parent_id=parent_id)
-        terms = await Topic.get_children_by_id(parent_id=topic_parent_id, skip=skip, limit=limit)
+        terms = await Topic.get_children_by_id(parent_id=topic_parent_id, search=search, hierarchy=hierarchy, language=language, skip=skip, limit=limit)
         return terms
     except CollectionWasNotInitialized as e:
         logging.debug(e)

@@ -11,13 +11,16 @@ from .topics_repository import get_topics_by_parent, create_topic, get_child_cou
 from fastapi import HTTPException
 
 
-async def get_topics(language: Optional[str], parent_id: Optional[str], skip: int, limit: int) -> TopicsResponse:
+async def get_topics(language: Optional[str], search: Optional[str], hierarchy: Optional[bool], parent_id: Optional[str], skip: int, limit: int) -> TopicsResponse:
     if language is None:
         language = get("DEFAULT_LANGUAGE")
     total = await get_child_count(parent_id=parent_id)
     parent_topic = await get_topic(topic_id=parent_id, language=language)
     topics = await get_topics_by_parent(
         parent_id=parent_id,
+        language=language,
+        search=search,
+        hierarchy=hierarchy,
         skip=skip,
         limit=limit
     )
@@ -31,7 +34,6 @@ async def get_topics(language: Optional[str], parent_id: Optional[str], skip: in
     ]
     topic_response = TopicsResponse(parent=parent_topic,topics=topic_list, total=total, skip=skip, limit=limit)
     return topic_response
-
 
 async def create_new_topic(create_topic_request: CreateTopicRequest, token: str, language: Optional[str]) -> TopicModel:
     is_admin = verify_admin_access(token=token)
