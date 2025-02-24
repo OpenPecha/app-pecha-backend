@@ -21,8 +21,10 @@ DEFAULTS = dict(
     JWT_ISSUER="https://pecha.org",
     JWT_SECRET_KEY="oJvUxI5jY7nXaD4sC_kFGoM0_qAuewVxg3p6F8CH-tI",
     MAX_FILE_SIZE_MB=1,
+
     # MONGO_CONNECTION_STRING="mongodb+srv://pecha_user:JYtqiTyPA6FxzWz5@pecha-backend.i3b0a.mongodb.net/",
     MONGO_CONNECTION_STRING="mongodb://admin:pechaAdmin@localhost:27017/",
+
     MONGO_DATABASE_NAME="pecha",
     REFRESH_TOKEN_EXPIRE_DAYS=30,
     SENDGRID_API_KEY="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",
