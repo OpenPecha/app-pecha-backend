@@ -32,9 +32,10 @@ class Topic(Document):
                 query["parent_id"] = parent_id
                 query[f"titles.{language}"] = {"$regex": f"^{search}", "$options": "i"}
             elif heirarchy:
-                query["parent_id"] = {"$ne": None}
+                query["parent_id"] = None
                 query[f"titles.{language}"] = {"$regex": f"^{search}", "$options": "i"}
             else:
+                query["parent_id"] = {"$ne": None}
                 query[f"titles.{language}"] = {"$regex": f"^{search}", "$options": "i"}
         elif parent_id:
             query["parent_id"] = parent_id
