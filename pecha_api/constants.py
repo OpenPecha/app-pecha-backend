@@ -65,6 +65,14 @@ time_passed_word = {
     }
 }
 
+MINUTE_IN_SECONDS = 60
+HOUR_IN_SECONDS = 3600
+DAY_IN_SECONDS = 86400
+WEEK_IN_SECONDS = 604800
+MONTH_IN_SECONDS = 2592000
+YEAR_IN_SECONDS = 31536000
+
+
 def get_word(word: str, language: str):
     return get_value_from_dict(time_passed_word[word], language)
 
@@ -78,21 +86,21 @@ def time_passed(published_time: int, language: str):
     current_time_in_millisecond = int(time() * 1000)
     time_difference = (current_time_in_millisecond - published_time) // 1000
 
-    if time_difference < 60:
+    if time_difference < MINUTE_IN_SECONDS:
         return get_word("Now", language)
-    elif time_difference < 3600:
+    elif time_difference < HOUR_IN_SECONDS:
         time_passed_value = filter_number_by_language(str(divide(time_difference, 60)), language)
         return f"{time_passed_value} {get_word('Min', language)}"
-    elif time_difference < 86400:
+    elif time_difference < DAY_IN_SECONDS:
         time_passed_value = filter_number_by_language(str(divide(time_difference,3600)), language)
         return f"{time_passed_value} {get_word('Hr', language)}"
-    elif time_difference < 604800:
+    elif time_difference < WEEK_IN_SECONDS:
         time_passed_value = filter_number_by_language(str(divide(time_difference,86400)), language)
         return f"{time_passed_value} {get_word('Day', language)}"
-    elif time_difference < 2592000:
+    elif time_difference < MONTH_IN_SECONDS:
         time_passed_value = filter_number_by_language(str(divide(time_difference,604800)), language)
         return f"{time_passed_value} {get_word('Week', language)}"
-    elif time_difference < 31536000:
+    elif time_difference < YEAR_IN_SECONDS:
         time_passed_value = filter_number_by_language(str(divide(time_difference,2592000)), language)
         return f"{time_passed_value} {get_word('Month', language)}"
     else:
