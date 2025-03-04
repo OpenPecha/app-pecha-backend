@@ -5,6 +5,99 @@ from beanie import PydanticObjectId
 from bson.errors import InvalidId
 from fastapi import HTTPException
 from starlette import status
+from time import time
+
+number_language = {
+    "bo": {
+        "0": "༠",
+        "1": "༡",
+        "2": "༢",
+        "3": "༣",
+        "4": "༤",
+        "5": "༥",
+        "6": "༦",
+        "7": "༧",
+        "8": "༨",
+        "9": "༩"
+    },
+    "en": {
+        "0": "0",
+        "1": "1",
+        "2": "2",
+        "3": "3",
+        "4": "4",
+        "5": "5",
+        "6": "6",
+        "7": "7",
+        "8": "8",
+        "9": "9"
+    }
+}
+
+time_passed_word = {
+    "Now" : {
+        "en": "Now",
+        "bo": "དད་ལྟ།"
+    },
+    "Min": {
+        "en": "Min",
+        "bo": "སྐར་མ།"
+    },
+    "Hr": {
+        "en": "Hr",
+        "bo": "ཆུ་ཚོད།"
+    },
+    "Day": {
+        "en": "Day",
+        "bo": "ཉིནམ།"
+    },
+    "Week": {
+        "en": "Week",
+        "bo": "གཟའ་འཁོར།"
+    },
+    "Month": {
+        "en": "Month",
+        "bo": "ཟླ་བ།"
+    },
+    "Year": {
+        "en": "Year",
+        "bo": "ལོ།"
+    }
+}
+
+def get_word(word: str, language: str):
+    return get_value_from_dict(time_passed_word[word], language)
+
+def divide(numerator: int, denominator: int):
+    return numerator // denominator
+
+def filter_number_by_language(value: str, language: str) -> str:
+    return "".join([number_language[language][char] if "0" <= char <="9" else char for char in str(value)])
+
+def time_passed(published_time: int, language: str):
+    current_time_in_millisecond = int(time() * 1000)
+    time_difference = (current_time_in_millisecond - published_time) // 1000
+
+    if time_difference < 60:
+        return get_word("Now", language)
+    elif time_difference < 3600:
+        time_passed_value = filter_number_by_language(str(divide(time_difference, 60)), language)
+        return f"{time_passed_value} {get_word('Min', language)}"
+    elif time_difference < 86400:
+        time_passed_value = filter_number_by_language(str(divide(time_difference,3600)), language)
+        return f"{time_passed_value} {get_word('Hr', language)}"
+    elif time_difference < 604800:
+        time_passed_value = filter_number_by_language(str(divide(time_difference,86400)), language)
+        return f"{time_passed_value} {get_word('Day', language)}"
+    elif time_difference < 2592000:
+        time_passed_value = filter_number_by_language(str(divide(time_difference,604800)), language)
+        return f"{time_passed_value} {get_word('Week', language)}"
+    elif time_difference < 31536000:
+        time_passed_value = filter_number_by_language(str(divide(time_difference,2592000)), language)
+        return f"{time_passed_value} {get_word('Month', language)}"
+    else:
+        time_passed_value = filter_number_by_language(str(divide(time_difference,31536000)), language)
+        return f"{time_passed_value} {get_word('Year', language)}"
 
 
 def get_value_from_dict(values: dict[str, str], language: str):

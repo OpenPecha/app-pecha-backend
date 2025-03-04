@@ -1,9 +1,11 @@
 from __future__ import annotations
-from fastapi import APIRouter
+from fastapi import APIRouter, Query
 from fastapi.security import HTTPBearer
 from starlette import status
 
-from .sheets_service import get_sheets
+from typing import Optional
+
+from .sheets_service import get_sheets, get_sheets_by_userID
 
 oauth2_scheme = HTTPBearer()
 sheets_router = APIRouter(
@@ -12,6 +14,21 @@ sheets_router = APIRouter(
 )
 
 
-@sheets_router.get("", status_code=status.HTTP_200_OK)
+@sheets_router.get("/topic", status_code=status.HTTP_200_OK)
 def get_topics(language: str | None):
     return get_sheets(topic_id='', language=language)
+
+#get sheet with user_id with pagination
+@sheets_router.get("", status_code=status.HTTP_200_OK)
+async def get_sheets_by_user_id(
+    user_id: Optional[str] = None,
+    language: Optional[str] = None,
+    skip: int = Query(default=0, ge=0, description="Number of records to skip"),
+    limit: int = Query(default=10, ge=1, le=100, description="Number of records to return")
+):
+    return await get_sheets_by_userID(
+        user_id=user_id,
+        language=language,
+        skip=skip,
+        limit=limit
+    )
