@@ -14,7 +14,7 @@ class SheetModel(BaseModel):
     id: str
     title: str
     summary: str
-    date: str
+    published_date: str
     views: str
     topics: List[str]
     published_time: str

@@ -43,7 +43,7 @@ async def get_sheets_by_userID(user_id: str, language: str, skip: int, limit: in
             id=str(sheet.id),
             title=sheet.titles.get(language, ""),
             summary=sheet.summaries.get(language, ""),
-            date=sheet.date,
+            published_date=sheet.published_date,
             views=sheet.views,
             topics=sheet.topics,
             published_time=sheet.published_time,

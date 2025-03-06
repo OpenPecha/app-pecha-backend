@@ -17,7 +17,7 @@ async def get_users_sheets(user_id: str, language: str, skip: int, limit: int):
         Sheet(
             titles={"en": f"Topic {i}", "bo": f"གྲྭ་ཚན {i}"},
             summaries={"en": f"Summaries {i}", "bo": f"སྙིང་བསྡུས་ {i}"},
-            date="2021-01-01",
+            published_date="2021-01-01",
             views=str(i),
             topics=[
                 {
