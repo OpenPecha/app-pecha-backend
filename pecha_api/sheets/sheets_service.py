@@ -1,7 +1,7 @@
 import uuid
 
 from pecha_api.config import get
-from .sheets_repository import get_sheets_by_topic, get_users_sheets
+from .sheets_repository import get_sheets_by_topic, get_users_sheets, create_sheet
 from .sheets_response_models import SheetModel, Publisher, SheetsResponse
 
 
@@ -54,3 +54,8 @@ async def get_sheets_by_userID(user_id: str, language: str, skip: int, limit: in
     ]
     sheet_response = SheetsResponse(sheets=sheets_list)
     return sheet_response
+
+async def create_new_sheet(create_sheet_request):
+    new_sheet = await create_sheet(create_sheet_request=create_sheet_request)
+    return new_sheet
+    

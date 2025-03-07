@@ -5,7 +5,8 @@ from starlette import status
 
 from typing import Optional
 
-from .sheets_service import get_sheets, get_sheets_by_userID
+from .sheets_service import get_sheets, get_sheets_by_userID, create_new_sheet
+from .sheets_response_models import CreateSheetRequest
 
 oauth2_scheme = HTTPBearer()
 sheets_router = APIRouter(
@@ -31,4 +32,12 @@ async def get_sheets_by_user_id(
         language=language,
         skip=skip,
         limit=limit
+    )
+
+@sheets_router.post("", status_code=status.HTTP_201_CREATED)
+async def create_sheet(
+    create_sheet_request: CreateSheetRequest,
+        ):
+    return await create_new_sheet(
+        create_sheet_request=create_sheet_request
     )

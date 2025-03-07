@@ -6,6 +6,7 @@ from bson.errors import InvalidId
 from fastapi import HTTPException
 from starlette import status
 from time import time
+import datetime
 
 number_language = {
     "bo": {
@@ -107,6 +108,11 @@ def time_passed(published_time: int, language: str):
         time_passed_value = filter_number_by_language(str(divide(time_difference,31536000)), language)
         return f"{time_passed_value} {get_word('Year', language)}"
 
+def get_current_date():
+    return datetime.datetime.now().strftime("%Y-%m-%d")
+
+def get_current_time_in_millisecond():
+    return int(time() * 1000)
 
 def get_value_from_dict(values: dict[str, str], language: str):
     value = "" if not isinstance(values, dict) or not values else values.get(language, "")
