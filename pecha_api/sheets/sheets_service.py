@@ -41,7 +41,7 @@ async def get_sheets_by_userID(user_id: str, language: str, skip: int, limit: in
             id=str(publisher.id),
             name=publisher.firstname + " " + publisher.lastname,
             profile_url="",
-            image_url=publisher.avatar_url
+            image_url=""
         )
     sheets = await get_users_sheets(user_id=user_id, language=language, skip=skip, limit=limit)
     sheets_list = []
