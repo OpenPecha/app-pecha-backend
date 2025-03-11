@@ -1,4 +1,4 @@
-from typing import List
+from typing import List, Optional
 
 from pydantic import BaseModel
 
@@ -19,23 +19,13 @@ class Segment(BaseModel):
     segment_id: str
     segment_number: int
 
-class SubSection(BaseModel):
-    id: str
-    title: str
-    section_number: int
-    parent_id: str
-    created_date: str
-    updated_date: str
-    published_date: str
-    segments: List[Segment]
-    sections: List["SubSection"]
-
 class Section(BaseModel):
     id: str
     title: str
     section_number: int
-    segments: List[str]
-    sections: List[SubSection]
+    parent_id: Optional[str] = None
+    segments: List[Segment]
+    sections: List["Section"]
     created_date: str
     updated_date: str
     published_date: str

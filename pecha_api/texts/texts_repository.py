@@ -1,7 +1,7 @@
 import uuid
 
 from .texts_models import Text
-from .texts_response_models import Section, SubSection, Segment, RootText
+from .texts_response_models import Section, Segment, RootText
 
 
 def get_texts_by_id():
@@ -28,9 +28,10 @@ async def get_contents_by_id(text_id: str, skip: int, limit: int):
             id="d19338e4-da52-4ea2-800e-3414eac8167e",
             title="A brief presentation of the ground path and result",
             section_number=1,
+            parent_id=None,
             segments=[],
             sections=[
-                SubSection(
+                Section(
                     id="39965c2a-e89e-4834-83bb-e3a294a8f705",
                     title="",
                     section_number=1,
@@ -82,7 +83,7 @@ async def get_contents_by_id(text_id: str, skip: int, limit: int):
             parent_id=None,
             segments=[],
             sections=[
-                SubSection(
+                Section(
                     id="0971f07a-8491-4cfe-9720-dac1acb9824d",
                     title="Basis",
                     section_number=1,
@@ -92,7 +93,7 @@ async def get_contents_by_id(text_id: str, skip: int, limit: int):
                     published_date="2021-09-01T00:00:00.000Z",
                     segments=[],
                     sections=[
-                        SubSection(
+                        Section(
                             id="0971f07a-8491-4cfe-9720-dac1acb9824d",
                             title="The extensive explanation of the abiding nature of the ground",
                             section_number=1,
