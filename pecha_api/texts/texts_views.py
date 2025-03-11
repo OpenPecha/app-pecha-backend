@@ -16,7 +16,7 @@ text_router = APIRouter(
 def get_text(language: str | None):
     return get_text_by_term(language=language)
 
-@text_router.get("", status_code=status.HTTP_200_OK)
+@text_router.get("/category", status_code=status.HTTP_200_OK)
 async def get_text(
     category: str= Query(default=None),
     language: str= Query(default=None),

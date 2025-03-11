@@ -40,15 +40,15 @@ async def get_text_by_category(category: str, language: str, skip: int, limit: i
     texts = await get_texts_by_category(category=category, language=language, skip=skip, limit=limit)
     text_list = [
         Text(
-            id= texts.id,
-            title = texts.title,
-            language= texts.language,
-            type= texts.type,
-            is_published= texts.is_published,
-            created_date= texts.created_date,
-            updated_date= texts.updated_date,
-            published_date= texts.published_date,
-            published_by= texts.published_by
+            id= text["id"],
+            title = text["title"],
+            language= text["language"],
+            type= text["type"],
+            is_published= text["is_published"],
+            created_date= text["created_date"],
+            updated_date= text["updated_date"],
+            published_date= text["published_date"],
+            published_by= text["published_by"]
         )
         for text in texts
     ]
