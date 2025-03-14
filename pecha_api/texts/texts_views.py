@@ -20,12 +20,3 @@ def get_text(
     limit: int= Query(default=10)
 ):
     return get_text_by_term_or_category(category=category, language=language, skip=skip, limit=limit)
-
-# @text_router.get("/", status_code=status.HTTP_200_OK)
-# async def get_text(
-#     category: str= Query(default=None),
-#     language: str= Query(default=None),
-#     skip: int= Query(default=0),
-#     limit: int= Query(default=10)
-# ):
-#     return await get_text_by_category(category=category, language=language, skip=skip, limit=limit)
