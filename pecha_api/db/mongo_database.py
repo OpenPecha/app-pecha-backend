@@ -8,6 +8,7 @@ from motor.motor_asyncio import AsyncIOMotorClient
 from ..topics.topics_models import Topic
 from ..terms.terms_models import Term
 from ..texts.texts_models import Text, Segment
+from ..sheets.sheets_models import Sheet
 from ..config import get
 
 mongodb_client = None

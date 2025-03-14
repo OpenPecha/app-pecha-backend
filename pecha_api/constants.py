@@ -1,11 +1,13 @@
 import logging
-from typing import Optional
+from typing import Optional, List
 
 from beanie import PydanticObjectId
 from bson.errors import InvalidId
 from fastapi import HTTPException
 from starlette import status
 from time import time
+import datetime
+
 
 number_language = {
     "bo": {
@@ -107,6 +109,26 @@ def time_passed(published_time: int, language: str):
         time_passed_value = filter_number_by_language(str(divide(time_difference,31536000)), language)
         return f"{time_passed_value} {get_word('Year', language)}"
 
+def get_current_date():
+    return str(datetime.datetime.utcnow())
+
+def millisecond_to_seconds(milliseconds: int) -> int:
+    return milliseconds // 1000
+
+def milliseconds_to_datetime(milliseconds: int) -> str:
+    dt_object = datetime.datetime.utcfromtimestamp(millisecond_to_seconds(milliseconds))
+    formatted_time = dt_object.strftime('%Y-%m-%d %H:%M:%S')
+    return str(formatted_time)
+
+def get_current_time_in_millisecond():
+    return int(time() * 1000)
+
+# async def get_topics_list_from_ids(topic_id: List[str]) -> List[str]:
+#     topic_list = []
+#     for topic_id in topic_id:
+#         topic = await get_topic_by_id(topic_id)
+#         topic_list.append(topic.titles)
+#     return topic_list
 
 def get_value_from_dict(values: dict[str, str], language: str):
     value = "" if not isinstance(values, dict) or not values else values.get(language, "")
