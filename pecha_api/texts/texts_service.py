@@ -5,6 +5,10 @@ from .texts_response_models import TableOfContentResponse, TextResponse, TextMod
 from .texts_repository import get_texts_by_category
 from .texts_response_models import Category, TextsCategoryResponse, Text
 
+from .texts_response_models import TextResponse, TextModel, CreateTextRequest, CreateSegmentRequest
+from .texts_repository import create_text, create_segment
+
+
 from pecha_api.config import get
 
 async def get_texts_by_category_id(category: str, language: str, skip: int, limit: int):
@@ -49,7 +53,6 @@ async def get_text_by_term_or_category(
     else:
         return await get_texts_without_category()
 
-
 async def get_contents_by_text_id(text_id: str, skip:int, limit: int) -> TableOfContentResponse:
     list_of_sections = await get_contents_by_id(text_id=text_id, skip=skip, limit=limit)
     return TableOfContentResponse(
@@ -81,3 +84,12 @@ async def get_version_by_text_id(text_id: str, skip: int, limit: int) -> TextVer
         text=root_text,
         versions=list_of_version
     )
+
+  
+async def create_new_text(create_text_request: CreateTextRequest):
+    new_text = await create_text(create_text_request=create_text_request)
+    return new_text
+
+async def create_new_segment(create_segment_request: CreateSegmentRequest):
+    new_segment = await create_segment(create_segment_request=create_segment_request)
+    return new_segment

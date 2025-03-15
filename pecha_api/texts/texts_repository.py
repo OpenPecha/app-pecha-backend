@@ -1,10 +1,16 @@
 import uuid
 
-from .texts_models import Text
+
 
 from .texts_response_models import Section, Segment, RootText
 
 from .texts_response_models import Category
+
+
+from .texts_models import Text, Segment
+from .texts_response_models import CreateTextRequest, CreateSegmentRequest
+
+import datetime
 
 
 def get_texts_by_id():
@@ -24,7 +30,6 @@ def get_texts_by_id():
         for i in range(1, 6)
     ]
     return root_text, versions
-
 
 async def get_contents_by_id(text_id: str, skip: int, limit: int):
     return [
@@ -147,15 +152,30 @@ async def get_text_by_id(text_id: str):
         has_child= False
     )
 
-async def get_versions_by_id(text_id: str, skip: int, limit: int):
-    return [
-        {
-            "id": "uuid.v4",
-            "title": "शबोधिचर्यावतार[sa]",
-            "parent_id": "d19338e",
-            "priority": 1,
-            "language": "sa",
-            "type": "translation",
+async def create_text(create_text_request: CreateTextRequest) -> Text:
+    new_text = Text(
+        titles=create_text_request.titles,
+        language=create_text_request.language,
+        is_published=True,
+        created_date=str(datetime.datetime.utcnow()),
+        updated_date=str(datetime.datetime.utcnow()),
+        published_date=str(datetime.datetime.utcnow()),
+        published_by=create_text_request.published_by,
+        type=create_text_request.type,
+        categories=create_text_request.categories
+    )
+    saved_text = await new_text.insert()
+    return saved_text
+
+async def create_segment(create_segment_request: CreateSegmentRequest) -> Segment:
+    new_segment = Segment(
+        text_id=create_segment_request.text_id,
+        content=create_segment_request.content,
+        mapping=create_segment_request.mapping
+    )
+    saved_segment = await new_segment.insert()
+    return saved_segment
+
 
 async def get_texts_by_category(category: str, language: str, skip: int, limit: int):
     return [
@@ -197,3 +217,4 @@ async def get_texts_by_category(category: str, language: str, skip: int, limit: 
             "published_by": "buddhist_tab"
         }
     ]
+

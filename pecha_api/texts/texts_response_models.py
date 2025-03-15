@@ -1,7 +1,10 @@
+
 from typing import List, Optional
 
-from pydantic import BaseModel
+from typing import Dict
 
+from pydantic import BaseModel
+from .texts_models import Mapping
 
 class TextModel(BaseModel):
     id: str
@@ -14,7 +17,6 @@ class TextModel(BaseModel):
 class TextResponse(BaseModel):
     source: TextModel
     versions: List[TextModel]
-
 
 class Segment(BaseModel):
     segment_id: str
@@ -59,6 +61,19 @@ class TextVersion(BaseModel):
 class TextVersionResponse(BaseModel):
     text: RootText
     versions: List[TextVersion]
+
+class CreateTextRequest(BaseModel):
+    titles: str
+    language: str
+    published_by: str
+    type: str
+    categories: List[str]
+
+class CreateSegmentRequest(BaseModel):
+    text_id: str
+    content: str
+    mapping: List[Mapping]
+
 
 class Text(BaseModel):
     id : str
