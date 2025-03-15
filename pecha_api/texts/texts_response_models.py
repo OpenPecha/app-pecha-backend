@@ -1,7 +1,7 @@
-from typing import List
+from typing import List, Dict
 
 from pydantic import BaseModel
-
+from .texts_models import Mapping
 
 class TextModel(BaseModel):
     id: str
@@ -14,6 +14,18 @@ class TextModel(BaseModel):
 class TextResponse(BaseModel):
     source: TextModel
     versions: List[TextModel]
+
+class CreateTextRequest(BaseModel):
+    titles: str
+    language: str
+    published_by: str
+    type: str
+    categories: List[str]
+
+class CreateSegmentRequest(BaseModel):
+    text_id: str
+    content: str
+    mapping: List[Mapping]
 
 class Text(BaseModel):
     id : str
@@ -39,3 +51,4 @@ class TextsCategoryResponse(BaseModel):
     total: int
     skip: int
     limit: int
+
