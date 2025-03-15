@@ -1,7 +1,10 @@
 import uuid
 
 from .texts_models import Text
+
 from .texts_response_models import Section, Segment, RootText
+
+from .texts_response_models import Category
 
 
 def get_texts_by_id():
@@ -21,6 +24,7 @@ def get_texts_by_id():
         for i in range(1, 6)
     ]
     return root_text, versions
+
 
 async def get_contents_by_id(text_id: str, skip: int, limit: int):
     return [
@@ -152,6 +156,14 @@ async def get_versions_by_id(text_id: str, skip: int, limit: int):
             "priority": 1,
             "language": "sa",
             "type": "translation",
+
+async def get_texts_by_category(category: str, language: str, skip: int, limit: int):
+    return [
+        {
+            "id": "uuid.v4",
+            "title": "The Way of the Bodhisattva",
+            "language": "en",
+            "type": "root_text",
             "is_published": True,
             "created_date": "2021-09-01T00:00:00.000Z",
             "updated_date": "2021-09-01T00:00:00.000Z",

@@ -15,6 +15,7 @@ class TextResponse(BaseModel):
     source: TextModel
     versions: List[TextModel]
 
+
 class Segment(BaseModel):
     segment_id: str
     segment_number: int
@@ -58,3 +59,29 @@ class TextVersion(BaseModel):
 class TextVersionResponse(BaseModel):
     text: RootText
     versions: List[TextVersion]
+
+class Text(BaseModel):
+    id : str
+    title: str
+    language : str
+    type : str
+    is_published : bool
+    created_date: str
+    updated_date: str
+    published_date: str
+    published_by: str
+
+class Category(BaseModel):
+    id : str
+    title: str
+    description : str
+    slug: str
+    has_child: bool
+
+class TextsCategoryResponse(BaseModel):
+    category: Category
+    texts : List[Text]
+    total: int
+    skip: int
+    limit: int
+

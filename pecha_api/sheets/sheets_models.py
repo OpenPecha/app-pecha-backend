@@ -1,25 +1,49 @@
 import uuid
-from typing import Dict, List
+from typing import Dict, List, Union
 
-from pydantic import BaseModel,Field
+from beanie import PydanticObjectId, Document
+from pydantic import BaseModel, Field
 
+class Source(BaseModel):
+    position: int
+    type: str
+    text_ref: str
+    text: Dict[str, str]
 
-class Sheet(BaseModel):
-    id: uuid.UUID = Field(default_factory=uuid.uuid4)
-    titles: Dict[str, str] = Field(default_factory={})
-    summaries: Dict[str, str] = Field(default_factory={})
-    date: str
-    views: str
-    topics: List[Dict[str, str]] = Field(default_factory=[])
-    published_time: int
+class Text(BaseModel):
+    position: int
+    text: str
+
+class Media(BaseModel):
+    position: int
+    type : str
+    media_type: str
+    media: str
+
+class Like(BaseModel):
+    username: str
+    name: str
+
+class Sheet(Document):
+    id: PydanticObjectId = Field(default_factory=PydanticObjectId, alias="_id")
+    titles: str 
+    summaries: str
+    source: List[Union[Source, Text, Media]] = Field(default_factory=list)
     publisher_id: str
-    #topic_id
-    #created date
-    #modified date
-    #published date
-    #views
-    #likes
-
+    creation_date: str #UTC date with date and time
+    modified_date: str #UTC date with date and time
+    published_date: int #epoch time
+    views: int
+    likes: List[Like] = Field(default_factory=list)
+    collection: List[str] = Field(default_factory=list)
+    topic_id: List[str] = Field(default_factory=list)
+    sheetLanguage: str
     
 
+    class Settings:
+        name = "Sheets"  # Collection name in MongoDB
 
+    @classmethod
+    async def get_sheets_by_user_id(cls, user_id: str, skip: int, limit: int):
+        query = {"publisher_id": user_id}
+        return await cls.find(query).skip(skip).limit(limit).to_list()

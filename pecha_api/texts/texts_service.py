@@ -1,11 +1,17 @@
+
 from .texts_repository import get_texts_by_id, get_contents_by_id, get_text_by_id, get_versions_by_id
 from .texts_response_models import TableOfContentResponse, TextResponse, TextModel, TextVersionResponse, TextVersion
 
+from .texts_repository import get_texts_by_category
+from .texts_response_models import Category, TextsCategoryResponse, Text
+
 from pecha_api.config import get
-def get_text_by_term(language: str):
+
+async def get_texts_by_category_id(category: str, language: str, skip: int, limit: int):
+    return await get_texts_by_category(category=category, language=language, skip=skip, limit=limit)
+
+async def get_texts_without_category():
     root_text, text_versions = get_texts_by_id()
-    if language is None:
-        language = get("DEFAULT_LANGUAGE")
     return TextResponse(
         source=TextModel(
             id=str(root_text.id),
@@ -27,6 +33,22 @@ def get_text_by_term(language: str):
             for text in text_versions
         ]
     )
+  
+
+async def get_text_by_term_or_category(
+        category: str,
+        language: str,
+        skip: int,
+        limit: int
+    ):
+    if language is None:
+        language = get("DEFAULT_LANGUAGE")
+
+    if category is not None:
+        return await get_texts_by_category_id(category=category, language=language, skip=skip, limit=limit)
+    else:
+        return await get_texts_without_category()
+
 
 async def get_contents_by_text_id(text_id: str, skip:int, limit: int) -> TableOfContentResponse:
     list_of_sections = await get_contents_by_id(text_id=text_id, skip=skip, limit=limit)
