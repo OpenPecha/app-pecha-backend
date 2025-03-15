@@ -2,6 +2,7 @@ import uuid
 from typing import Dict, List
 
 from pydantic import BaseModel, Field
+from beanie import Document
 
 class Mapping(BaseModel):
     text_id: str
@@ -18,7 +19,7 @@ class Segment(Document):
 
 class Text(Document):
     id: uuid.UUID = Field(default_factory=uuid.uuid4)
-    titles: Dict[str, str] = Field(default_factory={})
+    titles: str
     language: str
     is_published: bool
     created_date: str

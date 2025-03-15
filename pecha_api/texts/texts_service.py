@@ -33,6 +33,6 @@ async def create_new_text(create_text_request: CreateTextRequest):
     new_text = await create_text(create_text_request=create_text_request)
     return new_text
 
-async def create_new_segment(text_id: str, create_segment_request: CreateSegmentRequest):
-    new_segment = await create_segment(text_id=text_id, create_segment_request=create_segment_request)
+async def create_new_segment(create_segment_request: CreateSegmentRequest):
+    new_segment = await create_segment(create_segment_request=create_segment_request)
     return new_segment

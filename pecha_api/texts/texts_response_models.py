@@ -1,4 +1,4 @@
-from typing import List
+from typing import List, Dict
 
 from pydantic import BaseModel
 from .texts_models import Mapping
@@ -16,16 +16,13 @@ class TextResponse(BaseModel):
     versions: List[TextModel]
 
 class CreateTextRequest(BaseModel):
-    titles: Dict[str, str]
+    titles: str
     language: str
-    is_published: bool
-    created_date: str
-    updated_date: str
-    published_date: str
     published_by: str
     type: str
     categories: List[str]
 
 class CreateSegmentRequest(BaseModel):
+    text_id: str
     content: str
     mapping: List[Mapping]

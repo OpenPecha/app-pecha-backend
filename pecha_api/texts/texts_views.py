@@ -20,8 +20,8 @@ def get_text(language: str | None):
 async def create_text(create_text_request: CreateTextRequest):
     return await create_new_text(create_text_request=create_text_request)
 
-@text_router.post("/{text_id}/segment", status_code=status.HTTP_201_CREATED)
-async def create_segment(text_id: str, create_segment_request: CreateSegmentRequest):
-    return await create_new_segment(text_id=text_id, create_segment_request=create_segment_request)
+@text_router.post("/segment", status_code=status.HTTP_201_CREATED)
+async def create_segment(create_segment_request: CreateSegmentRequest):
+    return await create_new_segment(create_segment_request=create_segment_request)
 
 

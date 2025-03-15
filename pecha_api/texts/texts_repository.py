@@ -3,6 +3,8 @@ import uuid
 from .texts_models import Text, Segment
 from .texts_response_models import CreateTextRequest, CreateSegmentRequest
 
+import datetime
+
 def get_texts_by_id():
     root_text = Text(
         id=uuid.uuid4(),
@@ -25,10 +27,10 @@ async def create_text(create_text_request: CreateTextRequest) -> Text:
     new_text = Text(
         titles=create_text_request.titles,
         language=create_text_request.language,
-        is_published=create_text_request.is_published,
-        created_date=create_text_request.created_date,
-        updated_date=create_text_request.updated_date,
-        published_date=create_text_request.published_date,
+        is_published=True,
+        created_date=str(datetime.datetime.utcnow()),
+        updated_date=str(datetime.datetime.utcnow()),
+        published_date=str(datetime.datetime.utcnow()),
         published_by=create_text_request.published_by,
         type=create_text_request.type,
         categories=create_text_request.categories
@@ -36,9 +38,9 @@ async def create_text(create_text_request: CreateTextRequest) -> Text:
     saved_text = await new_text.insert()
     return saved_text
 
-async def create_segment(text_id: str, create_segment_request: CreateSegmentRequest) -> Segment:
+async def create_segment(create_segment_request: CreateSegmentRequest) -> Segment:
     new_segment = Segment(
-        text_id=text_id,
+        text_id=create_segment_request.text_id,
         content=create_segment_request.content,
         mapping=create_segment_request.mapping
     )
