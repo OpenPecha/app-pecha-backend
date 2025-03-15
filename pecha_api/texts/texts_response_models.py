@@ -18,7 +18,7 @@ class TextResponse(BaseModel):
     source: TextModel
     versions: List[TextModel]
 
-class Segment(BaseModel):
+class SegmentResponse(BaseModel):
     segment_id: str
     segment_number: int
 
@@ -27,7 +27,7 @@ class Section(BaseModel):
     title: str
     section_number: int
     parent_id: Optional[str] = None
-    segments: List[Segment]
+    segments: List[SegmentResponse]
     sections: List["Section"]
     created_date: str
     updated_date: str
