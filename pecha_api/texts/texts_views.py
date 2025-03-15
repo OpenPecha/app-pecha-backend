@@ -35,7 +35,7 @@ async def get_contents(
 ):
     return await get_contents_by_text_id(text_id=text_id, skip=skip, limit=limit)
 
-@text_router.get("{text_id}/versions", status_code=status.HTTP_200_OK)
+@text_router.get("/{text_id}/versions", status_code=status.HTTP_200_OK)
 async def get_versions(
     text_id: str,
     skip: int = Query(default=0),
