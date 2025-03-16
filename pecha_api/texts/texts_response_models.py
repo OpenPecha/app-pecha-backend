@@ -9,10 +9,15 @@ from .texts_models import Mapping
 class TextModel(BaseModel):
     id: str
     title: str
-    summary: str
     language: str
-    source: str
-    parent_id: str
+    type: str
+    is_published: bool
+    created_date: str
+    updated_date: str
+    published_date: str
+    published_by: str
+    categories: List[str]
+    parent_id: Optional[str] = None
 
 class TextResponse(BaseModel):
     source: TextModel
@@ -63,8 +68,9 @@ class TextVersionResponse(BaseModel):
     versions: List[TextVersion]
 
 class CreateTextRequest(BaseModel):
-    titles: str
+    title: str
     language: str
+    parent_id: Optional[str] = None
     published_by: str
     type: str
     categories: List[str]

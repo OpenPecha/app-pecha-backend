@@ -1,9 +1,8 @@
-from fastapi import APIRouter, Query
-
-from fastapi.security import HTTPBearer
+from fastapi import APIRouter, Query, Depends
+from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from starlette import status
 
-from typing import Optional
+from typing import Optional, Annotated
 
 from .texts_service import get_contents_by_text_id, get_versions_by_text_id, create_new_text, create_new_segment, \
     get_text_by_term_or_category
@@ -27,8 +26,14 @@ async def get_text(
 
 
 @text_router.post("", status_code=status.HTTP_201_CREATED)
-async def create_text(create_text_request: CreateTextRequest):
-    return await create_new_text(create_text_request=create_text_request)
+async def create_text(
+    create_text_request: CreateTextRequest,
+    authentication_credential: Annotated[HTTPAuthorizationCredentials, Depends(oauth2_scheme)],
+    ):
+    return await create_new_text(
+        create_text_request=create_text_request,
+        token=authentication_credential.credentials
+        )
 
 
 @text_router.get("/{text_id}/contents", status_code=status.HTTP_200_OK)
