@@ -74,7 +74,6 @@ class CreateTextRequest(BaseModel):
     type: str
     categories: List[str]
 
-
 class Text(BaseModel):
     id : str
     title: str
