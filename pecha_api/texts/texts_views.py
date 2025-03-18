@@ -4,9 +4,8 @@ from starlette import status
 
 from typing import Optional, Annotated
 
-from .texts_service import get_contents_by_text_id, get_versions_by_text_id, create_new_text, create_new_segment, \
-    get_text_by_term_or_category
-from .texts_response_models import CreateTextRequest, CreateSegmentRequest
+from .texts_service import get_contents_by_text_id, get_versions_by_text_id, create_new_text, get_text_by_term_or_category
+from .texts_response_models import CreateTextRequest
 
 oauth2_scheme = HTTPBearer()
 text_router = APIRouter(
@@ -53,7 +52,3 @@ async def get_versions(
 ):
     return await get_versions_by_text_id(text_id=text_id, skip=skip, limit=limit)
 
-
-@text_router.post("/segments", status_code=status.HTTP_201_CREATED)
-async def create_segment(create_segment_request: CreateSegmentRequest):
-    return await create_new_segment(create_segment_request=create_segment_request)

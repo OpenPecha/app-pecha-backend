@@ -11,6 +11,7 @@ from pecha_api.terms import terms_views
 from pecha_api.texts import texts_views
 from pecha_api.topics import topics_views
 from pecha_api.users import users_views
+from pecha_api.texts.segments import segments_views
 import uvicorn
 
 
@@ -25,6 +26,7 @@ api.include_router(auth_views.auth_router)
 api.include_router(sheets_views.sheets_router)
 api.include_router(terms_views.terms_router)
 api.include_router(texts_views.text_router)
+api.include_router(segments_views.segment_router)
 api.include_router(topics_views.topics_router)
 api.include_router(users_views.user_router)
 
