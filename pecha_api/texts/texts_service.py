@@ -25,32 +25,27 @@ async def get_texts_by_category_id(category: str, language: str, skip: int, limi
     ]
     return text_list
 
-async def get_texts_without_category():
-    root_text, text_versions = get_texts_by_id()
-    return TextResponse(
-        source=TextModel(
-            id=str(root_text.id),
-            title=root_text.titles[language],
-            summary=root_text.summaries[language],
-            language=root_text.default_language,
-            source='',
-            parent_id=''
-        ),
-        versions=[
-            TextModel(
-                id=str(text.id),
-                title=text.titles[text.default_language],
-                summary=text.summaries[text.default_language],
-                language=text.default_language,
-                source='',
-                parent_id=str(root_text.id)
-            )
-            for text in text_versions
-        ]
+async def get_texts_without_category(text_id: str) -> TextModel:
+    text = await get_texts_by_id(text_id=text_id)
+    if text is None:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Text not found")
+    return TextModel(
+        id=str(text.id),
+        title=text.title,
+        language=text.language,
+        parent_id=text.parent_id,
+        type=text.type,
+        is_published=text.is_published,
+        created_date=text.created_date,
+        updated_date=text.updated_date,
+        published_date=text.published_date,
+        published_by=text.published_by,
+        categories=text.categories
     )
   
 
 async def get_text_by_term_or_category(
+        text_id: str,
         category: str,
         language: str,
         skip: int,
@@ -76,7 +71,7 @@ async def get_text_by_term_or_category(
             limit=limit
         )
     else:
-        return await get_texts_without_category()
+        return await get_texts_without_category(text_id=text_id)
 
 async def get_contents_by_text_id(text_id: str, skip:int, limit: int) -> TableOfContentResponse:
     list_of_sections = await get_contents_by_id(text_id=text_id, skip=skip, limit=limit)

@@ -8,6 +8,7 @@ from starlette import status
 from time import time
 import datetime
 
+from .texts.texts_repository import get_texts_by_id
 
 number_language = {
     "bo": {
@@ -123,12 +124,11 @@ def milliseconds_to_datetime(milliseconds: int) -> str:
 def get_current_time_in_millisecond():
     return int(time() * 1000)
 
-# async def get_topics_list_from_ids(topic_id: List[str]) -> List[str]:
-#     topic_list = []
-#     for topic_id in topic_id:
-#         topic = await get_topic_by_id(topic_id)
-#         topic_list.append(topic.titles)
-#     return topic_list
+async def is_root_text(text_id: str) -> bool:
+    get_text = await get_texts_by_id(text_id=text_id)
+    if get_text is None:
+        return False
+    return get_text.type == "root_text"
 
 def get_value_from_dict(values: dict[str, str], language: str):
     value = "" if not isinstance(values, dict) or not values else values.get(language, "")

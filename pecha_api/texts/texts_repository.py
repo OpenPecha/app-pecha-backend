@@ -1,4 +1,6 @@
 import uuid
+import logging
+from beanie.exceptions import CollectionWasNotInitialized
 
 from .texts_response_models import Section, SegmentResponse, RootText, CreateTextRequest
 from .texts_models import Text
@@ -6,23 +8,14 @@ from .texts_models import Text
 import datetime
 
 
-def get_texts_by_id():
-    root_text = Text(
-        id=uuid.uuid4(),
-        titles={"en": "Root Text title", "bo": "Root གྲྭ་ཚན"},
-        summaries={"en": "Root Summaries", "bo": "Root སྙིང་བསྡུས་"},
-        default_language="bo"
-    )
-    versions = [
-        Text(
-            id=uuid.uuid4(),
-            titles={"en": f"Version Topic {i}", "bo": f"Version གྲྭ་ཚན {i}"},
-            summaries={"en": f"Version Summaries {i}", "bo": f"Version སྙིང་བསྡུས་ {i}"},
-            default_language="bo"
-        )
-        for i in range(1, 6)
-    ]
-    return root_text, versions
+async def get_texts_by_id(text_id: str):
+    try:
+        text = await Text.get_text(text_id=text_id)
+        print(text)
+        return text
+    except CollectionWasNotInitialized as e:
+        logging.debug(e)
+        return []
 
 async def get_texts_by_category(category: str, language: str, skip: int, limit: int):
     return [

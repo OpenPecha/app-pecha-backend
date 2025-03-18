@@ -1,4 +1,5 @@
 import uuid
+from uuid import UUID
 from typing import Dict, List, Optional
 
 from pydantic import Field
@@ -19,3 +20,12 @@ class Text(Document):
 
     class Settings:
         collection = "texts"
+    
+    @classmethod
+    async def get_text(cls, text_id: str):
+        try:
+            text_uuid = UUID(text_id)
+        except ValueError:
+            return None
+        
+        return await cls.find_one(cls.id == text_uuid)
