@@ -1,7 +1,7 @@
 import uuid
 
-from .texts_response_models import Section, SegmentResponse, RootText, CreateTextRequest, CreateSegmentRequest
-from .texts_models import Text, Segment
+from .texts_response_models import Section, SegmentResponse, RootText, CreateTextRequest
+from .texts_models import Text
 
 import datetime
 
@@ -228,7 +228,7 @@ async def get_text_by_id(text_id: str):
 
 async def create_text(create_text_request: CreateTextRequest) -> Text:
     new_text = Text(
-        title=create_text_request.titles,
+        title=create_text_request.title,
         language=create_text_request.language,
         parent_id=create_text_request.parent_id,
         is_published=True,
@@ -241,15 +241,4 @@ async def create_text(create_text_request: CreateTextRequest) -> Text:
     )
     saved_text = await new_text.insert()
     return saved_text
-
-async def create_segment(create_segment_request: CreateSegmentRequest) -> Segment:
-    new_segment = Segment(
-        text_id=create_segment_request.text_id,
-        content=create_segment_request.content,
-        mapping=create_segment_request.mapping
-    )
-    saved_segment = await new_segment.insert()
-    return saved_segment
-
-
 

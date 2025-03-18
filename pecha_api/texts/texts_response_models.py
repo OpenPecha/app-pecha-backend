@@ -4,7 +4,6 @@ from typing import List, Optional
 from typing import Dict
 
 from pydantic import BaseModel
-from .texts_models import Mapping
 
 class TextModel(BaseModel):
     id: str
@@ -74,11 +73,6 @@ class CreateTextRequest(BaseModel):
     published_by: str
     type: str
     categories: List[str]
-
-class CreateSegmentRequest(BaseModel):
-    text_id: str
-    content: str
-    mapping: List[Mapping]
 
 
 class Text(BaseModel):
