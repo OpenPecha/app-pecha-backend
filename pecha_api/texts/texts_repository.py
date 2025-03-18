@@ -228,8 +228,9 @@ async def get_text_by_id(text_id: str):
 
 async def create_text(create_text_request: CreateTextRequest) -> Text:
     new_text = Text(
-        titles=create_text_request.titles,
+        title=create_text_request.titles,
         language=create_text_request.language,
+        parent_id=create_text_request.parent_id,
         is_published=True,
         created_date=str(datetime.datetime.utcnow()),
         updated_date=str(datetime.datetime.utcnow()),

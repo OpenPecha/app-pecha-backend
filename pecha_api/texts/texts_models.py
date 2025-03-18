@@ -1,5 +1,5 @@
 import uuid
-from typing import Dict, List
+from typing import Dict, List, Optional
 
 from pydantic import BaseModel, Field
 from beanie import Document
@@ -19,8 +19,9 @@ class Segment(Document):
 
 class Text(Document):
     id: uuid.UUID = Field(default_factory=uuid.uuid4)
-    titles: str
+    title: str
     language: str
+    parent_id: Optional[str] = None
     is_published: bool
     created_date: str
     updated_date: str

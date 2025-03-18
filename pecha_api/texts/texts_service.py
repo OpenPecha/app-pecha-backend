@@ -1,7 +1,9 @@
+from fastapi import HTTPException
+from starlette import status
 
 from .texts_repository import get_texts_by_id, get_contents_by_id, get_text_by_id, get_versions_by_id, get_texts_by_category, get_versions_by_id, create_text, create_segment
 from .texts_response_models import TableOfContentResponse, TextResponse, TextModel, TextVersionResponse, TextVersion, Category, TextsCategoryResponse, Text, CreateTextRequest, CreateSegmentRequest
-
+from ..users.users_service import verify_admin_access
 
 from pecha_api.config import get
 
@@ -108,9 +110,28 @@ async def get_versions_by_text_id(text_id: str, skip: int, limit: int) -> TextVe
         versions=list_of_version
     )
 
-async def create_new_text(create_text_request: CreateTextRequest):
-    new_text = await create_text(create_text_request=create_text_request)
-    return new_text
+async def create_new_text(
+    create_text_request: CreateTextRequest,
+    token: str
+    ) -> TextModel:
+    is_admin = verify_admin_access(token=token)
+    if is_admin:
+        new_text = await create_text(create_text_request=create_text_request)
+        return TextModel(
+            id=new_text.id,
+            title=new_text.title,
+            language=new_text.language,
+            type=new_text.type,
+            is_published=new_text.is_published,
+            created_date=new_text.created_date,
+            updated_date=new_text.updated_date,
+            published_date=new_text.published_date,
+            published_by=new_text.published_by,
+            categories=new_text.categories,
+            parent_id=new_text.parent_id
+        )
+    else:
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Admin access required")
 
 async def create_new_segment(create_segment_request: CreateSegmentRequest):
     new_segment = await create_segment(create_segment_request=create_segment_request)
