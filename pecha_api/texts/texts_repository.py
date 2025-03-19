@@ -11,7 +11,6 @@ import datetime
 async def get_texts_by_id(text_id: str):
     try:
         text = await Text.get_text(text_id=text_id)
-        print(text)
         return text
     except CollectionWasNotInitialized as e:
         logging.debug(e)
