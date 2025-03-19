@@ -16,3 +16,11 @@ class Segment(Document):
 
     class Settings:
         collection = "segments"
+    
+    @classmethod
+    async def get_segment_by_id(cls, segment_id: str):
+        return await cls.find_one(cls.id == segment_id)
+    
+    @classmethod
+    async def get_segment_by_list_of_id(cls, segment_ids: List[str]):
+        return await cls.find({"_id": {"$in": segment_ids}}).to_list(length=len(segment_ids))
