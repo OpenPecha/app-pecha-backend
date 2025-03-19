@@ -1,9 +1,15 @@
 
 from typing import List, Optional
 
-from typing import Dict
-
 from pydantic import BaseModel
+
+class CreateTextRequest(BaseModel):
+    title: str
+    language: str
+    parent_id: Optional[str] = None
+    published_by: str
+    type: str
+    categories: List[str]
 
 class TextModel(BaseModel):
     id: str
@@ -18,10 +24,9 @@ class TextModel(BaseModel):
     categories: List[str]
     parent_id: Optional[str] = None
 
-class TextResponse(BaseModel):
-    source: TextModel
-    versions: List[TextModel]
 
+
+# Text TOC Response Models
 class SegmentResponse(BaseModel):
     segment_id: str
     segment_number: int
@@ -31,17 +36,19 @@ class Section(BaseModel):
     title: str
     section_number: int
     parent_id: Optional[str] = None
-    segments: List[SegmentResponse]
+    segments: List[SegmentResponse] = []
     sections: List["Section"]
     created_date: str
     updated_date: str
     published_date: str
 
 class TableOfContentResponse(BaseModel):
-    id : str
+    id: str
     text_id: str
-    segments: List[Section]
+    contents: List[Section]
 
+
+# Text Version Response Models 
 class RootText(BaseModel):
     id: str
     title: str
@@ -66,14 +73,7 @@ class TextVersionResponse(BaseModel):
     text: RootText
     versions: List[TextVersion]
 
-class CreateTextRequest(BaseModel):
-    title: str
-    language: str
-    parent_id: Optional[str] = None
-    published_by: str
-    type: str
-    categories: List[str]
-
+# Texts Category Response Models
 class Text(BaseModel):
     id : str
     title: str
