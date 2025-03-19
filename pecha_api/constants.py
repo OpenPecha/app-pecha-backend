@@ -124,11 +124,11 @@ def milliseconds_to_datetime(milliseconds: int) -> str:
 def get_current_time_in_millisecond():
     return int(time() * 1000)
 
-async def is_root_text(text_id: str) -> bool:
-    get_text = await get_texts_by_id(text_id=text_id)
-    if get_text is None:
+async def valid_text(text_id: str) -> bool:
+    text_detail = await get_texts_by_id(text_id=text_id)
+    if text_detail is None:
         return False
-    return get_text.type == "root_text"
+    return True
 
 def get_value_from_dict(values: dict[str, str], language: str):
     value = "" if not isinstance(values, dict) or not values else values.get(language, "")
