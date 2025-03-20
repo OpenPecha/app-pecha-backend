@@ -95,6 +95,7 @@ async def replace_segments_id_with_segment_details_in_section(section: Optional[
 
 
 async def get_mapped_table_of_contents_segments(table_of_contents: List[Section]):
+    return table_of_contents
     await asyncio.gather(*[replace_segments_id_with_segment_details_in_section(section) for section in table_of_contents])
     return table_of_contents
 

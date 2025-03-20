@@ -40,7 +40,7 @@ class Section(BaseModel):
     section_number: int
     parent_id: Optional[str] = None
     segments: List[TableOfContentSegmentResponse] = []
-    sections: List["Section"] = []
+    sections: Optional[List["Section"]] = None
     created_date: str
     updated_date: str
     published_date: str

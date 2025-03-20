@@ -34,7 +34,6 @@ async def test_create_new_segment():
             create_segment_request=create_segment_request,
             token="admin"
         )
-        print("HERE -> ", response)
         assert response == [
             SegmentResponse(
                 id="efb26a06-f373-450b-ba57-e7a8d4dd5b64",
