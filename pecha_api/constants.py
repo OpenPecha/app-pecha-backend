@@ -1,14 +1,19 @@
+
 import logging
 from typing import Optional, List
+import asyncio
 
 from beanie import PydanticObjectId
 from bson.errors import InvalidId
 from fastapi import HTTPException
 from starlette import status
 from time import time
+import uuid
 import datetime
 
 from .texts.texts_repository import get_texts_by_id
+from .texts.texts_response_models import Section
+from .texts.segments.segments_repository import get_segments_by_list_of_id
 
 number_language = {
     "bo": {
@@ -74,6 +79,24 @@ DAY_IN_SECONDS = 86400
 WEEK_IN_SECONDS = 604800
 MONTH_IN_SECONDS = 2592000
 YEAR_IN_SECONDS = 31536000
+
+async def replace_segments_id_with_segment_details_in_section(section: Optional[Section] = None) -> None:
+    if section and section.segments:
+        list_segment_id = [segment.segment_id for segment in section.segments if segment.segment_id]
+        if list_segment_id:
+            segments = await get_segments_by_list_of_id(segment_ids=list_segment_id)
+            for segment in section.segments:
+                segment_detail = segments.get(segment.segment_id)
+                if segment_detail:
+                    segment.content = segment_detail.content
+                    segment.mapping = segment_detail.mapping
+    if section.sections:
+        await asyncio.gather(*[replace_segments_id_with_segment_details_in_section(section=sub_section) for sub_section in section.sections])
+
+
+async def get_mapped_table_of_contents_segments(table_of_contents: List[Section]):
+    await asyncio.gather(*[replace_segments_id_with_segment_details_in_section(section) for section in table_of_contents])
+    return table_of_contents
 
 
 def get_word(word: str, language: str):

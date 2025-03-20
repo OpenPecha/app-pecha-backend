@@ -2,6 +2,7 @@
 from typing import List, Optional
 
 from pydantic import BaseModel
+from .segments.segments_models import Mapping
 
 class CreateTextRequest(BaseModel):
     title: str
@@ -27,20 +28,23 @@ class TextModel(BaseModel):
 
 
 # Text TOC Response Models
-class SegmentResponse(BaseModel):
+class TableOfContentSegmentResponse(BaseModel):
     segment_id: str
     segment_number: int
+    content: Optional[str] = None
+    mapping: Optional[Mapping] = None
 
 class Section(BaseModel):
     id: str
     title: str
     section_number: int
     parent_id: Optional[str] = None
-    segments: List[SegmentResponse] = []
-    sections: List["Section"]
+    segments: List[TableOfContentSegmentResponse] = []
+    sections: List["Section"] = []
     created_date: str
     updated_date: str
     published_date: str
+
 
 class TableOfContentResponse(BaseModel):
     id: str

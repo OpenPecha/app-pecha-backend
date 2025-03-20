@@ -1,10 +1,11 @@
 from fastapi import HTTPException
 from starlette import status
 
-from .texts_repository import get_texts_by_id, get_contents_by_id, get_text_by_id, get_versions_by_id, get_texts_by_category, get_versions_by_id, create_text
+from .texts_repository import get_contents_by_id_with_segments, get_texts_by_id, get_contents_by_id, get_text_by_id, get_versions_by_id, get_texts_by_category, get_versions_by_id, create_text
 from .texts_response_models import TableOfContentResponse, TextModel, TextVersionResponse, TextVersion, Category, TextsCategoryResponse, Text, CreateTextRequest
 from ..users.users_service import verify_admin_access
 
+from ..constants import get_mapped_table_of_contents_segments
 from pecha_api.config import get
 
 async def get_texts_by_category_id(category: str, language: str, skip: int, limit: int):
@@ -81,6 +82,15 @@ async def get_contents_by_text_id(text_id: str, skip:int, limit: int) -> TableOf
         contents=table_of_contents
     )
 
+async def get_contents_by_text_id_with_detail(text_id: str, content_id: str, skip: int, limit: int) -> TableOfContentResponse:
+    table_of_contents = await get_contents_by_id_with_segments(text_id=text_id, content_id=content_id, skip=skip, limit=limit)
+    table_of_contents_with_details = await get_mapped_table_of_contents_segments(table_of_contents=table_of_contents)
+    return TableOfContentResponse(
+        id="123",
+        text_id=text_id,
+        contents=table_of_contents_with_details
+    )
+
 async def get_versions_by_text_id(text_id: str, skip: int, limit: int) -> TextVersionResponse:
     root_text = await get_text_by_id(text_id=text_id)
     versions = await get_versions_by_id(text_id=text_id, skip=skip, limit=limit)
@@ -104,6 +114,7 @@ async def get_versions_by_text_id(text_id: str, skip: int, limit: int) -> TextVe
         text=root_text,
         versions=list_of_version
     )
+
 
 async def create_new_text(
     create_text_request: CreateTextRequest,

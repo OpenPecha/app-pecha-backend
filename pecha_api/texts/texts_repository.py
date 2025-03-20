@@ -2,7 +2,7 @@ import uuid
 import logging
 from beanie.exceptions import CollectionWasNotInitialized
 
-from .texts_response_models import Section, SegmentResponse, RootText, CreateTextRequest
+from .texts_response_models import Section, TableOfContentSegmentResponse, RootText, CreateTextRequest
 from .texts_models import Text
 
 import datetime
@@ -146,6 +146,50 @@ async def get_contents_by_id(text_id: str, skip: int, limit: int):
                             sections=[]
                         )
                     ]
+                )
+            ],
+            created_date="2021-09-01T00:00:00.000Z",
+            updated_date="2021-09-01T00:00:00.000Z",
+            published_date="2021-09-01T00:00:00.000Z"
+        )
+    ]
+async def get_contents_by_id_with_segments(text_id: str, content_id: str, skip: int, limit: int):
+    return [
+        Section(
+            id="d19338e4-da52-4ea2-800e-3414eac8167e",
+            title="A brief presentation of the ground path and result",
+            section_number=1,
+            parent_id=None,
+            segments=[
+                TableOfContentSegmentResponse(
+                    segment_id="52eb0072-51de-4a42-9d49-580b729d7658",
+                    segment_number=1
+                ),
+                TableOfContentSegmentResponse(
+                    segment_id="202121f5-0d28-41e9-bff1-83ef53bfbad1",
+                    segment_number=2
+                )
+            ],
+            sections=[
+                Section(
+                    id="39965c2a-e89e-4834-83bb-e3a294a8f705",
+                    title="",
+                    section_number=1,
+                    parent_id="d19338e4-da52-4ea2-800e-3414eac8167e",
+                    created_date="2021-09-01T00:00:00.000Z",
+                    updated_date="2021-09-01T00:00:00.000Z",
+                    published_date="2021-09-01T00:00:00.000Z",
+                    segments=[
+                        TableOfContentSegmentResponse(
+                            segment_id="25ed983f-421f-4492-8e38-c502d3260bf5", #<-actual segment content
+                            segment_number=1
+                        ),
+                        TableOfContentSegmentResponse(
+                            segment_id="377bbb75-8013-44a0-95b2-98e674b80bf8", #<-actual segment content
+                            segment_number=2
+                        )
+                    ],
+                    sections=[]
                 )
             ],
             created_date="2021-09-01T00:00:00.000Z",
