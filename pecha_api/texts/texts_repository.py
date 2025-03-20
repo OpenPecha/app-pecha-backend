@@ -104,18 +104,6 @@ async def get_contents_by_id(text_id: str, skip: int, limit: int):
             title="A brief presentation of the ground path and result",
             section_number=1,
             parent_id=None,
-            sections=[
-                Section(
-                    id="39965c2a-e89e-4834-83bb-e3a294a8f705",
-                    title="",
-                    section_number=1,
-                    parent_id="d19338e4-da52-4ea2-800e-3414eac8167e",
-                    created_date="2021-09-01T00:00:00.000Z",
-                    updated_date="2021-09-01T00:00:00.000Z",
-                    published_date="2021-09-01T00:00:00.000Z",
-                    sections=[]
-                )
-            ],
             created_date="2021-09-01T00:00:00.000Z",
             updated_date="2021-09-01T00:00:00.000Z",
             published_date="2021-09-01T00:00:00.000Z"
@@ -142,8 +130,7 @@ async def get_contents_by_id(text_id: str, skip: int, limit: int):
                             parent_id="0971f07a-8491-4cfe-9720-dac1acb9824d",
                             created_date="2021-09-01T00:00:00.000Z",
                             updated_date="2021-09-01T00:00:00.000Z",
-                            published_date="2021-09-01T00:00:00.000Z",
-                            sections=[]
+                            published_date="2021-09-01T00:00:00.000Z"
                         )
                     ]
                 )
@@ -163,33 +150,80 @@ async def get_contents_by_id_with_segments(text_id: str, content_id: str, skip: 
             segments=[
                 TableOfContentSegmentResponse(
                     segment_id="52eb0072-51de-4a42-9d49-580b729d7658",
-                    segment_number=1
+                    segment_number=1,
+                    content="༄༅༅།།རྒྱ་གར་སྐད་དུ། བོ་<sup class=\"footnote-marker\">*</sup><i class=\"footnote\">བོ་] Q བོད་</i>དྷི་སཏྭ་ཙརྱ་<sup class=\"footnote-marker\">*</sup><i class=\"footnote\">སཏྭ་ཙརྱ་] I སཏྭ་ཙཪྻ་ N སཏྭ་ཙརྱྭ་ Q སཏྭ་ཙམླཻ་; The reading སཏྭ་ཙརྱ་ is supported by both GDR and TS commentaries which gloss ཙརྱ་ as སྤྱོད་པ་</i>ཨ་བ་ཏཱ་<sup class=\"footnote-marker\">*</sup><i class=\"footnote\">ཏཱ་] C ཏ་; The long vowel ཏཱ་ is confirmed by KP and TS who consistently use the form ཨ་བ་ཏ་ར་ in their commentaries</i>ར།",
                 ),
                 TableOfContentSegmentResponse(
                     segment_id="202121f5-0d28-41e9-bff1-83ef53bfbad1",
-                    segment_number=2
+                    segment_number=2,
+                    content="བོད་སྐད་དུ། བྱང་ཆུབ་སེམས་དཔའི་སྤྱོད་པ་ལ་འཇུག་པ།"
+                )
+            ],
+            created_date="2021-09-01T00:00:00.000Z",
+            updated_date="2021-09-01T00:00:00.000Z",
+            published_date="2021-09-01T00:00:00.000Z"
+        ),
+        Section(
+            id="b48dad38-da6d-45c3-ad12-97bca590769c",
+            title="The detailed explanation of the divisions of reality",
+            section_number=2,
+            parent_id=None,
+            segments=[
+                TableOfContentSegmentResponse(
+                    segment_id="52eb0072-51de-4a42-9d49-580b729d7658",
+                    segment_number=1,
+                    content="༄༅༅།།རྒྱ་གར་སྐད་དུ། བོ་<sup class=\"footnote-marker\">*</sup><i class=\"footnote\">བོ་] Q བོད་</i>དྷི་སཏྭ་ཙརྱ་<sup class=\"footnote-marker\">*</sup><i class=\"footnote\">སཏྭ་ཙརྱ་] I སཏྭ་ཙཪྻ་ N སཏྭ་ཙརྱྭ་ Q སཏྭ་ཙམླཻ་; The reading སཏྭ་ཙརྱ་ is supported by both GDR and TS commentaries which gloss ཙརྱ་ as སྤྱོད་པ་</i>ཨ་བ་ཏཱ་<sup class=\"footnote-marker\">*</sup><i class=\"footnote\">ཏཱ་] C ཏ་; The long vowel ཏཱ་ is confirmed by KP and TS who consistently use the form ཨ་བ་ཏ་ར་ in their commentaries</i>ར།",
+                ),
+                TableOfContentSegmentResponse(
+                    segment_id="202121f5-0d28-41e9-bff1-83ef53bfbad1",
+                    segment_number=2,
+                    content="བོད་སྐད་དུ། བྱང་ཆུབ་སེམས་དཔའི་སྤྱོད་པ་ལ་འཇུག་པ།"
                 )
             ],
             sections=[
                 Section(
-                    id="39965c2a-e89e-4834-83bb-e3a294a8f705",
-                    title="",
+                    id="0971f07a-8491-4cfe-9720-dac1acb9824d",
+                    title="Basis",
                     section_number=1,
-                    parent_id="d19338e4-da52-4ea2-800e-3414eac8167e",
+                    parent_id="b48dad38-da6d-45c3-ad12-97bca590769c",
+                    segments=[
+                        TableOfContentSegmentResponse(
+                            segment_id="52eb0072-51de-4a42-9d49-580b729d7658",
+                            segment_number=1,
+                            content="༄༅༅།།རྒྱ་གར་སྐད་དུ། བོ་<sup class=\"footnote-marker\">*</sup><i class=\"footnote\">བོ་] Q བོད་</i>དྷི་སཏྭ་ཙརྱ་<sup class=\"footnote-marker\">*</sup><i class=\"footnote\">སཏྭ་ཙརྱ་] I སཏྭ་ཙཪྻ་ N སཏྭ་ཙརྱྭ་ Q སཏྭ་ཙམླཻ་; The reading སཏྭ་ཙརྱ་ is supported by both GDR and TS commentaries which gloss ཙརྱ་ as སྤྱོད་པ་</i>ཨ་བ་ཏཱ་<sup class=\"footnote-marker\">*</sup><i class=\"footnote\">ཏཱ་] C ཏ་; The long vowel ཏཱ་ is confirmed by KP and TS who consistently use the form ཨ་བ་ཏ་ར་ in their commentaries</i>ར།",
+                        ),
+                        TableOfContentSegmentResponse(
+                            segment_id="202121f5-0d28-41e9-bff1-83ef53bfbad1",
+                            segment_number=2,
+                            content="བོད་སྐད་དུ། བྱང་ཆུབ་སེམས་དཔའི་སྤྱོད་པ་ལ་འཇུག་པ།"
+                        )
+                    ],
                     created_date="2021-09-01T00:00:00.000Z",
                     updated_date="2021-09-01T00:00:00.000Z",
                     published_date="2021-09-01T00:00:00.000Z",
-                    segments=[
-                        TableOfContentSegmentResponse(
-                            segment_id="25ed983f-421f-4492-8e38-c502d3260bf5", #<-actual segment content
-                            segment_number=1
-                        ),
-                        TableOfContentSegmentResponse(
-                            segment_id="377bbb75-8013-44a0-95b2-98e674b80bf8", #<-actual segment content
-                            segment_number=2
+                    sections=[
+                        Section(
+                            id="0971f07a-8491-4cfe-9720-dac1acb9824d",
+                            title="The extensive explanation of the abiding nature of the ground",
+                            section_number=1,
+                            parent_id="0971f07a-8491-4cfe-9720-dac1acb9824d",
+                            segments=[
+                                TableOfContentSegmentResponse(
+                                    segment_id="52eb0072-51de-4a42-9d49-580b729d7658",
+                                    segment_number=1,
+                                    content="༄༅༅།།རྒྱ་གར་སྐད་དུ། བོ་<sup class=\"footnote-marker\">*</sup><i class=\"footnote\">བོ་] Q བོད་</i>དྷི་སཏྭ་ཙརྱ་<sup class=\"footnote-marker\">*</sup><i class=\"footnote\">སཏྭ་ཙརྱ་] I སཏྭ་ཙཪྻ་ N སཏྭ་ཙརྱྭ་ Q སཏྭ་ཙམླཻ་; The reading སཏྭ་ཙརྱ་ is supported by both GDR and TS commentaries which gloss ཙརྱ་ as སྤྱོད་པ་</i>ཨ་བ་ཏཱ་<sup class=\"footnote-marker\">*</sup><i class=\"footnote\">ཏཱ་] C ཏ་; The long vowel ཏཱ་ is confirmed by KP and TS who consistently use the form ཨ་བ་ཏ་ར་ in their commentaries</i>ར།",
+                                ),
+                                TableOfContentSegmentResponse(
+                                    segment_id="202121f5-0d28-41e9-bff1-83ef53bfbad1",
+                                    segment_number=2,
+                                    content="བོད་སྐད་དུ། བྱང་ཆུབ་སེམས་དཔའི་སྤྱོད་པ་ལ་འཇུག་པ།"
+                                )
+                            ],
+                            created_date="2021-09-01T00:00:00.000Z",
+                            updated_date="2021-09-01T00:00:00.000Z",
+                            published_date="2021-09-01T00:00:00.000Z"
                         )
-                    ],
-                    sections=[]
+                    ]
                 )
             ],
             created_date="2021-09-01T00:00:00.000Z",
