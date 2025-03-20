@@ -8,6 +8,7 @@ from bson.errors import InvalidId
 from fastapi import HTTPException
 from starlette import status
 from time import time
+import uuid
 import datetime
 
 from .texts.texts_repository import get_texts_by_id

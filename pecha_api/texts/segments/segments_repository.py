@@ -1,5 +1,5 @@
 from .segments_models import Segment
-from .segments_response_models import CreateSegmentRequest
+from .segments_response_models import CreateSegmentRequest, SegmentResponse
 import logging
 from beanie.exceptions import CollectionWasNotInitialized
 from typing import List, Dict
@@ -12,12 +12,17 @@ async def get_segments_by_id(segment_id: str) -> Segment:
         logging.debug(e)
         return None
 
-async def get_segments_by_list_of_id(segment_ids: List[str]) -> Dict[str, Segment]:
+async def get_segments_by_list_of_id(segment_ids: List[str]) -> Dict[str, SegmentResponse]:
     try:
         if not segment_ids:
             return {}
-        list_of_segments = await Segment.get_segment_by_list_of_id(segment_ids=segment_ids)
-        return {segment.id: segment for segment in list_of_segments}
+        list_of_segments_detail = await Segment.get_segment_by_list_of_id(segment_ids=segment_ids)
+        return {str(segment.id): SegmentResponse(
+            id=str(segment.id),
+            text_id=segment.text_id,
+            content=segment.content,
+            mapping=segment.mapping
+        ) for segment in list_of_segments_detail}
     except CollectionWasNotInitialized as e:
         logging.debug(e)
         return {}

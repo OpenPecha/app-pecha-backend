@@ -153,7 +153,7 @@ async def get_contents_by_id(text_id: str, skip: int, limit: int):
             published_date="2021-09-01T00:00:00.000Z"
         )
     ]
-async def get_contents_by_id_with_segments(text_id: str, skip: int, limit: int):
+async def get_contents_by_id_with_segments(text_id: str, content_id: str, skip: int, limit: int):
     return [
         Section(
             id="d19338e4-da52-4ea2-800e-3414eac8167e",
@@ -162,11 +162,11 @@ async def get_contents_by_id_with_segments(text_id: str, skip: int, limit: int):
             parent_id=None,
             segments=[
                 TableOfContentSegmentResponse(
-                    segment_id="31fe9ea0-f032-46e7-86c9-f07ae70b5b35",
+                    segment_id="52eb0072-51de-4a42-9d49-580b729d7658",
                     segment_number=1
                 ),
                 TableOfContentSegmentResponse(
-                    segment_id="41e438b8-2286-458b-a1b2-860553ce0f54",
+                    segment_id="202121f5-0d28-41e9-bff1-83ef53bfbad1",
                     segment_number=2
                 )
             ],
@@ -181,11 +181,11 @@ async def get_contents_by_id_with_segments(text_id: str, skip: int, limit: int):
                     published_date="2021-09-01T00:00:00.000Z",
                     segments=[
                         TableOfContentSegmentResponse(
-                            segment_id="8bac2031-e8c6-4c5b-981f-ed17dbc755fb", #<-actual segment content
+                            segment_id="25ed983f-421f-4492-8e38-c502d3260bf5", #<-actual segment content
                             segment_number=1
                         ),
                         TableOfContentSegmentResponse(
-                            segment_id="b3dc7cec-0e18-4238-8184-9b59bc6b114d", #<-actual segment content
+                            segment_id="377bbb75-8013-44a0-95b2-98e674b80bf8", #<-actual segment content
                             segment_number=2
                         )
                     ],
