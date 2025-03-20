@@ -2,7 +2,7 @@ from fastapi import HTTPException
 from starlette import status
 
 from .texts_repository import get_texts_by_id, get_contents_by_id, get_text_by_id, get_versions_by_id, get_texts_by_category, get_versions_by_id, create_text
-from .texts_response_models import TableOfContentResponse, TextResponse, TextModel, TextVersionResponse, TextVersion, Category, TextsCategoryResponse, Text, CreateTextRequest
+from .texts_response_models import TableOfContentResponse, TextModel, TextVersionResponse, TextVersion, Category, TextsCategoryResponse, Text, CreateTextRequest
 from ..users.users_service import verify_admin_access
 
 from pecha_api.config import get
@@ -74,11 +74,11 @@ async def get_text_by_term_or_category(
         return await get_texts_without_category(text_id=text_id)
 
 async def get_contents_by_text_id(text_id: str, skip:int, limit: int) -> TableOfContentResponse:
-    list_of_sections = await get_contents_by_id(text_id=text_id, skip=skip, limit=limit)
+    table_of_contents = await get_contents_by_id(text_id=text_id, skip=skip, limit=limit)
     return TableOfContentResponse(
-        id="5894c3b8-4c52-4964-b0d1-9498a71fd1e1",
+        id="123",
         text_id=text_id,
-        segments=list_of_sections
+        contents=table_of_contents
     )
 
 async def get_versions_by_text_id(text_id: str, skip: int, limit: int) -> TextVersionResponse:
