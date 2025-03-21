@@ -45,11 +45,13 @@ class Section(BaseModel):
     updated_date: str
     published_date: str
 
-
-class TableOfContentResponse(BaseModel):
+class TableOfContent(BaseModel):
     id: str
     text_id: str
-    contents: List[Section]
+    segments: List[Section]
+
+class TableOfContentResponse(BaseModel):
+    contents: List[TableOfContent]
 
 
 # Text Version Response Models 
