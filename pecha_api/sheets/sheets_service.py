@@ -3,7 +3,7 @@ import asyncio
 
 from pecha_api.config import get
 from .sheets_repository import get_sheets_by_topic, get_users_sheets, create_sheet
-from .sheets_response_models import SheetModel, Publisher, SheetsResponse
+from .sheets_response_models import SheetModel, Publisher, SheetsResponse, CreateSheetRequest
 from ..users.users_repository import get_user_by_username
 from ..db.database import SessionLocal
 from ..topics.topics_repository import get_topic_by_id
@@ -67,7 +67,7 @@ async def get_sheets_by_userID(user_id: str, language: str, skip: int, limit: in
     sheet_response = SheetsResponse(sheets=sheets_list)
     return sheet_response
     
-async def create_new_sheet(create_sheet_request):
+async def create_new_sheet(create_sheet_request: CreateSheetRequest):
     new_sheet = await create_sheet(create_sheet_request=create_sheet_request)
     return new_sheet
     

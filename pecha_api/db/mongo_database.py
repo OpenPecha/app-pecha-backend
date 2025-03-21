@@ -26,7 +26,7 @@ async def lifespan(api: FastAPI):
 
     # Initialize collections and indexes if necessary
     try:
-        await init_beanie(database=mongodb,document_models=[Term, Topic, Text, Segment])
+        await init_beanie(database=mongodb,document_models=[Term, Topic, Text, Segment, Sheet])
         logging.info("Beanie initialized with the 'terms' collection.")
         
     except Exception as e:
