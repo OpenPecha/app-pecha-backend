@@ -5,7 +5,7 @@ from .texts_repository import get_contents_by_id_with_segments, get_texts_by_id,
 from .texts_response_models import TableOfContentResponse, TextModel, TextVersionResponse, TextVersion, Category, TextsCategoryResponse, Text, CreateTextRequest
 from ..users.users_service import verify_admin_access
 
-from ..terms.terms_repository import get_term
+from ..terms.terms_service import get_term
 
 from typing import List
 
