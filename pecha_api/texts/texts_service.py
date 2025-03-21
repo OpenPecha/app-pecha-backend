@@ -5,6 +5,8 @@ from .texts_repository import get_contents_by_id_with_segments, get_texts_by_id,
 from .texts_response_models import TableOfContentResponse, TextModel, TextVersionResponse, TextVersion, Category, TextsCategoryResponse, Text, CreateTextRequest
 from ..users.users_service import verify_admin_access
 
+from ..terms.terms_repository import get_term
+
 from typing import List
 
 from ..constants import get_mapped_table_of_contents_segments
@@ -58,13 +60,7 @@ async def get_text_by_term_or_category(
         language = get("DEFAULT_LANGUAGE")
 
     if category is not None:
-        term = Category(
-            id= "d19338e",
-            title= "Bodhicaryavatara",
-            description= "Bodhicaryavatara title",
-            slug= "bodhicaryavatara",
-            has_child= False
-        )
+        term = await get_term(term_id=category, language=language)
         texts = await get_texts_by_category_id(category=category, language=language, skip=skip, limit=limit)
         return TextsCategoryResponse(
             category=term,
