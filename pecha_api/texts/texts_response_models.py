@@ -1,6 +1,8 @@
 
 from typing import List, Optional
 
+from pecha_api.terms.terms_response_models import TermsModel
+
 from pydantic import BaseModel
 from .segments.segments_models import Mapping
 
@@ -99,7 +101,7 @@ class Category(BaseModel):
     has_child: bool
 
 class TextsCategoryResponse(BaseModel):
-    category: Category
+    category: TermsModel
     texts : List[Text]
     total: int
     skip: int
