@@ -110,7 +110,7 @@ class TextsCategoryResponse(BaseModel):
 # Texts Info Response Models
 class RelatedTexts(BaseModel):
     id: str
-    title: Union[Dict[str, str], str]
+    title: str
     count: int
 
 class TextInfos(BaseModel):
