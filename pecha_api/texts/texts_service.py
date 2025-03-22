@@ -2,7 +2,9 @@ from fastapi import HTTPException
 from starlette import status
 
 from .texts_repository import get_contents_by_id_with_segments, get_texts_by_id, get_contents_by_id, get_text_by_id, get_versions_by_id, get_texts_by_category, get_versions_by_id, create_text
+from .texts_repository import get_text_infos
 from .texts_response_models import TableOfContentResponse, TextModel, TextVersionResponse, TextVersion, Category, TextsCategoryResponse, Text, CreateTextRequest
+from .texts_response_models import TextInfosResponse
 from ..users.users_service import verify_admin_access
 
 from ..terms.terms_service import get_term
@@ -133,3 +135,8 @@ async def create_new_text(
     else:
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Admin access required")
 
+async def get_infos_by_text_id(text_id: str, skip: int, limit: int) -> TextInfosResponse:
+    text_infos = await get_text_infos(text_id=text_id, skip=skip, limit=limit)
+    return TextInfosResponse(
+        text_infos=text_infos
+    )

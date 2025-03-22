@@ -107,3 +107,21 @@ class TextsCategoryResponse(BaseModel):
     skip: int
     limit: int
 
+# Texts Info Response Models
+class RelatedTexts(BaseModel):
+    id: str
+    title: str
+    count: int
+
+class TextInfos(BaseModel):
+    text_id: str
+    about_text: str
+    translations: int
+    related_texts: List[RelatedTexts]
+    sheets: int
+    web_pages: int
+    short_url: str
+
+class TextInfosResponse(BaseModel):
+    text_infos: TextInfos
+    
