@@ -5,6 +5,8 @@ from beanie.exceptions import CollectionWasNotInitialized
 from .texts_response_models import TableOfContent, Section, TableOfContentSegmentResponse, RootText, CreateTextRequest, TextInfos, RelatedTexts
 from .texts_models import Text
 
+from ..constants import get_value_from_dict
+
 import datetime
 
 
@@ -319,7 +321,7 @@ async def create_text(create_text_request: CreateTextRequest) -> Text:
     saved_text = await new_text.insert()
     return saved_text
 
-async def get_text_infos(text_id: str, skip: int, limit: int):
+async def get_text_infos(text_id: str, language: str, skip: int, limit: int):
     return TextInfos(
         text_id=text_id,
         about_text="",
@@ -327,8 +329,35 @@ async def get_text_infos(text_id: str, skip: int, limit: int):
         related_texts=[
             RelatedTexts(
                 id=str(uuid.uuid4()),
-                title="commentary",
+                title= get_value_from_dict({
+                    "en": "commentary",
+                    "bo": "འགྲེལ་བརྗོད།"
+                }, language),
                 count=1
+            ),
+            RelatedTexts(
+                id=str(uuid.uuid4()),
+                title= get_value_from_dict({
+                    "en": "Happiness",
+                    "bo": "སྤྲོ་སྣང་།"
+                }, language),
+                count=3
+            ),
+            RelatedTexts(
+                id=str(uuid.uuid4()),
+                title= get_value_from_dict({
+                    "en": "Kindness",
+                    "bo": "སྙིང་རྗེ།"
+                }, language),
+                count=5
+            ),
+            RelatedTexts(
+                id=str(uuid.uuid4()),
+                title= get_value_from_dict({
+                    "en": "Patience",
+                    "bo": "བཟོད་པ།།"
+                }, language),
+                count=7
             )
         ],
         sheets=1,

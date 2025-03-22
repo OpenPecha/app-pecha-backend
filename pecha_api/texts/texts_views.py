@@ -66,8 +66,9 @@ async def get_versions(
 @text_router.get("/{text_id}/infos", status_code=status.HTTP_200_OK)
 async def get_text_infos(
         text_id: str,
+        language: str = Query(default=None),
         skip: int = Query(default=0),
         limit: int = Query(default=10)
 ):
-    return await get_infos_by_text_id(text_id=text_id, skip=skip, limit=limit)
+    return await get_infos_by_text_id(text_id=text_id, language=language, skip=skip, limit=limit)
 
