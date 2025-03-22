@@ -175,17 +175,17 @@ async def get_contents_by_id_with_segments(text_id: str, content_id: str, skip: 
                         ),
                         TableOfContentSegmentResponse(
                             segment_id="9876yt56-51de-4a42-9d49-580b729dnb66",
-                            segment_number=1,
+                            segment_number=4,
                             content="<span class=\"text-quotation-style\">དང་པོ་ནི་</span><span class=\"text-citation-style\">ཧོ་སྣང་སྲིད་</span>སོགས་ཚིག་རྐང་དྲུག་གིས་བསྟན།<span class=\"text-citation-style\">ཧོ༵་</span>ཞེས་པ་འཁྲུལ་བས་དབང་མེད་དུ་བྱས་ཏེ་མི་འདོད་པའི་ཉེས་རྒུད་དྲག་པོས་རབ་ཏུ་གཟིར་བའི་འཁོར་བའི་སེམས་ཅན་རྣམས་ལ་དམིགས་མེད་བརྩེ་བའི་རྣམ་པར་ཤར་ཏེ་འཁྲུལ་སྣང་རང་སར་དག་པའི་ཉེ་ལམ་ཟབ་མོ་འདིར་བསྐུལ་བའི་ཚིག་ཏུ་བྱས་པ་སྟེ།"
                         ),
                         TableOfContentSegmentResponse(
                             segment_id="m9i7y654-0d28-41e9-bff1-83ef53bfbad1",
-                            segment_number=2,
+                            segment_number=5,
                             content="འདི་ལྟར་བློའི་ཡུལ་དུ་བྱ་རུང་བའི་ཆོས་རང་ངོས་ནས་བདེན་པར་མ་གྲུབ་པས་<span class=\"text-citation-style\">སྣང༵་</span>བ་ཙམ་དུ་ཟད་ཅིང་།གང་སྣང་ཐ་སྙད་ཙམ་དུ་བསླུ་བ་མེད་པར་གནས་པས་སྣང་ཙམ་དུ་<span class=\"text-citation-style\">སྲི༵ད་</span>ཅིང་ཡོད་པའི་མ་དག་ཀུན་ཉོན་འཁྲུལ་བའི་<span class=\"text-citation-style\">འཁོ༵ར་</span>བའི་སྣོད་བཅུད་རྒྱུ་འབྲས་ཀྱི་སྒྱུ་འཕྲུལ་སྣ་ཚོགས་ཀྱི་བཀོད་པ་འདི་དང་།དག་པ་རྣམ་བྱང་མྱང་<span class=\"text-citation-style\">འད༵ས་</span>ཀྱི་གྲོལ་བ་ཐར་པའི་ཡེ་ཤེས་ཡོན་ཏན་ཕྲིན་ལས་ཀྱི་རོལ་གར་བསམ་ལས་འདས་པའི་འཁྲུལ་གྲོལ་གྱི་ཆོས་འདི་<span class=\"text-citation-style\">ཐམ༵ས་</span><span class=\"text-citation-style\">ཅ༵ད་</span><span class=\"text-citation-style\">ཀུན༵</span>།"
                         ),
                         TableOfContentSegmentResponse(
                             segment_id="bbju7846-0d28-41e9-bff1-83ef53bfbju7",
-                            segment_number=3,
+                            segment_number=6,
                             content="འབྱུང་ཞིང་མཆེད་པའི་འབྱུང་གཞི།ཐིམ་ཞིང་སྡུད་པའི་སྡུད་གཞི།མཐར་ཐུག་ནི་སེམས་ཅན་རང་ཉིད་ཀྱི་སེམས་ཀྱི་གཤིས་ལུགས་ཕྲ་བ་གཉུག་མ་སེམས་ཀྱི་རྡོ་རྗེ་བྱང་ཆུབ་ཀྱི་སེམས་ངོ་བོའི་ཆ་ནས་སྟོང་ཞིང་ཀ་ནས་དག་པས།དངོས་པོ་རང་མཚན་གྱི་སྤྲོས་པའི་ཕྱོགས་ཀུན་དང་བྲལ་བ།རང་བཞིན་ཆ་ནས་གཏིང་གསལ་འགགས་པ་མེད་པའི་རང་བཞིན་ལྷུན་གྲུབ་ཀྱི་ཡོན་ཏན་འདུ་འབྲལ་སྤང་བས།"
                         )
                     ],
@@ -207,21 +207,21 @@ async def get_contents_by_id_with_segments(text_id: str, content_id: str, skip: 
                         TableOfContentSegmentResponse(
                             segment_id="ad45121f5-0d28-41e9-bff1-83ef53bf99d1",
                             segment_number=2,
-                            content="<span class=\"text-quotation-style\">དང་པོ་ནི་</span><span class=\"text-citation-style\">ཧོ་སྣང་སྲིད་</span>སོགས་ཚིག་རྐང་དྲུག་གིས་བསྟན།<span class=\"text-citation-style\">ཧོ༵་</span>ཞེས་པ་འཁྲུལ་བས་དབང་མེད་དུ་བྱས་ཏེ་མི་འདོད་པའི་ཉེས་རྒུད་དྲག་པོས་རབ་ཏུ་གཟིར་བའི་འཁོར་བའི་སེམས་ཅན་རྣམས་ལ་དམིགས་མེད་བརྩེ་བའི་རྣམ་པར་ཤར་ཏེ་འཁྲུལ་སྣང་རང་སར་དག་པའི་ཉེ་ལམ་ཟབ་མོ་འདིར་བསྐུལ་བའི་ཚིག་ཏུ་བྱས་པ་སྟེ།"
+                            content="<span class=\"text-quotation-style\">དང་པོ་ནི་</span><span class=\"text-citation-style\">ཧོ་སྣང་སྲིད་</span>སོགས་ཚིག་རྐང་དྲུག་གིས་བསྟན།<span class=\"text-citation-style\">ཧོ༵་</span>ཞེས་པ་འཁྲུལ་བས་དབང་མེད་དུ་བྱས་ཏེ་མི་འདོད་པའི་ཉེས་རྒུད་དྲག་པོས་རབ་ཏུ་གཟིར་བའི་འཁོར་བའི་སེམས་ཅན་རྣམས་ལ་དམིགས་མེད་བརྩེ་བའི་རྣམ་པར་ཤར་ཏེ་འཁྲུལ་སྣང་རང་སར་དག་པའི་ཉེ་ལམ་ཟབ་མོ་འདིར་བསྐུལ་བའི་ཚིག་ཏུ་བྱས་པ་སྟེ།"
                         ),
                         TableOfContentSegmentResponse(
                             segment_id="kji8yt56-51de-4a42-9d49-580b729dnb66",
-                            segment_number=1,
+                            segment_number=3,
                             content="<span class=\"text-quotation-style\">དང་པོ་ནི་</span><span class=\"text-citation-style\">ཧོ་སྣང་སྲིད་</span>སོགས་ཚིག་རྐང་དྲུག་གིས་བསྟན།<span class=\"text-citation-style\">ཧོ༵་</span>ཞེས་པ་འཁྲུལ་བས་དབང་མེད་དུ་བྱས་ཏེ་མི་འདོད་པའི་ཉེས་རྒུད་དྲག་པོས་རབ་ཏུ་གཟིར་བའི་འཁོར་བའི་སེམས་ཅན་རྣམས་ལ་དམིགས་མེད་བརྩེ་བའི་རྣམ་པར་ཤར་ཏེ་འཁྲུལ་སྣང་རང་སར་དག་པའི་ཉེ་ལམ་ཟབ་མོ་འདིར་བསྐུལ་བའི་ཚིག་ཏུ་བྱས་པ་སྟེ།"
                         ),
                         TableOfContentSegmentResponse(
                             segment_id="9jja7y654-0d28-41e9-bff1-83ef53bfbad1",
-                            segment_number=2,
+                            segment_number=4,
                             content="འདི་ལྟར་བློའི་ཡུལ་དུ་བྱ་རུང་བའི་ཆོས་རང་ངོས་ནས་བདེན་པར་མ་གྲུབ་པས་<span class=\"text-citation-style\">སྣང༵་</span>བ་ཙམ་དུ་ཟད་ཅིང་།གང་སྣང་ཐ་སྙད་ཙམ་དུ་བསླུ་བ་མེད་པར་གནས་པས་སྣང་ཙམ་དུ་<span class=\"text-citation-style\">སྲི༵ད་</span>ཅིང་ཡོད་པའི་མ་དག་ཀུན་ཉོན་འཁྲུལ་བའི་<span class=\"text-citation-style\">འཁོ༵ར་</span>བའི་སྣོད་བཅུད་རྒྱུ་འབྲས་ཀྱི་སྒྱུ་འཕྲུལ་སྣ་ཚོགས་ཀྱི་བཀོད་པ་འདི་དང་།དག་པ་རྣམ་བྱང་མྱང་<span class=\"text-citation-style\">འད༵ས་</span>ཀྱི་གྲོལ་བ་ཐར་པའི་ཡེ་ཤེས་ཡོན་ཏན་ཕྲིན་ལས་ཀྱི་རོལ་གར་བསམ་ལས་འདས་པའི་འཁྲུལ་གྲོལ་གྱི་ཆོས་འདི་<span class=\"text-citation-style\">ཐམ༵ས་</span><span class=\"text-citation-style\">ཅ༵ད་</span><span class=\"text-citation-style\">ཀུན༵</span>།"
                         ),
                         TableOfContentSegmentResponse(
                             segment_id="ji897846-0d28-41e9-bff1-83ef53bfbju7",
-                            segment_number=3,
+                            segment_number=5,
                             content="འབྱུང་ཞིང་མཆེད་པའི་འབྱུང་གཞི།ཐིམ་ཞིང་སྡུད་པའི་སྡུད་གཞི།མཐར་ཐུག་ནི་སེམས་ཅན་རང་ཉིད་ཀྱི་སེམས་ཀྱི་གཤིས་ལུགས་ཕྲ་བ་གཉུག་མ་སེམས་ཀྱི་རྡོ་རྗེ་བྱང་ཆུབ་ཀྱི་སེམས་ངོ་བོའི་ཆ་ནས་སྟོང་ཞིང་ཀ་ནས་དག་པས།དངོས་པོ་རང་མཚན་གྱི་སྤྲོས་པའི་ཕྱོགས་ཀུན་དང་བྲལ་བ།རང་བཞིན་ཆ་ནས་གཏིང་གསལ་འགགས་པ་མེད་པའི་རང་བཞིན་ལྷུན་གྲུབ་ཀྱི་ཡོན་ཏན་འདུ་འབྲལ་སྤང་བས།"
                         )
                     ],
@@ -265,17 +265,17 @@ async def get_contents_by_id_with_segments(text_id: str, content_id: str, skip: 
                                         ),
                                         TableOfContentSegmentResponse(
                                             segment_id="te76yt56-51de-4a42-9d49-580b729dnb66",
-                                            segment_number=1,
+                                            segment_number=3,
                                             content="<span class=\"text-quotation-style\">དང་པོ་ནི་</span><span class=\"text-citation-style\">ཧོ་སྣང་སྲིད་</span>སོགས་ཚིག་རྐང་དྲུག་གིས་བསྟན།<span class=\"text-citation-style\">ཧོ༵་</span>ཞེས་པ་འཁྲུལ་བས་དབང་མེད་དུ་བྱས་ཏེ་མི་འདོད་པའི་ཉེས་རྒུད་དྲག་པོས་རབ་ཏུ་གཟིར་བའི་འཁོར་བའི་སེམས་ཅན་རྣམས་ལ་དམིགས་མེད་བརྩེ་བའི་རྣམ་པར་ཤར་ཏེ་འཁྲུལ་སྣང་རང་སར་དག་པའི་ཉེ་ལམ་ཟབ་མོ་འདིར་བསྐུལ་བའི་ཚིག་ཏུ་བྱས་པ་སྟེ།"
                                         ),
                                         TableOfContentSegmentResponse(
                                             segment_id="ati7y654-0d28-41e9-bff1-83ef53bfbad1",
-                                            segment_number=2,
+                                            segment_number=4,
                                             content="འདི་ལྟར་བློའི་ཡུལ་དུ་བྱ་རུང་བའི་ཆོས་རང་ངོས་ནས་བདེན་པར་མ་གྲུབ་པས་<span class=\"text-citation-style\">སྣང༵་</span>བ་ཙམ་དུ་ཟད་ཅིང་།གང་སྣང་ཐ་སྙད་ཙམ་དུ་བསླུ་བ་མེད་པར་གནས་པས་སྣང་ཙམ་དུ་<span class=\"text-citation-style\">སྲི༵ད་</span>ཅིང་ཡོད་པའི་མ་དག་ཀུན་ཉོན་འཁྲུལ་བའི་<span class=\"text-citation-style\">འཁོ༵ར་</span>བའི་སྣོད་བཅུད་རྒྱུ་འབྲས་ཀྱི་སྒྱུ་འཕྲུལ་སྣ་ཚོགས་ཀྱི་བཀོད་པ་འདི་དང་།དག་པ་རྣམ་བྱང་མྱང་<span class=\"text-citation-style\">འད༵ས་</span>ཀྱི་གྲོལ་བ་ཐར་པའི་ཡེ་ཤེས་ཡོན་ཏན་ཕྲིན་ལས་ཀྱི་རོལ་གར་བསམ་ལས་འདས་པའི་འཁྲུལ་གྲོལ་གྱི་ཆོས་འདི་<span class=\"text-citation-style\">ཐམ༵ས་</span><span class=\"text-citation-style\">ཅ༵ད་</span><span class=\"text-citation-style\">ཀུན༵</span>།"
                                         ),
                                         TableOfContentSegmentResponse(
                                             segment_id="abcdu7846-0d28-41e9-bff1-83ef53bfbju7",
-                                            segment_number=3,
+                                            segment_number=5,
                                             content="འབྱུང་ཞིང་མཆེད་པའི་འབྱུང་གཞི།ཐིམ་ཞིང་སྡུད་པའི་སྡུད་གཞི།མཐར་ཐུག་ནི་སེམས་ཅན་རང་ཉིད་ཀྱི་སེམས་ཀྱི་གཤིས་ལུགས་ཕྲ་བ་གཉུག་མ་སེམས་ཀྱི་རྡོ་རྗེ་བྱང་ཆུབ་ཀྱི་སེམས་ངོ་བོའི་ཆ་ནས་སྟོང་ཞིང་ཀ་ནས་དག་པས།དངོས་པོ་རང་མཚན་གྱི་སྤྲོས་པའི་ཕྱོགས་ཀུན་དང་བྲལ་བ།རང་བཞིན་ཆ་ནས་གཏིང་གསལ་འགགས་པ་མེད་པའི་རང་བཞིན་ལྷུན་གྲུབ་ཀྱི་ཡོན་ཏན་འདུ་འབྲལ་སྤང་བས།"
                                         )
                                     ],
