@@ -2,7 +2,7 @@ from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from fastapi import APIRouter, Depends
 from starlette import status
 
-from typing import Annotated, List
+from typing import Annotated
 
 from .segments_service import create_new_segment
 from .segments_response_models import CreateSegmentRequest

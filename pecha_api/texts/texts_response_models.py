@@ -1,5 +1,5 @@
 
-from typing import List, Optional
+from typing import List, Optional, Dict, Union
 
 from pecha_api.terms.terms_response_models import TermsModel
 
@@ -110,7 +110,7 @@ class TextsCategoryResponse(BaseModel):
 # Texts Info Response Models
 class RelatedTexts(BaseModel):
     id: str
-    title: str
+    title: Union[Dict[str, str], str]
     count: int
 
 class TextInfos(BaseModel):
