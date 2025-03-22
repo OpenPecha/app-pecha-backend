@@ -326,7 +326,7 @@ async def get_text_infos(text_id: str, skip: int, limit: int):
         translations=10,
         related_texts=[
             RelatedTexts(
-                id=uuid.uuid4(),
+                id=str(uuid.uuid4()),
                 title="commentary",
                 count=1
             )
