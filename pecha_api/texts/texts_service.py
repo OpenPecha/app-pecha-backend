@@ -3,15 +3,15 @@ from starlette import status
 
 from .texts_repository import get_contents_by_id_with_segments, get_texts_by_id, get_contents_by_id, get_text_by_id, get_versions_by_id, get_texts_by_category, get_versions_by_id, create_text
 from .texts_repository import get_text_infos
-from .texts_response_models import TableOfContentResponse, TextModel, TextVersionResponse, TextVersion, Category, TextsCategoryResponse, Text, CreateTextRequest
-from .texts_response_models import TextInfosResponse
+from .texts_response_models import RelatedTexts, TableOfContentResponse, TextModel, TextVersionResponse, TextVersion, Category, TextsCategoryResponse, Text, CreateTextRequest
+from .texts_response_models import TextInfosResponse, TextInfos, RelatedTexts
 from ..users.users_service import verify_admin_access
 
 from ..terms.terms_service import get_term
 
 from typing import List
 
-from ..constants import get_mapped_table_of_contents_segments
+from ..constants import get_mapped_table_of_contents_segments, get_value_from_dict
 from pecha_api.config import get
 
 async def get_texts_by_category_id(category: str, language: str, skip: int, limit: int):
@@ -139,6 +139,22 @@ async def get_infos_by_text_id(text_id: str, language: str, skip: int, limit: in
     if language is None:
         language = get("DEFAULT_LANGUAGE")
     text_infos = await get_text_infos(text_id=text_id, language=language, skip=skip, limit=limit)
+    related_text = [
+        RelatedTexts(
+            id=text_info["id"],
+            title=get_value_from_dict(text_info["title"], language),
+            count=text_info["count"]
+        )
+        for text_info in text_infos
+    ]
     return TextInfosResponse(
-        text_infos=text_infos
+        text_infos= TextInfos(
+            text_id=text_id,
+            about_text="",
+            translations=30,
+            related_texts=related_text,
+            sheets=3,
+            web_pages=2,
+            short_url=""
+        )
     )
