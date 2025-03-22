@@ -13,6 +13,7 @@ segment_router = APIRouter(
     tags=["Segments"]
 )
 
+
 @segment_router.post("", status_code=status.HTTP_201_CREATED)
 async def create_segment(
     create_segment_request: CreateSegmentRequest,

@@ -2,7 +2,7 @@ import uuid
 import logging
 from beanie.exceptions import CollectionWasNotInitialized
 
-from .texts_response_models import TableOfContent, Section, TableOfContentSegmentResponse, RootText, CreateTextRequest
+from .texts_response_models import TableOfContent, Section, TableOfContentSegmentResponse, RootText, CreateTextRequest, TextInfos, RelatedTexts
 from .texts_models import Text
 
 import datetime
@@ -297,7 +297,7 @@ async def get_contents_by_id_with_segments(text_id: str, content_id: str, skip: 
 async def get_text_by_id(text_id: str):
     return RootText(
         id= "d19338e",
-        title= "Bodhicaryavatara",
+        title= "The Way of the Bodhisattva",
         language= "en",
         type= "root_text",
         has_child= False
@@ -319,3 +319,19 @@ async def create_text(create_text_request: CreateTextRequest) -> Text:
     saved_text = await new_text.insert()
     return saved_text
 
+async def get_text_infos(text_id: str, skip: int, limit: int):
+    return TextInfos(
+        text_id=text_id,
+        about_text="",
+        translations=10,
+        related_texts=[
+            RelatedTexts(
+                id=uuid.uuid4(),
+                title="commentary",
+                count=1
+            )
+        ],
+        sheets=1,
+        web_pages= 3,
+        short_url= ""
+    )
