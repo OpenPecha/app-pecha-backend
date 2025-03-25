@@ -29,3 +29,11 @@ class Text(Document):
             return None
         
         return await cls.find_one(cls.id == text_uuid)
+    
+    @classmethod
+    async def get_texts_by_category_id(cls, category_id: str, skip: int, limit: int):
+        return await cls.find({"categories": category_id, "type": {"$ne": "version"}}).skip(skip).limit(limit).to_list()
+        
+    @classmethod
+    async def get_versions_by_text_id(cls, text_id: str, skip: int, limit: int):
+        return await cls.find({"parent_id": text_id, "type": "version"}).skip(skip).limit(limit).to_list()

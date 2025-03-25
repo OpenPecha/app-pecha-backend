@@ -11,7 +11,7 @@ from time import time
 import uuid
 import datetime
 
-from .texts.texts_repository import get_texts_by_id
+from .texts.texts_repository import get_texts_by_text_id
 from .texts.texts_response_models import Section
 from .texts.segments.segments_repository import get_segments_by_list_of_id
 
@@ -149,7 +149,7 @@ def get_current_time_in_millisecond():
     return int(time() * 1000)
 
 async def valid_text(text_id: str) -> bool:
-    text_detail = await get_texts_by_id(text_id=text_id)
+    text_detail = await get_texts_by_text_id(text_id=text_id)
     if text_detail is None:
         return False
     return True
