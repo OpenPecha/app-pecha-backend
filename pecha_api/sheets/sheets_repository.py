@@ -1,10 +1,10 @@
 import uuid
 import logging
+from datetime import datetime, timezone
 
 from .sheets_models import Sheet
-from .sheets_response_models import CreateSheetRequest, Publisher
+from .sheets_response_models import CreateSheetRequest
 from beanie.exceptions import CollectionWasNotInitialized
-from ..constants import get_current_date, get_current_time_in_millisecond
 
 def get_sheets_by_topic(topic_id : str):
     return [
@@ -31,9 +31,9 @@ async def create_sheet(create_sheet_request: CreateSheetRequest):
         source=create_sheet_request.source,
         topic_id=create_sheet_request.topic_id,
         publisher_id=create_sheet_request.publisher_id,
-        creation_date=get_current_date(),
-        modified_date=get_current_date(),
-        published_date=get_current_time_in_millisecond(),
+        creation_date=str(datetime.now(timezone.utc)),
+        modified_date=str(datetime.now(timezone.utc)),
+        published_date=int(datetime.now(timezone.utc).timestamp()),
         views=0,
         likes=[],
         collection=[],

@@ -6,7 +6,7 @@ from beanie.exceptions import CollectionWasNotInitialized
 from fastapi import HTTPException
 from starlette import status
 
-from pecha_api.constants import get_parent_id
+from pecha_api.utils import Utils
 from .topics_models import Topic
 from .topics_response_models import CreateTopicRequest
 
@@ -19,7 +19,7 @@ async def get_topics_by_parent(
         skip: int,
         limit: int) -> list[Topic]:
     try:
-        topic_parent_id = get_parent_id(parent_id=parent_id)
+        topic_parent_id = Utils.get_parent_id(parent_id=parent_id)
         terms = await Topic.get_children_by_id(parent_id=topic_parent_id, search=search, hierarchy=hierarchy, language=language, skip=skip, limit=limit)
         return terms
     except CollectionWasNotInitialized as e:
@@ -28,13 +28,13 @@ async def get_topics_by_parent(
 
 
 async def get_child_count(parent_id: Optional[str]) -> int:
-    topic_parent_id = get_parent_id(parent_id=parent_id)
+    topic_parent_id = Utils.get_parent_id(parent_id=parent_id)
     count = await Topic.count_children(parent_id=topic_parent_id)
     return count
 
 
 async def create_topic(create_topic_request: CreateTopicRequest) -> Topic:
-    topic_parent_id = get_parent_id(parent_id=create_topic_request.parent_id)
+    topic_parent_id = Utils.get_parent_id(parent_id=create_topic_request.parent_id)
     new_topic = Topic(titles=create_topic_request.titles,
                       parent_id=topic_parent_id,
                       default_language=create_topic_request.default_language)

@@ -2,7 +2,7 @@ from typing import Optional
 
 from starlette import status
 
-from pecha_api.constants import get_value_from_dict
+from pecha_api.utils import Utils
 from pecha_api.config import get
 from pecha_api.sheets.sheets_service import get_sheets
 from ..users.users_service import verify_admin_access
@@ -27,7 +27,7 @@ async def get_topics(language: Optional[str], search: Optional[str], hierarchy: 
     topic_list = [
         TopicModel(
             id=str(topic.id),
-            title=get_value_from_dict(values=topic.titles, language=language),
+            title=Utils.get_value_from_dict(values=topic.titles, language=language),
             has_child=topic.has_sub_child
         )
         for topic in topics
@@ -43,7 +43,7 @@ async def create_new_topic(create_topic_request: CreateTopicRequest, token: str,
             language = get("DEFAULT_LANGUAGE")
         return TopicModel(
             id=str(new_topic.id),
-            title=get_value_from_dict(values=new_topic.titles, language=language),
+            title=Utils.get_value_from_dict(values=new_topic.titles, language=language),
             has_child=new_topic.has_sub_child
         )
     else:
@@ -55,7 +55,7 @@ async def get_topic(topic_id: str, language: str) -> Optional[TopicModel]:
     if selected_topic:
         return TopicModel(
             id=str(selected_topic.id),
-            title=get_value_from_dict(values=selected_topic.titles, language=language),
+            title=Utils.get_value_from_dict(values=selected_topic.titles, language=language),
             has_child=selected_topic.has_sub_child
         )
     return None
