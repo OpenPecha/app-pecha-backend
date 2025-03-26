@@ -18,7 +18,7 @@ async def test_create_new_segment():
     )
 
     with patch('pecha_api.texts.segments.segments_service.verify_admin_access', return_value=True), \
-        patch('pecha_api.texts.segments.segments_service.valid_text', new_callable=AsyncMock, return_value=True), \
+        patch('pecha_api.texts.segments.segments_service.validate_text_exits', new_callable=AsyncMock, return_value=True), \
         patch('pecha_api.texts.segments.segments_service.create_segment', new_callable=AsyncMock) as mock_create_segment:
         mock_segment_list = [
             SegmentResponse(

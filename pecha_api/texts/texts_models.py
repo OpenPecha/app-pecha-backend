@@ -4,6 +4,8 @@ from typing import Dict, List, Optional
 
 from pydantic import Field
 from beanie import Document
+from watchfiles import awatch
+
 
 class Text(Document):
     id: uuid.UUID = Field(default_factory=uuid.uuid4)
@@ -20,12 +22,29 @@ class Text(Document):
 
     class Settings:
         collection = "texts"
-    
+
     @classmethod
     async def get_text(cls, text_id: str):
         try:
             text_uuid = UUID(text_id)
         except ValueError:
             return None
-        
         return await cls.find_one(cls.id == text_uuid)
+
+    @classmethod
+    async def check_exists(cls, text_id: uuid.UUID) -> bool:
+        text = await cls.find_one(cls.id == text_id)
+        return text is not None  # True if exists, False otherwise
+
+    @classmethod
+    async def exists_all(cls, text_ids: List[UUID], batch_size: int = 100) -> bool:
+        for i in range(0, len(text_ids), batch_size):
+            batch_ids = text_ids[i: i + batch_size]
+            found_texts = await cls.find({"_id": {"$in": batch_ids}}).to_list()
+
+            found_ids = {text.id for text in found_texts}
+
+            # If any ID from the current batch is missing, stop early
+            if len(found_ids) < len(batch_ids):
+                return False  # One or more IDs are missing
+        return True  # All IDs exist

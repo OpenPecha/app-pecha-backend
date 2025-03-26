@@ -1,7 +1,10 @@
-from typing import List, Dict, Union
+from __future__ import annotations
+
+from typing import List, Union
 
 from pydantic import BaseModel, model_validator
-from ..constants import filter_number_by_language, get_value_from_dict, time_passed, milliseconds_to_datetime
+
+from pecha_api.utils import Utils
 from .sheets_models import Source, Text, Media
 
 class Publisher(BaseModel):
@@ -34,10 +37,10 @@ class SheetModel(BaseModel):
     @model_validator(mode = "before")
     @classmethod
     def filter_model_language(cls, values):
-        values["topics"] = [get_value_from_dict(topic, values["language"]) for topic in values["topics"]]
-        values["views"] = filter_number_by_language(str(values["views"]), values["language"])
-        values["time_passed"] = time_passed(values["published_date"], values["language"])
-        values["published_date"] = filter_number_by_language(milliseconds_to_datetime(values["published_date"]), values["language"])
+        values["topics"] = [Utils.get_value_from_dict(topic, values["language"]) for topic in values["topics"]]
+        values["views"] = Utils.get_number_by_language(values["views"], values["language"])
+        values["time_passed"] = Utils.time_passed(values["published_date"], values["language"])
+        values["published_date"] = Utils.get_number_by_language(values["published_date"], values["language"])
 
         return values
     

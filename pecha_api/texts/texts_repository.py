@@ -1,20 +1,40 @@
-import uuid
-import logging
-from beanie.exceptions import CollectionWasNotInitialized
+from __future__ import annotations
 
+import logging
+import uuid
+from typing import List
+from uuid import UUID
+
+from beanie.exceptions import CollectionWasNotInitialized
+from pecha_api.constants import Constants
 from .texts_response_models import TableOfContent, Section, TableOfContentSegmentResponse, RootText, CreateTextRequest
 from .texts_models import Text
+from datetime import datetime, timezone
 
-import datetime
 
-
-async def get_texts_by_id(text_id: str):
+async def get_texts_by_id(text_id: str) -> Text | None:
     try:
         text = await Text.get_text(text_id=text_id)
         return text
     except CollectionWasNotInitialized as e:
         logging.debug(e)
-        return []
+        return None
+
+async def check_text_exists(text_id: UUID) -> bool:
+    try:
+        is_text_exits = await Text.check_exists(text_id=text_id)
+        return is_text_exits
+    except CollectionWasNotInitialized as e:
+        logging.debug(e)
+        return False
+
+async def check_all_text_exists(text_ids: List[UUID]) -> bool:
+    try:
+        is_text_exits = await Text.all_exist(text_ids=text_ids,batch_size=Constants.QUERY_BATCH_SIZE)
+        return is_text_exits
+    except CollectionWasNotInitialized as e:
+        logging.debug(e)
+        return False
 
 async def get_texts_by_category(category: str, language: str, skip: int, limit: int):
     return [
@@ -146,6 +166,7 @@ async def get_contents_by_id(text_id: str, skip: int, limit: int):
             ]
         )
     ]
+
 async def get_contents_by_id_with_segments(text_id: str, content_id: str, skip: int, limit: int):
     return [
         TableOfContent(
@@ -309,9 +330,9 @@ async def create_text(create_text_request: CreateTextRequest) -> Text:
         language=create_text_request.language,
         parent_id=create_text_request.parent_id,
         is_published=True,
-        created_date=str(datetime.datetime.utcnow()),
-        updated_date=str(datetime.datetime.utcnow()),
-        published_date=str(datetime.datetime.utcnow()),
+        created_date=str(datetime.now(timezone.utc)),
+        updated_date=str(datetime.now(timezone.utc)),
+        published_date=str(datetime.now(timezone.utc)),
         published_by=create_text_request.published_by,
         type=create_text_request.type,
         categories=create_text_request.categories
