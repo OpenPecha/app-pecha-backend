@@ -2,7 +2,7 @@ from typing import Optional
 
 from starlette import status
 
-from pecha_api.constants import get_value_from_dict
+from pecha_api.utils import Utils
 from ..config import get
 from ..terms.terms_response_models import TermsModel, TermsResponse, CreateTermRequest, UpdateTermRequest
 from .terms_repository import get_child_count, get_terms_by_parent, create_term, update_term_titles, delete_term, \
@@ -24,8 +24,8 @@ async def get_all_terms(language: str, parent_id: Optional[str], skip: int, limi
     term_list = [
         TermsModel(
             id=str(term.id),
-            title=get_value_from_dict(values=term.titles, language=language),
-            description=get_value_from_dict(values=term.descriptions, language=language),
+            title=Utils.get_value_from_dict(values=term.titles, language=language),
+            description=Utils.get_value_from_dict(values=term.descriptions, language=language),
             has_child=term.has_sub_child,
             slug=term.slug
         )
@@ -43,8 +43,8 @@ async def create_new_term(create_term_request: CreateTermRequest, token: str, la
             language = get("DEFAULT_LANGUAGE")
         return TermsModel(
             id=str(new_term.id),
-            title=get_value_from_dict(values=new_term.titles, language=language),
-            description=get_value_from_dict(values=new_term.descriptions, language=language),
+            title=Utils.get_value_from_dict(values=new_term.titles, language=language),
+            description=Utils.get_value_from_dict(values=new_term.descriptions, language=language),
             has_child=new_term.has_sub_child,
             slug=new_term.slug
         )
@@ -56,8 +56,8 @@ async def get_term(term_id: str,language: str) -> Optional[TermsModel]:
     if selected_term:
         return TermsModel(
             id=term_id,
-            title=get_value_from_dict(values=selected_term.titles, language=language),
-            description=get_value_from_dict(values=selected_term.descriptions, language=language),
+            title=Utils.get_value_from_dict(values=selected_term.titles, language=language),
+            description=Utils.get_value_from_dict(values=selected_term.descriptions, language=language),
             has_child=selected_term.has_sub_child,
             slug=selected_term.slug
         )
@@ -72,8 +72,8 @@ async def update_existing_term(term_id: str, update_term_request: UpdateTermRequ
             language = get("DEFAULT_LANGUAGE")
         return TermsModel(
             id=term_id,
-            title=get_value_from_dict(values=updated_term.titles, language=language),
-            description=get_value_from_dict(values=updated_term.descriptions, language=language),
+            title=Utils.get_value_from_dict(values=updated_term.titles, language=language),
+            description=Utils.get_value_from_dict(values=updated_term.descriptions, language=language),
             has_child=updated_term.has_sub_child,
             slug=updated_term.slug
         )

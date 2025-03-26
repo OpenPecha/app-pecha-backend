@@ -1,5 +1,4 @@
 import uuid
-import asyncio
 
 from pecha_api.config import get
 from .sheets_repository import get_sheets_by_topic, get_users_sheets, create_sheet

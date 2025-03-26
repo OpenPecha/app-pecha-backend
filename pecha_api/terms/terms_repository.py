@@ -1,12 +1,11 @@
 import logging
 from typing import Optional
 
-from beanie import PydanticObjectId
 from beanie.exceptions import CollectionWasNotInitialized
 from fastapi import HTTPException
 from starlette import status
 
-from pecha_api.constants import get_parent_id
+from pecha_api.utils import Utils
 from ..terms.terms_models import Term
 from ..terms.terms_response_models import CreateTermRequest, UpdateTermRequest
 
@@ -18,7 +17,7 @@ async def get_terms_by_parent(
         skip: int,
         limit: int) -> list[Term]:
     try:
-        topic_parent_id = get_parent_id(parent_id=parent_id)
+        topic_parent_id = Utils.get_parent_id(parent_id=parent_id)
         terms = await Term.get_children_by_id(parent_id=topic_parent_id, skip=skip, limit=limit)
         return terms
     except CollectionWasNotInitialized as e:
@@ -27,7 +26,7 @@ async def get_terms_by_parent(
 
 
 async def get_child_count(parent_id: Optional[str]) -> int:
-    topic_parent_id = get_parent_id(parent_id=parent_id)
+    topic_parent_id = Utils.get_parent_id(parent_id=parent_id)
     count = await Term.count_children(parent_id=topic_parent_id)
     return count
 
