@@ -51,33 +51,6 @@ async def test_get_text_by_category():
         mock_get_texts_by_category.return_value = mock_texts_by_category
         mock_get_term.return_value = mock_term
         response = await get_text_by_term_or_category(text_id=None, category="id_1", language="bo", skip=0, limit=10)
-        print("HERE -> ", response)
-        print("2ndHERE -> ", TextsCategoryResponse(
-            category=TermsModel(
-                id="id_1",
-                title="སྤྱོད་འཇུག",
-                description="དུས་རབས་ ༨ པའི་ནང་སློབ་དཔོན་ཞི་བ་ལྷས་མཛད་པའི་རྩ་བ་དང་དེའི་འགྲེལ་བ་སོགས།",
-                has_child=False,
-                slug="bodhicaryavatara"
-            ),
-            texts=[
-                    Text(
-                    id=str(text.id),
-                    title=text.title,
-                    language=text.language,
-                    type=text.type,
-                    is_published=text.is_published,
-                    created_date=text.created_date,
-                    updated_date=text.updated_date,
-                    published_date=text.published_date,
-                    published_by=text.published_by
-                )
-                for text in mock_texts_by_category
-            ],
-            total=len(mock_texts_by_category),
-            skip=0,
-            limit=10
-        ))
         assert response == TextsCategoryResponse(
             category=TermsModel(
                 id="id_1",
