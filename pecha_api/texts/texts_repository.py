@@ -38,7 +38,7 @@ async def check_all_text_exists(text_ids: List[UUID]) -> bool:
         logging.debug(e)
         return False
 
-async def get_texts_by_category(category: str, language: str, skip: int, limit: int):
+async def get_texts_by_category(category: str, skip: int, limit: int):
     return await Text.get_texts_by_category_id(category_id=category, skip=skip, limit=limit)
 
 async def get_versions_by_id(text_id: str, skip: int, limit: int):

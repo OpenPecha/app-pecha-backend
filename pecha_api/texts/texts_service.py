@@ -1,14 +1,14 @@
 
 import asyncio
 from typing import List, Optional
-from uuid import UUID
+from uuid import UUID, uuid4
 
 from fastapi import HTTPException
 from starlette import status
 
 from pecha_api.utils import Utils
 from .segments.segments_repository import get_segments_by_list_of_id
-from .texts_repository import (get_contents_by_id_with_segments, get_texts_by_id, get_contents_by_id, get_text_by_id,
+from .texts_repository import (get_contents_by_id_with_segments, get_texts_by_id, get_contents_by_id,
                                get_texts_by_category, get_versions_by_id, create_text, check_all_text_exists,
                                check_text_exists)
 from .texts_repository import get_text_infos
@@ -38,8 +38,8 @@ async def validate_texts_exits(text_ids: List[str]):
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Text not found")
 
 
-async def get_texts_by_category_id(category: str, language: str, skip: int, limit: int):
-    texts = await get_texts_by_category(category=category, language=language, skip=skip, limit=limit)
+async def get_texts_by_category_id(category: str, skip: int, limit: int):
+    texts = await get_texts_by_category(category=category, skip=skip, limit=limit)
     text_list = [
         Text(
             id=str(text.id),
@@ -58,7 +58,7 @@ async def get_texts_by_category_id(category: str, language: str, skip: int, limi
 
 
 
-async def get_texts_without_category(text_id: str) -> TextModel:
+async def get_text_detail_by_id(text_id: str) -> TextModel:
     text = await get_texts_by_id(text_id=text_id)
     if text is None:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Text not found")
@@ -89,7 +89,7 @@ async def get_text_by_term_or_category(
 
     if category is not None:
         term = await get_term(term_id=category, language=language)
-        texts = await get_texts_by_category_id(category=category, language=language, skip=skip, limit=limit)
+        texts = await get_texts_by_category_id(category=category, skip=skip, limit=limit)
         return TextsCategoryResponse(
             category=term,
             texts=texts,
@@ -98,14 +98,14 @@ async def get_text_by_term_or_category(
             limit=limit
         )
     else:
-        return await get_texts_by_id(text_id=text_id)
+        return await get_text_detail_by_id(text_id=text_id)
 
 
 async def get_contents_by_text_id(text_id: str, skip: int, limit: int) -> TableOfContentResponse:
     table_of_contents = await get_contents_by_id(text_id=text_id, skip=skip, limit=limit)
     return TableOfContentResponse(
         text_detail=TextModel(
-            id=str(uuid.uuid4()),
+            id=str(uuid4()),
             title="བྱང་ཆུབ་སེམས་དཔའི་སྤྱོད་པ་ལ་འཇུག་པ།",
             language="bo",
             type="root_text",
@@ -114,7 +114,7 @@ async def get_contents_by_text_id(text_id: str, skip: int, limit: int) -> TableO
             updated_date="2021-09-01T00:00:00.000Z",
             published_date="2021-09-01T00:00:00.000Z",
             published_by="pecha",
-            categories=[str(uuid.uuid4())],
+            categories=[str(uuid4())],
             parent_id=None
         ),
         contents=table_of_contents
@@ -128,7 +128,7 @@ async def get_contents_by_text_id_with_detail(text_id: str, content_id: str, ski
     table_of_contents_with_details = await get_mapped_table_of_contents_segments(table_of_contents=table_of_contents)
     return TableOfContentResponse(
         text_detail=TextModel(
-            id=str(uuid.uuid4()),
+            id=str(uuid4()),
             title="བྱང་ཆུབ་སེམས་དཔའི་སྤྱོད་པ་ལ་འཇུག་པ།",
             language="bo",
             type="root_text",
@@ -137,7 +137,7 @@ async def get_contents_by_text_id_with_detail(text_id: str, content_id: str, ski
             updated_date="2021-09-01T00:00:00.000Z",
             published_date="2021-09-01T00:00:00.000Z",
             published_by="pecha",
-            categories=[str(uuid.uuid4())],
+            categories=[str(uuid4())],
             parent_id=None
         ),
         contents=table_of_contents_with_details
@@ -145,7 +145,7 @@ async def get_contents_by_text_id_with_detail(text_id: str, content_id: str, ski
 
 
 async def get_versions_by_text_id(text_id: str, skip: int, limit: int) -> TextVersionResponse:
-    root_text = await get_texts_by_id(text_id=text_id)
+    root_text = await get_text_detail_by_id(text_id=text_id)
     if root_text is None:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Text not found")
     versions = await get_versions_by_id(text_id=text_id, skip=skip, limit=limit)

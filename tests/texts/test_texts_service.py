@@ -50,7 +50,7 @@ async def test_get_text_by_category():
         patch('pecha_api.terms.terms_service.get_term_by_id', new_callable=AsyncMock) as mock_get_term:
         mock_get_texts_by_category.return_value = mock_texts_by_category
         mock_get_term.return_value = mock_term
-        response = await get_text_by_term_or_category(text_id=None, category="id_1", language="bo", skip=0, limit=10)
+        response = await get_text_by_term_or_category(text_id="", category="id_1", language="bo", skip=0, limit=10)
         assert response == TextsCategoryResponse(
             category=TermsModel(
                 id="id_1",
