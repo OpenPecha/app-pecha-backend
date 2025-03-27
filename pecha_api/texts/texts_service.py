@@ -8,7 +8,7 @@ from starlette import status
 
 from pecha_api.utils import Utils
 from .segments.segments_repository import get_segments_by_list_of_id
-from .texts_repository import (get_contents_by_id_with_segments, get_texts_by_id, get_contents_by_id,
+from .texts_repository import (get_texts_by_id, get_contents_by_id,
                                get_texts_by_category, get_versions_by_id, create_text, check_all_text_exists,
                                check_text_exists)
 from .texts_repository import get_text_infos
@@ -121,27 +121,6 @@ async def get_contents_by_text_id(text_id: str, skip: int, limit: int) -> TableO
     )
 
 
-async def get_contents_by_text_id_with_detail(text_id: str, content_id: str, skip: int,
-                                              limit: int) -> TableOfContentResponse:
-    table_of_contents = await get_contents_by_id_with_segments(text_id=text_id, content_id=content_id, skip=skip,
-                                                               limit=limit)
-    table_of_contents_with_details = await get_mapped_table_of_contents_segments(table_of_contents=table_of_contents)
-    return TableOfContentResponse(
-        text_detail=TextModel(
-            id=str(uuid4()),
-            title="བྱང་ཆུབ་སེམས་དཔའི་སྤྱོད་པ་ལ་འཇུག་པ།",
-            language="bo",
-            type="root_text",
-            is_published=True,
-            created_date="2021-09-01T00:00:00.000Z",
-            updated_date="2021-09-01T00:00:00.000Z",
-            published_date="2021-09-01T00:00:00.000Z",
-            published_by="pecha",
-            categories=[str(uuid4())],
-            parent_id=None
-        ),
-        contents=table_of_contents_with_details
-    )
 
 
 async def get_versions_by_text_id(text_id: str, skip: int, limit: int) -> TextVersionResponse:

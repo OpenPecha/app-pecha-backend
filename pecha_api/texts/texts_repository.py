@@ -95,7 +95,6 @@ async def get_contents_by_id(text_id: str, skip: int, limit: int):
         )
     ]
 
-async def get_contents_by_id_with_segments(text_id: str, content_id: str, skip: int, limit: int):
     return [
         TableOfContent(
             id="abh7u8e4-da52-4ea2-800e-3414emk8uy67",
