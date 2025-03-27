@@ -7,7 +7,7 @@ from pecha_api.texts.texts_service import create_new_text, get_versions_by_text_
 from pecha_api.texts.texts_response_models import CreateTextRequest, TextModel, Text, TextVersion, TextVersionResponse, \
     TableOfContent, Section, TableOfContentSegmentResponse, Translation, TextDetailsRequest, TableOfContentResponse
 from pecha_api.texts.texts_service import get_text_by_term_or_category, TextsCategoryResponse, get_text_details_by_text_id, \
-    validate_text_exits, validate_texts_exits
+    validate_text_exits, validate_texts_exits, get_contents_by_text_id
 
 
 @pytest.mark.asyncio
@@ -213,7 +213,7 @@ async def test_get_text_details_by_text_id():
         content_id="content_id_1",
         version_id="version_id_1"
     )
-    text_detail = TextModel(
+    text = TextModel(
         id="032b9a5f-0712-40d8-b7ec-73c8c94f1c15",
         title="བྱང་ཆུབ་སེམས་དཔའི་སྤྱོད་པ་ལ་འཇུག་པ།",
         language="bo",
@@ -259,10 +259,84 @@ async def test_get_text_details_by_text_id():
     with patch('pecha_api.texts.texts_service.check_text_exists', return_value=True), \
         patch('pecha_api.texts.texts_service.get_text_detail_by_id', new_callable=AsyncMock) as mock_get_text_detail_by_id, \
         patch('pecha_api.texts.texts_service.get_text_details', new_callable=AsyncMock) as mock_get_text_details:
-        mock_get_text_detail_by_id.return_value = text_detail
+        mock_get_text_detail_by_id.return_value = text
         mock_get_text_details.return_value = text_details
         response = await get_text_details_by_text_id(text_id="032b9a5f-0712-40d8-b7ec-73c8c94f1c15", text_details_request=text_request, skip=0, limit=100)
         assert response == TableOfContentResponse(
-            text_detail=text_detail,
+            text_detail=text,
             contents=text_details
+        )
+
+@pytest.mark.asyncio
+async def test_get_contents_by_text_id():
+    text = TextModel(
+        id="032b9a5f-0712-40d8-b7ec-73c8c94f1c15",
+        title="བྱང་ཆུབ་སེམས་དཔའི་སྤྱོད་པ་ལ་འཇུག་པ།",
+        language="bo",
+        type="root_text",
+        is_published=True,
+        created_date="2025-03-20 09:26:16.571522",
+        updated_date="2025-03-20 09:26:16.571532",
+        published_date="2025-03-20 09:26:16.571536",
+        published_by="pecha",
+        categories=["67dd22a8d9f06ab28feedc90"],
+        parent_id=None
+    )
+    table_of_contents = [
+        TableOfContent(
+            id="abh7u8e4-da52-4ea2-800e-3414emk8uy67",
+            text_id="032b9a5f-0712-40d8-b7ec-73c8c94f1c15",
+            segments=[
+                Section(
+                    id="d19338e4-da52-4ea2-800e-3414eac8167e",
+                    title="A brief presentation of the ground path and result",
+                    section_number=1,
+                    parent_id=None,
+                    created_date="2021-09-01T00:00:00.000Z",
+                    updated_date="2021-09-01T00:00:00.000Z",
+                    published_date="2021-09-01T00:00:00.000Z"
+                ),
+                Section(
+                    id="b48dad38-da6d-45c3-ad12-97bca590769c",
+                    title="The detailed explanation of the divisions of reality",
+                    section_number=2,
+                    parent_id=None,
+                    sections=[
+                        Section(
+                            id="0971f07a-8491-4cfe-9720-dac1acb9824d",
+                            title="Basis",
+                            section_number=1,
+                            parent_id="b48dad38-da6d-45c3-ad12-97bca590769c",
+                            created_date="2021-09-01T00:00:00.000Z",
+                            updated_date="2021-09-01T00:00:00.000Z",
+                            published_date="2021-09-01T00:00:00.000Z",
+                            sections=[
+                                Section(
+                                    id="at8ujke7-8491-4cfe-9720-dac1acb967y7",
+                                    title="The extensive explanation of the abiding nature of the ground",
+                                    section_number=1,
+                                    parent_id="0971f07a-8491-4cfe-9720-dac1acb9824d",
+                                    created_date="2021-09-01T00:00:00.000Z",
+                                    updated_date="2021-09-01T00:00:00.000Z",
+                                    published_date="2021-09-01T00:00:00.000Z"
+                                )
+                            ]
+                        )
+                    ],
+                    created_date="2021-09-01T00:00:00.000Z",
+                    updated_date="2021-09-01T00:00:00.000Z",
+                    published_date="2021-09-01T00:00:00.000Z"
+                )
+            ]
+        )
+    ]
+    with patch('pecha_api.texts.texts_service.check_text_exists', return_value=True), \
+        patch('pecha_api.texts.texts_service.get_texts_by_id', new_callable=AsyncMock) as mock_get_text_detail_by_id, \
+        patch('pecha_api.texts.texts_service.get_contents_by_id', new_callable=AsyncMock) as mock_get_contents_by_id:
+        mock_get_contents_by_id.return_value = table_of_contents
+        mock_get_text_detail_by_id.return_value = text
+        response = await get_contents_by_text_id(text_id="032b9a5f-0712-40d8-b7ec-73c8c94f1c15", skip=0, limit=10)
+        assert response == TableOfContentResponse(
+            text_detail=text,
+            contents=table_of_contents
         )

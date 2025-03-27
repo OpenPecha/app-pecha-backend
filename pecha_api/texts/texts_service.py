@@ -103,21 +103,13 @@ async def get_text_by_term_or_category(
 
 
 async def get_contents_by_text_id(text_id: str, skip: int, limit: int) -> TableOfContentResponse:
+    is_valid_text = await validate_text_exits(text_id=text_id)
+    if not is_valid_text:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Text not found")
+    text = await get_text_detail_by_id(text_id=text_id)
     table_of_contents = await get_contents_by_id(text_id=text_id, skip=skip, limit=limit)
     return TableOfContentResponse(
-        text_detail=TextModel(
-            id=str(uuid4()),
-            title="བྱང་ཆུབ་སེམས་དཔའི་སྤྱོད་པ་ལ་འཇུག་པ།",
-            language="bo",
-            type="root_text",
-            is_published=True,
-            created_date="2021-09-01T00:00:00.000Z",
-            updated_date="2021-09-01T00:00:00.000Z",
-            published_date="2021-09-01T00:00:00.000Z",
-            published_by="pecha",
-            categories=[str(uuid4())],
-            parent_id=None
-        ),
+        text_detail=text,
         contents=table_of_contents
     )
 
