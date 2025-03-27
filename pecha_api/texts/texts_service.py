@@ -29,13 +29,14 @@ async def validate_text_exits(text_id: str):
     is_exists =  await check_text_exists(text_id=uuid_text_id)
     if not is_exists:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail='Text not found')
-
+    return is_exists
 
 async def validate_texts_exits(text_ids: List[str]):
     uuid_text_ids = [UUID(text_id) for text_id in text_ids]
     all_exists =  await check_all_text_exists(text_ids=uuid_text_ids)
     if not all_exists:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Text not found")
+    return all_exists
 
 
 async def get_texts_by_category_id(category: str, skip: int, limit: int):
