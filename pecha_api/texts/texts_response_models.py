@@ -50,7 +50,7 @@ class TableOfContentSegmentResponse(BaseModel):
     segment_id: str
     segment_number: int
     content: Optional[str] = None
-    translation: Translation
+    translation: Optional[Translation] = None
 
 class Section(BaseModel):
     id: str
@@ -74,7 +74,7 @@ class TableOfContentResponse(BaseModel):
 
 class TextDetailsRequest(BaseModel):
     content_id: str
-    version_id: str
+    version_id: Optional[str] = None
 
 
 # Text Version Response Models
