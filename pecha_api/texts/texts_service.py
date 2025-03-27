@@ -10,10 +10,10 @@ from pecha_api.utils import Utils
 from .segments.segments_repository import get_segments_by_list_of_id
 from .texts_repository import (get_texts_by_id, get_contents_by_id,
                                get_texts_by_category, get_versions_by_id, create_text, check_all_text_exists,
-                               check_text_exists)
+                               check_text_exists, get_text_details)
 from .texts_repository import get_text_infos
 from .texts_response_models import TableOfContent, TableOfContentResponse, TextModel, TextVersionResponse, TextVersion, \
-     TextsCategoryResponse, Text, CreateTextRequest, Section
+     TextsCategoryResponse, Text, CreateTextRequest, Section, TextDetailsRequest
 from .texts_response_models import TextInfosResponse, TextInfos, RelatedTexts
 from ..users.users_service import verify_admin_access
 
@@ -120,6 +120,17 @@ async def get_contents_by_text_id(text_id: str, skip: int, limit: int) -> TableO
         contents=table_of_contents
     )
 
+async def get_texts_details_by_text_id(text_id: str, text_details_request: TextDetailsRequest, skip: int, limit: int) -> TableOfContentResponse:
+    is_valid_text = await validate_text_exits(text_id=text_id)
+    if is_valid_text:
+        text = await get_text_detail_by_id(text_id=text_id)
+        text_details = await get_text_details(text_id=text_id, text_details_request=text_details_request, skip=skip, limit=limit)
+        return TableOfContentResponse(
+            text_detail=text,
+            contents=text_details
+        )
+    else:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Text not found")
 
 
 
@@ -206,7 +217,6 @@ async def replace_segments_id_with_segment_details_in_section(section: Optional[
                 segment_detail = segments.get(segment.segment_id)
                 if segment_detail:
                     segment.content = segment_detail.content
-                    segment.mapping = segment_detail.mapping
     if section.sections:
         await asyncio.gather(*[replace_segments_id_with_segment_details_in_section(section=sub_section) for sub_section in section.sections])
 
