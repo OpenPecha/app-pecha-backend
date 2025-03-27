@@ -12,9 +12,13 @@ from .constants import Constants
 class Utils:
 
     @staticmethod
+    def get_date_time_from_epoch(epoch: int) -> str:
+        return datetime.fromtimestamp(epoch // 1000, timezone.utc)
+
+    @staticmethod
     def time_passed(published_time: int, language: str) -> str:
         current_time = datetime.now(timezone.utc)
-        post_time = datetime.fromtimestamp(published_time, timezone.utc)
+        post_time = datetime.fromtimestamp(published_time // 1000, timezone.utc)
         time_difference = current_time - post_time
         if time_difference < timedelta(minutes=1):
             return Utils.get_word_by_language(word='Now', language=language)

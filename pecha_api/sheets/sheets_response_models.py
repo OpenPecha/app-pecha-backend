@@ -40,7 +40,8 @@ class SheetModel(BaseModel):
         values["topics"] = [Utils.get_value_from_dict(topic, values["language"]) for topic in values["topics"]]
         values["views"] = Utils.get_number_by_language(values["views"], values["language"])
         values["time_passed"] = Utils.time_passed(values["published_date"], values["language"])
-        values["published_date"] = Utils.get_number_by_language(values["published_date"], values["language"])
+        milliseconds_to_date_time = Utils.get_date_time_from_epoch(values["published_date"])
+        values["published_date"] = Utils.get_number_by_language(milliseconds_to_date_time, values["language"])
 
         return values
     
