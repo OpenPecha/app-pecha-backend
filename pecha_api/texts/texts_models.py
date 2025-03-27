@@ -48,3 +48,25 @@ class Text(Document):
             if len(found_ids) < len(batch_ids):
                 return False  # One or more IDs are missing
         return True  # All IDs exist
+    
+    @classmethod
+    async def get_texts_by_category_id(cls, category_id: str, skip: int, limit: int):
+        query = {"categories": category_id, "type": {"$ne": "version"}}
+        texts = (
+            await cls.find(query)
+            .skip(skip)
+            .limit(limit)
+            .to_list()
+        )
+        return texts
+    
+    @classmethod
+    async def get_versions_by_text_id(cls, text_id: str, skip: int, limit: int):
+        query = {"parent_id": text_id, "type": "version"}
+        texts = (
+            await cls.find(query)
+            .skip(skip)
+            .limit(limit)
+            .to_list()
+        )
+        return texts

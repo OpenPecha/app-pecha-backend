@@ -12,6 +12,7 @@ from .texts_models import Text
 from datetime import datetime, timezone
 
 
+
 async def get_texts_by_id(text_id: str) -> Text | None:
     try:
         text = await Text.get_text(text_id=text_id)
@@ -19,6 +20,7 @@ async def get_texts_by_id(text_id: str) -> Text | None:
     except CollectionWasNotInitialized as e:
         logging.debug(e)
         return None
+
 
 async def check_text_exists(text_id: UUID) -> bool:
     try:
@@ -36,85 +38,11 @@ async def check_all_text_exists(text_ids: List[UUID]) -> bool:
         logging.debug(e)
         return False
 
-async def get_texts_by_category(category: str, language: str, skip: int, limit: int):
-    return [
-        {
-            "id": "uuid.v4",
-            "title": "The Way of the Bodhisattva",
-            "language": "en",
-            "type": "root_text",
-            "is_published": True,
-            "created_date": "2021-09-01T00:00:00.000Z",
-            "updated_date": "2021-09-01T00:00:00.000Z",
-            "published_date": "2021-09-01T00:00:00.000Z",
-            "published_by": "buddhist_tab"
-        },
-        {
-            "id": "uuid.v4",
-            "title": "Commentary on the difficult points of The Way of Bodhisattvas",
-            "language": "en",
-            "type": "commentary",
-            "is_published": True,
-            "created_date": "2021-09-01T00:00:00.000Z",
-            "updated_date": "2021-09-01T00:00:00.000Z",
-            "published_date": "2021-09-01T00:00:00.000Z",
-            "published_by": "buddhist_tab"
-        },
-        {
-            "id": "uuid.v4",
-            "title": "Khenpo Kunpel's commentary on the Bodhicaryavatara",
-            "language": "en",
-            "type": "commentary",
-            "is_published": True,
-            "created_date": "2021-09-01T00:00:00.000Z",
-            "updated_date": "2021-09-01T00:00:00.000Z",
-            "published_date": "2021-09-01T00:00:00.000Z",
-            "published_by": "buddhist_tab"
-        }
-    ]
+async def get_texts_by_category(category: str, skip: int, limit: int):
+    return await Text.get_texts_by_category_id(category_id=category, skip=skip, limit=limit)
 
 async def get_versions_by_id(text_id: str, skip: int, limit: int):
-    return [
-        {
-            "id": "uuid.v4",
-            "title": "शबोधिचर्यावतार[sa]",
-            "parent_id": "d19338e",
-            "priority": 1,
-            "language": "sa",
-            "type": "translation",
-            "is_published": True,
-            "created_date": "2021-09-01T00:00:00.000Z",
-            "updated_date": "2021-09-01T00:00:00.000Z",
-            "published_date": "2021-09-01T00:00:00.000Z",
-            "published_by": "buddhist_tab"
-        },
-        {
-            "id": "uuid.v4",
-            "title": "བྱང་ཆུབ་སེམས་དཔའི་སྤྱོད་པ་ལ་འཇུག་པ།",
-            "language": "bo",
-            "parent_id": "d19338e",
-            "priority": 2,
-            "type": "translation",
-            "is_published": True,
-            "created_date": "2021-09-01T00:00:00.000Z",
-            "updated_date": "2021-09-01T00:00:00.000Z",
-            "published_date": "2021-09-01T00:00:00.000Z",
-            "published_by": "buddhist_tab"
-        },
-        {
-            "id": "uuid.v4",
-            "title": "The Way of the Bodhisattva Monlam AI Draft",
-            "language": "en",
-            "parent_id": "d19338e",
-            "priority": 3,
-            "type": "translation",
-            "is_published": True,
-            "created_date": "2021-09-01T00:00:00.000Z",
-            "updated_date": "2021-09-01T00:00:00.000Z",
-            "published_date": "2021-09-01T00:00:00.000Z",
-            "published_by": "buddhist_tab"
-        }
-    ]
+    return await Text.get_versions_by_text_id(text_id=text_id, skip=skip, limit=limit)
 
 
 async def get_contents_by_id(text_id: str, skip: int, limit: int):
@@ -314,15 +242,6 @@ async def get_contents_by_id_with_segments(text_id: str, content_id: str, skip: 
             ]
         )
     ]
-
-async def get_text_by_id(text_id: str):
-    return RootText(
-        id= "d19338e",
-        title= "The Way of the Bodhisattva",
-        language= "en",
-        type= "root_text",
-        has_child= False
-    )
 
 async def create_text(create_text_request: CreateTextRequest) -> Text:
     new_text = Text(

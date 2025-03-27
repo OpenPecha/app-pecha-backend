@@ -1,4 +1,3 @@
-
 from typing import List, Optional, Dict, Union
 
 from pecha_api.terms.terms_response_models import TermsModel
@@ -27,6 +26,18 @@ class TextModel(BaseModel):
     categories: List[str]
     parent_id: Optional[str] = None
 
+class RootText(BaseModel):
+    id: str
+    title: str
+    language: str
+    type: str
+    is_published: bool
+    created_date: str
+    updated_date: str
+    published_date: str
+    published_by: str
+    categories: List[str]
+    parent_id: Optional[str] = None
 
 
 # Text TOC Response Models
@@ -53,22 +64,17 @@ class TableOfContent(BaseModel):
     segments: List[Section]
 
 class TableOfContentResponse(BaseModel):
+    text_detail: TextModel
     contents: List[TableOfContent]
 
 
-# Text Version Response Models 
-class RootText(BaseModel):
-    id: str
-    title: str
-    language: str
-    type: str
-    has_child: bool
+# Text Version Response Models
 
 class TextVersion(BaseModel):
     id: str
     title: str
     parent_id: str
-    priority: int
+    priority: Optional[int] = None
     language: str
     type: str
     is_published: bool
@@ -78,7 +84,7 @@ class TextVersion(BaseModel):
     published_by: str
 
 class TextVersionResponse(BaseModel):
-    text: RootText
+    text: TextModel
     versions: List[TextVersion]
 
 # Texts Category Response Models
@@ -124,4 +130,3 @@ class TextInfos(BaseModel):
 
 class TextInfosResponse(BaseModel):
     text_infos: TextInfos
-    

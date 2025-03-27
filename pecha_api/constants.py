@@ -31,6 +31,7 @@ class Constants:
             "8": "8",
             "9": "9"
         }
+
     }
 
     TIME_PASSED_NOW = {
@@ -63,7 +64,6 @@ class Constants:
             "bo": "ལོ།"
         }
     }
-
 
 
 
