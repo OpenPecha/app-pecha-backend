@@ -209,20 +209,4 @@ async def get_infos_by_text_id(text_id: str, language: str, skip: int, limit: in
         )
     )
 
-async def replace_segments_id_with_segment_details_in_section(section: Optional[Section] = None) -> None:
-    if section and section.segments:
-        list_segment_id = [segment.segment_id for segment in section.segments if segment.segment_id]
-        if list_segment_id:
-            segments = await get_segments_by_list_of_id(segment_ids=list_segment_id)
-            for segment in section.segments:
-                segment_detail = segments.get(segment.segment_id)
-                if segment_detail:
-                    segment.content = segment_detail.content
-    if section.sections:
-        await asyncio.gather(*[replace_segments_id_with_segment_details_in_section(section=sub_section) for sub_section in section.sections])
 
-
-async def get_mapped_table_of_contents_segments(table_of_contents: List[TableOfContent]) -> List[TableOfContent]:
-    return table_of_contents
-    # await asyncio.gather(*[replace_segments_id_with_segment_details_in_section(section) for section in table_of_contents])
-    # return table_of_contents

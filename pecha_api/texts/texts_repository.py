@@ -32,7 +32,7 @@ async def check_text_exists(text_id: UUID) -> bool:
 
 async def check_all_text_exists(text_ids: List[UUID]) -> bool:
     try:
-        is_text_exits = await Text.all_exist(text_ids=text_ids,batch_size=Constants.QUERY_BATCH_SIZE)
+        is_text_exits = await Text.exists_all(text_ids=text_ids,batch_size=Constants.QUERY_BATCH_SIZE)
         return is_text_exits
     except CollectionWasNotInitialized as e:
         logging.debug(e)

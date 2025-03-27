@@ -6,7 +6,22 @@ import pytest
 from pecha_api.texts.texts_service import create_new_text, get_versions_by_text_id
 from pecha_api.texts.texts_response_models import CreateTextRequest, TextModel, Text, TextVersion, TextVersionResponse, \
     TableOfContent, Section, TableOfContentSegmentResponse, Translation, TextDetailsRequest, TableOfContentResponse
-from pecha_api.texts.texts_service import get_text_by_term_or_category, TextsCategoryResponse, get_text_details_by_text_id
+from pecha_api.texts.texts_service import get_text_by_term_or_category, TextsCategoryResponse, get_text_details_by_text_id, \
+    validate_text_exits, validate_texts_exits
+
+
+@pytest.mark.asyncio
+async def test_validate_text_exits():
+    with patch('pecha_api.texts.texts_service.check_text_exists', return_value=True):
+        response = await validate_text_exits(text_id="032b9a5f-0712-40d8-b7ec-73c8c94f1c15")
+        assert response == True
+
+@pytest.mark.asyncio
+async def test_validate_texts_exits():
+    with patch('pecha_api.texts.texts_service.check_all_text_exists', return_value=True):
+        response = await validate_texts_exits(text_ids=["032b9a5f-0712-40d8-b7ec-73c8c94f1c15", "a48c0814-ce56-4ada-af31-f74b179b52a9"])
+        assert response == True
+        
 
 @pytest.mark.asyncio
 async def test_get_text_by_category():
