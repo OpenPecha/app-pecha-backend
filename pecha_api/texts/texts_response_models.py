@@ -41,11 +41,16 @@ class RootText(BaseModel):
 
 
 # Text TOC Response Models
+class Translation(BaseModel):
+    text_id: str
+    language: str
+    content: str
+
 class TableOfContentSegmentResponse(BaseModel):
     segment_id: str
     segment_number: int
     content: Optional[str] = None
-    mapping: Optional[Mapping] = None
+    translation: Translation
 
 class Section(BaseModel):
     id: str
@@ -66,6 +71,10 @@ class TableOfContent(BaseModel):
 class TableOfContentResponse(BaseModel):
     text_detail: TextModel
     contents: List[TableOfContent]
+
+class TextDetailsRequest(BaseModel):
+    content_id: str
+    version_id: str
 
 
 # Text Version Response Models

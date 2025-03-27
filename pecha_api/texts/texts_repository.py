@@ -7,7 +7,7 @@ from uuid import UUID
 
 from beanie.exceptions import CollectionWasNotInitialized
 from pecha_api.constants import Constants
-from .texts_response_models import TableOfContent, Section, TableOfContentSegmentResponse, RootText, CreateTextRequest
+from .texts_response_models import TableOfContent, Section, CreateTextRequest, TextDetailsRequest, Translation, TableOfContentSegmentResponse
 from .texts_models import Text
 from datetime import datetime, timezone
 
@@ -95,7 +95,8 @@ async def get_contents_by_id(text_id: str, skip: int, limit: int):
         )
     ]
 
-async def get_contents_by_id_with_segments(text_id: str, content_id: str, skip: int, limit: int):
+
+async def get_text_details(text_id: str, text_details_request: TextDetailsRequest, skip: int, limit: int):
     return [
         TableOfContent(
             id="abh7u8e4-da52-4ea2-800e-3414emk8uy67",
@@ -110,131 +111,15 @@ async def get_contents_by_id_with_segments(text_id: str, content_id: str, skip: 
                         TableOfContentSegmentResponse(
                             segment_id="2176yt56-51de-4a42-9d49-580b729dnb66",
                             segment_number=1,
-                            content="<span class=\"text-quotation-style\">དང་པོ་ནི་</span><span class=\"text-citation-style\">ཧོ་སྣང་སྲིད་</span>སོགས་ཚིག་རྐང་དྲུག་གིས་བསྟན།<span class=\"text-citation-style\">ཧོ༵་</span>ཞེས་པ་འཁྲུལ་བས་དབང་མེད་དུ་བྱས་ཏེ་མི་འདོད་པའི་ཉེས་རྒུད་དྲག་པོས་རབ་ཏུ་གཟིར་བའི་འཁོར་བའི་སེམས་ཅན་རྣམས་ལ་དམིགས་མེད་བརྩེ་བའི་རྣམ་པར་ཤར་ཏེ་འཁྲུལ་སྣང་རང་སར་དག་པའི་ཉེ་ལམ་ཟབ་མོ་འདིར་བསྐུལ་བའི་ཚིག་ཏུ་བྱས་པ་སྟེ།"
-                        ),
-                        TableOfContentSegmentResponse(
-                            segment_id="koi7y654-0d28-41e9-bff1-83ef53bfbad1",
-                            segment_number=2,
-                            content="འདི་ལྟར་བློའི་ཡུལ་དུ་བྱ་རུང་བའི་ཆོས་རང་ངོས་ནས་བདེན་པར་མ་གྲུབ་པས་<span class=\"text-citation-style\">སྣང༵་</span>བ་ཙམ་དུ་ཟད་ཅིང་།གང་སྣང་ཐ་སྙད་ཙམ་དུ་བསླུ་བ་མེད་པར་གནས་པས་སྣང་ཙམ་དུ་<span class=\"text-citation-style\">སྲི༵ད་</span>ཅིང་ཡོད་པའི་མ་དག་ཀུན་ཉོན་འཁྲུལ་བའི་<span class=\"text-citation-style\">འཁོ༵ར་</span>བའི་སྣོད་བཅུད་རྒྱུ་འབྲས་ཀྱི་སྒྱུ་འཕྲུལ་སྣ་ཚོགས་ཀྱི་བཀོད་པ་འདི་དང་།དག་པ་རྣམ་བྱང་མྱང་<span class=\"text-citation-style\">འད༵ས་</span>ཀྱི་གྲོལ་བ་ཐར་པའི་ཡེ་ཤེས་ཡོན་ཏན་ཕྲིན་ལས་ཀྱི་རོལ་གར་བསམ་ལས་འདས་པའི་འཁྲུལ་གྲོལ་གྱི་ཆོས་འདི་<span class=\"text-citation-style\">ཐམ༵ས་</span><span class=\"text-citation-style\">ཅ༵ད་</span><span class=\"text-citation-style\">ཀུན༵</span>།"
-                        ),
-                        TableOfContentSegmentResponse(
-                            segment_id="74ju7846-0d28-41e9-bff1-83ef53bfbju7",
-                            segment_number=3,
-                            content="འབྱུང་ཞིང་མཆེད་པའི་འབྱུང་གཞི།ཐིམ་ཞིང་སྡུད་པའི་སྡུད་གཞི།མཐར་ཐུག་ནི་སེམས་ཅན་རང་ཉིད་ཀྱི་སེམས་ཀྱི་གཤིས་ལུགས་ཕྲ་བ་གཉུག་མ་སེམས་ཀྱི་རྡོ་རྗེ་བྱང་ཆུབ་ཀྱི་སེམས་ངོ་བོའི་ཆ་ནས་སྟོང་ཞིང་ཀ་ནས་དག་པས།དངོས་པོ་རང་མཚན་གྱི་སྤྲོས་པའི་ཕྱོགས་ཀུན་དང་བྲལ་བ།རང་བཞིན་ཆ་ནས་གཏིང་གསལ་འགགས་པ་མེད་པའི་རང་བཞིན་ལྷུན་གྲུབ་ཀྱི་ཡོན་ཏན་འདུ་འབྲལ་སྤང་བས།"
-                        ),
-                        TableOfContentSegmentResponse(
-                            segment_id="9876yt56-51de-4a42-9d49-580b729dnb66",
-                            segment_number=4,
-                            content="<span class=\"text-quotation-style\">དང་པོ་ནི་</span><span class=\"text-citation-style\">ཧོ་སྣང་སྲིད་</span>སོགས་ཚིག་རྐང་དྲུག་གིས་བསྟན།<span class=\"text-citation-style\">ཧོ༵་</span>ཞེས་པ་འཁྲུལ་བས་དབང་མེད་དུ་བྱས་ཏེ་མི་འདོད་པའི་ཉེས་རྒུད་དྲག་པོས་རབ་ཏུ་གཟིར་བའི་འཁོར་བའི་སེམས་ཅན་རྣམས་ལ་དམིགས་མེད་བརྩེ་བའི་རྣམ་པར་ཤར་ཏེ་འཁྲུལ་སྣང་རང་སར་དག་པའི་ཉེ་ལམ་ཟབ་མོ་འདིར་བསྐུལ་བའི་ཚིག་ཏུ་བྱས་པ་སྟེ།"
-                        ),
-                        TableOfContentSegmentResponse(
-                            segment_id="m9i7y654-0d28-41e9-bff1-83ef53bfbad1",
-                            segment_number=5,
-                            content="འདི་ལྟར་བློའི་ཡུལ་དུ་བྱ་རུང་བའི་ཆོས་རང་ངོས་ནས་བདེན་པར་མ་གྲུབ་པས་<span class=\"text-citation-style\">སྣང༵་</span>བ་ཙམ་དུ་ཟད་ཅིང་།གང་སྣང་ཐ་སྙད་ཙམ་དུ་བསླུ་བ་མེད་པར་གནས་པས་སྣང་ཙམ་དུ་<span class=\"text-citation-style\">སྲི༵ད་</span>ཅིང་ཡོད་པའི་མ་དག་ཀུན་ཉོན་འཁྲུལ་བའི་<span class=\"text-citation-style\">འཁོ༵ར་</span>བའི་སྣོད་བཅུད་རྒྱུ་འབྲས་ཀྱི་སྒྱུ་འཕྲུལ་སྣ་ཚོགས་ཀྱི་བཀོད་པ་འདི་དང་།དག་པ་རྣམ་བྱང་མྱང་<span class=\"text-citation-style\">འད༵ས་</span>ཀྱི་གྲོལ་བ་ཐར་པའི་ཡེ་ཤེས་ཡོན་ཏན་ཕྲིན་ལས་ཀྱི་རོལ་གར་བསམ་ལས་འདས་པའི་འཁྲུལ་གྲོལ་གྱི་ཆོས་འདི་<span class=\"text-citation-style\">ཐམ༵ས་</span><span class=\"text-citation-style\">ཅ༵ད་</span><span class=\"text-citation-style\">ཀུན༵</span>།"
-                        ),
-                        TableOfContentSegmentResponse(
-                            segment_id="bbju7846-0d28-41e9-bff1-83ef53bfbju7",
-                            segment_number=6,
-                            content="འབྱུང་ཞིང་མཆེད་པའི་འབྱུང་གཞི།ཐིམ་ཞིང་སྡུད་པའི་སྡུད་གཞི།མཐར་ཐུག་ནི་སེམས་ཅན་རང་ཉིད་ཀྱི་སེམས་ཀྱི་གཤིས་ལུགས་ཕྲ་བ་གཉུག་མ་སེམས་ཀྱི་རྡོ་རྗེ་བྱང་ཆུབ་ཀྱི་སེམས་ངོ་བོའི་ཆ་ནས་སྟོང་ཞིང་ཀ་ནས་དག་པས།དངོས་པོ་རང་མཚན་གྱི་སྤྲོས་པའི་ཕྱོགས་ཀུན་དང་བྲལ་བ།རང་བཞིན་ཆ་ནས་གཏིང་གསལ་འགགས་པ་མེད་པའི་རང་བཞིན་ལྷུན་གྲུབ་ཀྱི་ཡོན་ཏན་འདུ་འབྲལ་སྤང་བས།"
+                            content="<span class=\"text-quotation-style\">དང་པོ་ནི་</span><span class=\"text-citation-style\">ཧོ་སྣང་སྲིད་</span>སོགས་ཚིག་རྐང་དྲུག་གིས་བསྟན།<span class=\"text-citation-style\">ཧོ༵་</span>ཞེས་པ་འཁྲུལ་བས་དབང་མེད་དུ་བྱས་ཏེ་མི་འདོད་པའི་ཉེས་རྒུད་དྲག་པོས་རབ་ཏུ་གཟིར་བའི་འཁོར་བའི་སེམས་ཅན་རྣམས་ལ་དམིགས་མེད་བརྩེ་བའི་རྣམ་པར་ཤར་ཏེ་འཁྲུལ་སྣང་རང་སར་དག་པའི་ཉེ་ལམ་ཟབ་མོ་འདིར་བསྐུལ་བའི་ཚིག་ཏུ་བྱས་པ་སྟེ།",
+                            translation=Translation(
+                                text_id=text_details_request.version_id,
+                                language="en",
+                                content="비파시불, 시기불, 비사부불, <br>  구류손불, 구나함모니불, 가섭불, <br>  그리고 석가모니불 - 고타마, 모든 신들의 신께, <br>  이 일곱 용사 같은 부처님들께 예배드립니다!"
+                            )
                         )
                     ],
-                    created_date="2021-09-01T00:00:00.000Z",
-                    updated_date="2021-09-01T00:00:00.000Z",
-                    published_date="2021-09-01T00:00:00.000Z"
-                ),
-                Section(
-                    id="b48dad38-da6d-45c3-ad12-97bca590769c",
-                    title="ཐོག་མར་གཞི་ལམ་འབྲས་བུའི་རྣམ་བཞག་མདོར་བསྡུས་ཏེ་བསྟན་པ།",
-                    section_number=2,
-                    parent_id=None,
-                    segments=[
-                        TableOfContentSegmentResponse(
-                            segment_id="tbeb0072-51de-4a42-9d49-580b729dd6aa",
-                            segment_number=1,
-                            content="འབྱུང་ཞིང་མཆེད་པའི་འབྱུང་གཞི།ཐིམ་ཞིང་སྡུད་པའི་སྡུད་གཞི།མཐར་ཐུག་ནི་སེམས་ཅན་རང་ཉིད་ཀྱི་སེམས་ཀྱི་གཤིས་ལུགས་ཕྲ་བ་གཉུག་མ་སེམས་ཀྱི་རྡོ་རྗེ་བྱང་ཆུབ་ཀྱི་སེམས་ངོ་བོའི་ཆ་ནས་སྟོང་ཞིང་ཀ་ནས་དག་པས།དངོས་པོ་རང་མཚན་གྱི་སྤྲོས་པའི་ཕྱོགས་ཀུན་དང་བྲལ་བ།རང་བཞིན་ཆ་ནས་གཏིང་གསལ་འགགས་པ་མེད་པའི་རང་བཞིན་ལྷུན་གྲུབ་ཀྱི་ཡོན་ཏན་འདུ་འབྲལ་སྤང་བས།"
-                        ),
-                        TableOfContentSegmentResponse(
-                            segment_id="ad45121f5-0d28-41e9-bff1-83ef53bf99d1",
-                            segment_number=2,
-                            content="<span class=\"text-quotation-style\">དང་པོ་ནི་</span><span class=\"text-citation-style\">ཧོ་སྣང་སྲིད་</span>སོགས་ཚིག་རྐང་དྲུག་གིས་བསྟན།<span class=\"text-citation-style\">ཧོ༵་</span>ཞེས་པ་འཁྲུལ་བས་དབང་མེད་དུ་བྱས་ཏེ་མི་འདོད་པའི་ཉེས་རྒུད་དྲག་པོས་རབ་ཏུ་གཟིར་བའི་འཁོར་བའི་སེམས་ཅན་རྣམས་ལ་དམིགས་མེད་བརྩེ་བའི་རྣམ་པར་ཤར་ཏེ་འཁྲུལ་སྣང་རང་སར་དག་པའི་ཉེ་ལམ་ཟབ་མོ་འདིར་བསྐུལ་བའི་ཚིག་ཏུ་བྱས་པ་སྟེ།"
-                        ),
-                        TableOfContentSegmentResponse(
-                            segment_id="kji8yt56-51de-4a42-9d49-580b729dnb66",
-                            segment_number=3,
-                            content="<span class=\"text-quotation-style\">དང་པོ་ནི་</span><span class=\"text-citation-style\">ཧོ་སྣང་སྲིད་</span>སོགས་ཚིག་རྐང་དྲུག་གིས་བསྟན།<span class=\"text-citation-style\">ཧོ༵་</span>ཞེས་པ་འཁྲུལ་བས་དབང་མེད་དུ་བྱས་ཏེ་མི་འདོད་པའི་ཉེས་རྒུད་དྲག་པོས་རབ་ཏུ་གཟིར་བའི་འཁོར་བའི་སེམས་ཅན་རྣམས་ལ་དམིགས་མེད་བརྩེ་བའི་རྣམ་པར་ཤར་ཏེ་འཁྲུལ་སྣང་རང་སར་དག་པའི་ཉེ་ལམ་ཟབ་མོ་འདིར་བསྐུལ་བའི་ཚིག་ཏུ་བྱས་པ་སྟེ།"
-                        ),
-                        TableOfContentSegmentResponse(
-                            segment_id="9jja7y654-0d28-41e9-bff1-83ef53bfbad1",
-                            segment_number=4,
-                            content="འདི་ལྟར་བློའི་ཡུལ་དུ་བྱ་རུང་བའི་ཆོས་རང་ངོས་ནས་བདེན་པར་མ་གྲུབ་པས་<span class=\"text-citation-style\">སྣང༵་</span>བ་ཙམ་དུ་ཟད་ཅིང་།གང་སྣང་ཐ་སྙད་ཙམ་དུ་བསླུ་བ་མེད་པར་གནས་པས་སྣང་ཙམ་དུ་<span class=\"text-citation-style\">སྲི༵ད་</span>ཅིང་ཡོད་པའི་མ་དག་ཀུན་ཉོན་འཁྲུལ་བའི་<span class=\"text-citation-style\">འཁོ༵ར་</span>བའི་སྣོད་བཅུད་རྒྱུ་འབྲས་ཀྱི་སྒྱུ་འཕྲུལ་སྣ་ཚོགས་ཀྱི་བཀོད་པ་འདི་དང་།དག་པ་རྣམ་བྱང་མྱང་<span class=\"text-citation-style\">འད༵ས་</span>ཀྱི་གྲོལ་བ་ཐར་པའི་ཡེ་ཤེས་ཡོན་ཏན་ཕྲིན་ལས་ཀྱི་རོལ་གར་བསམ་ལས་འདས་པའི་འཁྲུལ་གྲོལ་གྱི་ཆོས་འདི་<span class=\"text-citation-style\">ཐམ༵ས་</span><span class=\"text-citation-style\">ཅ༵ད་</span><span class=\"text-citation-style\">ཀུན༵</span>།"
-                        ),
-                        TableOfContentSegmentResponse(
-                            segment_id="ji897846-0d28-41e9-bff1-83ef53bfbju7",
-                            segment_number=5,
-                            content="འབྱུང་ཞིང་མཆེད་པའི་འབྱུང་གཞི།ཐིམ་ཞིང་སྡུད་པའི་སྡུད་གཞི།མཐར་ཐུག་ནི་སེམས་ཅན་རང་ཉིད་ཀྱི་སེམས་ཀྱི་གཤིས་ལུགས་ཕྲ་བ་གཉུག་མ་སེམས་ཀྱི་རྡོ་རྗེ་བྱང་ཆུབ་ཀྱི་སེམས་ངོ་བོའི་ཆ་ནས་སྟོང་ཞིང་ཀ་ནས་དག་པས།དངོས་པོ་རང་མཚན་གྱི་སྤྲོས་པའི་ཕྱོགས་ཀུན་དང་བྲལ་བ།རང་བཞིན་ཆ་ནས་གཏིང་གསལ་འགགས་པ་མེད་པའི་རང་བཞིན་ལྷུན་གྲུབ་ཀྱི་ཡོན་ཏན་འདུ་འབྲལ་སྤང་བས།"
-                        )
-                    ],
-                    sections=[
-                        Section(
-                            id="0971f07a-8491-4cfe-9720-dac1acb9824d",
-                            title="དེ་ཉིད་སོ་སོར་ཕྱེ་སྟེ་རྒྱས་པར་འཆད་པ།",
-                            section_number=1,
-                            parent_id="b48dad38-da6d-45c3-ad12-97bca590769c",
-                            segments=[
-                                TableOfContentSegmentResponse(
-                                    segment_id="kjib0072-51de-4a42-9d49-580b729d7658",
-                                    segment_number=1,
-                                    content="འདི་ལྟར་བློའི་ཡུལ་དུ་བྱ་རུང་བའི་ཆོས་རང་ངོས་ནས་བདེན་པར་མ་གྲུབ་པས་<span class=\"text-citation-style\">སྣང༵་</span>བ་ཙམ་དུ་ཟད་ཅིང་།གང་སྣང་ཐ་སྙད་ཙམ་དུ་བསླུ་བ་མེད་པར་གནས་པས་སྣང་ཙམ་དུ་<span class=\"text-citation-style\">སྲི༵ད་</span>ཅིང་ཡོད་པའི་མ་དག་ཀུན་ཉོན་འཁྲུལ་བའི་<span class=\"text-citation-style\">འཁོ༵ར་</span>བའི་སྣོད་བཅུད་རྒྱུ་འབྲས་ཀྱི་སྒྱུ་འཕྲུལ་སྣ་ཚོགས་ཀྱི་བཀོད་པ་འདི་དང་།དག་པ་རྣམ་བྱང་མྱང་<span class=\"text-citation-style\">འད༵ས་</span>ཀྱི་གྲོལ་བ་ཐར་པའི་ཡེ་ཤེས་ཡོན་ཏན་ཕྲིན་ལས་ཀྱི་རོལ་གར་བསམ་ལས་འདས་པའི་འཁྲུལ་གྲོལ་གྱི་ཆོས་འདི་<span class=\"text-citation-style\">ཐམ༵ས་</span><span class=\"text-citation-style\">ཅ༵ད་</span><span class=\"text-citation-style\">ཀུན༵</span>།"
-                                ),
-                                TableOfContentSegmentResponse(
-                                    segment_id="mk8121f5-0d28-41e9-bff1-83ef53bfbad1",
-                                    segment_number=2,
-                                    content="འབྱུང་ཞིང་མཆེད་པའི་འབྱུང་གཞི།ཐིམ་ཞིང་སྡུད་པའི་སྡུད་གཞི།མཐར་ཐུག་ནི་སེམས་ཅན་རང་ཉིད་ཀྱི་སེམས་ཀྱི་གཤིས་ལུགས་ཕྲ་བ་གཉུག་མ་སེམས་ཀྱི་རྡོ་རྗེ་བྱང་ཆུབ་ཀྱི་སེམས་ངོ་བོའི་ཆ་ནས་སྟོང་ཞིང་ཀ་ནས་དག་པས།དངོས་པོ་རང་མཚན་གྱི་སྤྲོས་པའི་ཕྱོགས་ཀུན་དང་བྲལ་བ།རང་བཞིན་ཆ་ནས་གཏིང་གསལ་འགགས་པ་མེད་པའི་རང་བཞིན་ལྷུན་གྲུབ་ཀྱི་ཡོན་ཏན་འདུ་འབྲལ་སྤང་བས།"
-                                )
-                            ],
-                            created_date="2021-09-01T00:00:00.000Z",
-                            updated_date="2021-09-01T00:00:00.000Z",
-                            published_date="2021-09-01T00:00:00.000Z",
-                            sections=[
-                                Section(
-                                    id="abv6578i-8491-4cfe-9720-dac1acb9824d",
-                                    title="The extensive explanation of the abiding nature of the ground",
-                                    section_number=1,
-                                    parent_id="0971f07a-8491-4cfe-9720-dac1acb9824d",
-                                    segments=[
-                                        TableOfContentSegmentResponse(
-                                            segment_id="jheb0072-51de-4a42-9d49-580b729dcvgt",
-                                            segment_number=1,
-                                            content="འདི་ལྟར་བློའི་ཡུལ་དུ་བྱ་རུང་བའི་ཆོས་རང་ངོས་ནས་བདེན་པར་མ་གྲུབ་པས་<span class=\"text-citation-style\">སྣང༵་</span>བ་ཙམ་དུ་ཟད་ཅིང་།གང་སྣང་ཐ་སྙད་ཙམ་དུ་བསླུ་བ་མེད་པར་གནས་པས་སྣང་ཙམ་དུ་<span class=\"text-citation-style\">སྲི༵ད་</span>ཅིང་ཡོད་པའི་མ་དག་ཀུན་ཉོན་འཁྲུལ་བའི་<span class=\"text-citation-style\">འཁོ༵ར་</span>བའི་སྣོད་བཅུད་རྒྱུ་འབྲས་ཀྱི་སྒྱུ་འཕྲུལ་སྣ་ཚོགས་ཀྱི་བཀོད་པ་འདི་དང་།དག་པ་རྣམ་བྱང་མྱང་<span class=\"text-citation-style\">འད༵ས་</span>ཀྱི་གྲོལ་བ་ཐར་པའི་ཡེ་ཤེས་ཡོན་ཏན་ཕྲིན་ལས་ཀྱི་རོལ་གར་བསམ་ལས་འདས་པའི་འཁྲུལ་གྲོལ་གྱི་ཆོས་འདི་<span class=\"text-citation-style\">ཐམ༵ས་</span><span class=\"text-citation-style\">ཅ༵ད་</span><span class=\"text-citation-style\">ཀུན༵</span>།"
-                                        ),
-                                        TableOfContentSegmentResponse(
-                                            segment_id="st2121f5-0d28-41e9-bff1-83ef53bfabcd",
-                                            segment_number=2,
-                                            content="འབྱུང་ཞིང་མཆེད་པའི་འབྱུང་གཞི།ཐིམ་ཞིང་སྡུད་པའི་སྡུད་གཞི།མཐར་ཐུག་ནི་སེམས་ཅན་རང་ཉིད་ཀྱི་སེམས་ཀྱི་གཤིས་ལུགས་ཕྲ་བ་གཉུག་མ་སེམས་ཀྱི་རྡོ་རྗེ་བྱང་ཆུབ་ཀྱི་སེམས་ངོ་བོའི་ཆ་ནས་སྟོང་ཞིང་ཀ་ནས་དག་པས།དངོས་པོ་རང་མཚན་གྱི་སྤྲོས་པའི་ཕྱོགས་ཀུན་དང་བྲལ་བ།རང་བཞིན་ཆ་ནས་གཏིང་གསལ་འགགས་པ་མེད་པའི་རང་བཞིན་ལྷུན་གྲུབ་ཀྱི་ཡོན་ཏན་འདུ་འབྲལ་སྤང་བས།"
-                                        ),
-                                        TableOfContentSegmentResponse(
-                                            segment_id="te76yt56-51de-4a42-9d49-580b729dnb66",
-                                            segment_number=3,
-                                            content="<span class=\"text-quotation-style\">དང་པོ་ནི་</span><span class=\"text-citation-style\">ཧོ་སྣང་སྲིད་</span>སོགས་ཚིག་རྐང་དྲུག་གིས་བསྟན།<span class=\"text-citation-style\">ཧོ༵་</span>ཞེས་པ་འཁྲུལ་བས་དབང་མེད་དུ་བྱས་ཏེ་མི་འདོད་པའི་ཉེས་རྒུད་དྲག་པོས་རབ་ཏུ་གཟིར་བའི་འཁོར་བའི་སེམས་ཅན་རྣམས་ལ་དམིགས་མེད་བརྩེ་བའི་རྣམ་པར་ཤར་ཏེ་འཁྲུལ་སྣང་རང་སར་དག་པའི་ཉེ་ལམ་ཟབ་མོ་འདིར་བསྐུལ་བའི་ཚིག་ཏུ་བྱས་པ་སྟེ།"
-                                        ),
-                                        TableOfContentSegmentResponse(
-                                            segment_id="ati7y654-0d28-41e9-bff1-83ef53bfbad1",
-                                            segment_number=4,
-                                            content="འདི་ལྟར་བློའི་ཡུལ་དུ་བྱ་རུང་བའི་ཆོས་རང་ངོས་ནས་བདེན་པར་མ་གྲུབ་པས་<span class=\"text-citation-style\">སྣང༵་</span>བ་ཙམ་དུ་ཟད་ཅིང་།གང་སྣང་ཐ་སྙད་ཙམ་དུ་བསླུ་བ་མེད་པར་གནས་པས་སྣང་ཙམ་དུ་<span class=\"text-citation-style\">སྲི༵ད་</span>ཅིང་ཡོད་པའི་མ་དག་ཀུན་ཉོན་འཁྲུལ་བའི་<span class=\"text-citation-style\">འཁོ༵ར་</span>བའི་སྣོད་བཅུད་རྒྱུ་འབྲས་ཀྱི་སྒྱུ་འཕྲུལ་སྣ་ཚོགས་ཀྱི་བཀོད་པ་འདི་དང་།དག་པ་རྣམ་བྱང་མྱང་<span class=\"text-citation-style\">འད༵ས་</span>ཀྱི་གྲོལ་བ་ཐར་པའི་ཡེ་ཤེས་ཡོན་ཏན་ཕྲིན་ལས་ཀྱི་རོལ་གར་བསམ་ལས་འདས་པའི་འཁྲུལ་གྲོལ་གྱི་ཆོས་འདི་<span class=\"text-citation-style\">ཐམ༵ས་</span><span class=\"text-citation-style\">ཅ༵ད་</span><span class=\"text-citation-style\">ཀུན༵</span>།"
-                                        ),
-                                        TableOfContentSegmentResponse(
-                                            segment_id="abcdu7846-0d28-41e9-bff1-83ef53bfbju7",
-                                            segment_number=5,
-                                            content="འབྱུང་ཞིང་མཆེད་པའི་འབྱུང་གཞི།ཐིམ་ཞིང་སྡུད་པའི་སྡུད་གཞི།མཐར་ཐུག་ནི་སེམས་ཅན་རང་ཉིད་ཀྱི་སེམས་ཀྱི་གཤིས་ལུགས་ཕྲ་བ་གཉུག་མ་སེམས་ཀྱི་རྡོ་རྗེ་བྱང་ཆུབ་ཀྱི་སེམས་ངོ་བོའི་ཆ་ནས་སྟོང་ཞིང་ཀ་ནས་དག་པས།དངོས་པོ་རང་མཚན་གྱི་སྤྲོས་པའི་ཕྱོགས་ཀུན་དང་བྲལ་བ།རང་བཞིན་ཆ་ནས་གཏིང་གསལ་འགགས་པ་མེད་པའི་རང་བཞིན་ལྷུན་གྲུབ་ཀྱི་ཡོན་ཏན་འདུ་འབྲལ་སྤང་བས།"
-                                        )
-                                    ],
-                                    created_date="2021-09-01T00:00:00.000Z",
-                                    updated_date="2021-09-01T00:00:00.000Z",
-                                    published_date="2021-09-01T00:00:00.000Z"
-                                )
-                            ]
-                        )
-                    ],
+                    sections=None,
                     created_date="2021-09-01T00:00:00.000Z",
                     updated_date="2021-09-01T00:00:00.000Z",
                     published_date="2021-09-01T00:00:00.000Z"
@@ -242,6 +127,7 @@ async def get_contents_by_id_with_segments(text_id: str, content_id: str, skip: 
             ]
         )
     ]
+
 
 async def create_text(create_text_request: CreateTextRequest) -> Text:
     new_text = Text(

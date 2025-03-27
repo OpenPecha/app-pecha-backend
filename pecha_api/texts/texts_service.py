@@ -8,12 +8,12 @@ from starlette import status
 
 from pecha_api.utils import Utils
 from .segments.segments_repository import get_segments_by_list_of_id
-from .texts_repository import (get_contents_by_id_with_segments, get_texts_by_id, get_contents_by_id,
+from .texts_repository import (get_texts_by_id, get_contents_by_id,
                                get_texts_by_category, get_versions_by_id, create_text, check_all_text_exists,
-                               check_text_exists)
+                               check_text_exists, get_text_details)
 from .texts_repository import get_text_infos
 from .texts_response_models import TableOfContent, TableOfContentResponse, TextModel, TextVersionResponse, TextVersion, \
-     TextsCategoryResponse, Text, CreateTextRequest, Section
+     TextsCategoryResponse, Text, CreateTextRequest, Section, TextDetailsRequest
 from .texts_response_models import TextInfosResponse, TextInfos, RelatedTexts
 from ..users.users_service import verify_admin_access
 
@@ -29,13 +29,14 @@ async def validate_text_exits(text_id: str):
     is_exists =  await check_text_exists(text_id=uuid_text_id)
     if not is_exists:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail='Text not found')
-
+    return is_exists
 
 async def validate_texts_exits(text_ids: List[str]):
     uuid_text_ids = [UUID(text_id) for text_id in text_ids]
     all_exists =  await check_all_text_exists(text_ids=uuid_text_ids)
     if not all_exists:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Text not found")
+    return all_exists
 
 
 async def get_texts_by_category_id(category: str, skip: int, limit: int):
@@ -120,28 +121,18 @@ async def get_contents_by_text_id(text_id: str, skip: int, limit: int) -> TableO
         contents=table_of_contents
     )
 
+async def get_texts_details_by_text_id(text_id: str, text_details_request: TextDetailsRequest, skip: int, limit: int) -> TableOfContentResponse:
+    is_valid_text = await validate_text_exits(text_id=text_id)
+    if is_valid_text:
+        text = await get_text_detail_by_id(text_id=text_id)
+        text_details = await get_text_details(text_id=text_id, text_details_request=text_details_request, skip=skip, limit=limit)
+        return TableOfContentResponse(
+            text_detail=text,
+            contents=text_details
+        )
+    else:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Text not found")
 
-async def get_contents_by_text_id_with_detail(text_id: str, content_id: str, skip: int,
-                                              limit: int) -> TableOfContentResponse:
-    table_of_contents = await get_contents_by_id_with_segments(text_id=text_id, content_id=content_id, skip=skip,
-                                                               limit=limit)
-    table_of_contents_with_details = await get_mapped_table_of_contents_segments(table_of_contents=table_of_contents)
-    return TableOfContentResponse(
-        text_detail=TextModel(
-            id=str(uuid4()),
-            title="བྱང་ཆུབ་སེམས་དཔའི་སྤྱོད་པ་ལ་འཇུག་པ།",
-            language="bo",
-            type="root_text",
-            is_published=True,
-            created_date="2021-09-01T00:00:00.000Z",
-            updated_date="2021-09-01T00:00:00.000Z",
-            published_date="2021-09-01T00:00:00.000Z",
-            published_by="pecha",
-            categories=[str(uuid4())],
-            parent_id=None
-        ),
-        contents=table_of_contents_with_details
-    )
 
 
 async def get_versions_by_text_id(text_id: str, skip: int, limit: int) -> TextVersionResponse:
@@ -227,7 +218,6 @@ async def replace_segments_id_with_segment_details_in_section(section: Optional[
                 segment_detail = segments.get(segment.segment_id)
                 if segment_detail:
                     segment.content = segment_detail.content
-                    segment.mapping = segment_detail.mapping
     if section.sections:
         await asyncio.gather(*[replace_segments_id_with_segment_details_in_section(section=sub_section) for sub_section in section.sections])
 
