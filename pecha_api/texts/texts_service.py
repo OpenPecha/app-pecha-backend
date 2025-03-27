@@ -121,7 +121,7 @@ async def get_contents_by_text_id(text_id: str, skip: int, limit: int) -> TableO
         contents=table_of_contents
     )
 
-async def get_texts_details_by_text_id(text_id: str, text_details_request: TextDetailsRequest, skip: int, limit: int) -> TableOfContentResponse:
+async def get_text_details_by_text_id(text_id: str, text_details_request: TextDetailsRequest, skip: int, limit: int) -> TableOfContentResponse:
     is_valid_text = await validate_text_exits(text_id=text_id)
     if is_valid_text:
         text = await get_text_detail_by_id(text_id=text_id)
