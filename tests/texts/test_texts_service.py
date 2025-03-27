@@ -1,5 +1,6 @@
 from unittest.mock import AsyncMock, patch
 import uuid
+from fastapi import status, HTTPException
 
 from pecha_api.terms.terms_response_models import TermsModel
 import pytest
@@ -11,16 +12,33 @@ from pecha_api.texts.texts_service import get_text_by_term_or_category, TextsCat
 
 
 @pytest.mark.asyncio
-async def test_validate_text_exits():
+async def test_validate_text_exits_true():
     with patch('pecha_api.texts.texts_service.check_text_exists', return_value=True):
         response = await validate_text_exits(text_id="032b9a5f-0712-40d8-b7ec-73c8c94f1c15")
         assert response == True
 
+
 @pytest.mark.asyncio
-async def test_validate_texts_exits():
+async def test_validate_text_exits_false():
+    with patch('pecha_api.texts.texts_service.check_text_exists', new_callable=AsyncMock, return_value=False):
+        with pytest.raises(HTTPException) as exc_info:
+            await validate_text_exits(text_id="032b9a5f-0712-40d8-b7ec-73c8c94f1c15")
+        assert exc_info.value.status_code == status.HTTP_404_NOT_FOUND
+        assert exc_info.value.detail == "Text not found"
+
+@pytest.mark.asyncio
+async def test_validate_texts_exits_true():
     with patch('pecha_api.texts.texts_service.check_all_text_exists', return_value=True):
         response = await validate_texts_exits(text_ids=["032b9a5f-0712-40d8-b7ec-73c8c94f1c15", "a48c0814-ce56-4ada-af31-f74b179b52a9"])
         assert response == True
+
+@pytest.mark.asyncio
+async def test_validate_texts_exits_true():
+    with patch('pecha_api.texts.texts_service.check_all_text_exists', return_value=False):
+        with pytest.raises(HTTPException) as exc_info:
+            await validate_texts_exits(text_ids=["032b9a5f-0712-40d8-b7ec-73c8c94f1c15", "a48c0814-ce56-4ada-af31-f74b179b52a9"])
+        assert exc_info.value.status_code == status.HTTP_404_NOT_FOUND
+        assert exc_info.value.detail == "Text not found"
         
 
 @pytest.mark.asyncio
