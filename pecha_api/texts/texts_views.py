@@ -5,7 +5,7 @@ from starlette import status
 from typing import Optional, Annotated
 
 from .texts_service import get_contents_by_text_id, get_versions_by_text_id, create_new_text, get_text_by_term_or_category
-from .texts_service import get_infos_by_text_id, get_texts_details_by_text_id
+from .texts_service import get_infos_by_text_id, get_text_details_by_text_id
 from .texts_response_models import CreateTextRequest, TextDetailsRequest
 
 oauth2_scheme = HTTPBearer()
@@ -53,7 +53,7 @@ async def get_contents_with_details(
         skip: int = Query(default=0),
         limit: int = Query(default=100)
 ):
-    return await get_texts_details_by_text_id(text_id=text_id, text_details_request=text_details_request, skip=skip, limit=limit)
+    return await get_text_details_by_text_id(text_id=text_id, text_details_request=text_details_request, skip=skip, limit=limit)
 
 @text_router.get("/{text_id}/versions", status_code=status.HTTP_200_OK)
 async def get_versions(

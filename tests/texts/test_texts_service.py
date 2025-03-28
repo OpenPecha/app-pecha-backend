@@ -1,11 +1,45 @@
 from unittest.mock import AsyncMock, patch
 import uuid
+from fastapi import status, HTTPException
 
 from pecha_api.terms.terms_response_models import TermsModel
 import pytest
 from pecha_api.texts.texts_service import create_new_text, get_versions_by_text_id
-from pecha_api.texts.texts_response_models import CreateTextRequest, TextModel, Text, TextVersion, TextVersionResponse
-from pecha_api.texts.texts_service import get_text_by_term_or_category, TextsCategoryResponse
+from pecha_api.texts.texts_response_models import CreateTextRequest, TextModel, Text, TextVersion, TextVersionResponse, \
+    TableOfContent, Section, TableOfContentSegmentResponse, Translation, TextDetailsRequest, TableOfContentResponse
+from pecha_api.texts.texts_service import get_text_by_term_or_category, TextsCategoryResponse, get_text_details_by_text_id, \
+    validate_text_exits, validate_texts_exits, get_contents_by_text_id
+
+
+@pytest.mark.asyncio
+async def test_validate_text_exits_true():
+    with patch('pecha_api.texts.texts_service.check_text_exists', return_value=True):
+        response = await validate_text_exits(text_id="032b9a5f-0712-40d8-b7ec-73c8c94f1c15")
+        assert response == True
+
+
+@pytest.mark.asyncio
+async def test_validate_text_exits_false():
+    with patch('pecha_api.texts.texts_service.check_text_exists', new_callable=AsyncMock, return_value=False):
+        with pytest.raises(HTTPException) as exc_info:
+            await validate_text_exits(text_id="032b9a5f-0712-40d8-b7ec-73c8c94f1c15")
+        assert exc_info.value.status_code == status.HTTP_404_NOT_FOUND
+        assert exc_info.value.detail == "Text not found"
+
+@pytest.mark.asyncio
+async def test_validate_texts_exits_true():
+    with patch('pecha_api.texts.texts_service.check_all_text_exists', return_value=True):
+        response = await validate_texts_exits(text_ids=["032b9a5f-0712-40d8-b7ec-73c8c94f1c15", "a48c0814-ce56-4ada-af31-f74b179b52a9"])
+        assert response == True
+
+@pytest.mark.asyncio
+async def test_validate_texts_exits_true():
+    with patch('pecha_api.texts.texts_service.check_all_text_exists', return_value=False):
+        with pytest.raises(HTTPException) as exc_info:
+            await validate_texts_exits(text_ids=["032b9a5f-0712-40d8-b7ec-73c8c94f1c15", "a48c0814-ce56-4ada-af31-f74b179b52a9"])
+        assert exc_info.value.status_code == status.HTTP_404_NOT_FOUND
+        assert exc_info.value.detail == "Text not found"
+        
 
 @pytest.mark.asyncio
 async def test_get_text_by_category():
@@ -189,4 +223,138 @@ async def test_create_new_root_text():
             published_by="pecha",
             categories=[],
             parent_id=None
+        )
+
+@pytest.mark.asyncio
+async def test_get_text_details_by_text_id():
+    text_request = TextDetailsRequest(
+        content_id="content_id_1",
+        version_id="version_id_1"
+    )
+    text = TextModel(
+        id="032b9a5f-0712-40d8-b7ec-73c8c94f1c15",
+        title="བྱང་ཆུབ་སེམས་དཔའི་སྤྱོད་པ་ལ་འཇུག་པ།",
+        language="bo",
+        type="root_text",
+        is_published=True,
+        created_date="2025-03-20 09:26:16.571522",
+        updated_date="2025-03-20 09:26:16.571532",
+        published_date="2025-03-20 09:26:16.571536",
+        published_by="pecha",
+        categories=["67dd22a8d9f06ab28feedc90"],
+        parent_id=None
+    )
+    text_details = [
+        TableOfContent(
+            id="abh7u8e4-da52-4ea2-800e-3414emk8uy67",
+            text_id="90i7u8e4-da52-4ea2-800e-3414emkki897",
+            segments=[
+                Section(
+                    id="d19338e4-da52-4ea2-800e-3414eac8167e",
+                    title="བྱང་གཏེར་དགོངས་པ་ཟང་ཐལ་གྱི་རྒྱུད་ཆེན་ལས་བྱུང་བའི་ཀུན་བཟང་སྨོན་ལམ་གྱི་རྣམ་བཤད། ཀུན་བཟང་ཉེ་ལམ་འོད་སྣང་གསལ་བའི་སྒྲོན་མ།",
+                    section_number=1,
+                    parent_id=None,
+                    segments=[
+                        TableOfContentSegmentResponse(
+                            segment_id="2176yt56-51de-4a42-9d49-580b729dnb66",
+                            segment_number=1,
+                            content="<span class=\"text-quotation-style\">དང་པོ་ནི་</span><span class=\"text-citation-style\">ཧོ་སྣང་སྲིད་</span>སོགས་ཚིག་རྐང་དྲུག་གིས་བསྟན།<span class=\"text-citation-style\">ཧོ༵་</span>ཞེས་པ་འཁྲུལ་བས་དབང་མེད་དུ་བྱས་ཏེ་མི་འདོད་པའི་ཉེས་རྒུད་དྲག་པོས་རབ་ཏུ་གཟིར་བའི་འཁོར་བའི་སེམས་ཅན་རྣམས་ལ་དམིགས་མེད་བརྩེ་བའི་རྣམ་པར་ཤར་ཏེ་འཁྲུལ་སྣང་རང་སར་དག་པའི་ཉེ་ལམ་ཟབ་མོ་འདིར་བསྐུལ་བའི་ཚིག་ཏུ་བྱས་པ་སྟེ།",
+                            translation=Translation(
+                                text_id="version_id_1",
+                                language="en",
+                                content="비파시불, 시기불, 비사부불, <br>  구류손불, 구나함모니불, 가섭불, <br>  그리고 석가모니불 - 고타마, 모든 신들의 신께, <br>  이 일곱 용사 같은 부처님들께 예배드립니다!"
+                            )
+                        )
+                    ],
+                    sections=None,
+                    created_date="2021-09-01T00:00:00.000Z",
+                    updated_date="2021-09-01T00:00:00.000Z",
+                    published_date="2021-09-01T00:00:00.000Z"
+                )
+            ]
+        )
+    ]
+    with patch('pecha_api.texts.texts_service.check_text_exists', return_value=True), \
+        patch('pecha_api.texts.texts_service.get_text_detail_by_id', new_callable=AsyncMock) as mock_get_text_detail_by_id, \
+        patch('pecha_api.texts.texts_service.get_text_details', new_callable=AsyncMock) as mock_get_text_details:
+        mock_get_text_detail_by_id.return_value = text
+        mock_get_text_details.return_value = text_details
+        response = await get_text_details_by_text_id(text_id="032b9a5f-0712-40d8-b7ec-73c8c94f1c15", text_details_request=text_request, skip=0, limit=100)
+        assert response == TableOfContentResponse(
+            text_detail=text,
+            contents=text_details
+        )
+
+@pytest.mark.asyncio
+async def test_get_contents_by_text_id():
+    text = TextModel(
+        id="032b9a5f-0712-40d8-b7ec-73c8c94f1c15",
+        title="བྱང་ཆུབ་སེམས་དཔའི་སྤྱོད་པ་ལ་འཇུག་པ།",
+        language="bo",
+        type="root_text",
+        is_published=True,
+        created_date="2025-03-20 09:26:16.571522",
+        updated_date="2025-03-20 09:26:16.571532",
+        published_date="2025-03-20 09:26:16.571536",
+        published_by="pecha",
+        categories=["67dd22a8d9f06ab28feedc90"],
+        parent_id=None
+    )
+    table_of_contents = [
+        TableOfContent(
+            id="abh7u8e4-da52-4ea2-800e-3414emk8uy67",
+            text_id="032b9a5f-0712-40d8-b7ec-73c8c94f1c15",
+            segments=[
+                Section(
+                    id="d19338e4-da52-4ea2-800e-3414eac8167e",
+                    title="A brief presentation of the ground path and result",
+                    section_number=1,
+                    parent_id=None,
+                    created_date="2021-09-01T00:00:00.000Z",
+                    updated_date="2021-09-01T00:00:00.000Z",
+                    published_date="2021-09-01T00:00:00.000Z"
+                ),
+                Section(
+                    id="b48dad38-da6d-45c3-ad12-97bca590769c",
+                    title="The detailed explanation of the divisions of reality",
+                    section_number=2,
+                    parent_id=None,
+                    sections=[
+                        Section(
+                            id="0971f07a-8491-4cfe-9720-dac1acb9824d",
+                            title="Basis",
+                            section_number=1,
+                            parent_id="b48dad38-da6d-45c3-ad12-97bca590769c",
+                            created_date="2021-09-01T00:00:00.000Z",
+                            updated_date="2021-09-01T00:00:00.000Z",
+                            published_date="2021-09-01T00:00:00.000Z",
+                            sections=[
+                                Section(
+                                    id="at8ujke7-8491-4cfe-9720-dac1acb967y7",
+                                    title="The extensive explanation of the abiding nature of the ground",
+                                    section_number=1,
+                                    parent_id="0971f07a-8491-4cfe-9720-dac1acb9824d",
+                                    created_date="2021-09-01T00:00:00.000Z",
+                                    updated_date="2021-09-01T00:00:00.000Z",
+                                    published_date="2021-09-01T00:00:00.000Z"
+                                )
+                            ]
+                        )
+                    ],
+                    created_date="2021-09-01T00:00:00.000Z",
+                    updated_date="2021-09-01T00:00:00.000Z",
+                    published_date="2021-09-01T00:00:00.000Z"
+                )
+            ]
+        )
+    ]
+    with patch('pecha_api.texts.texts_service.check_text_exists', return_value=True), \
+        patch('pecha_api.texts.texts_service.get_texts_by_id', new_callable=AsyncMock) as mock_get_text_detail_by_id, \
+        patch('pecha_api.texts.texts_service.get_contents_by_id', new_callable=AsyncMock) as mock_get_contents_by_id:
+        mock_get_contents_by_id.return_value = table_of_contents
+        mock_get_text_detail_by_id.return_value = text
+        response = await get_contents_by_text_id(text_id="032b9a5f-0712-40d8-b7ec-73c8c94f1c15", skip=0, limit=10)
+        assert response == TableOfContentResponse(
+            text_detail=text,
+            contents=table_of_contents
         )
