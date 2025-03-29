@@ -59,6 +59,8 @@ async def get_texts_by_term_id(term_id: str, skip: int, limit: int):
 
 
 async def get_text_detail_by_id(text_id: str) -> TextModel:
+    if text_id is None:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Text ID or Term ID is required")
     text = await get_texts_by_id(text_id=text_id)
     if text is None:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Text not found")
