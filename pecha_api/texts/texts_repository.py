@@ -7,9 +7,11 @@ from uuid import UUID
 
 from beanie.exceptions import CollectionWasNotInitialized
 from pecha_api.constants import Constants
-from .texts_response_models import TableOfContent, Section, CreateTextRequest, TextDetailsRequest, Translation, TableOfContentSegmentResponse
+from .texts_response_models import TableOfContent, Section, CreateTextRequest, TextDetailsRequest, Translation, TextSegment
 from .texts_models import Text
 from datetime import datetime, timezone
+
+from .segments.segments_models import Segment
 
 
 
@@ -44,6 +46,8 @@ async def get_texts_by_term(term_id: str, skip: int, limit: int):
 async def get_versions_by_id(text_id: str, skip: int, limit: int):
     return await Text.get_versions_by_text_id(text_id=text_id, skip=skip, limit=limit)
 
+async def get_segment_details_by_id(segment_id: str):
+    return await Segment.get_segment_details(segment_id=segment_id)
 
 async def get_contents_by_id(text_id: str, skip: int, limit: int):
     return [
@@ -108,7 +112,7 @@ async def get_text_details(text_id: str, text_details_request: TextDetailsReques
                     section_number=1,
                     parent_id=None,
                     segments=[
-                        TableOfContentSegmentResponse(
+                        TextSegment(
                             segment_id="2176yt56-51de-4a42-9d49-580b729dnb66",
                             segment_number=1,
                             content="<span class=\"text-quotation-style\">དང་པོ་ནི་</span><span class=\"text-citation-style\">ཧོ་སྣང་སྲིད་</span>སོགས་ཚིག་རྐང་དྲུག་གིས་བསྟན།<span class=\"text-citation-style\">ཧོ༵་</span>ཞེས་པ་འཁྲུལ་བས་དབང་མེད་དུ་བྱས་ཏེ་མི་འདོད་པའི་ཉེས་རྒུད་དྲག་པོས་རབ་ཏུ་གཟིར་བའི་འཁོར་བའི་སེམས་ཅན་རྣམས་ལ་དམིགས་མེད་བརྩེ་བའི་རྣམ་པར་ཤར་ཏེ་འཁྲུལ་སྣང་རང་སར་དག་པའི་ཉེ་ལམ་ཟབ་མོ་འདིར་བསྐུལ་བའི་ཚིག་ཏུ་བྱས་པ་སྟེ།",
@@ -136,7 +140,7 @@ async def get_text_details(text_id: str, text_details_request: TextDetailsReques
                             section_number=1,
                             parent_id="b48dad38-da6d-45c3-ad12-97bca590769c",
                             segments=[
-                                TableOfContentSegmentResponse(
+                                TextSegment(
                                     segment_id="2176yt56-51de-4a42-9d49-580b729dnb66",
                                     segment_number=1,
                                     content="<span class=\"text-quotation-style\">དང་པོ་ནི་</span><span class=\"text-citation-style\">ཧོ་སྣང་སྲིད་</span>སོགས་ཚིག་རྐང་དྲུག་གིས་བསྟན།<span class=\"text-citation-style\">ཧོ༵་</span>ཞེས་པ་འཁྲུལ་བས་དབང་མེད་དུ་བྱས་ཏེ་མི་འདོད་པའི་ཉེས་རྒུད་དྲག་པོས་རབ་ཏུ་གཟིར་བའི་འཁོར་བའི་སེམས་ཅན་རྣམས་ལ་དམིགས་མེད་བརྩེ་བའི་རྣམ་པར་ཤར་ཏེ་འཁྲུལ་སྣང་རང་སར་དག་པའི་ཉེ་ལམ་ཟབ་མོ་འདིར་བསྐུལ་བའི་ཚིག་ཏུ་བྱས་པ་སྟེ།",
@@ -146,7 +150,7 @@ async def get_text_details(text_id: str, text_details_request: TextDetailsReques
                                         content="비파시불, 시기불, 비사부불, <br>  구류손불, 구나함모니불, 가섭불, <br>  그리고 석가모니불 - 고타마, 모든 신들의 신께, <br>  이 일곱 용사 같은 부처님들께 예배드립니다!"
                                     )
                                 ),
-                                TableOfContentSegmentResponse(
+                                TextSegment(
                                     segment_id="2176yt56-51de-4a42-9d49-580b729dnb66",
                                     segment_number=2,
                                     content="<span class=\"text-quotation-style\">དང་པོ་ནི་</span><span class=\"text-citation-style\">ཧོ་སྣང་སྲིད་</span>སོགས་ཚིག་རྐང་དྲུག་གིས་བསྟན།<span class=\"text-citation-style\">ཧོ༵་</span>ཞེས་པ་འཁྲུལ་བས་དབང་མེད་དུ་བྱས་ཏེ་མི་འདོད་པའི་ཉེས་རྒུད་དྲག་པོས་རབ་ཏུ་གཟིར་བའི་འཁོར་བའི་སེམས་ཅན་རྣམས་ལ་དམིགས་མེད་བརྩེ་བའི་རྣམ་པར་ཤར་ཏེ་འཁྲུལ་སྣང་རང་སར་དག་པའི་ཉེ་ལམ་ཟབ་མོ་འདིར་བསྐུལ་བའི་ཚིག་ཏུ་བྱས་པ་སྟེ།",
@@ -167,7 +171,7 @@ async def get_text_details(text_id: str, text_details_request: TextDetailsReques
                                     section_number=1,
                                     parent_id="0971f07a-8491-4cfe-9720-dac1acb9824d",
                                     segments=[
-                                        TableOfContentSegmentResponse(
+                                        TextSegment(
                                             segment_id="2176yt56-51de-4a42-9d49-580b729dnb66",
                                             segment_number=1,
                                             content="<span class=\"text-quotation-style\">དང་པོ་ནི་</span><span class=\"text-citation-style\">ཧོ་སྣང་སྲིད་</span>སོགས་ཚིག་རྐང་དྲུག་གིས་བསྟན།<span class=\"text-citation-style\">ཧོ༵་</span>ཞེས་པ་འཁྲུལ་བས་དབང་མེད་དུ་བྱས་ཏེ་མི་འདོད་པའི་ཉེས་རྒུད་དྲག་པོས་རབ་ཏུ་གཟིར་བའི་འཁོར་བའི་སེམས་ཅན་རྣམས་ལ་དམིགས་མེད་བརྩེ་བའི་རྣམ་པར་ཤར་ཏེ་འཁྲུལ་སྣང་རང་སར་དག་པའི་ཉེ་ལམ་ཟབ་མོ་འདིར་བསྐུལ་བའི་ཚིག་ཏུ་བྱས་པ་སྟེ།",
@@ -177,7 +181,7 @@ async def get_text_details(text_id: str, text_details_request: TextDetailsReques
                                                 content="비파시불, 시기불, 비사부불, <br>  구류손불, 구나함모니불, 가섭불, <br>  그리고 석가모니불 - 고타마, 모든 신들의 신께, <br>  이 일곱 용사 같은 부처님들께 예배드립니다!"
                                             )
                                         ),
-                                        TableOfContentSegmentResponse(
+                                        TextSegment(
                                             segment_id="2176yt56-51de-4a42-9d49-580b729dnb66",
                                             segment_number=2,
                                             content="<span class=\"text-quotation-style\">དང་པོ་ནི་</span><span class=\"text-citation-style\">ཧོ་སྣང་སྲིད་</span>སོགས་ཚིག་རྐང་དྲུག་གིས་བསྟན།<span class=\"text-citation-style\">ཧོ༵་</span>ཞེས་པ་འཁྲུལ་བས་དབང་མེད་དུ་བྱས་ཏེ་མི་འདོད་པའི་ཉེས་རྒུད་དྲག་པོས་རབ་ཏུ་གཟིར་བའི་འཁོར་བའི་སེམས་ཅན་རྣམས་ལ་དམིགས་མེད་བརྩེ་བའི་རྣམ་པར་ཤར་ཏེ་འཁྲུལ་སྣང་རང་སར་དག་པའི་ཉེ་ལམ་ཟབ་མོ་འདིར་བསྐུལ་བའི་ཚིག་ཏུ་བྱས་པ་སྟེ།",
@@ -202,6 +206,51 @@ async def get_text_details(text_id: str, text_details_request: TextDetailsReques
             ]
         )
     ]
+
+async def get_translations(
+        text_id: str,
+        segment_id: str,
+        skip: int,
+        limit: int
+    ):
+    return [
+        Translation(
+            text_id=text_id,
+            language="bo",
+            content="འགྲེལ་བརྗོད།"
+        ),
+        Translation(
+            text_id=text_id,
+            language="en",
+            content="commentary"
+        ),
+        Translation(
+            text_id=text_id,
+            language="zh",
+            content="注释"
+        ),
+        Translation(
+            text_id=text_id,
+            language="ja",
+            content="解説"
+        ),
+        Translation(
+            text_id=text_id,
+            language="ko",
+            content="주석"
+        ),
+        Translation(
+            text_id=text_id,
+            language="fr",
+            content="commentaire"
+        ),
+        Translation(
+            text_id=text_id,
+            language="de",
+            content="Kommentar"
+        )
+    ]
+
 
 
 async def create_text(create_text_request: CreateTextRequest) -> Text:

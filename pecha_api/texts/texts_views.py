@@ -4,8 +4,8 @@ from starlette import status
 
 from typing import Optional, Annotated
 
-from .texts_service import get_contents_by_text_id, get_versions_by_text_id, create_new_text, get_text_by_text_id_or_term
-from .texts_service import get_infos_by_text_id, get_text_details_by_text_id
+from .texts_service import get_contents_by_text_id, get_versions_by_text_id, create_new_text, get_text_by_text_id_or_term, \
+        get_infos_by_text_id, get_text_details_by_text_id, get_translations_by_segment_id
 from .texts_response_models import CreateTextRequest, TextDetailsRequest
 
 oauth2_scheme = HTTPBearer()
@@ -37,6 +37,15 @@ async def create_text(
         )
 
 
+@text_router.get("/{text_id}/versions", status_code=status.HTTP_200_OK)
+async def get_versions(
+        text_id: str,
+        skip: int = Query(default=0),
+        limit: int = Query(default=10)
+):
+    return await get_versions_by_text_id(text_id=text_id, skip=skip, limit=limit)
+
+
 @text_router.get("/{text_id}/contents", status_code=status.HTTP_200_OK)
 async def get_contents(
         text_id: str,
@@ -55,13 +64,19 @@ async def get_contents_with_details(
 ):
     return await get_text_details_by_text_id(text_id=text_id, text_details_request=text_details_request, skip=skip, limit=limit)
 
-@text_router.get("/{text_id}/versions", status_code=status.HTTP_200_OK)
-async def get_versions(
-        text_id: str,
-        skip: int = Query(default=0),
-        limit: int = Query(default=10)
+@text_router.get("/{text_id}/segment/{segment_id}/translations", status_code=status.HTTP_200_OK)
+async def get_translations_for_segment(
+    text_id: str,
+    segment_id: str,
+    skip: int = Query(default=0),
+    limit: int = Query(default=10),
 ):
-    return await get_versions_by_text_id(text_id=text_id, skip=skip, limit=limit)
+    return await get_translations_by_segment_id(
+        text_id=text_id,
+        segment_id=segment_id,
+        skip=skip,
+        limit=limit
+    )
 
 @text_router.get("/{text_id}/infos", status_code=status.HTTP_200_OK)
 async def get_text_infos(

@@ -10,7 +10,7 @@ from beanie.exceptions import CollectionWasNotInitialized
 from typing import List, Dict
 
 
-async def get_segment_by_id(segment_id: str) -> Segment | None:
+async def get_segment_by_id(segment_id: UUID) -> Segment | None:
     try:
         segment = await Segment.get_segment_by_id(segment_id=segment_id)
         return segment
