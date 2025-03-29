@@ -46,7 +46,7 @@ async def get_contents(
     return await get_contents_by_text_id(text_id=text_id, skip=skip, limit=limit)
 
 
-@text_router.post("/{text_id}/detals", status_code=status.HTTP_200_OK)
+@text_router.post("/{text_id}/details", status_code=status.HTTP_200_OK)
 async def get_contents_with_details(
         text_id: str,
         text_details_request: TextDetailsRequest,
