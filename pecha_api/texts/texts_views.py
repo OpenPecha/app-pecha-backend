@@ -4,7 +4,7 @@ from starlette import status
 
 from typing import Optional, Annotated
 
-from .texts_service import get_contents_by_text_id, get_versions_by_text_id, create_new_text, get_text_by_term_or_category
+from .texts_service import get_contents_by_text_id, get_versions_by_text_id, create_new_text, get_text_by_text_id_or_term
 from .texts_service import get_infos_by_text_id, get_text_details_by_text_id
 from .texts_response_models import CreateTextRequest, TextDetailsRequest
 
@@ -18,12 +18,12 @@ text_router = APIRouter(
 @text_router.get("", status_code=status.HTTP_200_OK)
 async def get_text(
     text_id: Optional[str] = Query(default=None),
-    category: Optional[str] = Query(default=None),
+    term_id: Optional[str] = Query(default=None),
     language: str = Query(default=None),
     skip: int = Query(default=0),
     limit: int = Query(default=10)
 ):
-    return await get_text_by_term_or_category(text_id=text_id, category=category, language=language, skip=skip, limit=limit)
+    return await get_text_by_text_id_or_term(text_id=text_id, term_id=term_id, language=language, skip=skip, limit=limit)
 
 
 @text_router.post("", status_code=status.HTTP_201_CREATED)
@@ -46,7 +46,7 @@ async def get_contents(
     return await get_contents_by_text_id(text_id=text_id, skip=skip, limit=limit)
 
 
-@text_router.post("/{text_id}/detals", status_code=status.HTTP_200_OK)
+@text_router.post("/{text_id}/details", status_code=status.HTTP_200_OK)
 async def get_contents_with_details(
         text_id: str,
         text_details_request: TextDetailsRequest,

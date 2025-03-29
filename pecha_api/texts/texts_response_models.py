@@ -108,15 +108,8 @@ class Text(BaseModel):
     published_date: str
     published_by: str
 
-class Category(BaseModel):
-    id : str
-    title: str
-    description : str
-    slug: str
-    has_child: bool
-
 class TextsCategoryResponse(BaseModel):
-    category: TermsModel
+    term: TermsModel
     texts : List[Text]
     total: int
     skip: int

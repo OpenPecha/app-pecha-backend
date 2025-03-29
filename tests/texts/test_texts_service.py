@@ -7,7 +7,7 @@ import pytest
 from pecha_api.texts.texts_service import create_new_text, get_versions_by_text_id
 from pecha_api.texts.texts_response_models import CreateTextRequest, TextModel, Text, TextVersion, TextVersionResponse, \
     TableOfContent, Section, TableOfContentSegmentResponse, Translation, TextDetailsRequest, TableOfContentResponse
-from pecha_api.texts.texts_service import get_text_by_term_or_category, TextsCategoryResponse, get_text_details_by_text_id, \
+from pecha_api.texts.texts_service import get_text_by_text_id_or_term, TextsCategoryResponse, get_text_details_by_text_id, \
     validate_text_exits, validate_texts_exits, get_contents_by_text_id
 
 
@@ -42,7 +42,7 @@ async def test_validate_texts_exits_true():
         
 
 @pytest.mark.asyncio
-async def test_get_text_by_category():
+async def test_get_text_by_term_id():
     mock_term = AsyncMock(id="id_1", titles={"bo": "སྤྱོད་འཇུག"}, descriptions={"bo": "དུས་རབས་ ༨ པའི་ནང་སློབ་དཔོན་ཞི་བ་ལྷས་མཛད་པའི་རྩ་བ་དང་དེའི་འགྲེལ་བ་སོགས།"}, slug="bodhicaryavatara", has_sub_child=False)
     mock_texts_by_category = [
                 Text(
@@ -80,13 +80,13 @@ async def test_get_text_by_category():
                 )
             ]
         
-    with patch('pecha_api.texts.texts_service.get_texts_by_category', new_callable=AsyncMock) as mock_get_texts_by_category, \
+    with patch('pecha_api.texts.texts_service.get_texts_by_term', new_callable=AsyncMock) as mock_get_texts_by_category, \
         patch('pecha_api.terms.terms_service.get_term_by_id', new_callable=AsyncMock) as mock_get_term:
         mock_get_texts_by_category.return_value = mock_texts_by_category
         mock_get_term.return_value = mock_term
-        response = await get_text_by_term_or_category(text_id="", category="id_1", language="bo", skip=0, limit=10)
+        response = await get_text_by_text_id_or_term(text_id="", term_id="id_1", language="bo", skip=0, limit=10)
         assert response == TextsCategoryResponse(
-            category=TermsModel(
+            term=TermsModel(
                 id="id_1",
                 title="སྤྱོད་འཇུག",
                 description="དུས་རབས་ ༨ པའི་ནང་སློབ་དཔོན་ཞི་བ་ལྷས་མཛད་པའི་རྩ་བ་དང་དེའི་འགྲེལ་བ་སོགས།",
