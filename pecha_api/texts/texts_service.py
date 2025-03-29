@@ -119,6 +119,7 @@ async def get_translations_by_segment_id(
         segment=TextSegment(
             segment_id=segment_id,
             text_id=text_id,
+            segment_number=1,
             content="This is a test segment content"
         ),
         translations=translations
