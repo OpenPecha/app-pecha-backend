@@ -46,9 +46,9 @@ class Translation(BaseModel):
     language: str
     content: str
 
-class TableOfContentSegmentResponse(BaseModel):
+class TextSegment(BaseModel):
     segment_id: str
-    segment_number: int
+    segment_number: Optional[int] = None
     content: Optional[str] = None
     translation: Optional[Translation] = None
 
@@ -57,7 +57,7 @@ class Section(BaseModel):
     title: str
     section_number: int
     parent_id: Optional[str] = None
-    segments: List[TableOfContentSegmentResponse] = []
+    segments: List[TextSegment] = []
     sections: Optional[List["Section"]] = None
     created_date: str
     updated_date: str
@@ -132,3 +132,8 @@ class TextInfos(BaseModel):
 
 class TextInfosResponse(BaseModel):
     text_infos: TextInfos
+
+# Segment transltion response
+class SegmentTranslationsResponse(BaseModel):
+    segment: TextSegment
+    translations: List[Translation]

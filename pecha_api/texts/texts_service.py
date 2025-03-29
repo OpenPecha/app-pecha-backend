@@ -10,13 +10,14 @@ from pecha_api.utils import Utils
 from .texts_repository import (get_texts_by_id, get_contents_by_id,
                                get_texts_by_term, get_versions_by_id, create_text, check_all_text_exists,
                                check_text_exists, get_text_details)
-from .texts_repository import get_text_infos
-from .texts_response_models import TableOfContent, TableOfContentResponse, TextModel, TextVersionResponse, TextVersion, \
-     TextsCategoryResponse, Text, CreateTextRequest, Section, TextDetailsRequest
-from .texts_response_models import TextInfosResponse, TextInfos, RelatedTexts
+from .texts_repository import get_text_infos, get_translations
+from .texts_response_models import TableOfContentResponse, TextModel, TextVersionResponse, TextVersion, \
+     TextsCategoryResponse, Text, CreateTextRequest, TextDetailsRequest, SegmentTranslationsResponse, \
+     TextInfosResponse, TextInfos, RelatedTexts, TextSegment
 from ..users.users_service import verify_admin_access
 
 from ..terms.terms_service import get_term
+
 
 from typing import List
 from pecha_api.config import get
@@ -101,6 +102,27 @@ async def get_text_by_text_id_or_term(
         )
     else:
         return await get_text_detail_by_id(text_id=text_id)
+    
+
+async def get_translations_by_segment_id(
+        text_id: str,
+        segment_id: str,
+        skip: int,
+        limit: int
+):
+    is_valid_text = await validate_text_exits(text_id=text_id)
+    is_valid_segment = True # later to validate the segment
+    if not (is_valid_text and is_valid_segment):
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Text or Segment not found")
+    translations = await get_translations(text_id=text_id, segment_id=segment_id, skip=skip, limit=limit)
+    return SegmentTranslationsResponse(
+        segment=TextSegment(
+            segment_id=segment_id,
+            text_id=text_id,
+            content="This is a test segment content"
+        ),
+        translations=translations
+    )
 
 
 async def get_contents_by_text_id(text_id: str, skip: int, limit: int) -> TableOfContentResponse:
