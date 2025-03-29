@@ -50,8 +50,8 @@ class Text(Document):
         return True  # All IDs exist
     
     @classmethod
-    async def get_texts_by_category_id(cls, category_id: str, skip: int, limit: int):
-        query = {"categories": category_id, "type": {"$ne": "version"}}
+    async def get_texts_by_term_id(cls, term_id: str, skip: int, limit: int):
+        query = {"categories": term_id, "type": {"$ne": "version"}}
         texts = (
             await cls.find(query)
             .skip(skip)

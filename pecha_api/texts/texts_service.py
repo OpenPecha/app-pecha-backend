@@ -7,9 +7,8 @@ from fastapi import HTTPException
 from starlette import status
 
 from pecha_api.utils import Utils
-from .segments.segments_repository import get_segments_by_list_of_id
 from .texts_repository import (get_texts_by_id, get_contents_by_id,
-                               get_texts_by_category, get_versions_by_id, create_text, check_all_text_exists,
+                               get_texts_by_term, get_versions_by_id, create_text, check_all_text_exists,
                                check_text_exists, get_text_details)
 from .texts_repository import get_text_infos
 from .texts_response_models import TableOfContent, TableOfContentResponse, TextModel, TextVersionResponse, TextVersion, \
@@ -39,8 +38,8 @@ async def validate_texts_exits(text_ids: List[str]):
     return all_exists
 
 
-async def get_texts_by_category_id(category: str, skip: int, limit: int):
-    texts = await get_texts_by_category(category=category, skip=skip, limit=limit)
+async def get_texts_by_term_id(term_id: str, skip: int, limit: int):
+    texts = await get_texts_by_term(term_id=term_id, skip=skip, limit=limit)
     text_list = [
         Text(
             id=str(text.id),
@@ -78,9 +77,9 @@ async def get_text_detail_by_id(text_id: str) -> TextModel:
     )
 
 
-async def get_text_by_term_or_category(
+async def get_text_by_text_id_or_term(
         text_id: str,
-        category: str,
+        term_id: str,
         language: str,
         skip: int,
         limit: int
@@ -88,11 +87,11 @@ async def get_text_by_term_or_category(
     if language is None:
         language = get("DEFAULT_LANGUAGE")
 
-    if category is not None:
-        term = await get_term(term_id=category, language=language)
-        texts = await get_texts_by_category_id(category=category, skip=skip, limit=limit)
+    if term_id is not None:
+        term = await get_term(term_id=term_id, language=language)
+        texts = await get_texts_by_term_id(term_id=term_id, skip=skip, limit=limit)
         return TextsCategoryResponse(
-            category=term,
+            term=term,
             texts=texts,
             total=len(texts),
             skip=skip,
