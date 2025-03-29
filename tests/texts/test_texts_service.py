@@ -1,12 +1,11 @@
 from unittest.mock import AsyncMock, patch
-import uuid
 from fastapi import status, HTTPException
 
 from pecha_api.terms.terms_response_models import TermsModel
 import pytest
 from pecha_api.texts.texts_service import create_new_text, get_versions_by_text_id
 from pecha_api.texts.texts_response_models import CreateTextRequest, TextModel, Text, TextVersion, TextVersionResponse, \
-    TableOfContent, Section, TableOfContentSegmentResponse, Translation, TextDetailsRequest, TableOfContentResponse
+    TableOfContent, Section, TextSegment, Translation, TextDetailsRequest, TableOfContentResponse
 from pecha_api.texts.texts_service import get_text_by_text_id_or_term, TextsCategoryResponse, get_text_details_by_text_id, \
     validate_text_exits, validate_texts_exits, get_contents_by_text_id
 
@@ -255,7 +254,7 @@ async def test_get_text_details_by_text_id():
                     section_number=1,
                     parent_id=None,
                     segments=[
-                        TableOfContentSegmentResponse(
+                        TextSegment(
                             segment_id="2176yt56-51de-4a42-9d49-580b729dnb66",
                             segment_number=1,
                             content="<span class=\"text-quotation-style\">དང་པོ་ནི་</span><span class=\"text-citation-style\">ཧོ་སྣང་སྲིད་</span>སོགས་ཚིག་རྐང་དྲུག་གིས་བསྟན།<span class=\"text-citation-style\">ཧོ༵་</span>ཞེས་པ་འཁྲུལ་བས་དབང་མེད་དུ་བྱས་ཏེ་མི་འདོད་པའི་ཉེས་རྒུད་དྲག་པོས་རབ་ཏུ་གཟིར་བའི་འཁོར་བའི་སེམས་ཅན་རྣམས་ལ་དམིགས་མེད་བརྩེ་བའི་རྣམ་པར་ཤར་ཏེ་འཁྲུལ་སྣང་རང་སར་དག་པའི་ཉེ་ལམ་ཟབ་མོ་འདིར་བསྐུལ་བའི་ཚིག་ཏུ་བྱས་པ་སྟེ།",

@@ -1,9 +1,12 @@
-from fastapi import APIRouter
-from fastapi.security import HTTPBearer
+from typing import Annotated
+
+from fastapi import APIRouter, Depends
+from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from starlette import status
 
-from texts.mappings.mappings_response_models import TextMappingRequest
-from texts.mappings.mappings_service import update_segment_mapping
+from .mappings_response_models import TextMappingRequest
+from .mappings_service import update_segment_mapping
+from ..segments.segments_response_models import SegmentResponse
 
 oauth2_scheme = HTTPBearer()
 
@@ -14,5 +17,6 @@ mapping_router = APIRouter(
 
 
 @mapping_router.post("",status_code=status.HTTP_201_CREATED)
-async def create_text_mapping(text_mapping_request: TextMappingRequest):
-    return await update_segment_mapping(text_mapping_request=text_mapping_request)
+async def create_text_mapping(authentication_credential: Annotated[HTTPAuthorizationCredentials, Depends(oauth2_scheme)],
+                              text_mapping_request: TextMappingRequest) -> SegmentResponse:
+    return await update_segment_mapping(token=authentication_credential.credentials, text_mapping_request=text_mapping_request)
