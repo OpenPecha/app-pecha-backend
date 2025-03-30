@@ -2,17 +2,12 @@ from unittest.mock import AsyncMock, patch, MagicMock
 import pytest
 from fastapi import HTTPException, status
 import uuid
-from datetime import datetime
-from jose import jwt
 
+from pecha_api.error_contants import ErrorConstants
 from pecha_api.texts.mappings.mappings_response_models import TextMappingRequest, MappingsModel
 from pecha_api.texts.mappings.mappings_service import update_segment_mapping, validate_request_info
 from pecha_api.texts.segments.segments_models import Segment, Mapping
-from pecha_api.texts.segments.segments_response_models import SegmentResponse, MappingResponse
-from pecha_api.texts.texts_models import Text
-from pecha_api.texts.texts_repository import check_text_exists
-from pecha_api.config import get
-from pecha_api.users.users_service import validate_token
+from pecha_api.texts.segments.segments_response_models import SegmentResponse
 
 @pytest.mark.asyncio
 async def test_update_segment_mapping_success():
@@ -76,7 +71,6 @@ async def test_update_segment_mapping_success():
             segment_id=uuid.UUID(segment_id),
             mappings=[Mapping(text_id=parent_text_id, segments=[parent_segment_id])]
         )
-
 
 @pytest.mark.asyncio
 async def test_update_segment_mapping_non_admin():
@@ -213,6 +207,44 @@ async def test_update_segment_mapping_invalid_parent_segment():
 
 
 @pytest.mark.asyncio
+async def test_update_segment_mapping_error_400():
+    """Test successful update of segment mapping with valid admin access and data"""
+    # Arrange
+    text_id = "8749b360-a55e-441c-b541-f7c6ba2f3c61"
+    segment_id = "f7e14876-a3af-4652-8c84-8df2c046a105"
+    parent_text_id = "c87aae38-ea7a-4d2b-ba0e-fd7dc61e68d1"
+    parent_segment_id = "aca07f77-5906-4636-b7b5-edb7c9bbf1cf"
+
+    mapping_request = TextMappingRequest(
+        text_id=text_id,
+        segment_id=segment_id,
+        mappings=[
+            MappingsModel(
+                parent_text_id=parent_text_id,
+                segments=[parent_segment_id]
+            )
+        ]
+    )
+
+    with patch('pecha_api.texts.mappings.mappings_service.verify_admin_access', return_value=True), \
+            patch('pecha_api.texts.mappings.mappings_service.validate_request_info',
+                  new_callable=AsyncMock) as mock_validate, \
+            patch('pecha_api.texts.mappings.mappings_service.update_mapping',
+                  new_callable=AsyncMock) as mock_update_mapping:
+        # Set up mock returns
+        mock_validate.return_value = True
+        mock_update_mapping.return_value = None
+
+        # Act & Assert
+        with pytest.raises(HTTPException) as exc_info:
+            await update_segment_mapping(text_mapping_request=mapping_request, token="Bearer token")
+
+        assert exc_info.value.status_code == status.HTTP_400_BAD_REQUEST
+        assert exc_info.value.detail == ErrorConstants.SEGMENT_MAPPING_ERROR_MESSAGE
+        mock_validate.assert_called_once()
+
+
+@pytest.mark.asyncio
 async def test_validate_request_info_success():
     """Test validation succeeds with valid data"""
     # Arrange
@@ -310,3 +342,22 @@ async def test_validate_request_info_invalid_parent_segment():
         
         assert exc_info.value.status_code == status.HTTP_404_NOT_FOUND
         assert exc_info.value.detail == "Parent segment not found"
+
+
+@pytest.mark.asyncio
+async def test_validate_request_info_invalid_same_text_mapping():
+    """Test validation fails when parent segment ID doesn't exist"""
+    # Arrange
+    text_id = "text-1"
+    segment_id = "segment-1"
+    mappings = [MappingsModel(parent_text_id=text_id, segments=["invalid-seg"])]
+
+    with patch('pecha_api.texts.mappings.mappings_service.validate_text_exits'), \
+            patch('pecha_api.texts.mappings.mappings_service.validate_segment_exists'):
+        # Act & Assert
+        with pytest.raises(HTTPException) as exc_info:
+            await validate_request_info(text_id=text_id, segment_id=segment_id, mappings=mappings)
+
+        assert exc_info.value.status_code == status.HTTP_400_BAD_REQUEST
+        assert exc_info.value.detail == ErrorConstants.SAME_TEXT_MAPPING_ERROR_MESSAGE
+
