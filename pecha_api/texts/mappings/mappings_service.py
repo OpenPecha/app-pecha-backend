@@ -52,6 +52,8 @@ async def validate_request_info(text_id: str, segment_id: str, mappings: List[Ma
     await validate_segment_exists(segment_id=segment_id)
     # validate the parent ids
     parent_text_ids = [mapping.parent_text_id for mapping in mappings]
+    if text_id in parent_text_ids:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Mapping within same text not allowed")
     await validate_texts_exits(text_ids=parent_text_ids)
     # validate segment ids
     segment_ids = [segment for mapping in mappings for segment in mapping.segments]

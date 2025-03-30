@@ -144,6 +144,29 @@ async def test_update_segment_mapping_invalid_segment():
 
 
 @pytest.mark.asyncio
+async def test_update_segment_mapping_text_and_parent_text_same_error():
+    """Test update fails when parent text id contains the current text id"""
+    # Arrange
+    text_id = "text-1"
+    segment_id = "segment-1"
+    mapping_request = TextMappingRequest(
+        text_id=text_id,
+        segment_id=segment_id,
+        mappings=[MappingsModel(parent_text_id=text_id, segments=["seg-1"])]
+    )
+
+    with patch('pecha_api.texts.mappings.mappings_service.verify_admin_access', return_value=True), \
+            patch('pecha_api.texts.mappings.mappings_service.validate_request_info',
+                  side_effect=HTTPException(status_code=400, detail="Mapping within same text not allowed")) as mock_validate:
+        # Act & Assert
+        with pytest.raises(HTTPException) as exc_info:
+            await update_segment_mapping(text_mapping_request=mapping_request, token="Bearer token")
+
+        assert exc_info.value.status_code == status.HTTP_400_BAD_REQUEST
+        assert exc_info.value.detail == "Mapping within same text not allowed"
+        mock_validate.assert_called_once()
+
+@pytest.mark.asyncio
 async def test_update_segment_mapping_invalid_parent_text():
     """Test update fails when parent text ID doesn't exist"""
     # Arrange
