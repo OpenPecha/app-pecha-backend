@@ -44,3 +44,22 @@ build-backend = "poetry.core.masonry.api"
 
 [tool.poetry.scripts]
 start = "uvicorn:main"
+
+[tool.coverage.run]
+omit = [
+    "*/*_repository.py",
+    "*/*_models.py",
+    "*/*_init__.py",
+    "*/db/*"
+]
+
+[tool.coverage.report]
+exclude_lines = [
+    "pragma: no cover",
+    "def __repr__",
+    "if self.debug:",
+    "raise NotImplementedError",
+    "if __name__ == .__main__.:",
+    "pass",
+    "raise ImportError"
+]

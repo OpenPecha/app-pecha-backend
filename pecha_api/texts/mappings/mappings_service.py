@@ -45,7 +45,7 @@ async def update_segment_mapping(text_mapping_request: TextMappingRequest, token
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Admin access required")
 
 
-async def validate_request_info(text_id: str, segment_id: str, mappings: List[MappingsModel]):
+async def validate_request_info(text_id: str, segment_id: str, mappings: List[MappingsModel]) -> bool:
     # validate the text id
     await validate_text_exits(text_id=text_id)
     # validate the segment id
@@ -56,4 +56,5 @@ async def validate_request_info(text_id: str, segment_id: str, mappings: List[Ma
     # validate segment ids
     segment_ids = [segment for mapping in mappings for segment in mapping.segments]
     await validate_segments_exists(segment_ids=segment_ids)
+    return True
 
