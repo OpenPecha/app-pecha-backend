@@ -36,7 +36,7 @@ async def check_all_segment_exists(segment_ids: List[UUID]) -> bool:
         return False
 
 
-async def get_segments_by_list_of_id(segment_ids: List[str]) -> Dict[str, SegmentResponse]:
+async def get_segments_by_ids(segment_ids: List[str]) -> Dict[str, SegmentResponse]:
     try:
         if not segment_ids:
             return {}

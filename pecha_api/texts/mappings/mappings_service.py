@@ -1,9 +1,10 @@
 import uuid
-from typing import List
+from typing import List, Optional
 
 from fastapi import HTTPException
 from starlette import status
 
+from pecha_api.error_contants import ErrorConstants
 from .mappings_repository import update_mapping
 from .mappings_response_models import TextMappingRequest, MappingsModel
 from ..segments.segments_response_models import SegmentResponse, MappingResponse
@@ -26,23 +27,25 @@ async def update_segment_mapping(text_mapping_request: TextMappingRequest, token
         # save the text_mapping
         mappings = [Mapping(text_id=mapping_model.parent_text_id, segments=mapping_model.segments) for mapping_model in
                     text_mapping_request.mappings]
-        updated_segment: Segment = await update_mapping(
+        updated_segment: Optional[Segment] = await update_mapping(
             text_id=text_mapping_request.text_id,
             segment_id=uuid.UUID(text_mapping_request.segment_id),
             mappings=mappings
         )
-        mapping_responses: List[MappingResponse] = [
-            MappingResponse(**mapping.model_dump()) for mapping in updated_segment.mapping
-        ]
-        return SegmentResponse(
-            id=str(updated_segment.id),
-            text_id=updated_segment.text_id,
-            content=updated_segment.content,
-            mapping=mapping_responses
-        )
-
+        if updated_segment:
+            mapping_responses: List[MappingResponse] = [
+                MappingResponse(**mapping.model_dump()) for mapping in updated_segment.mapping
+            ]
+            return SegmentResponse(
+                id=str(updated_segment.id),
+                text_id=updated_segment.text_id,
+                content=updated_segment.content,
+                mapping=mapping_responses
+            )
+        else:
+            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=ErrorConstants.SEGMENT_MAPPING_ERROR_MESSAGE)
     else:
-        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Admin access required")
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail=ErrorConstants.ADMIN_ERROR_MESSAGE)
 
 
 async def validate_request_info(text_id: str, segment_id: str, mappings: List[MappingsModel]) -> bool:

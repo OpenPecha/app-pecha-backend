@@ -228,7 +228,9 @@ async def test_create_new_root_text():
 async def test_get_text_details_by_text_id():
     text_request = TextDetailsRequest(
         content_id="content_id_1",
-        version_id="version_id_1"
+        version_id="version_id_1",
+        skip=0,
+        limit=10
     )
     text = TextModel(
         id="032b9a5f-0712-40d8-b7ec-73c8c94f1c15",
@@ -278,7 +280,7 @@ async def test_get_text_details_by_text_id():
         patch('pecha_api.texts.texts_service.get_text_details', new_callable=AsyncMock) as mock_get_text_details:
         mock_get_text_detail_by_id.return_value = text
         mock_get_text_details.return_value = text_details
-        response = await get_text_details_by_text_id(text_id="032b9a5f-0712-40d8-b7ec-73c8c94f1c15", text_details_request=text_request, skip=0, limit=100)
+        response = await get_text_details_by_text_id(text_id="032b9a5f-0712-40d8-b7ec-73c8c94f1c15", text_details_request=text_request)
         assert response == TableOfContentResponse(
             text_detail=text,
             contents=text_details

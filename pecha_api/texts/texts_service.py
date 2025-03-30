@@ -1,11 +1,10 @@
 
-import asyncio
-from typing import List, Optional
-from uuid import UUID, uuid4
+from uuid import UUID
 
 from fastapi import HTTPException
 from starlette import status
 
+from pecha_api.error_contants import ErrorConstants
 from pecha_api.utils import Utils
 from .texts_repository import (get_texts_by_id, get_contents_by_id,
                                get_texts_by_term, get_versions_by_id, create_text, check_all_text_exists,
@@ -28,14 +27,14 @@ async def validate_text_exits(text_id: str):
     uuid_text_id = UUID(text_id)
     is_exists =  await check_text_exists(text_id=uuid_text_id)
     if not is_exists:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail='Text not found')
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=ErrorConstants.TEXT_NOT_FOUND_MESSAGE)
     return is_exists
 
 async def validate_texts_exits(text_ids: List[str]):
     uuid_text_ids = [UUID(text_id) for text_id in text_ids]
     all_exists =  await check_all_text_exists(text_ids=uuid_text_ids)
     if not all_exists:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Text not found")
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=ErrorConstants.TEXT_NOT_FOUND_MESSAGE)
     return all_exists
 
 
@@ -61,10 +60,10 @@ async def get_texts_by_term_id(term_id: str, skip: int, limit: int):
 
 async def get_text_detail_by_id(text_id: str) -> TextModel:
     if text_id is None:
-        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Text ID or Term ID is required")
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=ErrorConstants.TEXT_OR_TERM_NOT_FOUND_MESSAGE)
     text = await get_texts_by_id(text_id=text_id)
     if text is None:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Text not found")
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=ErrorConstants.TEXT_NOT_FOUND_MESSAGE)
     return TextModel(
         id=str(text.id),
         title=text.title,
@@ -118,7 +117,6 @@ async def get_translations_by_segment_id(
     return SegmentTranslationsResponse(
         segment=TextSegment(
             segment_id=segment_id,
-            text_id=text_id,
             segment_number=1,
             content="This is a test segment content"
         ),
@@ -129,7 +127,7 @@ async def get_translations_by_segment_id(
 async def get_contents_by_text_id(text_id: str, skip: int, limit: int) -> TableOfContentResponse:
     is_valid_text = await validate_text_exits(text_id=text_id)
     if not is_valid_text:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Text not found")
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=ErrorConstants.TEXT_NOT_FOUND_MESSAGE)
     text = await get_text_detail_by_id(text_id=text_id)
     table_of_contents = await get_contents_by_id(text_id=text_id, skip=skip, limit=limit)
     return TableOfContentResponse(
@@ -137,24 +135,24 @@ async def get_contents_by_text_id(text_id: str, skip: int, limit: int) -> TableO
         contents=table_of_contents
     )
 
-async def get_text_details_by_text_id(text_id: str, text_details_request: TextDetailsRequest, skip: int, limit: int) -> TableOfContentResponse:
+async def get_text_details_by_text_id(text_id: str, text_details_request: TextDetailsRequest) -> TableOfContentResponse:
     is_valid_text = await validate_text_exits(text_id=text_id)
     if is_valid_text:
         text = await get_text_detail_by_id(text_id=text_id)
-        text_details = await get_text_details(text_id=text_id, text_details_request=text_details_request, skip=skip, limit=limit)
+        text_details = await get_text_details(text_id=text_id, text_details_request=text_details_request)
         return TableOfContentResponse(
             text_detail=text,
             contents=text_details
         )
     else:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Text not found")
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=ErrorConstants.TEXT_NOT_FOUND_MESSAGE)
 
 
 
 async def get_versions_by_text_id(text_id: str, skip: int, limit: int) -> TextVersionResponse:
     root_text = await get_text_detail_by_id(text_id=text_id)
     if root_text is None:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Text not found")
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=ErrorConstants.TEXT_NOT_FOUND_MESSAGE)
     versions = await get_versions_by_id(text_id=text_id, skip=skip, limit=limit)
     list_of_version = [
         TextVersion(
