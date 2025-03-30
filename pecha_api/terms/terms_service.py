@@ -2,6 +2,7 @@ from typing import Optional
 
 from starlette import status
 
+from pecha_api.error_contants import ErrorConstants
 from pecha_api.utils import Utils
 from ..config import get
 from ..terms.terms_response_models import TermsModel, TermsResponse, CreateTermRequest, UpdateTermRequest
@@ -49,7 +50,7 @@ async def create_new_term(create_term_request: CreateTermRequest, token: str, la
             slug=new_term.slug
         )
     else:
-        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Admin access required")
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail=ErrorConstants.ADMIN_ERROR_MESSAGE)
 
 async def get_term(term_id: str,language: str) -> Optional[TermsModel]:
     selected_term = await get_term_by_id(term_id=term_id)
@@ -78,7 +79,7 @@ async def update_existing_term(term_id: str, update_term_request: UpdateTermRequ
             slug=updated_term.slug
         )
     else:
-        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Admin access required")
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail=ErrorConstants.ADMIN_ERROR_MESSAGE)
 
 
 async def delete_existing_term(term_id: str, token: str):
@@ -87,4 +88,4 @@ async def delete_existing_term(term_id: str, token: str):
         await delete_term(term_id=term_id)
         return term_id
     else:
-        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Admin access required")
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail=ErrorConstants.ADMIN_ERROR_MESSAGE)

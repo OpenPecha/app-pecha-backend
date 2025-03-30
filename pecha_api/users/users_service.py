@@ -9,6 +9,7 @@ from jose import jwt
 from jose.exceptions import JWTClaimsError
 from jwt import ExpiredSignatureError
 
+from pecha_api.error_contants import ErrorConstants
 from .user_response_models import UserInfoRequest, UserInfoResponse, SocialMediaProfile
 from .users_enums import SocialProfile
 from .users_models import Users, SocialMediaAccount
@@ -126,22 +127,22 @@ def validate_and_extract_user_details(token: str) -> Users:
         payload = validate_token(token)
         email = payload.get("email")
         if email is None:
-            raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid token")
+            raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail=ErrorConstants.TOKEN_ERROR_MESSAGE)
         with SessionLocal() as db_session:
             user = get_user_by_email(db=db_session, email=email)
             return user
     except ExpiredSignatureError as exception:
-        logging.debug("exception", exception)
-        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid token")
+        logging.debug(f"exception: {exception}")
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail=ErrorConstants.TOKEN_ERROR_MESSAGE)
     except jose.ExpiredSignatureError as exception:
-        logging.debug("exception", exception)
-        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid token")
+        logging.debug(f"exception: {exception}")
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail=ErrorConstants.TOKEN_ERROR_MESSAGE)
     except JWTClaimsError as exception:
-        logging.debug("exception", exception)
-        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid token")
+        logging.debug(f"exception: {exception}")
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail=ErrorConstants.TOKEN_ERROR_MESSAGE)
     except ValueError as value_exception:
-        logging.debug("exception", value_exception)
-        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid token")
+        logging.debug(f"exception: {value_exception}")
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail=ErrorConstants.TOKEN_ERROR_MESSAGE)
 
 
 def verify_admin_access(token: str) -> bool:
