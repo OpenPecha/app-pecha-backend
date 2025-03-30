@@ -117,7 +117,6 @@ async def get_translations_by_segment_id(
     return SegmentTranslationsResponse(
         segment=TextSegment(
             segment_id=segment_id,
-            text_id=text_id,
             segment_number=1,
             content="This is a test segment content"
         ),
@@ -136,11 +135,11 @@ async def get_contents_by_text_id(text_id: str, skip: int, limit: int) -> TableO
         contents=table_of_contents
     )
 
-async def get_text_details_by_text_id(text_id: str, text_details_request: TextDetailsRequest, skip: int, limit: int) -> TableOfContentResponse:
+async def get_text_details_by_text_id(text_id: str, text_details_request: TextDetailsRequest) -> TableOfContentResponse:
     is_valid_text = await validate_text_exits(text_id=text_id)
     if is_valid_text:
         text = await get_text_detail_by_id(text_id=text_id)
-        text_details = await get_text_details(text_id=text_id, text_details_request=text_details_request, skip=skip, limit=limit)
+        text_details = await get_text_details(text_id=text_id, text_details_request=text_details_request)
         return TableOfContentResponse(
             text_detail=text,
             contents=text_details

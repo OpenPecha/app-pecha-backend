@@ -75,6 +75,8 @@ class TableOfContentResponse(BaseModel):
 class TextDetailsRequest(BaseModel):
     content_id: str
     version_id: Optional[str] = None
+    skip: int
+    limit: int
 
 
 # Text Version Response Models
