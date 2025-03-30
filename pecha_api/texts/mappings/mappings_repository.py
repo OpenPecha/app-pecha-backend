@@ -1,7 +1,7 @@
 import uuid
 from typing import List
 
-from texts.segments.segments_models import Mapping, Segment
+from ..segments.segments_models import Mapping, Segment
 
 
 async def update_mapping(segment_id: uuid.UUID, text_id: str, mappings: List[Mapping]):

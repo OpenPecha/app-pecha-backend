@@ -4,13 +4,13 @@ from typing import List
 from fastapi import HTTPException
 from starlette import status
 
-from texts.mappings.mappings_repository import update_mapping
-from texts.mappings.mappings_response_models import TextMappingRequest, MappingsModel
-from texts.segments.segments_response_models import SegmentResponse
-from texts.segments.segments_service import validate_segments_exists, validate_segment_exists
-from texts.texts_service import validate_text_exits, validate_texts_exits
-from users.users_service import verify_admin_access
-from texts.segments.segments_models import Mapping, Segment
+from .mappings_repository import update_mapping
+from .mappings_response_models import TextMappingRequest, MappingsModel
+from ..segments.segments_response_models import SegmentResponse, MappingResponse
+from ..segments.segments_service import validate_segments_exists, validate_segment_exists
+from ..texts_service import validate_text_exits, validate_texts_exits
+from pecha_api.users.users_service import verify_admin_access
+from ..segments.segments_models import Mapping, Segment
 
 
 async def update_segment_mapping(text_mapping_request: TextMappingRequest, token: str) -> SegmentResponse:
@@ -31,18 +31,21 @@ async def update_segment_mapping(text_mapping_request: TextMappingRequest, token
             segment_id=uuid.UUID(text_mapping_request.segment_id),
             mappings=mappings
         )
+        mapping_responses: List[MappingResponse] = [
+            MappingResponse(**mapping.model_dump()) for mapping in updated_segment.mapping
+        ]
         return SegmentResponse(
             id=str(updated_segment.id),
             text_id=updated_segment.text_id,
             content=updated_segment.content,
-            mapping=updated_segment.mapping
+            mapping=mapping_responses
         )
 
     else:
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Admin access required")
 
 
-async def validate_request_info(text_id: str, segment_id: str, mappings: List[MappingsModel]):
+async def validate_request_info(text_id: str, segment_id: str, mappings: List[MappingsModel]) -> bool:
     # validate the text id
     await validate_text_exits(text_id=text_id)
     # validate the segment id
@@ -53,4 +56,5 @@ async def validate_request_info(text_id: str, segment_id: str, mappings: List[Ma
     # validate segment ids
     segment_ids = [segment for mapping in mappings for segment in mapping.segments]
     await validate_segments_exists(segment_ids=segment_ids)
+    return True
 
