@@ -24,12 +24,8 @@ async def create_segment(
 
 @segment_router.get("/{segment_id}/translations", status_code=status.HTTP_200_OK)
 async def get_translations_for_segment(
-    segment_id: str,
-    skip: int = Query(default=0),
-    limit: int = Query(default=10),
+    segment_id: str
 ):
     return await get_translations_by_segment_id(
-        segment_id=segment_id,
-        skip=skip,
-        limit=limit
+        segment_id=segment_id
     )

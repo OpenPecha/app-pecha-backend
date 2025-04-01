@@ -134,8 +134,3 @@ class TextInfos(BaseModel):
 
 class TextInfosResponse(BaseModel):
     text_infos: TextInfos
-
-# Segment transltion response
-class SegmentTranslationsResponse(BaseModel):
-    segment: TextSegment
-    translations: List[Translation]

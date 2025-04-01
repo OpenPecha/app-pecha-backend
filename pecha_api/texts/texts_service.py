@@ -9,9 +9,9 @@ from pecha_api.utils import Utils
 from .texts_repository import (get_texts_by_id, get_contents_by_id,
                                get_texts_by_term, get_versions_by_id, create_text, check_all_text_exists,
                                check_text_exists, get_text_details)
-from .texts_repository import get_text_infos, get_translations
+from .texts_repository import get_text_infos
 from .texts_response_models import TableOfContentResponse, TextModel, TextVersionResponse, TextVersion, \
-     TextsCategoryResponse, Text, CreateTextRequest, TextDetailsRequest, SegmentTranslationsResponse, \
+     TextsCategoryResponse, Text, CreateTextRequest, TextDetailsRequest, \
      TextInfosResponse, TextInfos, RelatedTexts, TextSegment
 from ..users.users_service import verify_admin_access
 

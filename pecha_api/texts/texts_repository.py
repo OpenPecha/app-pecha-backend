@@ -207,50 +207,6 @@ async def get_text_details(text_id: str, text_details_request: TextDetailsReques
         )
     ]
 
-async def get_translations(
-        text_id: str,
-        segment_id: str,
-        skip: int,
-        limit: int
-    ):
-    return [
-        Translation(
-            text_id=text_id,
-            language="bo",
-            content="འགྲེལ་བརྗོད།"
-        ),
-        Translation(
-            text_id=text_id,
-            language="en",
-            content="commentary"
-        ),
-        Translation(
-            text_id=text_id,
-            language="zh",
-            content="注释"
-        ),
-        Translation(
-            text_id=text_id,
-            language="ja",
-            content="解説"
-        ),
-        Translation(
-            text_id=text_id,
-            language="ko",
-            content="주석"
-        ),
-        Translation(
-            text_id=text_id,
-            language="fr",
-            content="commentaire"
-        ),
-        Translation(
-            text_id=text_id,
-            language="de",
-            content="Kommentar"
-        )
-    ]
-
 
 
 async def create_text(create_text_request: CreateTextRequest) -> Text:

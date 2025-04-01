@@ -8,8 +8,9 @@ from starlette import status
 
 from typing import List
 
-from ..texts_repository import get_translations
-from ..texts_response_models import TextSegment, SegmentTranslationsResponse
+from .segments_repository import get_translations
+
+from .segments_response_models import SegmentTranslationsResponse, ParentSegment
 from ..texts_service import validate_text_exits
 from ...users.users_service import verify_admin_access
 
@@ -60,19 +61,17 @@ async def create_new_segment(create_segment_request: CreateSegmentRequest, token
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail=ErrorConstants.ADMIN_ERROR_MESSAGE)
 
 async def get_translations_by_segment_id(
-        segment_id: str,
-        skip: int,
-        limit: int
+        segment_id: str
 ):
     segment = await get_segment_by_id(segment_id=segment_id)
     if not segment:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=ErrorConstants.SEGMENT_NOT_FOUND_MESSAGE)
-    translations = await get_translations(text_id=segment.text_id, segment_id=segment_id, skip=skip, limit=limit)
+    translations = await get_translations(text_id=segment.text_id, segment_id=segment_id)
     return SegmentTranslationsResponse(
-        segment=TextSegment(
+        parent_segment=ParentSegment(
             segment_id=segment_id,
             segment_number=1,
-            content="This is a test segment content"
+            content="<span class=\"text-quotation-style\">དང་པོ་ནི་</span><span class=\"text-citation-style\">ཧོ་སྣང་སྲིད་</span>སོགས་ཚིག་རྐང་དྲུག་གིས་བསྟན།<span class=\"text-citation-style\">ཧོ༵་</span>ཞེས་པ་འཁྲུལ་བས་དབང་མེད་དུ་བྱས་ཏེ་མི་འདོད་པའི་ཉེས་རྒུད་དྲག་པོས་རབ་ཏུ་གཟིར་བའི་འཁོར་བའི་སེམས་ཅན་རྣམས་ལ་དམིགས་མེད་བརྩེ་བའི་རྣམ་པར་ཤར་ཏེ་འཁྲུལ་སྣང་རང་སར་དག་པའི་ཉེ་ལམ་ཟབ་མོ་འདིར་བསྐུལ་བའི་ཚིག་ཏུ་བྱས་པ་སྟེ།"
         ),
         translations=translations
     )
