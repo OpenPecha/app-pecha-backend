@@ -23,3 +23,19 @@ class SegmentResponse(BaseModel):
     text_id: str
     content: str
     mapping: List[MappingResponse]
+
+class ParentSegment(BaseModel):
+    segment_id: str
+    segment_number: int
+    content: str
+
+class SegmentTranslation(BaseModel):
+    text_id: str
+    title: str
+    source: str
+    language: str
+    content: str
+
+class SegmentTranslationsResponse(BaseModel):
+    parent_segment: ParentSegment
+    translations: List[SegmentTranslation]

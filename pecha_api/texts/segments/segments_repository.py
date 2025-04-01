@@ -4,7 +4,7 @@ from uuid import UUID
 
 from pecha_api.constants import Constants
 from .segments_models import Segment
-from .segments_response_models import CreateSegmentRequest, SegmentResponse
+from .segments_response_models import CreateSegmentRequest, SegmentResponse, SegmentTranslation
 import logging
 from beanie.exceptions import CollectionWasNotInitialized
 from typing import List, Dict
@@ -65,3 +65,59 @@ async def create_segment(create_segment_request: CreateSegmentRequest) -> List[S
     await Segment.insert_many(new_segment_list)
 
     return new_segment_list
+
+async def get_translations(
+        text_id: str,
+        segment_id: str
+    ):
+    return [
+        SegmentTranslation(
+            text_id=text_id,
+            title="Śikhin, Viśvabhū",
+            source="source 1",
+            language="en",
+            content="To the buddhas: Vipaśyin,<br> Śikhin, Viśvabhū,<br>   Krakucchanda, Kanakamuni,<br> and Kāśyapa,<br>   And Śākyamuni—Gautama,<br> deity of all deities,   <br>To the seven warrior-like buddhas, I pay homage!"
+        ),
+        SegmentTranslation(
+            text_id=text_id,
+            title="Seven Buddhas",
+            source="source 2",
+            language="en",
+            content="To the seven special buddhas,<br>   We say hello and thank you! <br>  You are like heroes who help everyone, <br>  And we bow to show we care."
+        ),
+        SegmentTranslation(
+            text_id=text_id,
+            title="སངས་རྒྱས་རྣམས་ལ།རྣམ་པར་གཟིགས",
+            source="source 3",
+            language="bhu",
+            content="སངས་རྒྱས་རྣམས་ལ།རྣམ་པར་གཟིགས་དང་།ག<br>ཙུག་ཏོར་ཅན་དང་།ཐམས་ཅད་སྐྱོབ་དང་།<br>  འཁོར་བ་འཇིག་དང་།གསེར་ཐུབ་དང་།འོད་སྲུང་དང་། <br> ཤཱཀྱ་ཐུབ་པ་གཽ་ཏ་མ།ལྷ་ཡི་ལྷ།<br>  དཔའ་བོ་བདུན་པོ་འདི་དག་ལ་ཕྱག་འཚལ་ལོ།"
+        ),
+        SegmentTranslation(
+            text_id=text_id,
+            title="Ante los",
+            source="Source 4",
+            language="sp",
+            content="Ante los budas: Vipaśyin,<br> Śikhin, Viśvabhukra   Krakucchanda,<br> Kanakamuni, and Kāśyapa   y Śākyamuni Gautama,<br> el dios de dioses <br>  ¡ante estos siete budas que<br> son como guerreros nos postramos!"
+        ),
+        SegmentTranslation(
+            text_id=text_id,
+            title="Seven Buddhas",
+            source="Source 5",
+            language="ko",
+            content="비파시불, 시기불,<br> 비사부불,   구류손불,<br> 구나함모니불, 가섭불, <br>  그리고 석가모니불 - 고타마, <br> 모든 신들의 신께,   이 일곱 용사 같은 <br> 부처님들께 예배드립니다!"
+        ),
+        SegmentTranslation(
+            text_id=text_id,
+            title="諸仏：毘婆尸仏",
+            source="Source 6",
+            language="ja",
+            content="諸仏：毘婆尸仏、<br> 尸棄仏、毘舍浮仏、 <br>  拘留孫仏、拘那含牟尼仏、迦葉仏、 <br>  そして釈迦牟尼仏—ゴータマ、諸天の天に、 <br>  この七人の勇者のような仏陀<br>たちに礼拝いたします！"
+        ),
+        SegmentTranslation(
+            text_id=text_id,
+            title="Бурхан багш",
+            source="Source 7",
+            language="mo",
+            content="Бурхан багш нар: Вибашин,<br> Шихин, Вишвабу,<br>   Кракуччанда, Канакамуни,<br> Кашьяпа,   Мөн Шакьямуни—Гаутама,<br> бүх бурхадын бурхан, <br>  Эдгээр долоон баатарлаг бурхан<br> багш нарт би мөргөн залбирна!"
+        )
+    ]
