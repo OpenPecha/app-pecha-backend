@@ -8,9 +8,9 @@ from starlette import status
 
 from typing import List
 
-from .segments_repository import get_translations
+from .segments_repository import get_translations, get_commentaries
 
-from .segments_response_models import SegmentTranslationsResponse, ParentSegment
+from .segments_response_models import SegmentTranslationsResponse, ParentSegment, SegmentCommentariesResponse
 from ..texts_service import validate_text_exits
 from ...users.users_service import verify_admin_access
 
@@ -28,6 +28,17 @@ async def validate_segments_exists(segment_ids: List[str]):
     if not all_exists:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=ErrorConstants.SEGMENT_NOT_FOUND_MESSAGE)
     return all_exists
+
+async def get_segment_by_segment_id(segment_id: str) -> SegmentResponse:
+    segment_details = await get_segment_by_id(segment_id=segment_id)
+    if not segment_details:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=ErrorConstants.SEGMENT_NOT_FOUND_MESSAGE)
+    return SegmentResponse(
+        id=str(segment_details.id),
+        text_id=segment_details.text_id,
+        content=segment_details.content,
+        mapping=segment_details.mapping
+    )
 
 async def get_segment_details_by_id(segment_id: str) -> SegmentResponse:
     segment = await get_segment_by_id(segment_id=segment_id)
@@ -62,11 +73,14 @@ async def create_new_segment(create_segment_request: CreateSegmentRequest, token
 
 async def get_translations_by_segment_id(
         segment_id: str
-):
+) -> SegmentTranslationsResponse:
+    """
+    Get translations for a given segment ID.
+    """
     segment = await get_segment_by_id(segment_id=segment_id)
     if not segment:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=ErrorConstants.SEGMENT_NOT_FOUND_MESSAGE)
-    translations = await get_translations(text_id=segment.text_id, segment_id=segment_id)
+    translations = await get_translations(segment_id=segment_id)
     return SegmentTranslationsResponse(
         parent_segment=ParentSegment(
             segment_id=segment_id,
@@ -74,4 +88,23 @@ async def get_translations_by_segment_id(
             content="<span class=\"text-quotation-style\">དང་པོ་ནི་</span><span class=\"text-citation-style\">ཧོ་སྣང་སྲིད་</span>སོགས་ཚིག་རྐང་དྲུག་གིས་བསྟན།<span class=\"text-citation-style\">ཧོ༵་</span>ཞེས་པ་འཁྲུལ་བས་དབང་མེད་དུ་བྱས་ཏེ་མི་འདོད་པའི་ཉེས་རྒུད་དྲག་པོས་རབ་ཏུ་གཟིར་བའི་འཁོར་བའི་སེམས་ཅན་རྣམས་ལ་དམིགས་མེད་བརྩེ་བའི་རྣམ་པར་ཤར་ཏེ་འཁྲུལ་སྣང་རང་སར་དག་པའི་ཉེ་ལམ་ཟབ་མོ་འདིར་བསྐུལ་བའི་ཚིག་ཏུ་བྱས་པ་སྟེ།"
         ),
         translations=translations
+    )
+
+async def get_commentaries_by_segment_id(
+        segment_id: str
+) -> SegmentCommentariesResponse:
+    """"
+       Get commentaries for a given segment ID.
+    """
+    segment = await get_segment_by_id(segment_id=segment_id)
+    if not segment:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=ErrorConstants.SEGMENT_NOT_FOUND_MESSAGE)
+    commentaries = await get_commentaries(segment_id=segment_id)
+    return SegmentCommentariesResponse(
+        parent_segment=ParentSegment(
+            segment_id=segment_id,
+            segment_number=1,
+            content="<span class=\"text-quotation-style\">དང་པོ་ནི་</span><span class=\"text-citation-style\">ཧོ་སྣང་སྲིད་</span>སོགས་ཚིག་རྐང་དྲུག་གིས་བསྟན།<span class=\"text-citation-style\">ཧོ༵་</span>ཞེས་པ་འཁྲུལ་བས་དབང་མེད་དུ་བྱས་ཏེ་མི་འདོད་པའི་ཉེས་རྒུད་དྲག་པོས་རབ་ཏུ་གཟིར་བའི་འཁོར་བའི་སེམས་ཅན་རྣམས་ལ་དམིགས་མེད་བརྩེ་བའི་རྣམ་པར་ཤར་ཏེ་འཁྲུལ་སྣང་རང་སར་དག་པའི་ཉེ་ལམ་ཟབ་མོ་འདིར་བསྐུལ་བའི་ཚིག་ཏུ་བྱས་པ་སྟེ།"
+        ),
+        commentaries=commentaries
     )

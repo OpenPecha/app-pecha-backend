@@ -29,6 +29,7 @@ class ParentSegment(BaseModel):
     segment_number: int
     content: str
 
+# segment translation models
 class SegmentTranslation(BaseModel):
     text_id: str
     title: str
@@ -39,3 +40,14 @@ class SegmentTranslation(BaseModel):
 class SegmentTranslationsResponse(BaseModel):
     parent_segment: ParentSegment
     translations: List[SegmentTranslation]
+
+# segemtn commentary models
+class SegmentCommentry(BaseModel):
+    text_id: str
+    title: str
+    language: str
+    count: int
+
+class SegmentCommentariesResponse(BaseModel):
+    parent_segment: ParentSegment
+    commentaries: List[SegmentCommentry]
