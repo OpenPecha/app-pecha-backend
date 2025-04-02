@@ -101,6 +101,112 @@ async def get_contents_by_id(text_id: str, skip: int, limit: int):
 
 
 async def get_text_details(text_id: str, text_details_request: TextDetailsRequest):
+    if text_details_request.version_id is not None:
+        return [
+        TableOfContent(
+            id="abh7u8e4-da52-4ea2-800e-3414emk8uy67",
+            text_id=text_id,
+            segments=[
+                Section(
+                    id="d19338e4-da52-4ea2-800e-3414eac8167e",
+                    title="ཟང་ཐལ་གྱི་རྒྱུད་ཆེན་ལས་བྱུང་བའི་ཀུན་བཟང་སྨོན་ལམ་གྱི་རྣམ་བཤད། ཀུན་བཟང་ཉེ་ལམ་འོད་སྣང་གསལ་བའི་སྒྲོན་མ།",
+                    section_number=1,
+                    parent_id=None,
+                    segments=[
+                        TextSegment(
+                            segment_id="2176yt56-51de-4a42-9d49-580b729dnb66",
+                            segment_number=1,
+                            content="<span class=\"text-citation-style\">ཧོ་སྣང་སྲིད་</span>སོགས་ཚིག་རྐང་དྲུག་གིས་བསྟན།<span class=\"text-citation-style\">ཧོ༵་</span>ཞེས་པ་འཁྲུལ་བས་དབང་མེད་དུ་བྱས་ཏེ་མི་འདོད་པའི་ཉེས་རྒུད་དྲག་པོས་རབ་ཏུ་གཟིར་བའི་འཁོར་བའི་སེམས་ཅན་རྣམས་ལ་དམིགས་མེད་བརྩེ་བའི་རྣམ་པར་ཤར་ཏེ་འཁྲུལ་སྣང་རང་སར་དག་པའི་ཉེ་ལམ་ཟབ་མོ་འདིར་བསྐུལ་བའི་ཚིག་ཏུ་བྱས་པ་སྟེ།",
+                            translation=Translation(
+                                text_id=text_details_request.version_id,
+                                language="zh",
+                                content="비파시불, 시기불, 비사부불, <br>  구류손불, 구나함모니불, 가섭불, <br>  그리고 석가모니불 - 고타마, 모든 신들의 신께, <br>  이 일곱 용사 같은 부처님들께 예배드립니다!"
+                            )
+                        )
+                    ],
+                    sections=None,
+                    created_date="2021-09-01T00:00:00.000Z",
+                    updated_date="2021-09-01T00:00:00.000Z",
+                    published_date="2021-09-01T00:00:00.000Z"
+                ),
+                Section(
+                    id="b48dad38-da6d-45c3-ad12-97bca590769c",
+                    title="ཟང་ཐལ་གྱི་རྒྱུད་ཆེན་ལས་བྱུང་བའི་ཀུན་བཟང་སྨོན་ལམ་གྱི་རྣམ་བཤད། ཀུན་བཟང་ཉེ་ལམ་འོད་སྣང་གསལ་བའི་སྒྲོན་མ།",
+                    section_number=2,
+                    parent_id=None,
+                    sections=[
+                        Section(
+                            id="0971f07a-8491-4cfe-9720-dac1acb9824d",
+                            title="Basis",
+                            section_number=1,
+                            parent_id="b48dad38-da6d-45c3-ad12-97bca590769c",
+                            segments=[
+                                TextSegment(
+                                    segment_id="2176yt56-51de-4a42-9d49-580b729dnb66",
+                                    segment_number=1,
+                                    content="<span class=\"text-quotation-style\">དང་པོ་ནི་</span><span class=\"text-citation-style\">ཧོ་སྣང་སྲིད་</span>སོགས་ཚིག་རྐང་དྲུག་གིས་བསྟན།<span class=\"text-citation-style\">ཧོ༵་</span>ཞེས་པ་འཁྲུལ་བས་དབང་མེད་དུ་བྱས་ཏེ་མི་འདོད་པའི་ཉེས་རྒུད་དྲག་པོས་རབ་ཏུ་གཟིར་བའི་འཁོར་བའི་སེམས་ཅན་རྣམས་ལ་དམིགས་མེད་བརྩེ་བའི་རྣམ་པར་ཤར་ཏེ་འཁྲུལ་སྣང་རང་སར་དག་པའི་ཉེ་ལམ་ཟབ་མོ་འདིར་བསྐུལ་བའི་ཚིག་ཏུ་བྱས་པ་སྟེ།",
+                                    translation=Translation(
+                                        text_id=text_details_request.version_id,
+                                        language="zh",
+                                        content="비파시불, 시기불, 비사부불, <br>  구류손불, 구나함모니불, 가섭불, <br>  그리고 석가모니불 - 고타마, 모든 신들의 신께, <br>  이 일곱 용사 같은 부처님들께 예배드립니다!"
+                                    )
+                                ),
+                                TextSegment(
+                                    segment_id="2176yt56-51de-4a42-9d49-580b729dnb66",
+                                    segment_number=2,
+                                    content="<span class=\"text-quotation-style\">དང་པོ་ནི་</span><span class=\"text-citation-style\">ཧོ་སྣང་སྲིད་</span>སོགས་ཚིག་རྐང་དྲུག་གིས་བསྟན།<span class=\"text-citation-style\">ཧོ༵་</span>ཞེས་པ་འཁྲུལ་བས་དབང་མེད་དུ་བྱས་ཏེ་མི་འདོད་པའི་ཉེས་རྒུད་དྲག་པོས་རབ་ཏུ་གཟིར་བའི་འཁོར་བའི་སེམས་ཅན་རྣམས་ལ་དམིགས་མེད་བརྩེ་བའི་རྣམ་པར་ཤར་ཏེ་འཁྲུལ་སྣང་རང་སར་དག་པའི་ཉེ་ལམ་ཟབ་མོ་འདིར་བསྐུལ་བའི་ཚིག་ཏུ་བྱས་པ་སྟེ།",
+                                    translation=Translation(
+                                        text_id=text_details_request.version_id,
+                                        language="zh",
+                                        content="비파시불, 시기불, 비사부불, <br>  구류손불, 구나함모니불, 가섭불, <br>  그리고 석가모니불 - 고타마, 모든 신들의 신께, <br>  이 일곱 용사 같은 부처님들께 예배드립니다!"
+                                    )
+                                )
+                            ],
+                            created_date="2021-09-01T00:00:00.000Z",
+                            updated_date="2021-09-01T00:00:00.000Z",
+                            published_date="2021-09-01T00:00:00.000Z",
+                            sections=[
+                                Section(
+                                    id="at8ujke7-8491-4cfe-9720-dac1acb967y7",
+                                    title="ཟང་ཐལ་གྱི་རྒྱུད་ཆེན་ལས་བྱུང་བའི་ཀུན་བཟང་སྨོན་ལམ་གྱི་རྣམ་བཤད། ཀུན་བཟང་ཉེ་ལམ་འོད་སྣང་གསལ་བའི་སྒྲོན་མ།",
+                                    section_number=1,
+                                    parent_id="0971f07a-8491-4cfe-9720-dac1acb9824d",
+                                    segments=[
+                                        TextSegment(
+                                            segment_id="2176yt56-51de-4a42-9d49-580b729dnb66",
+                                            segment_number=1,
+                                            content="<span class=\"text-quotation-style\">དང་པོ་ནི་</span><span class=\"text-citation-style\">ཧོ་སྣང་སྲིད་</span>སོགས་ཚིག་རྐང་དྲུག་གིས་བསྟན།<span class=\"text-citation-style\">ཧོ༵་</span>ཞེས་པ་འཁྲུལ་བས་དབང་མེད་དུ་བྱས་ཏེ་མི་འདོད་པའི་ཉེས་རྒུད་དྲག་པོས་རབ་ཏུ་གཟིར་བའི་འཁོར་བའི་སེམས་ཅན་རྣམས་ལ་དམིགས་མེད་བརྩེ་བའི་རྣམ་པར་ཤར་ཏེ་འཁྲུལ་སྣང་རང་སར་དག་པའི་ཉེ་ལམ་ཟབ་མོ་འདིར་བསྐུལ་བའི་ཚིག་ཏུ་བྱས་པ་སྟེ།",
+                                            translation=Translation(
+                                                text_id=text_details_request.version_id,
+                                                language="zh",
+                                                content="비파시불, 시기불, 비사부불, <br>  구류손불, 구나함모니불, 가섭불, <br>  그리고 석가모니불 - 고타마, 모든 신들의 신께, <br>  이 일곱 용사 같은 부처님들께 예배드립니다!"
+                                            )
+                                        ),
+                                        TextSegment(
+                                            segment_id="2176yt56-51de-4a42-9d49-580b729dnb66",
+                                            segment_number=2,
+                                            content="<span class=\"text-quotation-style\">དང་པོ་ནི་</span><span class=\"text-citation-style\">ཧོ་སྣང་སྲིད་</span>སོགས་ཚིག་རྐང་དྲུག་གིས་བསྟན།<span class=\"text-citation-style\">ཧོ༵་</span>ཞེས་པ་འཁྲུལ་བས་དབང་མེད་དུ་བྱས་ཏེ་མི་འདོད་པའི་ཉེས་རྒུད་དྲག་པོས་རབ་ཏུ་གཟིར་བའི་འཁོར་བའི་སེམས་ཅན་རྣམས་ལ་དམིགས་མེད་བརྩེ་བའི་རྣམ་པར་ཤར་ཏེ་འཁྲུལ་སྣང་རང་སར་དག་པའི་ཉེ་ལམ་ཟབ་མོ་འདིར་བསྐུལ་བའི་ཚིག་ཏུ་བྱས་པ་སྟེ།",
+                                            translation=Translation(
+                                                text_id=text_details_request.version_id,
+                                                language="zh",
+                                                content="비파시불, 시기불, 비사부불, <br>  구류손불, 구나함모니불, 가섭불, <br>  그리고 석가모니불 - 고타마, 모든 신들의 신께, <br>  이 일곱 용사 같은 부처님들께 예배드립니다!"
+                                            )
+                                        )
+                                    ],
+                                    created_date="2021-09-01T00:00:00.000Z",
+                                    updated_date="2021-09-01T00:00:00.000Z",
+                                    published_date="2021-09-01T00:00:00.000Z"
+                                )
+                            ]
+                        )
+                    ],
+                    created_date="2021-09-01T00:00:00.000Z",
+                    updated_date="2021-09-01T00:00:00.000Z",
+                    published_date="2021-09-01T00:00:00.000Z"
+                )
+            ]
+        )
+    ]
     return [
         TableOfContent(
             id="abh7u8e4-da52-4ea2-800e-3414emk8uy67",
