@@ -45,6 +45,7 @@ class SegmentTranslationsResponse(BaseModel):
 class SegmentCommentry(BaseModel):
     text_id: str
     title: str
+    content: str
     language: str
     count: int
 
