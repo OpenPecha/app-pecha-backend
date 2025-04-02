@@ -4,8 +4,8 @@ from fastapi import status, HTTPException
 from uuid import uuid4
 from pecha_api.app import api
 
-from pecha_api.texts.texts_response_models import TextSegment, Translation, SegmentTranslationsResponse
-from pecha_api.texts.segments.segments_response_models import CreateSegmentRequest, CreateSegment
+from pecha_api.texts.texts_response_models import TextSegment, Translation
+from pecha_api.texts.segments.segments_response_models import CreateSegmentRequest, CreateSegment, SegmentTranslationsResponse
 from pecha_api.error_contants import ErrorConstants
 
 client = TestClient(api)
