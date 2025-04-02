@@ -5,7 +5,7 @@ from urllib.parse import urlparse
 
 import jose
 from fastapi import HTTPException, status, UploadFile
-from jose import jwt
+from jose import jwt, JWTError
 from jose.exceptions import JWTClaimsError
 from jwt import ExpiredSignatureError
 
@@ -143,7 +143,9 @@ def validate_and_extract_user_details(token: str) -> Users:
     except ValueError as value_exception:
         logging.debug(f"exception: {value_exception}")
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail=ErrorConstants.TOKEN_ERROR_MESSAGE)
-
+    except JWTError as jwt_exception:
+        logging.debug(f"exception: {jwt_exception}")
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail=ErrorConstants.TOKEN_ERROR_MESSAGE)
 
 def verify_admin_access(token: str) -> bool:
     current_user = validate_and_extract_user_details(token=token)
