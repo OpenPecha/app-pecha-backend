@@ -29,17 +29,6 @@ async def validate_segments_exists(segment_ids: List[str]):
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=ErrorConstants.SEGMENT_NOT_FOUND_MESSAGE)
     return all_exists
 
-async def get_segment_by_segment_id(segment_id: str) -> SegmentResponse:
-    segment_details = await get_segment_by_id(segment_id=segment_id)
-    if not segment_details:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=ErrorConstants.SEGMENT_NOT_FOUND_MESSAGE)
-    return SegmentResponse(
-        id=str(segment_details.id),
-        text_id=segment_details.text_id,
-        content=segment_details.content,
-        mapping=segment_details.mapping
-    )
-
 async def get_segment_details_by_id(segment_id: str) -> SegmentResponse:
     segment = await get_segment_by_id(segment_id=segment_id)
     if not segment:

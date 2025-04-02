@@ -5,7 +5,7 @@ from starlette import status
 from typing import Annotated
 
 from .segments_service import create_new_segment, get_translations_by_segment_id, get_commentaries_by_segment_id, \
-    get_segment_by_segment_id
+    get_segment_details_by_id
 from .segments_response_models import CreateSegmentRequest
 
 oauth2_scheme = HTTPBearer()
@@ -18,7 +18,7 @@ segment_router = APIRouter(
 async def get_segment(
     segment_id: str
 ):
-    return await get_segment_by_segment_id(segment_id=segment_id)
+    return await get_segment_details_by_id(segment_id=segment_id)
 
 @segment_router.post("", status_code=status.HTTP_201_CREATED)
 async def create_segment(
