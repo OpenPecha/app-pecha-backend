@@ -101,27 +101,6 @@ async def get_text_by_text_id_or_term(
         )
     else:
         return await get_text_detail_by_id(text_id=text_id)
-    
-
-async def get_translations_by_segment_id(
-        text_id: str,
-        segment_id: str,
-        skip: int,
-        limit: int
-):
-    is_valid_text = await validate_text_exits(text_id=text_id)
-    is_valid_segment = True # later to validate the segment
-    if not (is_valid_text and is_valid_segment):
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Text or Segment not found")
-    translations = await get_translations(text_id=text_id, segment_id=segment_id, skip=skip, limit=limit)
-    return SegmentTranslationsResponse(
-        segment=TextSegment(
-            segment_id=segment_id,
-            segment_number=1,
-            content="This is a test segment content"
-        ),
-        translations=translations
-    )
 
 
 async def get_contents_by_text_id(text_id: str, skip: int, limit: int) -> TableOfContentResponse:
