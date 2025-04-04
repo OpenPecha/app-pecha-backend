@@ -207,7 +207,6 @@ async def get_text_details(text_id: str, text_details_request: TextDetailsReques
             ]
         )
     ]
-    print("here")
     return [
         TableOfContent(
             id="abh7u8e4-da52-4ea2-800e-3414emk8uy67",
@@ -333,37 +332,4 @@ async def create_text(create_text_request: CreateTextRequest) -> Text:
     return saved_text
 
 async def get_text_infos(text_id: str, language: str, skip: int, limit: int):
-    return [
-            {
-                "id": str(uuid.uuid4()),
-                "title": {
-                    "en": "commentary",
-                    "bo": "འགྲེལ་བརྗོད།"
-                },
-                "count": 1
-            },
-            {
-                "id": str(uuid.uuid4()),
-                "title": {
-                    "en": "Happiness",
-                    "bo": "སྤྲོ་སྣང་།"
-                },
-                "count": 3
-            },
-            {
-                "id": str(uuid.uuid4()),
-                "title": {
-                    "en": "Kindness",
-                    "bo": "སྙིང་རྗེ།"
-                },
-                "count": 5
-            },
-            {
-                "id": str(uuid.uuid4()),
-                "title": {
-                    "en": "Patience",
-                    "bo": "བཟོད་པ།།"
-                },
-                "count": 7
-            }
-        ]
+    return []
