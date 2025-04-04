@@ -332,4 +332,13 @@ async def create_text(create_text_request: CreateTextRequest) -> Text:
     return saved_text
 
 async def get_text_infos(text_id: str, language: str, skip: int, limit: int):
-    return []
+    return [
+        {
+            "id": str(uuid.uuid4()),
+            "title": {
+                "en": "commentary",
+                "bo": "འགྲེལ་བརྗོད།"
+            },
+            "count": 1
+        }
+    ]
