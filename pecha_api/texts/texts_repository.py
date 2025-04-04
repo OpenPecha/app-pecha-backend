@@ -101,7 +101,7 @@ async def get_contents_by_id(text_id: str, skip: int, limit: int):
 
 
 async def get_text_details(text_id: str, text_details_request: TextDetailsRequest):
-    if text_details_request.version_id is not None:
+    if text_details_request.version_id == "test":
         return [
         TableOfContent(
             id="abh7u8e4-da52-4ea2-800e-3414emk8uy67",
@@ -207,6 +207,7 @@ async def get_text_details(text_id: str, text_details_request: TextDetailsReques
             ]
         )
     ]
+    print("here")
     return [
         TableOfContent(
             id="abh7u8e4-da52-4ea2-800e-3414emk8uy67",
