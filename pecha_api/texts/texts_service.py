@@ -37,6 +37,24 @@ async def validate_texts_exits(text_ids: List[str]):
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=ErrorConstants.TEXT_NOT_FOUND_MESSAGE)
     return all_exists
 
+def get_all_segment_ids(table_of_content: TableOfContent) -> List[str]:
+    segment_ids = []
+    
+    def collect_segment_ids(sections: List[Section]):
+        for section in sections:
+            # Add IDs of CreateTableOfContentTextSegment instances
+            segment_ids.extend(
+                segment.segment_id
+                for segment in section.segments
+                if isinstance(segment, CreateTableOfContentTextSegment)
+            )
+            
+            # Recursively process nested sections
+            if section.sections:
+                collect_segment_ids(section.sections)
+        
+    collect_segment_ids(table_of_content.segments)
+    return segment_ids
 
 async def get_texts_by_term_id(term_id: str, skip: int, limit: int):
     texts = await get_texts_by_term(term_id=term_id, skip=skip, limit=limit)
@@ -207,6 +225,10 @@ async def create_table_of_content(table_of_content_request: CreateTableOfContent
     if is_admin:
         valid_text = await validate_text_exits(text_id=table_of_content_request.text_id)
         if valid_text:
+            segment_ids = get_all_segment_ids(table_of_content_request)
+            valid_segments = await validate_segments_exists(segment_ids=segment_ids)
+            if not valid_segments:
+                raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=ErrorConstants.SEGMENT_NOT_FOUND_MESSAGE)
             table_of_content = await create_table_of_content_detail(table_of_content_request=table_of_content_request)
             return TableOfContent(
                 id=str(table_of_content.id),

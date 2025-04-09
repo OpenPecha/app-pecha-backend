@@ -12,8 +12,6 @@ from .texts_response_models import TableOfContent, Section, CreateTextRequest, T
 from .texts_models import Text
 from datetime import datetime, timezone
 
-from .segments.segments_models import Segment
-
 
 
 async def get_texts_by_id(text_id: str) -> Text | None:
