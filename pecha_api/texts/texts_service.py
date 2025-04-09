@@ -6,17 +6,18 @@ from starlette import status
 
 from pecha_api.error_contants import ErrorConstants
 from pecha_api.utils import Utils
-from .texts_repository import (get_texts_by_id, get_contents_by_id,
+from .texts_repository import (get_texts_by_id,
                                get_texts_by_term, get_versions_by_id, create_text, check_all_text_exists,
-                               check_text_exists, get_text_details, create_table_of_content_detail)
+                               check_text_exists, create_table_of_content_detail)
 from .texts_repository import get_text_infos
 from .texts_response_models import TableOfContent, TableOfContentResponse, TextModel, TextVersionResponse, TextVersion, \
      TextsCategoryResponse, Text, CreateTextRequest, TextDetailsRequest, \
-     TextInfosResponse, TextInfos, RelatedTexts, CreateTableOfContentRequest
+     TextInfosResponse, TextInfos, RelatedTexts, CreateTableOfContentRequest, CreateTableOfContentTextSegment
 from ..users.users_service import verify_admin_access
 
 from ..terms.terms_service import get_term
 
+from .segments.segments_service import validate_segments_exists
 
 from typing import List
 from pecha_api.config import get
@@ -37,25 +38,25 @@ async def validate_texts_exits(text_ids: List[str]):
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=ErrorConstants.TEXT_NOT_FOUND_MESSAGE)
     return all_exists
 
-def get_all_segment_ids(table_of_content: TableOfContent) -> List[str]:
+def get_all_segment_ids(table_of_content: CreateTableOfContentRequest) -> List[str]:
     # Use an iterative approach with a stack
-    stack = list(table_of_content.segments)  # Start with top-level sections
+    stack = list(table_of_content.sections)  # Start with top-level sections
     segment_ids = []
-    
+
     while stack:
         section = stack.pop()
-        
+
         # Add segment IDs
         segment_ids.extend(
             segment.segment_id
             for segment in section.segments
             if isinstance(segment, CreateTableOfContentTextSegment)
         )
-        
+
         # Add nested sections to the stack
         if section.sections:
             stack.extend(section.sections)
-    
+
     return segment_ids
 
 async def get_texts_by_term_id(term_id: str, skip: int, limit: int):
@@ -222,21 +223,17 @@ async def get_infos_by_text_id(text_id: str, language: str, skip: int, limit: in
         )
     )
 
-async def create_table_of_content(table_of_content_request: CreateTableOfContentRequest, token: str) -> TableOfContent:
+async def create_table_of_content(table_of_content_request: CreateTableOfContentRequest, token: str):
     is_admin = verify_admin_access(token=token)
     if is_admin:
         valid_text = await validate_text_exits(text_id=table_of_content_request.text_id)
         if valid_text:
-            segment_ids = get_all_segment_ids(table_of_content_request)
+            segment_ids = get_all_segment_ids(table_of_content=table_of_content_request)
             valid_segments = await validate_segments_exists(segment_ids=segment_ids)
             if not valid_segments:
                 raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=ErrorConstants.SEGMENT_NOT_FOUND_MESSAGE)
             table_of_content = await create_table_of_content_detail(table_of_content_request=table_of_content_request)
-            return TableOfContent(
-                id=str(table_of_content.id),
-                text_id=table_of_content.text_id,
-                segments=table_of_content.segments
-            )
+            return table_of_content
         else:
             raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=ErrorConstants.TEXT_NOT_FOUND_MESSAGE)
     else:

@@ -66,7 +66,7 @@ class Section(BaseModel):
 class TableOfContent(BaseModel):
     id: str
     text_id: str
-    segments: List[Section]
+    sections: List[Section]
 
 class TableOfContentResponse(BaseModel):
     text_detail: TextModel
@@ -93,7 +93,7 @@ class CreateSection(BaseModel):
 
 class CreateTableOfContentRequest(BaseModel):
     text_id: str
-    segments: List[CreateSection]
+    sections: List[CreateSection]
 
 # Text Version Response Models
 
