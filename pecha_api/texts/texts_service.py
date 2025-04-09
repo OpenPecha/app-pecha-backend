@@ -38,22 +38,24 @@ async def validate_texts_exits(text_ids: List[str]):
     return all_exists
 
 def get_all_segment_ids(table_of_content: TableOfContent) -> List[str]:
+    # Use an iterative approach with a stack
+    stack = list(table_of_content.segments)  # Start with top-level sections
     segment_ids = []
     
-    def collect_segment_ids(sections: List[Section]):
-        for section in sections:
-            # Add IDs of CreateTableOfContentTextSegment instances
-            segment_ids.extend(
-                segment.segment_id
-                for segment in section.segments
-                if isinstance(segment, CreateTableOfContentTextSegment)
-            )
-            
-            # Recursively process nested sections
-            if section.sections:
-                collect_segment_ids(section.sections)
+    while stack:
+        section = stack.pop()
         
-    collect_segment_ids(table_of_content.segments)
+        # Add segment IDs
+        segment_ids.extend(
+            segment.segment_id
+            for segment in section.segments
+            if isinstance(segment, CreateTableOfContentTextSegment)
+        )
+        
+        # Add nested sections to the stack
+        if section.sections:
+            stack.extend(section.sections)
+    
     return segment_ids
 
 async def get_texts_by_term_id(term_id: str, skip: int, limit: int):
