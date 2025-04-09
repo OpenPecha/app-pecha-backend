@@ -2,10 +2,19 @@ import uuid
 from uuid import UUID
 from typing import Dict, List, Optional
 
+from .texts_response_models import Section
+
 from pydantic import Field
 from beanie import Document
 from watchfiles import awatch
 
+class TableOfContent(Document):
+    id: uuid.UUID = Field(default_factory=uuid.uuid4)
+    text_id: str
+    segments: List[Section]
+
+    class Settings:
+        collection = "table_of_contents"
 
 class Text(Document):
     id: uuid.UUID = Field(default_factory=uuid.uuid4)
@@ -70,3 +79,4 @@ class Text(Document):
             .to_list()
         )
         return texts
+

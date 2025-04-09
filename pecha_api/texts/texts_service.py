@@ -8,11 +8,11 @@ from pecha_api.error_contants import ErrorConstants
 from pecha_api.utils import Utils
 from .texts_repository import (get_texts_by_id, get_contents_by_id,
                                get_texts_by_term, get_versions_by_id, create_text, check_all_text_exists,
-                               check_text_exists, get_text_details)
+                               check_text_exists, get_text_details, create_table_of_content_detail)
 from .texts_repository import get_text_infos
-from .texts_response_models import TableOfContentResponse, TextModel, TextVersionResponse, TextVersion, \
+from .texts_response_models import TableOfContent, TableOfContentResponse, TextModel, TextVersionResponse, TextVersion, \
      TextsCategoryResponse, Text, CreateTextRequest, TextDetailsRequest, \
-     TextInfosResponse, TextInfos, RelatedTexts, TextSegment
+     TextInfosResponse, TextInfos, RelatedTexts, CreateTableOfContentRequest
 from ..users.users_service import verify_admin_access
 
 from ..terms.terms_service import get_term
@@ -202,4 +202,18 @@ async def get_infos_by_text_id(text_id: str, language: str, skip: int, limit: in
         )
     )
 
-
+async def create_table_of_content(table_of_content_request: CreateTableOfContentRequest, token: str) -> TableOfContent:
+    is_admin = verify_admin_access(token=token)
+    if is_admin:
+        valid_text = await validate_text_exits(text_id=table_of_content_request.text_id)
+        if valid_text:
+            table_of_content = await create_table_of_content_detail(table_of_content_request=table_of_content_request)
+            return TableOfContent(
+                id=str(table_of_content.id),
+                text_id=table_of_content.text_id,
+                segments=table_of_content.segments
+            )
+        else:
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=ErrorConstants.TEXT_NOT_FOUND_MESSAGE)
+    else:
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail=ErrorConstants.ADMIN_ERROR_MESSAGE)

@@ -52,12 +52,16 @@ class TextSegment(BaseModel):
     content: Optional[str] = None
     translation: Optional[Translation] = None
 
+class CreateTableOfContentTextSegment(BaseModel):
+    segment_id: str
+    segment_number: int
+
 class Section(BaseModel):
     id: str
     title: str
     section_number: int
     parent_id: Optional[str] = None
-    segments: List[TextSegment] = []
+    segments: List[Union[TextSegment, CreateTableOfContentTextSegment]] = []
     sections: Optional[List["Section"]] = None
     created_date: str
     updated_date: str
@@ -78,6 +82,9 @@ class TextDetailsRequest(BaseModel):
     skip: int
     limit: int
 
+class CreateTableOfContentRequest(BaseModel):
+    text_id: str
+    segments: List[Section]
 
 # Text Version Response Models
 
