@@ -47,9 +47,6 @@ async def get_texts_by_term(term_id: str, skip: int, limit: int):
 async def get_versions_by_id(text_id: str, skip: int, limit: int):
     return await Text.get_versions_by_text_id(text_id=text_id, skip=skip, limit=limit)
 
-async def get_segment_details_by_id(segment_id: str):
-    return await Segment.get_segment_details(segment_id=segment_id)
-
 async def get_contents_by_id(text_id: str, skip: int, limit: int):
     return [
         TableOfContent(
