@@ -7,7 +7,7 @@ from uuid import UUID
 
 from beanie.exceptions import CollectionWasNotInitialized
 from pecha_api.constants import Constants
-from .texts_response_models import CreateTextRequest, CreateTableOfContentRequest
+from .texts_response_models import CreateTextRequest, TextDetailsRequest, TableOfContentRequest
 from .texts_models import Text, TableOfContent
 from datetime import datetime, timezone
 
@@ -45,8 +45,6 @@ async def get_versions_by_id(text_id: str, skip: int, limit: int):
     return await Text.get_versions_by_text_id(text_id=text_id, skip=skip, limit=limit)
 
 
-
-
 async def create_text(create_text_request: CreateTextRequest) -> Text:
     new_text = Text(
         title=create_text_request.title,
@@ -63,13 +61,19 @@ async def create_text(create_text_request: CreateTextRequest) -> Text:
     saved_text = await new_text.insert()
     return saved_text
 
-async def create_table_of_content_detail(table_of_content_request: CreateTableOfContentRequest):
+async def create_table_of_content_detail(table_of_content_request: TableOfContentRequest):
     new_table_of_content = TableOfContent(
         text_id=table_of_content_request.text_id,
         sections=table_of_content_request.sections
     )
     saved_table_of_content = await new_table_of_content.insert()
     return saved_table_of_content
+
+async def get_contents_by_id(text_id: str, skip: int, limit: int) -> List[TableOfContent]:
+    return await TableOfContent.get_table_of_content_by_id(text_id=text_id)
+    
+async def get_text_details(text_id: str, text_details_request: TextDetailsRequest):
+    return await TableOfContent.get_details(text_id=text_id, text_details_request=text_details_request)
 
 async def get_text_infos(text_id: str, language: str, skip: int, limit: int):
     return [

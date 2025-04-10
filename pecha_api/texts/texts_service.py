@@ -9,10 +9,10 @@ from pecha_api.utils import Utils
 from .texts_repository import (get_texts_by_id,
                                get_texts_by_term, get_versions_by_id, create_text, check_all_text_exists,
                                check_text_exists, create_table_of_content_detail)
-from .texts_repository import get_text_infos
-from .texts_response_models import TableOfContent, TableOfContentResponse, TextModel, TextVersionResponse, TextVersion, \
+from .texts_repository import get_text_infos, get_contents_by_id, get_text_details
+from .texts_response_models import TableOfContent, TableOfContentResponse, TextModel, TextSegmentModel, TextVersionResponse, TextVersion, \
      TextsCategoryResponse, Text, CreateTextRequest, TextDetailsRequest, \
-     TextInfosResponse, TextInfos, RelatedTexts, CreateTableOfContentRequest, CreateTableOfContentTextSegment
+     TextInfosResponse, TextInfos, RelatedTexts, TableOfContentRequest
 from ..users.users_service import verify_admin_access
 
 from ..terms.terms_service import get_term
@@ -38,7 +38,7 @@ async def validate_texts_exits(text_ids: List[str]):
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=ErrorConstants.TEXT_NOT_FOUND_MESSAGE)
     return all_exists
 
-def get_all_segment_ids(table_of_content: CreateTableOfContentRequest) -> List[str]:
+def get_all_segment_ids(table_of_content: TableOfContentRequest) -> List[str]:
     # Use an iterative approach with a stack
     stack = list(table_of_content.sections)  # Start with top-level sections
     segment_ids = []
@@ -50,7 +50,7 @@ def get_all_segment_ids(table_of_content: CreateTableOfContentRequest) -> List[s
         segment_ids.extend(
             segment.segment_id
             for segment in section.segments
-            if isinstance(segment, CreateTableOfContentTextSegment)
+            if isinstance(segment, TextSegmentModel)
         )
 
         # Add nested sections to the stack
@@ -132,7 +132,14 @@ async def get_contents_by_text_id(text_id: str, skip: int, limit: int) -> TableO
     table_of_contents = await get_contents_by_id(text_id=text_id, skip=skip, limit=limit)
     return TableOfContentResponse(
         text_detail=text,
-        contents=table_of_contents
+        contents=[
+            TableOfContent(
+                id=str(content.id),
+                text_id=content.text_id,
+                sections=content.sections
+            )
+            for content in table_of_contents
+        ]
     )
 
 async def get_text_details_by_text_id(text_id: str, text_details_request: TextDetailsRequest) -> TableOfContentResponse:
@@ -140,9 +147,12 @@ async def get_text_details_by_text_id(text_id: str, text_details_request: TextDe
     if is_valid_text:
         text = await get_text_detail_by_id(text_id=text_id)
         text_details = await get_text_details(text_id=text_id, text_details_request=text_details_request)
+        #INCOMPLETE METHOD
         return TableOfContentResponse(
             text_detail=text,
-            contents=text_details
+            contents=[
+                text_details
+            ]
         )
     else:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=ErrorConstants.TEXT_NOT_FOUND_MESSAGE)
@@ -223,7 +233,7 @@ async def get_infos_by_text_id(text_id: str, language: str, skip: int, limit: in
         )
     )
 
-async def create_table_of_content(table_of_content_request: CreateTableOfContentRequest, token: str):
+async def create_table_of_content(table_of_content_request: TableOfContentRequest, token: str):
     is_admin = verify_admin_access(token=token)
     if is_admin:
         valid_text = await validate_text_exits(text_id=table_of_content_request.text_id)

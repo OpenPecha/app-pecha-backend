@@ -3,7 +3,6 @@ from typing import List, Optional, Dict, Union
 from pecha_api.terms.terms_response_models import TermsModel
 
 from pydantic import BaseModel
-from .segments.segments_models import Mapping
 
 class CreateTextRequest(BaseModel):
     title: str
@@ -14,19 +13,6 @@ class CreateTextRequest(BaseModel):
     categories: List[str]
 
 class TextModel(BaseModel):
-    id: str
-    title: str
-    language: str
-    type: str
-    is_published: bool
-    created_date: str
-    updated_date: str
-    published_date: str
-    published_by: str
-    categories: List[str]
-    parent_id: Optional[str] = None
-
-class RootText(BaseModel):
     id: str
     title: str
     language: str
@@ -59,9 +45,9 @@ class Section(BaseModel):
     parent_id: Optional[str] = None
     segments: List[TextSegment] = []
     sections: Optional[List["Section"]] = None
-    created_date: str
+    created_date: str 
     updated_date: str
-    published_date: str
+    published_date: str 
 
 class TableOfContent(BaseModel):
     id: str
@@ -72,28 +58,30 @@ class TableOfContentResponse(BaseModel):
     text_detail: TextModel
     contents: List[TableOfContent]
 
+class TextSegmentModel(BaseModel):
+    segment_id: str
+    segment_number: int
+
+class SectionModel(BaseModel):
+    id: str
+    title: str
+    section_number: int
+    parent_id: Optional[str] = None
+    segments: List[TextSegmentModel] = []
+    sections: Optional[List["SectionModel"]] = None
+    created_date: str 
+    updated_date: str
+    published_date: str 
+
+class TableOfContentRequest(BaseModel):
+    text_id: str
+    sections: List[SectionModel]
+
 class TextDetailsRequest(BaseModel):
     content_id: str
     version_id: Optional[str] = None
     skip: int
     limit: int
-
-# TOC creation models
-
-class CreateTableOfContentTextSegment(BaseModel):
-    segment_id: str
-    segment_number: int
-
-class CreateSection(BaseModel):
-    title: str
-    section_number: int
-    parent_id: Optional[str] = None
-    segments: List[CreateTableOfContentTextSegment] = []
-    sections: Optional[List["CreateSection"]] = None
-
-class CreateTableOfContentRequest(BaseModel):
-    text_id: str
-    sections: List[CreateSection]
 
 # Text Version Response Models
 

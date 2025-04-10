@@ -1,8 +1,8 @@
 import uuid
 from uuid import UUID
-from typing import Dict, List, Optional
+from typing import List, Optional
 
-from .texts_response_models import CreateSection
+from .texts_response_models import TextDetailsRequest, SectionModel
 
 from pydantic import Field
 from beanie import Document
@@ -10,10 +10,18 @@ from beanie import Document
 class TableOfContent(Document):
     id: uuid.UUID = Field(default_factory=uuid.uuid4)
     text_id: str
-    sections: List[CreateSection]
+    sections: List[SectionModel]
 
     class Settings:
         collection = "table_of_contents"
+    
+    @classmethod
+    async def get_table_of_content_by_id(cls, text_id: str):
+        return await cls.find(cls.text_id == text_id).to_list()
+    
+    @classmethod
+    async def get_details(cls, text_id: str, text_details_request: TextDetailsRequest):
+        return await cls.find_one(cls.text_id == text_id, cls.id == UUID(text_details_request.content_id))
 
 class Text(Document):
     id: uuid.UUID = Field(default_factory=uuid.uuid4)
