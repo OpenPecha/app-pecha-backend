@@ -16,12 +16,12 @@ class TableOfContent(Document):
         collection = "table_of_contents"
     
     @classmethod
-    async def get_table_of_content_by_id(cls, text_id: str):
+    async def get_table_of_content_by_text_id(cls, text_id: str):
         return await cls.find(cls.text_id == text_id).to_list()
     
     @classmethod
-    async def get_details(cls, text_id: str, text_details_request: TextDetailsRequest):
-        return await cls.find_one(cls.text_id == text_id, cls.id == UUID(text_details_request.content_id))
+    async def get_table_of_content_by_id(cls, content_id: str):
+        return await cls.find_one(cls.id == UUID(content_id))
 
 class Text(Document):
     id: uuid.UUID = Field(default_factory=uuid.uuid4)

@@ -70,10 +70,10 @@ async def create_table_of_content_detail(table_of_content_request: TableOfConten
     return saved_table_of_content
 
 async def get_contents_by_id(text_id: str, skip: int, limit: int) -> List[TableOfContent]:
-    return await TableOfContent.get_table_of_content_by_id(text_id=text_id)
+    return await TableOfContent.get_table_of_content_by_text_id(text_id=text_id)
     
-async def get_text_details(text_id: str, text_details_request: TextDetailsRequest):
-    return await TableOfContent.get_details(text_id=text_id, text_details_request=text_details_request)
+async def get_table_of_content_by_id(content_id: str):
+    return await TableOfContent.get_table_of_content_by_id(content_id=content_id)
 
 async def get_text_infos(text_id: str, language: str, skip: int, limit: int):
     return [

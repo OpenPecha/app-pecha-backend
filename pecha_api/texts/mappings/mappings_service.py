@@ -9,7 +9,7 @@ from .mappings_repository import update_mapping
 from .mappings_response_models import TextMappingRequest, MappingsModel
 from ..segments.segments_response_models import SegmentResponse, MappingResponse
 from ..segments.segments_service import validate_segments_exists, validate_segment_exists
-from ..texts_service import validate_text_exits, validate_texts_exits
+from ..texts_utils import TextUtils
 from pecha_api.users.users_service import verify_admin_access
 from ..segments.segments_models import Mapping, Segment
 
@@ -50,14 +50,14 @@ async def update_segment_mapping(text_mapping_request: TextMappingRequest, token
 
 async def validate_request_info(text_id: str, segment_id: str, mappings: List[MappingsModel]) -> bool:
     # validate the text id
-    await validate_text_exits(text_id=text_id)
+    await TextUtils.validate_text_exists(text_id=text_id)
     # validate the segment id
     await validate_segment_exists(segment_id=segment_id)
     # validate the parent ids
     parent_text_ids = [mapping.parent_text_id for mapping in mappings]
     if text_id in parent_text_ids:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=ErrorConstants.SAME_TEXT_MAPPING_ERROR_MESSAGE)
-    await validate_texts_exits(text_ids=parent_text_ids)
+    await TextUtils.validate_texts_exist(text_ids=parent_text_ids)
     # validate segment ids
     segment_ids = [segment for mapping in mappings for segment in mapping.segments]
     await validate_segments_exists(segment_ids=segment_ids)
