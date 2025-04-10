@@ -7,7 +7,7 @@ from uuid import UUID
 
 from beanie.exceptions import CollectionWasNotInitialized
 from pecha_api.constants import Constants
-from .texts_response_models import CreateTextRequest, TextDetailsRequest, TableOfContentRequest
+from .texts_response_models import CreateTextRequest, TextDetailsRequest, TableOfContent
 from .texts_models import Text, TableOfContent
 from datetime import datetime, timezone
 
@@ -61,7 +61,7 @@ async def create_text(create_text_request: CreateTextRequest) -> Text:
     saved_text = await new_text.insert()
     return saved_text
 
-async def create_table_of_content_detail(table_of_content_request: TableOfContentRequest):
+async def create_table_of_content_detail(table_of_content_request: TableOfContent):
     new_table_of_content = TableOfContent(
         text_id=table_of_content_request.text_id,
         sections=table_of_content_request.sections

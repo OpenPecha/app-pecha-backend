@@ -2,7 +2,7 @@ import uuid
 from uuid import UUID
 from typing import List, Optional
 
-from .texts_response_models import TextDetailsRequest, SectionModel
+from .texts_response_models import TextDetailsRequest, Section
 
 from pydantic import Field
 from beanie import Document
@@ -10,7 +10,7 @@ from beanie import Document
 class TableOfContent(Document):
     id: uuid.UUID = Field(default_factory=uuid.uuid4)
     text_id: str
-    sections: List[SectionModel]
+    sections: List[Section]
 
     class Settings:
         collection = "table_of_contents"

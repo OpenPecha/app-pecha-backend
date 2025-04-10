@@ -1,4 +1,5 @@
 from typing import List, Optional, Dict, Union
+from uuid import UUID
 
 from pecha_api.terms.terms_response_models import TermsModel
 
@@ -32,11 +33,35 @@ class Translation(BaseModel):
     language: str
     content: str
 
-class TextSegment(BaseModel):
+class DetailTextSegment(BaseModel):
     segment_id: str
     segment_number: Optional[int] = None
     content: Optional[str] = None
     translation: Optional[Translation] = None
+
+class DetailSection(BaseModel):
+    id: str
+    title: str
+    section_number: int
+    parent_id: Optional[str] = None
+    segments: List[DetailTextSegment] = []
+    sections: Optional[List["Section"]] = None
+    created_date: str 
+    updated_date: str
+    published_date: str 
+
+class DetailTableOfContent(BaseModel):
+    id: str
+    text_id: str
+    sections: List[DetailSection]
+
+class DetailTableOfContentResponse(BaseModel):
+    text_detail: TextModel
+    contents: List[DetailTableOfContent]
+
+class TextSegment(BaseModel):
+    segment_id: str
+    segment_number: int
 
 class Section(BaseModel):
     id: str
@@ -50,32 +75,13 @@ class Section(BaseModel):
     published_date: str 
 
 class TableOfContent(BaseModel):
-    id: str
+    id: Optional[str] = None
     text_id: str
     sections: List[Section]
 
 class TableOfContentResponse(BaseModel):
     text_detail: TextModel
     contents: List[TableOfContent]
-
-class TextSegmentModel(BaseModel):
-    segment_id: str
-    segment_number: int
-
-class SectionModel(BaseModel):
-    id: str
-    title: str
-    section_number: int
-    parent_id: Optional[str] = None
-    segments: List[TextSegmentModel] = []
-    sections: Optional[List["SectionModel"]] = None
-    created_date: str 
-    updated_date: str
-    published_date: str 
-
-class TableOfContentRequest(BaseModel):
-    text_id: str
-    sections: List[SectionModel]
 
 class TextDetailsRequest(BaseModel):
     content_id: str

@@ -6,7 +6,7 @@ from typing import Optional, Annotated
 
 from .texts_service import get_contents_by_text_id, get_versions_by_text_id, create_new_text, get_text_by_text_id_or_term, \
         get_infos_by_text_id, get_text_details_by_text_id, create_table_of_content
-from .texts_response_models import CreateTextRequest, TextDetailsRequest, TableOfContentRequest
+from .texts_response_models import CreateTextRequest, TextDetailsRequest, TableOfContent
 
 oauth2_scheme = HTTPBearer()
 text_router = APIRouter(
@@ -65,7 +65,7 @@ async def get_contents_with_details(
 @text_router.post("/table-of-content", status_code=status.HTTP_200_OK)
 async def create_table_of_content_request(
         authentication_credential: Annotated[HTTPAuthorizationCredentials, Depends(oauth2_scheme)],
-        table_of_content_request: TableOfContentRequest
+        table_of_content_request: TableOfContent
 ):
     return await create_table_of_content(table_of_content_request=table_of_content_request, token=authentication_credential.credentials)
 
