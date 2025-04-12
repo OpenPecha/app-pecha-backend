@@ -4,9 +4,9 @@ from starlette import status
 
 from typing import Optional, Annotated
 
-from .texts_service import get_contents_by_text_id, get_versions_by_text_id, create_new_text, get_text_by_text_id_or_term, \
-        get_infos_by_text_id, get_text_details_by_text_id
-from .texts_response_models import CreateTextRequest, TextDetailsRequest
+from .texts_service import get_table_of_contents_by_text_id, get_versions_by_text_id, create_new_text, get_text_by_text_id_or_term, \
+        get_infos_by_text_id, get_text_details_by_text_id, create_table_of_content
+from .texts_response_models import CreateTextRequest, TextDetailsRequest, TableOfContent
 
 oauth2_scheme = HTTPBearer()
 text_router = APIRouter(
@@ -50,9 +50,9 @@ async def get_versions(
 async def get_contents(
         text_id: str,
         skip: int = Query(default=0),
-        limit: int = Query(default=10)
+        limit: int = Query(default=5)
 ):
-    return await get_contents_by_text_id(text_id=text_id, skip=skip, limit=limit)
+    return await get_table_of_contents_by_text_id(text_id=text_id, skip=skip, limit=limit)
 
 
 @text_router.post("/{text_id}/details", status_code=status.HTTP_200_OK)
@@ -61,6 +61,13 @@ async def get_contents_with_details(
         text_details_request: TextDetailsRequest
 ):
     return await get_text_details_by_text_id(text_id=text_id, text_details_request=text_details_request)
+
+@text_router.post("/table-of-content", status_code=status.HTTP_200_OK)
+async def create_table_of_content_request(
+        authentication_credential: Annotated[HTTPAuthorizationCredentials, Depends(oauth2_scheme)],
+        table_of_content_request: TableOfContent
+):
+    return await create_table_of_content(table_of_content_request=table_of_content_request, token=authentication_credential.credentials)
 
 
 @text_router.get("/{text_id}/infos", status_code=status.HTTP_200_OK)

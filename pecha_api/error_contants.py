@@ -6,3 +6,4 @@ class ErrorConstants:
     SEGMENT_MAPPING_ERROR_MESSAGE="Segment mapping update Failed"
     SEGMENT_NOT_FOUND_MESSAGE = 'Segment not found'
     SAME_TEXT_MAPPING_ERROR_MESSAGE = "Mapping within same text not allowed"
+    TABLE_OF_CONTENT_NOT_FOUND_MESSAGE = "Table of content not found"

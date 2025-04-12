@@ -1,42 +1,45 @@
 
-from uuid import UUID
-
 from fastapi import HTTPException
 from starlette import status
 
 from pecha_api.error_contants import ErrorConstants
 from pecha_api.utils import Utils
-from .texts_repository import (get_texts_by_id, get_contents_by_id,
-                               get_texts_by_term, get_versions_by_id, create_text, check_all_text_exists,
-                               check_text_exists, get_text_details)
-from .texts_repository import get_text_infos
-from .texts_response_models import TableOfContentResponse, TextModel, TextVersionResponse, TextVersion, \
-     TextsCategoryResponse, Text, CreateTextRequest, TextDetailsRequest, \
-     TextInfosResponse, TextInfos, RelatedTexts, TextSegment
+from .texts_repository import (
+    get_texts_by_id,
+    get_texts_by_term, 
+    get_versions_by_id, 
+    create_text,
+    create_table_of_content_detail,
+    get_text_infos, 
+    get_contents_by_id, 
+    get_table_of_content_by_content_id
+)
+from .texts_response_models import (
+    TableOfContent, 
+    DetailTableOfContentResponse, 
+    TableOfContentResponse, 
+    TextModel, 
+    TextVersionResponse, 
+    TextVersion,
+    TextsCategoryResponse, 
+    Text, 
+    CreateTextRequest, 
+    TextDetailsRequest,
+    TextInfosResponse, 
+    TextInfos, 
+    RelatedTexts
+)
+from .texts_utils import TextUtils
 from ..users.users_service import verify_admin_access
-
 from ..terms.terms_service import get_term
-
+from .segments.segments_service import validate_segments_exists
 
 from typing import List
 from pecha_api.config import get
 
 
 
-async def validate_text_exits(text_id: str):
-    uuid_text_id = UUID(text_id)
-    is_exists =  await check_text_exists(text_id=uuid_text_id)
-    if not is_exists:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=ErrorConstants.TEXT_NOT_FOUND_MESSAGE)
-    return is_exists
-
-async def validate_texts_exits(text_ids: List[str]):
-    uuid_text_ids = [UUID(text_id) for text_id in text_ids]
-    all_exists =  await check_all_text_exists(text_ids=uuid_text_ids)
-    if not all_exists:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=ErrorConstants.TEXT_NOT_FOUND_MESSAGE)
-    return all_exists
-
+# These functions have been moved to the TextUtils class
 
 async def get_texts_by_term_id(term_id: str, skip: int, limit: int):
     texts = await get_texts_by_term(term_id=term_id, skip=skip, limit=limit)
@@ -103,26 +106,47 @@ async def get_text_by_text_id_or_term(
         return await get_text_detail_by_id(text_id=text_id)
 
 
-async def get_contents_by_text_id(text_id: str, skip: int, limit: int) -> TableOfContentResponse:
-    is_valid_text = await validate_text_exits(text_id=text_id)
+async def get_table_of_contents_by_text_id(text_id: str, skip: int, limit: int) -> List[TableOfContent]:
+    is_valid_text = await TextUtils.validate_text_exists(text_id=text_id)
     if not is_valid_text:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=ErrorConstants.TEXT_NOT_FOUND_MESSAGE)
     text = await get_text_detail_by_id(text_id=text_id)
-    table_of_contents = await get_contents_by_id(text_id=text_id, skip=skip, limit=limit)
+    table_of_contents = await get_contents_by_id(text_id=text_id)
+    table_of_contents = TextUtils.remove_segments_from_list_of_table_of_content(table_of_content=table_of_contents)
     return TableOfContentResponse(
         text_detail=text,
-        contents=table_of_contents
+        contents= [
+            TableOfContent(
+                id=str(content.id),
+                text_id=content.text_id,
+                sections=content.sections
+            )
+            for content in table_of_contents
+        ]
     )
 
-async def get_text_details_by_text_id(text_id: str, text_details_request: TextDetailsRequest) -> TableOfContentResponse:
-    is_valid_text = await validate_text_exits(text_id=text_id)
+async def get_text_details_by_text_id(text_id: str, text_details_request: TextDetailsRequest) -> DetailTableOfContentResponse:
+    if text_id is None:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=ErrorConstants.TEXT_OR_TERM_NOT_FOUND_MESSAGE)
+    is_valid_text = await TextUtils.validate_text_exists(text_id=text_id)
     if is_valid_text:
         text = await get_text_detail_by_id(text_id=text_id)
-        text_details = await get_text_details(text_id=text_id, text_details_request=text_details_request)
-        return TableOfContentResponse(
+        table_of_content = await get_table_of_content_by_content_id(content_id=text_details_request.content_id)
+        total_sections = len(table_of_content.sections)
+        if table_of_content is None:
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=ErrorConstants.TABLE_OF_CONTENT_NOT_FOUND_MESSAGE)
+        table_of_content.sections = table_of_content.sections[text_details_request.skip:text_details_request.skip+text_details_request.limit]
+        detail_table_of_content = await TextUtils.get_mapped_segment_content(table_of_content)
+        return DetailTableOfContentResponse(
             text_detail=text,
-            contents=text_details
+            contents=[
+                detail_table_of_content
+            ],
+            skip=text_details_request.skip,
+            limit=text_details_request.limit,
+            total=total_sections
         )
+            
     else:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=ErrorConstants.TEXT_NOT_FOUND_MESSAGE)
 
@@ -201,5 +225,21 @@ async def get_infos_by_text_id(text_id: str, language: str, skip: int, limit: in
             short_url=""
         )
     )
+
+async def create_table_of_content(table_of_content_request: TableOfContent, token: str):
+    is_admin = verify_admin_access(token=token)
+    if is_admin:
+        valid_text = await TextUtils.validate_text_exists(text_id=table_of_content_request.text_id)
+        if valid_text:
+            segment_ids = TextUtils.get_all_segment_ids(table_of_content=table_of_content_request)
+            valid_segments = await validate_segments_exists(segment_ids=segment_ids)
+            if not valid_segments:
+                raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=ErrorConstants.SEGMENT_NOT_FOUND_MESSAGE)
+            table_of_content = await create_table_of_content_detail(table_of_content_request=table_of_content_request)
+            return table_of_content
+        else:
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=ErrorConstants.TEXT_NOT_FOUND_MESSAGE)
+    else:
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail=ErrorConstants.ADMIN_ERROR_MESSAGE)
 
 

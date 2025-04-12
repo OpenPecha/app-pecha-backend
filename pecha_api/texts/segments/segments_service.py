@@ -11,7 +11,7 @@ from typing import List
 from .segments_repository import get_translations, get_commentaries
 
 from .segments_response_models import SegmentTranslationsResponse, ParentSegment, SegmentCommentariesResponse
-from ..texts_service import validate_text_exits
+# Removed circular import: from ..texts_service import validate_text_exits
 from ...users.users_service import verify_admin_access
 
 
@@ -46,6 +46,8 @@ async def get_segment_details_by_id(segment_id: str) -> SegmentResponse:
 async def create_new_segment(create_segment_request: CreateSegmentRequest, token: str) -> List[SegmentResponse]:
     is_admin = verify_admin_access(token=token)
     if is_admin:
+        # Import here to avoid circular dependency
+        from ..texts_service import validate_text_exits
         await validate_text_exits(text_id=create_segment_request.text_id)
         new_segment = await create_segment(create_segment_request=create_segment_request)
         return [

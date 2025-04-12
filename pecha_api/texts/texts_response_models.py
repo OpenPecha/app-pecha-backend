@@ -1,9 +1,9 @@
 from typing import List, Optional, Dict, Union
+from uuid import UUID
 
 from pecha_api.terms.terms_response_models import TermsModel
 
 from pydantic import BaseModel
-from .segments.segments_models import Mapping
 
 class CreateTextRequest(BaseModel):
     title: str
@@ -26,19 +26,6 @@ class TextModel(BaseModel):
     categories: List[str]
     parent_id: Optional[str] = None
 
-class RootText(BaseModel):
-    id: str
-    title: str
-    language: str
-    type: str
-    is_published: bool
-    created_date: str
-    updated_date: str
-    published_date: str
-    published_by: str
-    categories: List[str]
-    parent_id: Optional[str] = None
-
 
 # Text TOC Response Models
 class Translation(BaseModel):
@@ -46,11 +33,38 @@ class Translation(BaseModel):
     language: str
     content: str
 
-class TextSegment(BaseModel):
+class DetailTextSegment(BaseModel):
     segment_id: str
     segment_number: Optional[int] = None
     content: Optional[str] = None
     translation: Optional[Translation] = None
+
+class DetailSection(BaseModel):
+    id: str
+    title: str
+    section_number: int
+    parent_id: Optional[str] = None
+    segments: List[DetailTextSegment] = []
+    sections: Optional[List["Section"]] = None
+    created_date: str 
+    updated_date: str
+    published_date: str 
+
+class DetailTableOfContent(BaseModel):
+    id: str
+    text_id: str
+    sections: List[DetailSection]
+
+class DetailTableOfContentResponse(BaseModel):
+    text_detail: TextModel
+    contents: List[DetailTableOfContent]
+    skip: int
+    limit: int
+    total: int
+
+class TextSegment(BaseModel):
+    segment_id: str
+    segment_number: int
 
 class Section(BaseModel):
     id: str
@@ -59,14 +73,14 @@ class Section(BaseModel):
     parent_id: Optional[str] = None
     segments: List[TextSegment] = []
     sections: Optional[List["Section"]] = None
-    created_date: str
+    created_date: str 
     updated_date: str
-    published_date: str
+    published_date: str 
 
 class TableOfContent(BaseModel):
-    id: str
+    id: Optional[str] = None
     text_id: str
-    segments: List[Section]
+    sections: List[Section]
 
 class TableOfContentResponse(BaseModel):
     text_detail: TextModel
@@ -75,9 +89,8 @@ class TableOfContentResponse(BaseModel):
 class TextDetailsRequest(BaseModel):
     content_id: str
     version_id: Optional[str] = None
-    skip: int
-    limit: int
-
+    skip: int = 0
+    limit: int = 5
 
 # Text Version Response Models
 

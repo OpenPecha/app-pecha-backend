@@ -18,6 +18,9 @@ async def get_segment_by_id(segment_id: str) -> Segment | None:
         logging.debug(e)
         return None
 
+async def get_segment_details_by_id(segment_id: str):
+    return await Segment.get_segment_details(segment_id=segment_id)
+
 async def check_segment_exists(segment_id: UUID) -> bool:
     try:
         is_segment_exists = await Segment.check_exists(segment_id=segment_id)
