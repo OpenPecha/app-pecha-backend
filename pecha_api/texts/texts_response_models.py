@@ -58,6 +58,9 @@ class DetailTableOfContent(BaseModel):
 class DetailTableOfContentResponse(BaseModel):
     text_detail: TextModel
     contents: List[DetailTableOfContent]
+    skip: int
+    limit: int
+    total: int
 
 class TextSegment(BaseModel):
     segment_id: str
@@ -86,8 +89,8 @@ class TableOfContentResponse(BaseModel):
 class TextDetailsRequest(BaseModel):
     content_id: str
     version_id: Optional[str] = None
-    skip: int
-    limit: int
+    skip: int = 0
+    limit: int = 5
 
 # Text Version Response Models
 

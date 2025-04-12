@@ -4,7 +4,7 @@ from starlette import status
 
 from typing import Optional, Annotated
 
-from .texts_service import get_contents_by_text_id, get_versions_by_text_id, create_new_text, get_text_by_text_id_or_term, \
+from .texts_service import get_table_of_contents_by_text_id, get_versions_by_text_id, create_new_text, get_text_by_text_id_or_term, \
         get_infos_by_text_id, get_text_details_by_text_id, create_table_of_content
 from .texts_response_models import CreateTextRequest, TextDetailsRequest, TableOfContent
 
@@ -52,7 +52,7 @@ async def get_contents(
         skip: int = Query(default=0),
         limit: int = Query(default=10)
 ):
-    return await get_contents_by_text_id(text_id=text_id, skip=skip, limit=limit)
+    return await get_table_of_contents_by_text_id(text_id=text_id, skip=skip, limit=limit)
 
 
 @text_router.post("/{text_id}/details", status_code=status.HTTP_200_OK)
