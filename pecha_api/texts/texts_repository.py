@@ -69,7 +69,7 @@ async def create_table_of_content_detail(table_of_content_request: TableOfConten
     saved_table_of_content = await new_table_of_content.insert()
     return saved_table_of_content
 
-async def get_contents_by_id(text_id: str, skip: int, limit: int) -> List[TableOfContent]:
+async def get_contents_by_id(text_id: str) -> List[TableOfContent]:
     return await TableOfContent.get_table_of_contents_by_text_id(text_id=text_id)
     
 async def get_table_of_content_by_content_id(content_id: str) -> TableOfContent:

@@ -111,7 +111,8 @@ async def get_table_of_contents_by_text_id(text_id: str, skip: int, limit: int) 
     if not is_valid_text:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=ErrorConstants.TEXT_NOT_FOUND_MESSAGE)
     text = await get_text_detail_by_id(text_id=text_id)
-    table_of_contents = await get_contents_by_id(text_id=text_id, skip=skip, limit=limit)
+    table_of_contents = await get_contents_by_id(text_id=text_id)
+    table_of_contents = TextUtils.remove_segments_from_list_of_table_of_content(table_of_content=table_of_contents)
     return TableOfContentResponse(
         text_detail=text,
         contents= [
@@ -135,7 +136,7 @@ async def get_text_details_by_text_id(text_id: str, text_details_request: TextDe
         if table_of_content is None:
             raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=ErrorConstants.TABLE_OF_CONTENT_NOT_FOUND_MESSAGE)
         table_of_content.sections = table_of_content.sections[text_details_request.skip:text_details_request.skip+text_details_request.limit]
-        detail_table_of_content = await TextUtils.convert_to_detail_table_of_content(table_of_content)
+        detail_table_of_content = await TextUtils.get_mapped_segment_content(table_of_content)
         return DetailTableOfContentResponse(
             text_detail=text,
             contents=[

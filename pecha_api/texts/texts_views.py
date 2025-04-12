@@ -50,7 +50,7 @@ async def get_versions(
 async def get_contents(
         text_id: str,
         skip: int = Query(default=0),
-        limit: int = Query(default=10)
+        limit: int = Query(default=5)
 ):
     return await get_table_of_contents_by_text_id(text_id=text_id, skip=skip, limit=limit)
 
