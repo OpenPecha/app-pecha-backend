@@ -4,9 +4,10 @@ from fastapi import status, HTTPException
 from uuid import uuid4
 from pecha_api.app import api
 
-from pecha_api.texts.texts_response_models import TextSegment, Translation
-from pecha_api.texts.segments.segments_response_models import CreateSegmentRequest, CreateSegment, SegmentTranslationsResponse
+from pecha_api.texts.segments.segments_response_models import CreateSegmentRequest, CreateSegment, \
+    SegmentTranslationsResponse, SegmentTranslation
 from pecha_api.error_contants import ErrorConstants
+from pecha_api.texts.segments.segments_response_models import ParentSegment
 
 client = TestClient(api)
 
@@ -15,16 +16,25 @@ def test_get_translations_success(mock_get_translations):
     # Mock data
     segment_id = str(uuid4())
     mock_response = SegmentTranslationsResponse(
-        segment=TextSegment(
+        parent_segment=ParentSegment(
             segment_id=segment_id,
             segment_number=1,
             content="Test segment content"
         ),
         translations=[
-            Translation(
+            SegmentTranslation(
                 text_id="text1",
+                title='title',
+                source='source',
                 language='en',
                 content="Translation 1"
+            ),
+            SegmentTranslation(
+                text_id="text2",
+                title='title2',
+                source='source2',
+                language='bo',
+                content="Translation 2"
             )
         ]
     )
@@ -37,23 +47,39 @@ def test_get_translations_success(mock_get_translations):
     # Assert response
     assert response.status_code == status.HTTP_200_OK
     data = response.json()
-    assert data["segment"]["segment_id"] == segment_id
-    assert data["segment"]["content"] == "Test segment content"
-    assert len(data["translations"]) == 1
+    assert data["parent_segment"]["segment_id"] == segment_id
+    assert data["parent_segment"]["segment_number"] == 1
+    assert data["parent_segment"]["content"] == "Test segment content"
+    assert len(data["translations"]) == 2
+    
+    # Verify first translation
     assert data["translations"][0]["text_id"] == "text1"
+    assert data["translations"][0]["title"] == "title"
+    assert data["translations"][0]["source"] == "source"
+    assert data["translations"][0]["language"] == "en"
+    assert data["translations"][0]["content"] == "Translation 1"
+    
+    # Verify second translation
+    assert data["translations"][1]["text_id"] == "text2"
+    assert data["translations"][1]["language"] == "bo"
 
 @patch("pecha_api.texts.segments.segments_views.get_translations_by_segment_id")
 def test_get_translations_with_pagination(mock_get_translations):
     segment_id = str(uuid4())
     mock_response = SegmentTranslationsResponse(
-        segment=TextSegment(
+        parent_segment=ParentSegment(
             segment_id=segment_id,
             segment_number=1,
             content="Test segment content"
         ),
         translations=[
-            Translation(text_id=f"text{i}", language='en', content=f"Translation {i}")
-            for i in range(5)
+            SegmentTranslation(
+                text_id=f"text{i}",
+                title=f"title{i}",
+                source=f"source{i}",
+                language='en',
+                content=f"Translation {i}"
+            ) for i in range(5)
         ]
     )
     
@@ -61,7 +87,7 @@ def test_get_translations_with_pagination(mock_get_translations):
     response = client.get(f"/api/v1/segments/{segment_id}/translations?skip=2&limit=3")
     
     assert response.status_code == status.HTTP_200_OK
-    mock_get_translations.assert_called_with(segment_id=segment_id, skip=2, limit=3)
+    mock_get_translations.assert_called_with(segment_id=segment_id)
 
 @patch("pecha_api.texts.segments.segments_views.get_translations_by_segment_id")
 def test_get_translations_not_found(mock_get_translations):
@@ -78,6 +104,7 @@ def test_get_translations_not_found(mock_get_translations):
 @patch("pecha_api.texts.segments.segments_views.create_new_segment")
 def test_create_segment_success(mock_create_segment):
     # Mock data
+    segment_id = str(uuid4())
     segment_request = CreateSegmentRequest(
         text_id="text123",
         segments=[
@@ -88,10 +115,15 @@ def test_create_segment_success(mock_create_segment):
         ]
     )
     mock_response = {
-        "id": str(uuid4()),
-        "text_id": segment_request.text_id,
-        "content": segment_request.segments[0].content,
-        "mapping": []
+        "segments": [
+            {
+            "id": segment_id,
+            "text_id": segment_request.text_id,
+            "content": segment_request.segments[0].content,
+            "mapping": segment_request.segments[0].mapping
+            }
+        ]
+
     }
     mock_create_segment.return_value = mock_response
     
@@ -105,10 +137,11 @@ def test_create_segment_success(mock_create_segment):
     # Assert response
     assert response.status_code == status.HTTP_201_CREATED
     data = response.json()
-    assert data["text_id"] == segment_request.text_id
-    assert data["content"] == segment_request.segments[0].content
-    assert "id" in data
-    assert isinstance(data["mapping"], list)
+    
+    # Verify segment
+    assert data['segments'][0]["text_id"] == segment_request.text_id
+    assert data['segments'][0]["content"] == segment_request.segments[0].content
+    assert data['segments'][0]["id"] == segment_id
 
 def test_create_segment_unauthorized():
     segment_request = CreateSegmentRequest(

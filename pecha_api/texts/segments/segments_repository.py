@@ -4,7 +4,8 @@ from uuid import UUID, uuid4
 
 from pecha_api.constants import Constants
 from .segments_models import Segment
-from .segments_response_models import CreateSegmentRequest, SegmentResponse, SegmentTranslation, SegmentCommentry
+from .segments_response_models import CreateSegmentRequest, SegmentResponse, SegmentTranslation, SegmentCommentry, \
+    SegmentDTO
 import logging
 from beanie.exceptions import CollectionWasNotInitialized
 from typing import List, Dict
@@ -39,12 +40,12 @@ async def check_all_segment_exists(segment_ids: List[UUID]) -> bool:
         return False
 
 
-async def get_segments_by_ids(segment_ids: List[str]) -> Dict[str, SegmentResponse]:
+async def get_segments_by_ids(segment_ids: List[str]) -> Dict[str, SegmentDTO]:
     try:
         if not segment_ids:
             return {}
         list_of_segments_detail = await Segment.get_segments(segment_ids=segment_ids)
-        return {str(segment.id): SegmentResponse(
+        return {str(segment.id): SegmentDTO(
             id=str(segment.id),
             text_id=segment.text_id,
             content=segment.content,

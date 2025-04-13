@@ -2,7 +2,7 @@ from uuid import UUID
 
 from pecha_api.error_contants import ErrorConstants
 from .segments_repository import create_segment, check_segment_exists, check_all_segment_exists, get_segment_by_id
-from .segments_response_models import CreateSegmentRequest, SegmentResponse, MappingResponse
+from .segments_response_models import CreateSegmentRequest, SegmentResponse, MappingResponse, SegmentDTO
 from fastapi import HTTPException
 from starlette import status
 
@@ -11,7 +11,7 @@ from typing import List
 from .segments_repository import get_translations, get_commentaries
 
 from .segments_response_models import SegmentTranslationsResponse, ParentSegment, SegmentCommentariesResponse
-# Removed circular import: from ..texts_service import validate_text_exits
+from ..texts_utils import TextUtils
 from ...users.users_service import verify_admin_access
 
 
@@ -29,29 +29,27 @@ async def validate_segments_exists(segment_ids: List[str]):
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=ErrorConstants.SEGMENT_NOT_FOUND_MESSAGE)
     return all_exists
 
-async def get_segment_details_by_id(segment_id: str) -> SegmentResponse:
+async def get_segment_details_by_id(segment_id: str) -> SegmentDTO:
     segment = await get_segment_by_id(segment_id=segment_id)
     if not segment:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=ErrorConstants.SEGMENT_NOT_FOUND_MESSAGE)
     mapping_responses: List[MappingResponse] = [
         MappingResponse(**mapping.model_dump()) for mapping in segment.mapping
     ]
-    return SegmentResponse(
+    return SegmentDTO(
         id=str(segment.id),
         text_id=segment.text_id,
         content=segment.content,
         mapping=mapping_responses
     )
 
-async def create_new_segment(create_segment_request: CreateSegmentRequest, token: str) -> List[SegmentResponse]:
+async def create_new_segment(create_segment_request: CreateSegmentRequest, token: str) -> SegmentResponse:
     is_admin = verify_admin_access(token=token)
     if is_admin:
-        # Import here to avoid circular dependency
-        from ..texts_service import validate_text_exits
-        await validate_text_exits(text_id=create_segment_request.text_id)
+        await TextUtils.validate_text_exists(text_id=create_segment_request.text_id)
         new_segment = await create_segment(create_segment_request=create_segment_request)
-        return [
-            SegmentResponse(
+        segments =  [
+            SegmentDTO(
                 id=str(segment.id),
                 text_id=segment.text_id,
                 content=segment.content,
@@ -59,12 +57,11 @@ async def create_new_segment(create_segment_request: CreateSegmentRequest, token
             )
             for segment in new_segment
         ]
+        return SegmentResponse(segments=segments)
     else:
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail=ErrorConstants.ADMIN_ERROR_MESSAGE)
 
-async def get_translations_by_segment_id(
-        segment_id: str
-) -> SegmentTranslationsResponse:
+async def get_translations_by_segment_id(segment_id: str) -> SegmentTranslationsResponse:
     """
     Get translations for a given segment ID.
     """

@@ -17,12 +17,14 @@ class MappingResponse(BaseModel):
     text_id: str
     segments: List[str]
 
-
-class SegmentResponse(BaseModel):
+class SegmentDTO(BaseModel):
     id: str
     text_id: str
     content: str
     mapping: List[MappingResponse]
+
+class SegmentResponse(BaseModel):
+    segments: List[SegmentDTO]
 
 class ParentSegment(BaseModel):
     segment_id: str
