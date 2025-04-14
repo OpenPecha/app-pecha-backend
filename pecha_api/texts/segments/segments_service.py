@@ -1,10 +1,13 @@
 from uuid import UUID
 
 from pecha_api.error_contants import ErrorConstants
-from .segments_repository import create_segment, check_segment_exists, check_all_segment_exists, get_segment_by_id
-from .segments_response_models import CreateSegmentRequest, SegmentResponse, MappingResponse, SegmentDTO
+from .segments_repository import create_segment, check_segment_exists, check_all_segment_exists, get_segment_by_id, \
+    get_related_mapped_segments
+from .segments_response_models import CreateSegmentRequest, SegmentResponse, MappingResponse, SegmentDTO, \
+    SegmentInfosResponse
 from fastapi import HTTPException
 from starlette import status
+from segments_utils import SegmentUtils
 
 from typing import List
 
@@ -95,4 +98,18 @@ async def get_commentaries_by_segment_id(
             content="<span class=\"text-quotation-style\">དང་པོ་ནི་</span><span class=\"text-citation-style\">ཧོ་སྣང་སྲིད་</span>སོགས་ཚིག་རྐང་དྲུག་གིས་བསྟན།<span class=\"text-citation-style\">ཧོ༵་</span>ཞེས་པ་འཁྲུལ་བས་དབང་མེད་དུ་བྱས་ཏེ་མི་འདོད་པའི་ཉེས་རྒུད་དྲག་པོས་རབ་ཏུ་གཟིར་བའི་འཁོར་བའི་སེམས་ཅན་རྣམས་ལ་དམིགས་མེད་བརྩེ་བའི་རྣམ་པར་ཤར་ཏེ་འཁྲུལ་སྣང་རང་སར་དག་པའི་ཉེ་ལམ་ཟབ་མོ་འདིར་བསྐུལ་བའི་ཚིག་ཏུ་བྱས་པ་སྟེ།"
         ),
         commentaries=commentaries
+    )
+
+async def get_infos_by_segment_id(segment_id: str, text_id: str, language: str) -> SegmentInfosResponse:
+    if language is None:
+        language = get("DEFAULT_LANGUAGE")
+    is_segment_valid = await TextUtils.validate_segment_exists(segment_id=segment_id)
+    if not is_segment_valid:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=ErrorConstants.SEGMENT_NOT_FOUND_MESSAGE)
+    segments = await get_related_mapped_segments(parent_text_id=text_id, parent_segment_id=segment_id)
+    counts = await SegmentUtils.get_count_of_each_commentary_and_version(segments)
+    return SegmentInfosResponse(
+        segment_id=segment_id,
+        translations=counts["version"],
+        commentaries=counts["commentary"]
     )

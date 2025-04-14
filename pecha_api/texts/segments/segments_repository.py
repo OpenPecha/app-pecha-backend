@@ -70,6 +70,14 @@ async def create_segment(create_segment_request: CreateSegmentRequest) -> List[S
 
     return new_segment_list
 
+async def get_related_mapped_segments(parent_text_id: str, parent_segment_id: str) -> List[Segment]:
+    try:
+        segments = await Segment.get_related_mapped_segments(parent_text_id=parent_text_id, parent_segment_id=parent_segment_id)
+        return segments
+    except CollectionWasNotInitialized as e:
+        logging.debug(e)
+        return []
+
 async def get_translations(
         segment_id: str
     ):

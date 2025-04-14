@@ -49,12 +49,11 @@ class Segment(Document):
         return await cls.find({"_id": {"$in": segment_ids}}).to_list(length=len(segment_ids))
     
     @classmethod
-    async def get_related_mapped_segments(cls, child_text_id: str, parent_text_id: str, parent_segment_id: str):
+    async def get_related_mapped_segments(cls, parent_text_id: str, parent_segment_id: str):
         # Find segments where:
         # 1. There exists a mapping object with text_id matching parent_text_id
         # 2. Within that same mapping object, segments list contains parent_segment_id
         query = {
-            "text_id": child_text_id,
             "mapping": {
                 "$elemMatch": {
                     "text_id": parent_text_id,
