@@ -6,7 +6,7 @@ from typing import Annotated
 
 from .segments_service import create_new_segment, get_translations_by_segment_id, get_commentaries_by_segment_id, \
     get_segment_details_by_id, get_infos_by_segment_id
-from .segments_response_models import CreateSegmentRequest
+from .segments_response_models import CreateSegmentRequest, SegmentInfosRequest
 
 oauth2_scheme = HTTPBearer()
 segment_router = APIRouter(
@@ -29,11 +29,9 @@ async def create_segment(
 
 @segment_router.get("/{segment_id}/infos", status_code=status.HTTP_200_OK)
 async def get_infos_for_segment(
-    segment_id: str,
-    text_id: str = Query(default=None),
-    language: str = Query(default=None),
+    segment_id: str
 ):
-    return await get_infos_by_segment_id(segment_id=segment_id, text_id=text_id, language=language)
+    return await get_infos_by_segment_id(segment_id=segment_id)
 
 @segment_router.get("/{segment_id}/translations", status_code=status.HTTP_200_OK)
 async def get_translations_for_segment(

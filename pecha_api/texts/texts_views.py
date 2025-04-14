@@ -5,7 +5,7 @@ from starlette import status
 from typing import Optional, Annotated
 
 from .texts_service import get_table_of_contents_by_text_id, get_versions_by_text_id, create_new_text, get_text_by_text_id_or_term, \
-        get_infos_by_text_id, get_text_details_by_text_id, create_table_of_content
+        get_text_details_by_text_id, create_table_of_content
 from .texts_response_models import CreateTextRequest, TextDetailsRequest, TableOfContent
 
 oauth2_scheme = HTTPBearer()
@@ -68,14 +68,3 @@ async def create_table_of_content_request(
         table_of_content_request: TableOfContent
 ):
     return await create_table_of_content(table_of_content_request=table_of_content_request, token=authentication_credential.credentials)
-
-
-@text_router.get("/{text_id}/infos", status_code=status.HTTP_200_OK)
-async def get_text_infos(
-        text_id: str,
-        language: str = Query(default=None),
-        skip: int = Query(default=0),
-        limit: int = Query(default=10)
-):
-    return await get_infos_by_text_id(text_id=text_id, language=language, skip=skip, limit=limit)
-

@@ -49,6 +49,11 @@ class Text(Document):
         except ValueError:
             return None
         return await cls.find_one(cls.id == text_uuid)
+    
+    @classmethod
+    async def get_texts_by_ids(cls, text_ids: List[str]):
+        # Use the correct MongoDB query syntax
+        return await cls.find({"_id": {"$in": text_ids}}).to_list()
 
     @classmethod
     async def check_exists(cls, text_id: uuid.UUID) -> bool:

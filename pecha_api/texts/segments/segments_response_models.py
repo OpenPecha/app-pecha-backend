@@ -28,7 +28,6 @@ class SegmentResponse(BaseModel):
 
 class ParentSegment(BaseModel):
     segment_id: str
-    segment_number: int
     content: str
 
 # segment translation models
@@ -56,7 +55,18 @@ class SegmentCommentariesResponse(BaseModel):
     commentaries: List[SegmentCommentry]
 
 # segment info models
+
+class SegmentInfosRequest(BaseModel):
+    text_id: str
+
+class RelatedText(BaseModel):
+    commentaries: int
+
+class Resources(BaseModel):
+    sheets: int
+
 class SegmentInfosResponse(BaseModel):
     segment_id: str
     translations: int
-    commentaries: int
+    related_text: RelatedText
+    resources: Resources

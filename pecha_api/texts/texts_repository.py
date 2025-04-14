@@ -21,6 +21,9 @@ async def get_texts_by_id(text_id: str) -> Text | None:
         logging.debug(e)
         return None
 
+async def get_texts_by_ids(text_ids: List[str]):
+    return await Text.get_texts_by_ids(text_ids=text_ids)
+
 
 async def check_text_exists(text_id: UUID) -> bool:
     try:
@@ -74,15 +77,3 @@ async def get_contents_by_id(text_id: str) -> List[TableOfContent]:
     
 async def get_table_of_content_by_content_id(content_id: str) -> TableOfContent:
     return await TableOfContent.get_table_of_content_by_content_id(content_id=content_id)
-
-async def get_text_infos(text_id: str, language: str, skip: int, limit: int):
-    return [
-        {
-            "id": str(uuid.uuid4()),
-            "title": {
-                "en": "commentary",
-                "bo": "འགྲེལ་བརྗོད།"
-            },
-            "count": 1
-        }
-    ]
