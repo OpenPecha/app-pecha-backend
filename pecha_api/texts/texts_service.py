@@ -38,7 +38,6 @@ from typing import List
 from pecha_api.config import get
 
 
-
 # These functions have been moved to the TextUtils class
 
 async def get_texts_by_term_id(term_id: str, skip: int, limit: int):
@@ -106,7 +105,7 @@ async def get_text_by_text_id_or_term(
         return await get_text_detail_by_id(text_id=text_id)
 
 
-async def get_table_of_contents_by_text_id(text_id: str, skip: int, limit: int) -> List[TableOfContent]:
+async def get_table_of_contents_by_text_id(text_id: str, skip: int, limit: int) -> TableOfContentResponse:
     is_valid_text = await TextUtils.validate_text_exists(text_id=text_id)
     if not is_valid_text:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=ErrorConstants.TEXT_NOT_FOUND_MESSAGE)

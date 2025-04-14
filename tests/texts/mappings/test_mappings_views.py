@@ -4,24 +4,28 @@ from fastapi.testclient import TestClient
 from pecha_api.app import api
 from fastapi import HTTPException
 
-from pecha_api.texts.segments.segments_response_models import SegmentResponse, MappingResponse
+from pecha_api.texts.segments.segments_response_models import SegmentResponse, MappingResponse,SegmentDTO
 
 client = TestClient(api)
 
 text_mapping_request = {
-        "text_id": "2ff4215e-bc9e-4d16-8d7e-b4adea3c6ef9",
-        "segment_id": "cce14575-ebc3-43aa-bcce-777676f3b2e2",
-        "mappings": [
-            {
-                "parent_text_id": "e55d66bc-0b2c-4575-afe1-c357856b1592",
-                "segments": [
-                    "5bbe24b9-625e-41bf-b6aa-a949f26a7c05",
-                    "83311e49-7e8b-413d-95c3-80d2cdea5158"
-
-                ]
-            }
-        ]
+    "text_mappings": [
+        {
+            "text_id": "2ff4215e-bc9e-4d16-8d7e-b4adea3c6ef9",
+            "segment_id": "cce14575-ebc3-43aa-bcce-777676f3b2e2",
+            "mappings": [
+                {
+                    "parent_text_id": "e55d66bc-0b2c-4575-afe1-c357856b1592",
+                    "segments": [
+                        "5bbe24b9-625e-41bf-b6aa-a949f26a7c05",
+                        "83311e49-7e8b-413d-95c3-80d2cdea5158"
+                    ]
+                }
+            ]
+        }
+    ]
 }
+
 
 @patch("pecha_api.texts.mappings.mappings_views.update_segment_mapping")
 def test_create_text_mapping(mock_update_mapping):
@@ -35,10 +39,15 @@ def test_create_text_mapping(mock_update_mapping):
         ]
     )
     section_response = SegmentResponse(
-        id="cce14575-ebc3-43aa-bcce-777676f3b2e2",
-        text_id="2ff4215e-bc9e-4d16-8d7e-b4adea3c6ef9",
-        content="content pf the segment",
-        mapping=[mapping_response]
+        segments=[
+            SegmentDTO(
+                id="cce14575-ebc3-43aa-bcce-777676f3b2e2",
+                text_id="2ff4215e-bc9e-4d16-8d7e-b4adea3c6ef9",
+                content="content pf the segment",
+                mapping=[mapping_response]
+
+            )
+        ]
     )
     mock_update_mapping.return_value = section_response
     response = client.post(

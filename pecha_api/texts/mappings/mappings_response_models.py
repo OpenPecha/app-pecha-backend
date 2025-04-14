@@ -6,7 +6,12 @@ class MappingsModel(BaseModel):
     parent_text_id: str
     segments: List[str]
 
-class TextMappingRequest(BaseModel):
+
+class TextMapping(BaseModel):
     text_id: str
     segment_id: str
     mappings: List[MappingsModel]
+
+
+class TextMappingRequest(BaseModel):
+    text_mappings: List[TextMapping]
