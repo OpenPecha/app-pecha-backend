@@ -6,7 +6,7 @@ from typing import Annotated
 
 from .segments_service import create_new_segment, get_translations_by_segment_id, get_commentaries_by_segment_id, \
     get_segment_details_by_id, get_infos_by_segment_id
-from .segments_response_models import CreateSegmentRequest, SegmentInfosRequest
+from .segments_response_models import CreateSegmentRequest
 
 oauth2_scheme = HTTPBearer()
 segment_router = APIRouter(

@@ -11,7 +11,7 @@ from ..texts_utils import TextUtils
 from typing import List
 
 from .segments_response_models import SegmentTranslationsResponse, ParentSegment, SegmentCommentariesResponse, \
-    RelatedText, Resources
+    RelatedText, Resources, SegmentInfos
 from ...users.users_service import verify_admin_access
 
 
@@ -92,12 +92,14 @@ async def get_infos_by_segment_id(segment_id: str) -> SegmentInfosResponse:
     mapped_segments = await get_related_mapped_segments(parent_segment_id=segment_id)
     counts = await SegmentUtils.get_count_of_each_commentary_and_version(mapped_segments)
     return SegmentInfosResponse(
-        segment_id=segment_id,
-        translations=counts["version"],
-        related_text=RelatedText(
-            commentaries=counts["commentary"]
-        ),
-        resources=Resources(
-            sheets=0
+        segment_infos= SegmentInfos(
+            segment_id=segment_id,
+            translations=counts["version"],
+            related_text=RelatedText(
+                commentaries=counts["commentary"]
+            ),
+            resources=Resources(
+                sheets=0
+            )
         )
-    )
+    ) 

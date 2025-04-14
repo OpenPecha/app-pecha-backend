@@ -65,8 +65,11 @@ class RelatedText(BaseModel):
 class Resources(BaseModel):
     sheets: int
 
-class SegmentInfosResponse(BaseModel):
+class SegmentInfos(BaseModel):
     segment_id: str
     translations: int
     related_text: RelatedText
     resources: Resources
+
+class SegmentInfosResponse(BaseModel):
+    segment_infos: SegmentInfos
