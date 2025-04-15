@@ -20,10 +20,17 @@ class TableOfContent(Document):
         return await cls.find(cls.text_id == text_id).to_list()
     
     @classmethod
-    async def get_table_of_content_by_content_id(cls, content_id: str): # this methods is getting a specific table of content by content_id
+    async def get_sections_count(cls, content_id: str) -> int:
+        return await cls.find_one(cls.id == UUID(content_id)).sections.count()
+    
+    @classmethod
+    async def get_table_of_content_by_content_id(cls, content_id: str, skip: int, limit: int): # this methods is getting a specific table of content by content_id
         contents = await cls.find_one(cls.id == UUID(content_id))
         if contents:
             contents.sections.sort(key=lambda section: section.section_number)
+            if (skip * limit) > len(contents.sections):
+                return []
+            contents.sections = contents.sections[skip * limit:skip+limit]
         return contents
 
 class Text(Document):

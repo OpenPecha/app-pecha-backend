@@ -11,7 +11,8 @@ from .texts_response_models import CreateTextRequest, TextDetailsRequest, TableO
 from .texts_models import Text, TableOfContent
 from datetime import datetime, timezone
 
-
+async def get_sections_count_of_table_of_content(content_id: str) -> int:
+    return await TableOfContent.get_sections_count(content_id=content_id)
 
 async def get_texts_by_id(text_id: str) -> Text | None:
     try:
@@ -75,5 +76,5 @@ async def create_table_of_content_detail(table_of_content_request: TableOfConten
 async def get_contents_by_id(text_id: str) -> List[TableOfContent]:
     return await TableOfContent.get_table_of_contents_by_text_id(text_id=text_id)
     
-async def get_table_of_content_by_content_id(content_id: str) -> TableOfContent:
-    return await TableOfContent.get_table_of_content_by_content_id(content_id=content_id)
+async def get_table_of_content_by_content_id(content_id: str, skip: int, limit: int) -> TableOfContent:
+    return await TableOfContent.get_table_of_content_by_content_id(content_id=content_id, skip=skip, limit=limit)

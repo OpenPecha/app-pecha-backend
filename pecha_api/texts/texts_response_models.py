@@ -90,7 +90,7 @@ class TextDetailsRequest(BaseModel):
     content_id: str
     version_id: Optional[str] = None
     skip: int = 0
-    limit: int = 5
+    limit: int = 1
 
 # Text Version Response Models
 
