@@ -1,13 +1,13 @@
 from unittest.mock import AsyncMock, patch
+from fastapi import HTTPException
 
 from pecha_api.terms.terms_response_models import TermsModel
 import pytest
 from pecha_api.texts.texts_service import create_new_text, get_versions_by_text_id
 from pecha_api.texts.texts_response_models import CreateTextRequest, TextModel, Text, TextVersion, TextVersionResponse, \
-    TableOfContent, Section, TextSegment, Translation, TextDetailsRequest, TableOfContentResponse
-from pecha_api.texts.texts_service import get_text_by_text_id_or_term, TextsCategoryResponse, \
-    get_text_details_by_text_id
-
+    TableOfContent, Section, TextSegment, TextsCategoryResponse
+from pecha_api.texts.texts_service import get_text_by_text_id_or_term, create_table_of_content
+from pecha_api.error_contants import ErrorConstants
 
 @pytest.mark.asyncio
 async def test_get_text_by_term_id():
@@ -189,3 +189,83 @@ async def test_create_new_root_text():
             categories=[],
             parent_id=None
         )
+
+@pytest.mark.asyncio
+async def test_create_table_of_content_success():
+    table_of_content = TableOfContent (
+        id="id_1",
+        text_id="id_1",
+        sections=[
+            Section(
+                id="id_1",
+                title="section_1",
+                section_number=1,
+                parent_id="id_1",
+                segments=[
+                    TextSegment(
+                        segment_id="id_1", segment_number=1
+                    )
+                ],
+                sections=[],
+                created_date="2025-03-16 04:40:54.757652",
+                updated_date="2025-03-16 04:40:54.757652",
+                published_date="2025-03-16 04:40:54.757652",
+                published_by="pecha"
+            )
+        ]
+    )
+
+    with patch("pecha_api.texts.texts_service.verify_admin_access", return_value=True), \
+            patch("pecha_api.texts.texts_service.TextUtils.validate_text_exists", new_callable=AsyncMock) as mock_validate_text_exists, \
+            patch("pecha_api.texts.texts_service.SegmentUtils.validate_segments_exists", new_callable=AsyncMock) as mock_validate_segments_exists, \
+            patch("pecha_api.texts.texts_service.create_table_of_content_detail", new_callable=AsyncMock) as mock_create_table_of_content_detail:
+        mock_validate_text_exists.return_value = True
+        mock_validate_segments_exists.return_value = True
+        mock_create_table_of_content_detail.return_value = table_of_content
+        response = await create_table_of_content(table_of_content_request=table_of_content, token="admin")
+        assert response == table_of_content
+    
+@pytest.mark.asyncio
+async def test_create_table_of_content_not_admin():
+    with patch("pecha_api.texts.texts_service.verify_admin_access", return_value=False):
+        with pytest.raises(HTTPException) as exc_info:
+            await create_table_of_content(table_of_content_request={}, token="user")
+        assert exc_info.value.status_code == 403
+        assert exc_info.value.detail == ErrorConstants.ADMIN_ERROR_MESSAGE
+
+@pytest.mark.asyncio
+async def test_create_table_of_content_invalid_text():
+    table_of_content = type('TableOfContent', () , {
+        'id': "id_1",
+        'text_id': "text_id 1"
+        }
+    )
+    with patch("pecha_api.texts.texts_service.TextUtils.validate_text_exists", new_callable=AsyncMock) as mock_validate_text_exists, \
+        patch("pecha_api.texts.texts_service.verify_admin_access", return_value=True):
+        mock_validate_text_exists.return_value = False
+        with pytest.raises(HTTPException) as exc_info:
+            await create_table_of_content(table_of_content_request=table_of_content, token="admin")
+        assert exc_info.value.status_code == 404
+        assert exc_info.value.detail == ErrorConstants.TEXT_NOT_FOUND_MESSAGE
+
+@pytest.mark.asyncio
+async def test_create_table_of_content_invalid_segment():
+    table_of_content = type('TableOfContent', () , {
+        'id': "id_1",
+        'text_id': "text_id 1"
+        }
+    )
+    segment_ids = [
+        "efb26a06-f373-450b-ba57-e7a8d4dd5b64",
+        "efb26a06-f373-450b-ba57-e7a8d4dd5b65"
+    ]
+    with patch("pecha_api.texts.texts_service.verify_admin_access", return_value=True), \
+        patch("pecha_api.texts.texts_service.TextUtils.get_all_segment_ids", return_value=segment_ids), \
+        patch("pecha_api.texts.texts_service.TextUtils.validate_text_exists", new_callable=AsyncMock, return_value=True), \
+        patch("pecha_api.texts.texts_service.SegmentUtils.validate_segments_exists", new_callable=AsyncMock, return_value=False):
+        with pytest.raises(HTTPException) as exc_info:
+            await create_table_of_content(table_of_content_request=table_of_content, token="admin")
+        assert exc_info.value.status_code == 404
+        assert exc_info.value.detail == ErrorConstants.SEGMENT_NOT_FOUND_MESSAGE
+        
+        

@@ -181,7 +181,7 @@ async def create_new_text(
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Admin access required")
 
 
-async def create_table_of_content(table_of_content_request: TableOfContent, token: str):
+async def create_table_of_content(table_of_content_request: TableOfContent, token: str) -> TableOfContent:
     is_admin = verify_admin_access(token=token)
     if is_admin:
         valid_text = await TextUtils.validate_text_exists(text_id=table_of_content_request.text_id)
