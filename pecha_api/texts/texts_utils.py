@@ -225,7 +225,6 @@ class TextUtils:
                            or None if the segment is not found
         """
         table_of_contents = await get_contents_by_id(text_id=text_id)
-        
         # Recursive function to search for segment_id in sections
         def find_section_with_segment(sections):
             for section in sections:
@@ -247,7 +246,7 @@ class TextUtils:
             if found_section:
                 # Create a new TableOfContent with only the found section
                 filtered_content = TableOfContent(
-                    id=content.id,
+                    id=str(content.id),
                     text_id=content.text_id,
                     sections=[found_section]  # Only include the section with the segment_id
                 )
