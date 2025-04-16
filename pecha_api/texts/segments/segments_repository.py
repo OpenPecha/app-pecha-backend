@@ -1,11 +1,10 @@
 from __future__ import annotations
 
-from uuid import UUID, uuid4
+from uuid import UUID
 
 from pecha_api.constants import Constants
 from .segments_models import Segment
-from .segments_response_models import CreateSegmentRequest, SegmentResponse, SegmentTranslation, SegmentCommentry, \
-    SegmentDTO
+from .segments_response_models import CreateSegmentRequest, SegmentDTO
 import logging
 from beanie.exceptions import CollectionWasNotInitialized
 from typing import List, Dict
@@ -70,7 +69,7 @@ async def create_segment(create_segment_request: CreateSegmentRequest) -> List[S
 
     return new_segment_list
 
-async def get_related_mapped_segments(parent_segment_id: str) -> List[Segment]:
+async def get_related_mapped_segments(parent_segment_id: str) -> List[SegmentDTO]:
     try:
         segments = await Segment.get_related_mapped_segments(parent_segment_id=parent_segment_id)
         return segments

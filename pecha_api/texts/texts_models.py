@@ -21,7 +21,10 @@ class TableOfContent(Document):
     
     @classmethod
     async def get_sections_count(cls, content_id: str) -> int:
-        return await cls.find_one(cls.id == UUID(content_id)).sections.count()
+        table_of_content = await cls.find_one(cls.id == UUID(content_id))
+        if table_of_content and hasattr(table_of_content, "sections"):
+            return len(table_of_content.sections)
+        return 0
     
     @classmethod
     async def get_table_of_content_by_content_id(cls, content_id: str, skip: int, limit: int) -> Optional["TableOfContent"]:

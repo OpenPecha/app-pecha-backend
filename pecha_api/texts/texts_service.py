@@ -112,7 +112,7 @@ async def get_text_details_by_text_id(text_id: str, text_details_request: TextDe
         total_sections = await get_sections_count_of_table_of_content(content_id=text_details_request.content_id)
         if table_of_content is None:
             raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=ErrorConstants.TABLE_OF_CONTENT_NOT_FOUND_MESSAGE)
-        detail_table_of_content = await TextUtils.get_mapped_segment_content(table_of_content)
+        detail_table_of_content = await SegmentUtils.get_mapped_segment_content(table_of_content, version_id=text_details_request.version_id)
         return DetailTableOfContentResponse(
             text_detail=text,
             contents=[

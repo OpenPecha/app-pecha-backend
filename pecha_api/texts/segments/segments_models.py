@@ -4,6 +4,7 @@ from pydantic import BaseModel, Field
 from beanie import Document
 
 
+
 class Mapping(BaseModel):
     text_id: str
     segments: List[str]
