@@ -15,7 +15,7 @@ from .texts_response_models import (
     DetailTextSegment,
     Section
 )
-
+from .segments.segments_repository import get_segment_by_id
 
 class TextUtils:
     """
@@ -132,7 +132,7 @@ class TextUtils:
         Returns:
             A DetailTableOfContent model with enriched segment details
         """
-        from .segments.segments_service import get_segment_details_by_id
+        
         
         # Create a new DetailTableOfContent with the same base attributes
         detail_table_of_content = DetailTableOfContent(
@@ -158,7 +158,7 @@ class TextUtils:
             # Process segments
             for segment in section.segments:
                 # Fetch detailed segment information
-                segment_details = await get_segment_details_by_id(segment.segment_id)
+                segment_details = await get_segment_by_id(segment_id=segment.segment_id)
                 
                 # Create DetailTextSegment with enriched information
                 detail_segment = DetailTextSegment(
