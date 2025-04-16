@@ -36,17 +36,6 @@ async def test_get_text_by_term_id():
             updated_date="2025-03-21 09:40:34.025035",
             published_date="2025-03-21 09:40:34.025038",
             published_by="pecha"
-        ),
-        Text(
-            id="3111b8b4-d14a-4644-b99b-24fb5723c9f4",
-            title="སྤྱོད་འཇུག་དོན་བསྡུས།",
-            language="bo",
-            type="commentary",
-            is_published=True,
-            created_date="2025-03-21 09:41:11.276584",
-            updated_date="2025-03-21 09:41:11.276595",
-            published_date="2025-03-21 09:41:11.276599",
-            published_by="pecha"
         )
     ]
 
@@ -126,7 +115,7 @@ async def test_get_versions_by_text_id():
             published_by="pecha"
         )
     ]
-    with patch('pecha_api.texts.texts_service.get_texts_by_id', new_callable=AsyncMock) as mock_text_detail, \
+    with patch('pecha_api.texts.texts_service.TextUtils.get_text_detail_by_id', new_callable=AsyncMock) as mock_text_detail, \
             patch('pecha_api.texts.texts_service.get_versions_by_id',
                   new_callable=AsyncMock) as mock_get_versions_by_text_id:
         mock_text_detail.return_value = text_detail
