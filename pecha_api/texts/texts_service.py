@@ -36,7 +36,7 @@ from pecha_api.config import get
 
 # These functions have been moved to the TextUtils class
 
-async def get_texts_by_term_id(term_id: str, skip: int, limit: int):
+async def get_texts_by_term_id(term_id: str, skip: int, limit: int) -> List[Text]:
     texts = await get_texts_by_term(term_id=term_id, skip=skip, limit=limit)
     text_list = [
         Text(

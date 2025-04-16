@@ -62,7 +62,7 @@ class Text(Document):
         return await cls.find_one(cls.id == text_uuid)
     
     @classmethod
-    async def get_texts_by_ids(cls, text_ids: List[str]):
+    async def get_texts_by_ids(cls, text_ids: List[str]) -> List["Text"]:
         # Filter out non-UUID text_ids
         valid_text_uuids = []
         for text_id in text_ids:
