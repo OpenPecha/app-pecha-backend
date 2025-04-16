@@ -1,9 +1,8 @@
-from pydoc import text
 import uuid
 from uuid import UUID
 from typing import List, Optional
 
-from .texts_response_models import TextDetailsRequest, Section
+from .texts_response_models import Section
 
 from pydantic import Field
 from beanie import Document

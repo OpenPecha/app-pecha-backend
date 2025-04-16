@@ -89,6 +89,7 @@ class TableOfContentResponse(BaseModel):
 class TextDetailsRequest(BaseModel):
     content_id: str
     version_id: Optional[str] = None
+    segment_id: Optional[str] = None
     skip: int = 0
     limit: int = 1
 
