@@ -1,3 +1,4 @@
+from pydoc import text
 import uuid
 from uuid import UUID
 from typing import List, Optional
@@ -62,8 +63,8 @@ class Text(Document):
         return await cls.find_one(cls.id == text_uuid)
     
     @classmethod
-    async def get_texts_by_ids(cls, text_ids: List[str]) -> List["Text"]:
-        # Use the correct MongoDB query syntax
+    async def get_texts_by_ids(cls, text_ids: List[str]):
+        text_ids = [UUID(text_id) for text_id in text_ids]
         return await cls.find({"_id": {"$in": text_ids}}).to_list()
 
     @classmethod
