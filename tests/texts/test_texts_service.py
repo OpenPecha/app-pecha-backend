@@ -5,8 +5,8 @@ from pecha_api.terms.terms_response_models import TermsModel
 import pytest
 from pecha_api.texts.texts_service import create_new_text, get_versions_by_text_id
 from pecha_api.texts.texts_response_models import CreateTextRequest, TextModel, Text, TextVersion, TextVersionResponse, \
-    TableOfContent, Section, TextSegment, TextsCategoryResponse
-from pecha_api.texts.texts_service import get_text_by_text_id_or_term, create_table_of_content
+    TableOfContent, Section, TextSegment, TextsCategoryResponse, TableOfContentResponse
+from pecha_api.texts.texts_service import get_text_by_text_id_or_term, create_table_of_content, get_table_of_contents_by_text_id
 from pecha_api.error_contants import ErrorConstants
 
 @pytest.mark.asyncio
@@ -267,5 +267,76 @@ async def test_create_table_of_content_invalid_segment():
             await create_table_of_content(table_of_content_request=table_of_content, token="admin")
         assert exc_info.value.status_code == 404
         assert exc_info.value.detail == ErrorConstants.SEGMENT_NOT_FOUND_MESSAGE
-        
-        
+    
+@pytest.mark.asyncio
+async def test_get_table_of_contents_by_text_id_success():
+    table_of_contents = [
+        TableOfContent(
+            id="id_1",
+            text_id="text_id 1",
+            sections=[
+                Section(
+                    id="id_1",
+                    title="section_1",
+                    section_number=1,
+                    parent_id="id_1",
+                    segments=[],
+                    sections=[],
+                    created_date="2025-03-16 04:40:54.757652",
+                    updated_date="2025-03-16 04:40:54.757652",
+                    published_date="2025-03-16 04:40:54.757652",
+                    published_by="pecha"
+                )
+            ]
+        )
+    ]
+    text_detail = TextModel(
+        id="id_1",
+        title="text_1",
+        language="bo",
+        type="root_text",
+        is_published=True,
+        created_date="2025-03-16 04:40:54.757652",
+        updated_date="2025-03-16 04:40:54.757652",
+        published_date="2025-03-16 04:40:54.757652",
+        published_by="pecha",
+        categories=[],
+        parent_id=None
+    )
+    with patch("pecha_api.texts.texts_service.TextUtils.validate_text_exists", new_callable=AsyncMock, return_value=True), \
+        patch("pecha_api.texts.texts_service.TextUtils.get_text_detail_by_id", new_callable=AsyncMock) as mock_get_text_detail_by_id, \
+        patch("pecha_api.texts.texts_service.get_contents_by_id", new_callable=AsyncMock) as mock_get_contents_by_id:
+        mock_get_text_detail_by_id.return_value = text_detail
+        mock_get_contents_by_id.return_value = table_of_contents
+        response = await get_table_of_contents_by_text_id(text_id="id_1", skip=0, limit=10)
+        assert response == TableOfContentResponse(
+            text_detail=text_detail,
+            contents=[
+                TableOfContent(
+                    id="id_1",
+                    text_id="text_id 1",
+                    sections=[
+                        Section(
+                            id="id_1",
+                            title="section_1",
+                            section_number=1,
+                            parent_id="id_1",
+                            segments=[],
+                            sections=[],
+                            created_date="2025-03-16 04:40:54.757652",
+                            updated_date="2025-03-16 04:40:54.757652",
+                            published_date="2025-03-16 04:40:54.757652",
+                            published_by="pecha"
+                        )
+                    ]
+                )
+            ]
+        )
+
+@pytest.mark.asyncio
+async def test_get_table_of_contents_by_text_id_invalid_text():
+    with patch("pecha_api.texts.texts_service.TextUtils.validate_text_exists", new_callable=AsyncMock, return_value=False):
+        with pytest.raises(HTTPException) as exc_info:
+            await get_table_of_contents_by_text_id(text_id="id_1", skip=0, limit=10)
+        assert exc_info.value.status_code == 404
+        assert exc_info.value.detail == ErrorConstants.TEXT_NOT_FOUND_MESSAGE
