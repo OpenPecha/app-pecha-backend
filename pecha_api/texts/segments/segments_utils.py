@@ -199,7 +199,7 @@ class SegmentUtils:
         return detail_table_of_content
     
     @classmethod
-    async def get_segment_root_mapping_details(segment: SegmentDTO) -> SegmentRootMappingResponse:
+    async def get_segment_root_mapping_details(segment: SegmentDTO) -> List[SegmentRootMapping]:
         list_of_text_ids = [
             mapping.text_id
             for mapping in segment.mapping
