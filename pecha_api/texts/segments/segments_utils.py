@@ -170,7 +170,7 @@ class SegmentUtils:
                     if filtered_translation_by_version_id:
                         translation = Translation(
                             text_id=filtered_translation_by_version_id[0].text_id,
-                            language=version_text_detail[0].language,
+                            language=version_text_detail.language,
                             content=filtered_translation_by_version_id[0].content
                         )
                 # Create DetailTextSegment with enriched information
@@ -198,7 +198,7 @@ class SegmentUtils:
         
         return detail_table_of_content
     
-    @classmethod
+    @staticmethod
     async def get_segment_root_mapping_details(segment: SegmentDTO) -> List[SegmentRootMapping]:
         list_of_text_ids = [
             mapping.text_id

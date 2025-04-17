@@ -4,8 +4,14 @@ from starlette import status
 
 from typing import Annotated
 
-from .segments_service import create_new_segment, get_translations_by_segment_id, get_commentaries_by_segment_id, \
-    get_segment_details_by_id, get_infos_by_segment_id
+from .segments_service import (
+    create_new_segment,
+    get_translations_by_segment_id,
+    get_commentaries_by_segment_id,
+    get_segment_details_by_id, 
+    get_infos_by_segment_id,
+    get_root_text_mapping_by_segment_id
+)
 from .segments_response_models import CreateSegmentRequest
 
 oauth2_scheme = HTTPBearer()

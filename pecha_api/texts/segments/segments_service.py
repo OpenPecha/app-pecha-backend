@@ -111,8 +111,12 @@ async def get_root_text_mapping_by_segment_id(segment_id: str) -> SegmentRootMap
     if not is_valid_segment:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=ErrorConstants.SEGMENT_NOT_FOUND_MESSAGE)
     segment = await get_segment_by_id(segment_id=segment_id)
-    segment_root_mapping = await get_segment_root_mapping_details(segment=segment)
+    segment_root_mapping = await SegmentUtils.get_segment_root_mapping_details(segment=segment)
     return SegmentRootMappingResponse(
+        parent_segment=ParentSegment(
+            segment_id=segment_id,
+            content=segment.content
+        ),
         segment_root_mapping=segment_root_mapping
     )
     

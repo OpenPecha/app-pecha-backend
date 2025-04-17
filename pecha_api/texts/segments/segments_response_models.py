@@ -84,4 +84,5 @@ class SegmentRootMapping(BaseModel):
     language: str
 
 class SegmentRootMappingResponse(BaseModel):
+    parent_segment: ParentSegment
     segment_root_mapping: List[SegmentRootMapping]
