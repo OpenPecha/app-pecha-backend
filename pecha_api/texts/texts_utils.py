@@ -212,7 +212,7 @@ class TextUtils:
         return process_table_of_content(table_of_content)
 
     @staticmethod
-    async def get_table_of_content_id_and_section_number_by_segment_id(text_id: str, segment_id: str) -> TableOfContent:
+    async def get_table_of_content_id_and_respective_section_by_segment_id(text_id: str, segment_id: str) -> TableOfContent:
         """
         Searches for a segment_id within all sections of table of contents for the given text_id.
         Returns a TableOfContent object with only the section containing the segment_id.
