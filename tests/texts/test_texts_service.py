@@ -340,3 +340,91 @@ async def test_get_table_of_contents_by_text_id_invalid_text():
             await get_table_of_contents_by_text_id(text_id="id_1", skip=0, limit=10)
         assert exc_info.value.status_code == 404
         assert exc_info.value.detail == ErrorConstants.TEXT_NOT_FOUND_MESSAGE
+
+@pytest.mark.asyncio
+async def test_get_text_details_by_text_id_with_content_id_only_success():
+    text_detail_request = TextDetailsRequest(
+        content_id="content_id_1",
+        skip=0,
+        limit=1
+    )
+    text_detail = TextModel(
+            id="id_1",
+            title="text_1",
+            language="bo",
+            type="root_text",
+            is_published=True,
+            created_date="2025-03-16 04:40:54.757652",
+            updated_date="2025-03-16 04:40:54.757652",
+            published_date="2025-03-16 04:40:54.757652",
+            published_by="pecha",
+            categories=[],
+            parent_id=None
+        )
+    table_of_content = TableOfContent(
+        id="id_1",
+        text_id="text_id_1",
+        sections=[
+            Section(
+                id=f"id_{i}",
+                title=f"section_{i}",
+                section_number=i,
+                parent_id="parent_id_1",
+                segments=[
+                    TextSegment(
+                        segment_id=f"segment_id_{i}",
+                        segment_number=1
+                    )
+                    for i in range(1,6)
+                ],
+                sections=[],
+                created_date="2025-03-16 04:40:54.757652",
+                updated_date="2025-03-16 04:40:54.757652",
+                published_date="2025-03-16 04:40:54.757652",
+                published_by="pecha"
+            )
+            for i in range(1,6)
+        ]
+    )
+    detail_table_of_content = DetailTableOfContent(
+        id="id_1",
+        text_id="text_id_1",
+        sections=[
+            DetailSection(
+                id=f"id_{i}",
+                title=f"section_{i}",
+                section_number=i,
+                parent_id="parent_id_1",
+                segments=[
+                    DetailTextSegment(
+                        segment_id=f"segment_id_{i}",
+                        segment_number=1,
+                        content=f"content_{i}",
+                        translation=None
+                    )
+                    for i in range(1,6)
+                ],
+                sections=[],
+                created_date="2025-03-16 04:40:54.757652",
+                updated_date="2025-03-16 04:40:54.757652",
+                published_date="2025-03-16 04:40:54.757652",
+                published_by="pecha"
+            )
+            for i in range(1,6)
+        ]
+    )
+    with patch("pecha_api.texts.texts_service.TextUtils.validate_text_exists", new_callable=AsyncMock, return_value=True), \
+        patch("pecha_api.texts.texts_service.TextUtils.get_text_detail_by_id", new_callable=AsyncMock) as mock_get_text_detail_by_id, \
+        patch("pecha_api.texts.texts_service.get_table_of_content_by_content_id", new_callable=AsyncMock) as mock_get_table_of_content_by_content_id, \
+        patch("pecha_api.texts.texts_service.get_sections_count_of_table_of_content", new_callable=AsyncMock) as mock_get_sections_count_of_table_of_content, \
+        patch("pecha_api.texts.texts_service.SegmentUtils.get_mapped_segment_content_for_table_of_content", new_callable=AsyncMock) as mock_get_mapped_segment_content_for_table_of_content:
+        mock_get_text_detail_by_id.return_value = text_detail
+        mock_get_table_of_content_by_content_id.return_value = table_of_content
+        mock_get_sections_count_of_table_of_content.return_value = 10
+        mock_get_mapped_segment_content_for_table_of_content.return_value = detail_table_of_content
+        response = await get_text_details_by_text_id(text_id="text_id_1", text_details_request=text_detail_request)
+        assert response.text_detail == text_detail
+        assert response.contents == [detail_table_of_content]
+        assert response.skip == 0
+        assert response.limit == 1
+        assert response.total == 10
