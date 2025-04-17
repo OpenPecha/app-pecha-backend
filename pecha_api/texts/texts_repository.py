@@ -1,12 +1,12 @@
 from __future__ import annotations
 
 import logging
-from typing import List, Optional
+from typing import List, Optional, Dict
 from uuid import UUID
 
 from beanie.exceptions import CollectionWasNotInitialized
 from pecha_api.constants import Constants
-from .texts_response_models import CreateTextRequest, TableOfContent
+from .texts_response_models import CreateTextRequest, TableOfContent, TextModel
 from .texts_models import Text, TableOfContent
 from datetime import datetime, timezone
 
@@ -21,8 +21,24 @@ async def get_texts_by_id(text_id: str) -> Text | None:
         logging.debug(e)
         return None
 
-async def get_texts_by_ids(text_ids: List[str]) -> List[Text]:
-    return await Text.get_texts_by_ids(text_ids=text_ids)
+async def get_texts_by_ids(text_ids: List[str]) -> Dict[str, TextModel]:
+    list_of_texts_detail = await Text.get_texts_by_ids(text_ids=text_ids)
+    return {
+        str(text.id): TextModel(
+            id=str(text.id),
+            title=text.title,
+            language=text.language,
+            parent_id=text.parent_id,
+            type=text.type,
+            is_published=text.is_published,
+            created_date=text.created_date,
+            updated_date=text.updated_date,
+            published_date=text.published_date,
+            published_by=text.published_by,
+            categories=text.categories
+        )
+        for text in list_of_texts_detail
+    }
 
 
 async def check_text_exists(text_id: UUID) -> bool:

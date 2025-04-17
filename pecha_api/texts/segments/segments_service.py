@@ -1,7 +1,7 @@
 from pecha_api.error_contants import ErrorConstants
 from .segments_repository import create_segment, get_segment_by_id, get_related_mapped_segments
 from .segments_response_models import CreateSegmentRequest, SegmentResponse, MappingResponse, SegmentDTO, \
-    SegmentInfosResponse
+    SegmentInfosResponse, SegmentRootMappingResponse
 from fastapi import HTTPException
 from starlette import status
 
@@ -11,7 +11,7 @@ from ..texts_utils import TextUtils
 from typing import List
 
 from .segments_response_models import SegmentTranslationsResponse, ParentSegment, SegmentCommentariesResponse, \
-    RelatedText, Resources, SegmentInfos
+    RelatedText, Resources, SegmentInfos, SegmentRootMappingResponse
 from ...users.users_service import verify_admin_access
 
 
@@ -105,3 +105,14 @@ async def get_infos_by_segment_id(segment_id: str) -> SegmentInfosResponse:
             )
         )
     ) 
+
+async def get_root_text_mapping_by_segment_id(segment_id: str) -> SegmentRootMappingResponse:
+    is_valid_segment = await SegmentUtils.validate_segment_exists(segment_id=segment_id)
+    if not is_valid_segment:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=ErrorConstants.SEGMENT_NOT_FOUND_MESSAGE)
+    segment = await get_segment_by_id(segment_id=segment_id)
+    segment_root_mapping = await get_segment_root_mapping_details(segment=segment)
+    return SegmentRootMappingResponse(
+        segment_root_mapping=segment_root_mapping
+    )
+    

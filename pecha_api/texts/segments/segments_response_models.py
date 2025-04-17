@@ -74,3 +74,14 @@ class SegmentInfos(BaseModel):
 
 class SegmentInfosResponse(BaseModel):
     segment_infos: SegmentInfos
+
+# segment's root mapping models
+
+class SegmentRootMapping(BaseModel):
+    text_id: str
+    title: str
+    content: str
+    language: str
+
+class SegmentRootMappingResponse(BaseModel):
+    segment_root_mapping: List[SegmentRootMapping]

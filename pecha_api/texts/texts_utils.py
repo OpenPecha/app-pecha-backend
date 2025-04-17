@@ -12,7 +12,7 @@ from .texts_response_models import (
     TextSegment,
     Section
 )
-from .texts_repository import get_contents_by_id
+from .texts_repository import get_contents_by_id, get_texts_by_id
 
 class TextUtils:
     """
@@ -21,24 +21,25 @@ class TextUtils:
     """
 
     @staticmethod
-    async def get_text_details_by_ids(text_ids: List[str]) -> List[TextModel]:
-        texts = await get_texts_by_ids(text_ids=text_ids)
-        return [
-            TextModel(
-                id=str(text.id),
-                title=text.title,
-                language=text.language,
-                parent_id=text.parent_id,
-                type=text.type,
-                is_published=text.is_published,
-                created_date=text.created_date,
-                updated_date=text.updated_date,
-                published_date=text.published_date,
-                published_by=text.published_by,
-                categories=text.categories
-            )
-            for text in texts
-        ]
+    async def get_text_details_by_ids(text_ids: List[str]) -> Dict[str, TextModel]:
+        texts_detail = await get_texts_by_ids(text_ids=text_ids)
+        return texts_detail
+    
+    async def get_text_details_by_id(text_id: str) -> TextModel:
+        text_detail = await get_texts_by_id(text_id=text_id)
+        return TextModel(
+            id=str(text_detail.id),
+            title=text_detail.title,
+            language=text_detail.language,
+            parent_id=text_detail.parent_id,
+            type=text_detail.type,
+            is_published=text_detail.is_published,
+            created_date=text_detail.created_date,
+            updated_date=text_detail.updated_date,
+            published_date=text_detail.published_date,
+            published_by=text_detail.published_by,
+            categories=text_detail.categories
+        )
     
     @staticmethod
     async def validate_text_exists(text_id: str):
