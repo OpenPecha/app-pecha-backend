@@ -189,6 +189,24 @@ async def test_create_new_root_text():
             categories=[],
             parent_id=None
         )
+    
+@pytest.mark.asyncio
+async def test_create_new_root_text_not_admin():
+    with patch("pecha_api.texts.texts_service.verify_admin_access", return_value=False):
+        with pytest.raises(HTTPException) as exc_info:
+            await create_new_text(
+                create_text_request=CreateTextRequest(
+                    title="བྱང་ཆུབ་སེམས་དཔའི་སྤྱོད་པ་ལ་འཇུག་པ།",
+                    language="bo",
+                    parent_id=None,
+                    published_by="pecha",
+                    type="root_text",
+                    categories=[]
+                ),
+                token="user"
+            )
+        assert exc_info.value.status_code == 403
+        assert exc_info.value.detail == ErrorConstants.ADMIN_ERROR_MESSAGE
 
 @pytest.mark.asyncio
 async def test_create_table_of_content_success():

@@ -179,7 +179,7 @@ async def create_new_text(
             parent_id=new_text.parent_id
         )
     else:
-        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Admin access required")
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail=ErrorConstants.ADMIN_ERROR_MESSAGE)
 
 
 async def create_table_of_content(table_of_content_request: TableOfContent, token: str) -> TableOfContent:

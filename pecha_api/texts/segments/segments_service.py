@@ -76,7 +76,7 @@ async def get_commentaries_by_segment_id(
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=ErrorConstants.SEGMENT_NOT_FOUND_MESSAGE)
     parent_segment = await get_segment_by_id(segment_id=segment_id)
     mapped_segments = await get_related_mapped_segments(parent_segment_id=segment_id)
-    commentaries = await SegmentUtils.filter_segment_mapping_by_type(segments=mapped_segments, type="commentary")
+    commentaries = await SegmentUtils.filter_segment_mapping_by_type_or_text_id(segments=mapped_segments, type="commentary")
     return SegmentCommentariesResponse(
         parent_segment=ParentSegment(
             segment_id=segment_id,
@@ -91,12 +91,14 @@ async def get_infos_by_segment_id(segment_id: str) -> SegmentInfosResponse:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=ErrorConstants.SEGMENT_NOT_FOUND_MESSAGE)
     mapped_segments = await get_related_mapped_segments(parent_segment_id=segment_id)
     counts = await SegmentUtils.get_count_of_each_commentary_and_version(mapped_segments)
+    segment_root_mapping_count = await SegmentUtils.get_root_mapping_count(segment_id=segment_id)
     return SegmentInfosResponse(
         segment_infos= SegmentInfos(
             segment_id=segment_id,
             translations=counts["version"],
             related_text=RelatedText(
-                commentaries=counts["commentary"]
+                commentaries=counts["commentary"],
+                root_text=segment_root_mapping_count
             ),
             resources=Resources(
                 sheets=0

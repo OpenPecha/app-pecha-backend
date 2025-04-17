@@ -61,6 +61,7 @@ class SegmentInfosRequest(BaseModel):
 
 class RelatedText(BaseModel):
     commentaries: int
+    root_text: int
 
 class Resources(BaseModel):
     sheets: int

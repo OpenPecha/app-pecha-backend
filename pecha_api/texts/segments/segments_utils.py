@@ -20,6 +20,10 @@ from ..texts_response_models import (
     TableOfContent,
     Translation,
 )
+from .segments_response_models import (
+    SegmentCommentry,
+    SegmentTranslation,
+)
 
 class SegmentUtils:
     """
@@ -110,6 +114,12 @@ class SegmentUtils:
                     )
                 )
         return filtered_segments
+    
+    @staticmethod
+    async def get_root_mapping_count(segment_id: str) -> int:
+        segment = await get_segment_by_id(segment_id=segment_id)
+        root_mapping_count = len(segment.mapping)
+        return root_mapping_count
 
     @staticmethod
     async def get_mapped_segment_content(
