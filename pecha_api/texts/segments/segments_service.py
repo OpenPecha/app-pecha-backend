@@ -76,7 +76,7 @@ async def get_commentaries_by_segment_id(
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=ErrorConstants.SEGMENT_NOT_FOUND_MESSAGE)
     parent_segment = await get_segment_by_id(segment_id=segment_id)
     mapped_segments = await get_related_mapped_segments(parent_segment_id=segment_id)
-    commentaries = await SegmentUtils.filter_segment_mapping_by_type(segments=mapped_segments, type="commentary")
+    commentaries = await SegmentUtils.filter_segment_mapping_by_type_or_text_id(segments=mapped_segments, type="commentary")
     return SegmentCommentariesResponse(
         parent_segment=ParentSegment(
             segment_id=segment_id,

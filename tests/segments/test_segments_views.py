@@ -18,7 +18,6 @@ def test_get_translations_success(mock_get_translations):
     mock_response = SegmentTranslationsResponse(
         parent_segment=ParentSegment(
             segment_id=segment_id,
-            segment_number=1,
             content="Test segment content"
         ),
         translations=[
@@ -48,7 +47,6 @@ def test_get_translations_success(mock_get_translations):
     assert response.status_code == status.HTTP_200_OK
     data = response.json()
     assert data["parent_segment"]["segment_id"] == segment_id
-    assert data["parent_segment"]["segment_number"] == 1
     assert data["parent_segment"]["content"] == "Test segment content"
     assert len(data["translations"]) == 2
     

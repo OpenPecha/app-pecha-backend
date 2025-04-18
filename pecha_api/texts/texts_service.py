@@ -1,4 +1,5 @@
 
+
 from fastapi import HTTPException
 from starlette import status
 
@@ -88,8 +89,8 @@ async def get_table_of_contents_by_text_id(text_id: str, skip: int, limit: int) 
     if not is_valid_text:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=ErrorConstants.TEXT_NOT_FOUND_MESSAGE)
     text = await TextUtils.get_text_detail_by_id(text_id=text_id)
-    table_of_contents = await get_contents_by_id(text_id=text_id)
-    table_of_contents = TextUtils.remove_segments_from_list_of_table_of_content(table_of_content=table_of_contents)
+    list_of_table_of_contents = await get_contents_by_id(text_id=text_id)
+    table_of_contents = TextUtils.remove_segments_from_list_of_table_of_content(table_of_content=list_of_table_of_contents)
     return TableOfContentResponse(
         text_detail=text,
         contents= [
@@ -181,7 +182,7 @@ async def create_new_text(
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Admin access required")
 
 
-async def create_table_of_content(table_of_content_request: TableOfContent, token: str):
+async def create_table_of_content(table_of_content_request: TableOfContent, token: str) -> TableOfContent:
     is_admin = verify_admin_access(token=token)
     if is_admin:
         valid_text = await TextUtils.validate_text_exists(text_id=table_of_content_request.text_id)
