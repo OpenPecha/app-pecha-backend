@@ -217,6 +217,7 @@ class SegmentUtils:
                     segment_details = await get_segment_by_id(segment_id=segment_id)
                     list_of_segment_root_mapping.append(
                         SegmentRootMapping(
+                            segment_id=str(segment_details.id),
                             text_id=segment_details.text_id,
                             title=text_detail.title,
                             content=segment_details.content,
