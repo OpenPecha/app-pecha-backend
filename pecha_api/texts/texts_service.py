@@ -168,13 +168,10 @@ async def get_text_details_by_text_id(
         detail_table_of_content = await SegmentUtils.get_mapped_segment_content_for_table_of_content(
             table_of_content=table_of_content,
             version_id=text_details_request.version_id
-        )
-
+        )   
         return DetailTableOfContentResponse(
             text_detail=text,
-            contents=[
-                detail_table_of_content
-            ],
+            content=detail_table_of_content,
             skip=text_details_request.skip,
             limit=text_details_request.limit,
             total=total_sections
