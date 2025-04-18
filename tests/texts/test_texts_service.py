@@ -143,36 +143,44 @@ async def test_get_versions_by_text_id():
         mock_text_detail.return_value = text_detail
         mock_get_versions_by_text_id.return_value = versions_by_text_id
         response = await get_versions_by_text_id(text_id="id_1", skip=0, limit=10)
-        assert response == TextVersionResponse(
-            text=TextModel(
-                id=text_detail.id,
-                title=text_detail.title,
-                language=text_detail.language,
-                type=text_detail.type,
-                is_published=text_detail.is_published,
-                created_date=text_detail.created_date,
-                updated_date=text_detail.updated_date,
-                published_date=text_detail.published_date,
-                published_by=text_detail.published_by,
-                categories=text_detail.categories,
-                parent_id=text_detail.parent_id
-            ),
-            versions=[
-                TextVersion(
-                    id=version.id,
-                    title=version.title,
-                    parent_id=version.parent_id,
-                    priority=version.priority,
-                    language=version.language,
-                    type=version.type,
-                    is_published=version.is_published,
-                    created_date=version.created_date,
-                    updated_date=version.updated_date,
-                    published_date=version.published_date,
-                    published_by=version.published_by
-                )
-                for version in versions_by_text_id
-            ]
+
+        assert response.text == TextModel(
+            id="id_1",
+            title="བྱང་ཆུབ་སེམས་དཔའི་སྤྱོད་པ་ལ་འཇུག་པ།",
+            language="bo",
+            type="root_text",
+            is_published=True,
+            created_date="2025-03-20 09:26:16.571522",
+            updated_date="2025-03-20 09:26:16.571532",
+            published_date="2025-03-20 09:26:16.571536",
+            published_by="pecha",
+            categories=["67dd22a8d9f06ab28feedc90"],
+            parent_id=None
+        )
+        assert response.versions[0] == TextVersion(
+            id="59769286-2787-4181-953d-9149cdeef959",
+            title="The Way of the Bodhisattva",
+            parent_id="032b9a5f-0712-40d8-b7ec-73c8c94f1c15",
+            priority=None,
+            language="en",
+            type="version",
+            is_published=True,
+            created_date="2025-03-20 09:28:28.076920",
+            updated_date="2025-03-20 09:28:28.076934",
+            published_date="2025-03-20 09:28:28.076938",
+            published_by="pecha"
+        )
+        assert response.versions[-1] == TextVersion(
+            id="id_1",
+            title="བྱང་ཆུབ་སེམས་དཔའི་སྤྱོད་པ་ལ་འཇུག་པ།",
+            language="bo",
+            type="root_text",
+            is_published=True,
+            created_date="2025-03-20 09:26:16.571522",
+            updated_date="2025-03-20 09:26:16.571532",
+            published_date="2025-03-20 09:26:16.571536",
+            published_by="pecha",
+            parent_id=None
         )
 
 
@@ -457,7 +465,7 @@ async def test_get_text_details_by_text_id_with_content_id_only_success():
         patch("pecha_api.texts.texts_service.TextUtils.get_text_detail_by_id", new_callable=AsyncMock) as mock_get_text_detail_by_id, \
         patch("pecha_api.texts.texts_service.get_table_of_content_by_content_id", new_callable=AsyncMock) as mock_get_table_of_content_by_content_id, \
         patch("pecha_api.texts.texts_service.get_sections_count_of_table_of_content", new_callable=AsyncMock) as mock_get_sections_count_of_table_of_content, \
-        patch("pecha_api.texts.texts_service.SegmentUtils.get_mapped_segment_content", new_callable=AsyncMock) as mock_get_mapped_segment_content:
+        patch("pecha_api.texts.texts_service.SegmentUtils.get_mapped_segment_content_for_table_of_content", new_callable=AsyncMock) as mock_get_mapped_segment_content:
         mock_get_text_detail_by_id.return_value = text_detail
         mock_get_table_of_content_by_content_id.return_value = table_of_content
         mock_get_sections_count_of_table_of_content.return_value = 10
@@ -467,7 +475,7 @@ async def test_get_text_details_by_text_id_with_content_id_only_success():
         assert response.skip == 0
         assert response.limit == 1
         assert response.total == 10
-        assert response.contents[0].sections == [
+        assert response.content.sections == [
                 DetailSection(
                     id=f"id_{i}",
                     title=f"section_{i}",
@@ -490,9 +498,9 @@ async def test_get_text_details_by_text_id_with_content_id_only_success():
                 )
                 for i in range(1,6)
             ]
-        assert response.contents[0].id == "id_1"
-        assert response.contents[0].text_id == "text_id_1"
-        assert response.contents[0].sections[0].segments == [
+        assert response.content.id == "id_1"
+        assert response.content.text_id == "text_id_1"
+        assert response.content.sections[0].segments == [
                 DetailTextSegment(
                     segment_id=f"segment_id_{i}",
                     segment_number=1,
@@ -583,7 +591,7 @@ async def test_get_text_details_by_text_id_with_content_id_and_version_id_succes
         patch("pecha_api.texts.texts_service.TextUtils.get_text_detail_by_id", new_callable=AsyncMock) as mock_get_text_detail_by_id, \
         patch("pecha_api.texts.texts_service.get_table_of_content_by_content_id", new_callable=AsyncMock) as mock_get_table_of_content_by_content_id, \
         patch("pecha_api.texts.texts_service.get_sections_count_of_table_of_content", new_callable=AsyncMock) as mock_get_sections_count_of_table_of_content, \
-        patch("pecha_api.texts.texts_service.SegmentUtils.get_mapped_segment_content", new_callable=AsyncMock) as mock_get_mapped_segment_content:
+        patch("pecha_api.texts.texts_service.SegmentUtils.get_mapped_segment_content_for_table_of_content", new_callable=AsyncMock) as mock_get_mapped_segment_content:
         mock_get_text_detail_by_id.return_value = text_detail
         mock_get_table_of_content_by_content_id.return_value = table_of_content
         mock_get_sections_count_of_table_of_content.return_value = 10
@@ -593,7 +601,7 @@ async def test_get_text_details_by_text_id_with_content_id_and_version_id_succes
         assert response.skip == 0
         assert response.limit == 1
         assert response.total == 10
-        assert response.contents[0].sections == [
+        assert response.content.sections == [
                     DetailSection(
                         id=f"id_{i}",
                         title=f"section_{i}",
@@ -620,7 +628,7 @@ async def test_get_text_details_by_text_id_with_content_id_and_version_id_succes
                     )
                     for i in range(1,6)
                 ]
-        assert response.contents[0].sections[0].segments == [
+        assert response.content.sections[0].segments == [
                             DetailTextSegment(
                                 segment_id=f"segment_id_{i}",
                                 segment_number=1,

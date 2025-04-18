@@ -22,6 +22,7 @@ def test_get_translations_success(mock_get_translations):
         ),
         translations=[
             SegmentTranslation(
+                segment_id="segment_id_1",
                 text_id="text1",
                 title='title',
                 source='source',
@@ -29,6 +30,7 @@ def test_get_translations_success(mock_get_translations):
                 content="Translation 1"
             ),
             SegmentTranslation(
+                segment_id="segment_id_2",
                 text_id="text2",
                 title='title2',
                 source='source2',
@@ -72,6 +74,7 @@ def test_get_translations_with_pagination(mock_get_translations):
         ),
         translations=[
             SegmentTranslation(
+                segment_id=f"segment_id_{i}",
                 text_id=f"text{i}",
                 title=f"title{i}",
                 source=f"source{i}",
