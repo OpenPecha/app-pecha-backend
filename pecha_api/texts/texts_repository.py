@@ -1,17 +1,17 @@
 from __future__ import annotations
 
 import logging
-import uuid
-from typing import List
+from typing import List, Optional
 from uuid import UUID
 
 from beanie.exceptions import CollectionWasNotInitialized
 from pecha_api.constants import Constants
-from .texts_response_models import CreateTextRequest, TextDetailsRequest, TableOfContent
+from .texts_response_models import CreateTextRequest, TableOfContent
 from .texts_models import Text, TableOfContent
 from datetime import datetime, timezone
 
-
+async def get_sections_count_of_table_of_content(content_id: str) -> int:
+    return await TableOfContent.get_sections_count(content_id=content_id)
 
 async def get_texts_by_id(text_id: str) -> Text | None:
     try:
@@ -20,6 +20,9 @@ async def get_texts_by_id(text_id: str) -> Text | None:
     except CollectionWasNotInitialized as e:
         logging.debug(e)
         return None
+
+async def get_texts_by_ids(text_ids: List[str]) -> List[Text]:
+    return await Text.get_texts_by_ids(text_ids=text_ids)
 
 
 async def check_text_exists(text_id: UUID) -> bool:
@@ -38,10 +41,10 @@ async def check_all_text_exists(text_ids: List[UUID]) -> bool:
         logging.debug(e)
         return False
 
-async def get_texts_by_term(term_id: str, skip: int, limit: int):
+async def get_texts_by_term(term_id: str, skip: int, limit: int) -> List[Text]:
     return await Text.get_texts_by_term_id(term_id=term_id, skip=skip, limit=limit)
 
-async def get_versions_by_id(text_id: str, skip: int, limit: int):
+async def get_versions_by_id(text_id: str, skip: int, limit: int) -> List[Text]:
     return await Text.get_versions_by_text_id(text_id=text_id, skip=skip, limit=limit)
 
 
@@ -72,17 +75,5 @@ async def create_table_of_content_detail(table_of_content_request: TableOfConten
 async def get_contents_by_id(text_id: str) -> List[TableOfContent]:
     return await TableOfContent.get_table_of_contents_by_text_id(text_id=text_id)
     
-async def get_table_of_content_by_content_id(content_id: str) -> TableOfContent:
-    return await TableOfContent.get_table_of_content_by_content_id(content_id=content_id)
-
-async def get_text_infos(text_id: str, language: str, skip: int, limit: int):
-    return [
-        {
-            "id": str(uuid.uuid4()),
-            "title": {
-                "en": "commentary",
-                "bo": "འགྲེལ་བརྗོད།"
-            },
-            "count": 1
-        }
-    ]
+async def get_table_of_content_by_content_id(content_id: str, skip: int, limit: int) -> Optional[TableOfContent]:
+    return await TableOfContent.get_table_of_content_by_content_id(content_id=content_id, skip=skip, limit=limit)

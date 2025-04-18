@@ -4,7 +4,9 @@ from fastapi import HTTPException
 from starlette import status
 
 from pecha_api.error_contants import ErrorConstants
-from .texts_repository import check_text_exists, check_all_text_exists
+from .texts_repository import check_text_exists, check_all_text_exists, get_texts_by_id,\
+    get_texts_by_ids
+from .texts_response_models import TextModel
 from .texts_response_models import (
     DetailTableOfContent, 
     TableOfContent, 
@@ -20,6 +22,26 @@ class TextUtils:
     Utility class for text-related operations.
     Contains helper methods for text processing, validation, and transformations.
     """
+
+    @staticmethod
+    async def get_text_details_by_ids(text_ids: List[str]) -> List[TextModel]:
+        texts = await get_texts_by_ids(text_ids=text_ids)
+        return [
+            TextModel(
+                id=str(text.id),
+                title=text.title,
+                language=text.language,
+                parent_id=text.parent_id,
+                type=text.type,
+                is_published=text.is_published,
+                created_date=text.created_date,
+                updated_date=text.updated_date,
+                published_date=text.published_date,
+                published_by=text.published_by,
+                categories=text.categories
+            )
+            for text in texts
+        ]
     
     @staticmethod
     async def validate_text_exists(text_id: str):
@@ -163,6 +185,39 @@ class TextUtils:
         
         return detail_table_of_content
     
+    @staticmethod
+    async def get_text_detail_by_id(text_id: str) -> TextModel:
+        """
+        Get text details by ID.
+        
+        Args:
+            text_id: The ID of the text to retrieve
+            
+        Returns:
+            TextModel: The text model with details
+            
+        Raises:
+            HTTPException: If the text does not exist or text_id is None
+        """
+        if text_id is None:
+            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=ErrorConstants.TEXT_OR_TERM_NOT_FOUND_MESSAGE)
+        text = await get_texts_by_id(text_id=text_id)
+        if text is None:
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=ErrorConstants.TEXT_NOT_FOUND_MESSAGE)
+        return TextModel(
+            id=str(text.id),
+            title=text.title,
+            language=text.language,
+            parent_id=text.parent_id,
+            type=text.type,
+            is_published=text.is_published,
+            created_date=text.created_date,
+            updated_date=text.updated_date,
+            published_date=text.published_date,
+            published_by=text.published_by,
+            categories=text.categories
+        )
+        
     @staticmethod
     def remove_segments_from_list_of_table_of_content(table_of_content: List[TableOfContent]) -> List[TableOfContent]:
         """

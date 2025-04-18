@@ -8,7 +8,7 @@ from pecha_api.error_contants import ErrorConstants
 from .mappings_repository import update_mappings
 from .mappings_response_models import TextMappingRequest, MappingsModel
 from ..segments.segments_response_models import SegmentResponse, SegmentDTO, MappingResponse
-from ..segments.segments_service import validate_segments_exists, validate_segment_exists
+from ..segments.segments_utils import SegmentUtils
 from ..texts_utils import TextUtils
 from pecha_api.users.users_service import verify_admin_access
 
@@ -64,7 +64,7 @@ async def validate_request_info(text_id: str, segment_id: str, mappings: List[Ma
     # validate the text id
     await TextUtils.validate_text_exists(text_id=text_id)
     # validate the segment id
-    await validate_segment_exists(segment_id=segment_id)
+    await SegmentUtils.validate_segment_exists(segment_id=segment_id)
     # validate the parent ids
     parent_text_ids = [mapping.parent_text_id for mapping in mappings]
     if text_id in parent_text_ids:
@@ -72,6 +72,6 @@ async def validate_request_info(text_id: str, segment_id: str, mappings: List[Ma
     await TextUtils.validate_texts_exist(text_ids=parent_text_ids)
     # validate segment ids
     segment_ids = [segment for mapping in mappings for segment in mapping.segments]
-    await validate_segments_exists(segment_ids=segment_ids)
+    await SegmentUtils.validate_segments_exists(segment_ids=segment_ids)
     return True
 
