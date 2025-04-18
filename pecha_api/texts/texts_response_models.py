@@ -45,7 +45,7 @@ class DetailSection(BaseModel):
     section_number: int
     parent_id: Optional[str] = None
     segments: List[DetailTextSegment] = []
-    sections: Optional[List["Section"]] = None
+    sections: Optional[List["DetailSection"]] = None
     created_date: str 
     updated_date: str
     published_date: str 
@@ -57,7 +57,7 @@ class DetailTableOfContent(BaseModel):
 
 class DetailTableOfContentResponse(BaseModel):
     text_detail: TextModel
-    contents: List[DetailTableOfContent]
+    content: DetailTableOfContent
     skip: int
     limit: int
     total: int
@@ -98,7 +98,7 @@ class TextDetailsRequest(BaseModel):
 class TextVersion(BaseModel):
     id: str
     title: str
-    parent_id: str
+    parent_id: Optional[str] = None
     priority: Optional[int] = None
     language: str
     type: str
