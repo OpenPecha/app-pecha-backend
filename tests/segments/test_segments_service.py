@@ -35,6 +35,7 @@ async def test_get_translations_by_segment_id_success():
     )
     translations = [
         SegmentTranslation(
+            segment_id=f"efb26a06-f373-450b-ba57-e7a8d4dd5b64_{i}",
             text_id="efb26a06-f373-450b-ba57-e7a8d4dd5b64",
             title = f"Title {i}",
             source = f"source {i}",
@@ -235,6 +236,7 @@ async def test_get_commentaries_by_segment_id_success():
     ]
     filtered_commentaries = [
         SegmentCommentry(
+            segment_id=f"id_{i}",
             text_id=f"text_id_{i}",
             title=f"title_{i}",
             content=f"content_{i}",

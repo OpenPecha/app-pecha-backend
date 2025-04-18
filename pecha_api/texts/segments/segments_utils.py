@@ -94,6 +94,7 @@ class SegmentUtils:
                     continue
                 filtered_segments.append(
                     SegmentTranslation(
+                        segment_id=str(segment.id),
                         text_id=segment.text_id,
                         title=text_detail.title,
                         source=text_detail.published_by,
@@ -106,6 +107,7 @@ class SegmentUtils:
                     continue
                 filtered_segments.append(
                     SegmentCommentry(
+                        segment_id=str(segment.id),
                         text_id=segment.text_id,
                         title=text_detail.title,
                         content=segment.content,
