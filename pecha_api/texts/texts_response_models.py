@@ -98,7 +98,7 @@ class TextDetailsRequest(BaseModel):
 class TextVersion(BaseModel):
     id: str
     title: str
-    parent_id: str
+    parent_id: Optional[str] = None
     priority: Optional[int] = None
     language: str
     type: str

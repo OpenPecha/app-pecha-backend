@@ -202,6 +202,20 @@ async def get_versions_by_text_id(text_id: str, skip: int, limit: int) -> TextVe
         )
         for version in versions
     ]
+    list_of_version.append(
+        TextVersion(
+            id=str(root_text.id),
+            title=root_text.title,
+            parent_id=root_text.parent_id,
+            language=root_text.language,
+            type=root_text.type,
+            is_published=root_text.is_published,
+            created_date=root_text.created_date,
+            updated_date=root_text.updated_date,
+            published_date=root_text.published_date,
+            published_by=root_text.published_by
+        )
+    )
     return TextVersionResponse(
         text=root_text,
         versions=list_of_version
