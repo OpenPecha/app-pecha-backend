@@ -1,3 +1,4 @@
+from pydoc import text
 import uuid
 from uuid import UUID
 from typing import List, Optional
@@ -21,7 +22,10 @@ class TableOfContent(Document):
     
     @classmethod
     async def get_sections_count(cls, content_id: str) -> int:
-        return await cls.find_one(cls.id == UUID(content_id)).sections.count()
+        table_of_content = await cls.find_one(cls.id == UUID(content_id))
+        if table_of_content and hasattr(table_of_content, "sections"):
+            return len(table_of_content.sections)
+        return 0
     
     @classmethod
     async def get_table_of_content_by_content_id(cls, content_id: str, skip: int, limit: int) -> Optional["TableOfContent"]:
@@ -59,8 +63,8 @@ class Text(Document):
         return await cls.find_one(cls.id == text_uuid)
     
     @classmethod
-    async def get_texts_by_ids(cls, text_ids: List[str]) -> List["Text"]:
-        # Use the correct MongoDB query syntax
+    async def get_texts_by_ids(cls, text_ids: List[str]):
+        text_ids = [UUID(text_id) for text_id in text_ids]
         return await cls.find({"_id": {"$in": text_ids}}).to_list()
 
     @classmethod

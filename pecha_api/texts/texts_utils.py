@@ -8,14 +8,11 @@ from .texts_repository import check_text_exists, check_all_text_exists, get_text
     get_texts_by_ids
 from .texts_response_models import TextModel
 from .texts_response_models import (
-    DetailTableOfContent, 
     TableOfContent, 
-    TextSegment, 
-    DetailSection, 
-    DetailTextSegment,
+    TextSegment,
     Section
 )
-
+from .segments.segments_repository import get_segment_by_id, get_related_mapped_segments
 
 class TextUtils:
     """
@@ -119,71 +116,6 @@ class TextUtils:
                 stack.extend(section.sections)
 
         return segment_ids
-
-    @staticmethod
-    async def get_mapped_segment_content(table_of_content: TableOfContent) -> DetailTableOfContent:
-        """
-        Convert a TableOfContent model to a DetailTableOfContent model by enriching
-        each segment with detailed information fetched from get_segment_details_by_id.
-        
-        Args:
-            table_of_content: The TableOfContent model to be converted
-            
-        Returns:
-            A DetailTableOfContent model with enriched segment details
-        """
-        from .segments.segments_service import get_segment_details_by_id
-        
-        # Create a new DetailTableOfContent with the same base attributes
-        detail_table_of_content = DetailTableOfContent(
-            id=str(table_of_content.id) if table_of_content.id else None,
-            text_id=table_of_content.text_id,
-            sections=[]
-        )
-        
-        # Process sections recursively
-        async def process_section(section) -> 'DetailSection':
-            detail_section = DetailSection(
-                id=section.id,
-                title=section.title,
-                section_number=section.section_number,
-                parent_id=section.parent_id,
-                segments=[],
-                sections=[],
-                created_date=section.created_date,
-                updated_date=section.updated_date,
-                published_date=section.published_date
-            )
-            
-            # Process segments
-            for segment in section.segments:
-                # Fetch detailed segment information
-                segment_details = await get_segment_details_by_id(segment.segment_id)
-                
-                # Create DetailTextSegment with enriched information
-                detail_segment = DetailTextSegment(
-                    segment_id=segment.segment_id,
-                    segment_number=segment.segment_number,
-                    content=segment_details.content,
-                    # Translation can be added here if available
-                )
-                
-                detail_section.segments.append(detail_segment)
-            
-            # Process nested sections recursively
-            if section.sections:
-                for subsection in section.sections:
-                    detail_subsection = await process_section(subsection)
-                    detail_section.sections.append(detail_subsection)
-            
-            return detail_section
-        
-        # Process all top-level sections
-        for section in table_of_content.sections:
-            detail_section = await process_section(section)
-            detail_table_of_content.sections.append(detail_section)
-        
-        return detail_table_of_content
     
     @staticmethod
     async def get_text_detail_by_id(text_id: str) -> TextModel:
