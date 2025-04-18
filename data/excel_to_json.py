@@ -6,19 +6,22 @@ EXCEL_FILE_NAME = 'Segment_Mapping.xlsx'
 OUTPUT_FILE = "output.json"
 
 
-def excel_to_mapping_json(excel_path, sheet_number: int):
+def excel_to_mapping_json(excel_path, sheet_number: int, text_column_name: str, segment_column_name: str):
     excel_file = pd.ExcelFile(excel_path)
     sheet_name = excel_file.sheet_names[sheet_number]
 
     df = pd.read_excel(excel_path, sheet_name=sheet_number)
 
-    df = df.fillna("")
     result = {"text_mappings": []}
     grouped = defaultdict(lambda: defaultdict(list))
 
     for _, row in df.iterrows():
-        text_id = row["commentary_text_id"]
-        segment_id = row["commentary_segment_id"]
+        if pd.isna(row[text_column_name]) or pd.isna(row[segment_column_name]) or pd.isna(
+                row["parent_text_id"]) or pd.isna(
+                row["parent_segment_id"]):
+            continue
+        text_id = row[text_column_name]
+        segment_id = row[segment_column_name]
         parent_text_id = row["parent_text_id"]
         segment = row["parent_segment_id"]
 
@@ -44,10 +47,12 @@ def excel_to_mapping_json(excel_path, sheet_number: int):
 
 
 if __name__ == "__main__":
-    excel_to_mapping_json(EXCEL_FILE_NAME, 0)
-    excel_to_mapping_json(EXCEL_FILE_NAME, 1)
-    excel_to_mapping_json(EXCEL_FILE_NAME, 2)
-    excel_to_mapping_json(EXCEL_FILE_NAME, 3)
-    excel_to_mapping_json(EXCEL_FILE_NAME, 4)
-    excel_to_mapping_json(EXCEL_FILE_NAME, 5)
-    excel_to_mapping_json(EXCEL_FILE_NAME, 6)
+    excel_to_mapping_json(excel_path=EXCEL_FILE_NAME, sheet_number=0,text_column_name='commentary_text_id',segment_column_name='commentary_segment_id')
+    excel_to_mapping_json(excel_path=EXCEL_FILE_NAME, sheet_number=1,text_column_name='commentary_text_id',segment_column_name='commentary_segment_id')
+    excel_to_mapping_json(excel_path=EXCEL_FILE_NAME, sheet_number=2,text_column_name='commentary_text_id',segment_column_name='commentary_segment_id')
+    excel_to_mapping_json(excel_path=EXCEL_FILE_NAME, sheet_number=3,text_column_name='commentary_text_id',segment_column_name='commentary_segment_id')
+    excel_to_mapping_json(excel_path=EXCEL_FILE_NAME, sheet_number=4,text_column_name='commentary_text_id',segment_column_name='commentary_segment_id')
+    excel_to_mapping_json(excel_path=EXCEL_FILE_NAME, sheet_number=5,text_column_name='commentary_text_id',segment_column_name='commentary_segment_id')
+    excel_to_mapping_json(excel_path=EXCEL_FILE_NAME, sheet_number=6,text_column_name='commentary_text_id',segment_column_name='commentary_segment_id')
+    excel_to_mapping_json(excel_path=EXCEL_FILE_NAME, sheet_number=7,text_column_name='commentary_text_id',segment_column_name='commentary_segment_id')
+    excel_to_mapping_json(excel_path=EXCEL_FILE_NAME, sheet_number=9,text_column_name='version_text_id',segment_column_name='version_segment_id')
