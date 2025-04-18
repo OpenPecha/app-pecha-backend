@@ -1,9 +1,8 @@
-from pydoc import text
 import uuid
 from uuid import UUID
 from typing import List, Optional
 
-from .texts_response_models import TextDetailsRequest, Section
+from .texts_response_models import Section
 
 from pydantic import Field
 from beanie import Document
@@ -63,9 +62,21 @@ class Text(Document):
         return await cls.find_one(cls.id == text_uuid)
     
     @classmethod
-    async def get_texts_by_ids(cls, text_ids: List[str]):
-        text_ids = [UUID(text_id) for text_id in text_ids]
-        return await cls.find({"_id": {"$in": text_ids}}).to_list()
+    async def get_texts_by_ids(cls, text_ids: List[str]) -> List["Text"]:
+        # Filter out non-UUID text_ids
+        valid_text_uuids = []
+        for text_id in text_ids:
+            try:
+                if text_id is not None:
+                    valid_text_uuids.append(UUID(text_id))
+            except ValueError:
+                # Skip invalid UUIDs
+                continue
+                
+        if not valid_text_uuids:
+            return []
+            
+        return await cls.find({"_id": {"$in": valid_text_uuids}}).to_list()
 
     @classmethod
     async def check_exists(cls, text_id: uuid.UUID) -> bool:

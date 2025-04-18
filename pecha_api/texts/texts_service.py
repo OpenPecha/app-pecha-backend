@@ -36,7 +36,7 @@ from pecha_api.config import get
 
 # These functions have been moved to the TextUtils class
 
-async def get_texts_by_term_id(term_id: str, skip: int, limit: int):
+async def get_texts_by_term_id(term_id: str, skip: int, limit: int) -> List[Text]:
     texts = await get_texts_by_term(term_id=term_id, skip=skip, limit=limit)
     text_list = [
         Text(
@@ -87,7 +87,7 @@ async def get_table_of_contents_by_text_id(text_id: str, skip: int, limit: int) 
     is_valid_text = await TextUtils.validate_text_exists(text_id=text_id)
     if not is_valid_text:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=ErrorConstants.TEXT_NOT_FOUND_MESSAGE)
-    text = await get_text_detail_by_id(text_id=text_id)
+    text = await TextUtils.get_text_detail_by_id(text_id=text_id)
     table_of_contents = await get_contents_by_id(text_id=text_id)
     table_of_contents = TextUtils.remove_segments_from_list_of_table_of_content(table_of_content=table_of_contents)
     return TableOfContentResponse(
@@ -108,11 +108,14 @@ async def get_text_details_by_text_id(text_id: str, text_details_request: TextDe
     is_valid_text = await TextUtils.validate_text_exists(text_id=text_id)
     if is_valid_text:
         text = await TextUtils.get_text_detail_by_id(text_id=text_id)
-        table_of_content = await get_table_of_content_by_content_id(content_id=text_details_request.content_id, skip=text_details_request.skip, limit=text_details_request.limit)
-        total_sections = await get_sections_count_of_table_of_content(content_id=text_details_request.content_id)
+        if text_details_request.segment_id is not None:
+            table_of_content = await TextUtils.get_table_of_content_id_and_section_number_by_segment_id(text_id=text_id, segment_id=text_details_request.segment_id)
+        else:
+            table_of_content = await get_table_of_content_by_content_id(content_id=text_details_request.content_id, skip=text_details_request.skip, limit=text_details_request.limit)
+        total_sections = await get_sections_count_of_table_of_content(content_id=table_of_content.id)
         if table_of_content is None:
             raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=ErrorConstants.TABLE_OF_CONTENT_NOT_FOUND_MESSAGE)
-        detail_table_of_content = await SegmentUtils.get_mapped_segment_content(table_of_content, version_id=text_details_request.version_id)
+        detail_table_of_content = await SegmentUtils.get_mapped_segment_content(table_of_content=table_of_content, version_id=text_details_request.version_id)
         return DetailTableOfContentResponse(
             text_detail=text,
             contents=[

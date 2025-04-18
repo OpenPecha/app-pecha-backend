@@ -1,5 +1,5 @@
 from uuid import UUID
-from typing import List, Optional
+from typing import List, Optional, Dict, Union
 from fastapi import HTTPException
 from starlette import status
 
@@ -12,7 +12,7 @@ from .texts_response_models import (
     TextSegment,
     Section
 )
-from .segments.segments_repository import get_segment_by_id, get_related_mapped_segments
+from .texts_repository import get_contents_by_id
 
 class TextUtils:
     """
@@ -209,3 +209,47 @@ class TextUtils:
         
         # Process individual TableOfContent object
         return process_table_of_content(table_of_content)
+
+    @staticmethod
+    async def get_table_of_content_id_and_section_number_by_segment_id(text_id: str, segment_id: str) -> TableOfContent:
+        """
+        Searches for a segment_id within all sections of table of contents for the given text_id.
+        Returns a TableOfContent object with only the section containing the segment_id.
+        
+        Args:
+            text_id: The ID of the text to search in
+            segment_id: The ID of the segment to search for
+            
+        Returns:
+            TableOfContent: A TableOfContent object with only the section containing the segment_id,
+                           or None if the segment is not found
+        """
+        table_of_contents = await get_contents_by_id(text_id=text_id)
+        # Recursive function to search for segment_id in sections
+        def find_section_with_segment(sections):
+            for section in sections:
+                # Check if segment_id exists in this section's segments
+                for segment in getattr(section, "segments", []):
+                    if getattr(segment, "segment_id", None) == segment_id:
+                        return section
+                        
+                # Check subsections recursively
+                if getattr(section, "sections", None):
+                    found_section = find_section_with_segment(section.sections)
+                    if found_section:
+                        return found_section
+            return None
+        
+        # Search through all table of contents
+        for content in table_of_contents:
+            found_section = find_section_with_segment(getattr(content, "sections", []))
+            if found_section:
+                # Create a new TableOfContent with only the found section
+                filtered_content = TableOfContent(
+                    id=str(content.id),
+                    text_id=content.text_id,
+                    sections=[found_section]  # Only include the section with the segment_id
+                )
+                return filtered_content
+                
+        return None  # Return None if segment not found in any section
