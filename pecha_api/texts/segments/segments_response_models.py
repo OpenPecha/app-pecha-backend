@@ -1,5 +1,5 @@
 from pydantic import BaseModel
-from typing import List
+from typing import List, Optional
 from .segments_models import Mapping
 
 
@@ -60,15 +60,15 @@ class SegmentInfosRequest(BaseModel):
     text_id: str
 
 class RelatedText(BaseModel):
-    commentaries: int
-    root_text: int
+    commentaries: Optional[int] = 0
+    root_text: Optional[int] = 0
 
 class Resources(BaseModel):
     sheets: int
 
 class SegmentInfos(BaseModel):
     segment_id: str
-    translations: int
+    translations: Optional[int] = 0
     related_text: RelatedText
     resources: Resources
 
