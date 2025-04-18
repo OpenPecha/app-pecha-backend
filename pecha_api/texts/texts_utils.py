@@ -238,7 +238,8 @@ class TextUtils:
                 if getattr(section, "sections", None):
                     found_section = find_section_with_segment(section.sections)
                     if found_section:
-                        return found_section
+                        # we need to return the outermost section and not the inner most section
+                        return section
             return None
         
         # Search through all table of contents
