@@ -6,11 +6,22 @@ import pytest
 from pecha_api.texts.segments.segments_service import (
     create_new_segment,
     get_translations_by_segment_id,
-    get_segment_details_by_id
+    get_segment_details_by_id,
+    get_commentaries_by_segment_id
 )
 from pecha_api.texts.segments.segments_utils import SegmentUtils
-from pecha_api.texts.segments.segments_response_models import CreateSegmentRequest, SegmentResponse, CreateSegment, \
-    ParentSegment, SegmentTranslationsResponse, SegmentTranslation, SegmentDTO
+from pecha_api.texts.segments.segments_response_models import (
+    CreateSegmentRequest,
+    SegmentResponse,
+    CreateSegment,
+    ParentSegment,
+    SegmentTranslationsResponse,
+    SegmentTranslation,
+    SegmentDTO,
+    MappingResponse,
+    SegmentCommentariesResponse,
+    SegmentCommentry
+)
 from pecha_api.error_contants import ErrorConstants
 
 @pytest.mark.asyncio
@@ -199,6 +210,60 @@ async def test_get_segment_details_by_id_not_found():
         assert exc_info.value.status_code == 404
         assert exc_info.value.detail == ErrorConstants.SEGMENT_NOT_FOUND_MESSAGE
 
+@pytest.mark.asyncio
+async def test_get_commentaries_by_segment_id_success():
+    parent_segment_id = "efb26a06-f373-450b-ba57-e7a8d4dd5b64"
+    parent_segment = ParentSegment(
+        segment_id=parent_segment_id,
+        content="parent_segment_content"
+    )
+    commentaries = [
+        SegmentDTO(
+            id=f"id_{i}",
+            text_id=f"text_id_{i}",
+            content=f"content_{i}",
+            mapping=[
+                MappingResponse(
+                    text_id=f"parent_text_id",
+                    segments=[
+                        parent_segment_id
+                    ]
+                )
+            ]
+        )
+        for i in range(1,6)
+    ]
+    filtered_commentaries = [
+        SegmentCommentry(
+            text_id=f"text_id_{i}",
+            title=f"title_{i}",
+            content=f"content_{i}",
+            language="en",
+            count=1
+        )
+        for i in range(1,6)
+    ]
+    with patch("pecha_api.texts.segments.segments_service.SegmentUtils.validate_segment_exists", new_callable=AsyncMock, return_value=True), \
+        patch("pecha_api.texts.segments.segments_service.get_segment_by_id", new_callable=AsyncMock) as mock_parent_segment, \
+        patch("pecha_api.texts.segments.segments_service.get_related_mapped_segments", new_callable=AsyncMock) as mock_get_related_mapped_segment, \
+        patch("pecha_api.texts.segments.segments_service.SegmentUtils.filter_segment_mapping_by_type_or_text_id", new_callable=AsyncMock) as mock_filtered_segment_mapping:
+        mock_parent_segment.return_value = parent_segment
+        mock_get_related_mapped_segment.return_value = commentaries
+        mock_filtered_segment_mapping.return_value = filtered_commentaries
+        response = await get_commentaries_by_segment_id(segment_id=parent_segment_id)
+        assert isinstance(response, SegmentCommentariesResponse)
+        assert response.parent_segment == parent_segment
+        assert response.commentaries[0].text_id == "text_id_1"
+        assert response.commentaries[0].content == "content_1"
+        assert response.commentaries[0].language == "en"
+        assert response.commentaries[0].count == 1
 
 
-
+@pytest.mark.asyncio
+async def test_get_commentaries_by_segment_id_not_found():
+    segment_id = "efb26a06-f373-450b-ba57-e7a8d4dd5b64"
+    with patch("pecha_api.texts.segments.segments_service.SegmentUtils.validate_segment_exists", new_callable=AsyncMock, return_value=False):
+        with pytest.raises(HTTPException) as exc_info:
+            await get_commentaries_by_segment_id(segment_id=segment_id)
+        assert exc_info.value.status_code == 404
+        assert exc_info.value.detail == ErrorConstants.SEGMENT_NOT_FOUND_MESSAGE
