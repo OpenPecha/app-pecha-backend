@@ -176,6 +176,7 @@ async def get_text_details_by_text_id(
             text_detail=text,
             content=detail_table_of_content,
             skip=text_details_request.skip,
+            current_section=min(total_sections,text_details_request.skip + 1),
             limit=text_details_request.limit,
             total=total_sections
         )

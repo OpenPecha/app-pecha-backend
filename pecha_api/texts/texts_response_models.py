@@ -59,6 +59,7 @@ class DetailTableOfContentResponse(BaseModel):
     text_detail: TextModel
     content: DetailTableOfContent
     skip: int
+    current_section: int
     limit: int
     total: int
 
