@@ -143,17 +143,20 @@ async def get_text_details_by_text_id(
 
     if is_valid_text:
         text = await TextUtils.get_text_detail_by_id(text_id=text_id)
-        if text_details_request.segment_id is not None:
-            table_of_content = await TextUtils.get_table_of_content_id_and_respective_section_by_segment_id(
-                text_id=text_id,
-                segment_id=text_details_request.segment_id
-            )
-        else:
+        table_of_content = None
+        if text_details_request.content_id is not None:
             table_of_content = await get_table_of_content_by_content_id(
                 content_id=text_details_request.content_id,
                 skip=text_details_request.skip,
                 limit=text_details_request.limit
             )
+        elif text_details_request.segment_id is not None:
+            table_of_content = await TextUtils.get_table_of_content_id_and_respective_section_by_segment_id(
+                text_id=text_id,
+                segment_id=text_details_request.segment_id
+            )
+            text_details_request.skip = max(0, table_of_content.sections[0].section_number - 1)
+            text_details_request.limit = 1
 
         if table_of_content is None:
             raise HTTPException(
@@ -173,6 +176,7 @@ async def get_text_details_by_text_id(
             text_detail=text,
             content=detail_table_of_content,
             skip=text_details_request.skip,
+            current_section=min(total_sections,text_details_request.skip + 1),
             limit=text_details_request.limit,
             total=total_sections
         )
