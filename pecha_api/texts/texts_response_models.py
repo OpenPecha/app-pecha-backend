@@ -88,7 +88,7 @@ class TableOfContentResponse(BaseModel):
     contents: List[TableOfContent]
 
 class TextDetailsRequest(BaseModel):
-    content_id: str
+    content_id: Optional[str] = None
     version_id: Optional[str] = None
     segment_id: Optional[str] = None
     skip: int = 0
