@@ -238,8 +238,8 @@ class TextUtils:
                 if getattr(section, "sections", None):
                     found_section = find_section_with_segment(section.sections)
                     if found_section:
-                        # we need to return the found section and not the whole main section
-                        return found_section
+                        # we need to return the main section
+                        return section
             return None
         
         # Search through all table of contents
