@@ -80,6 +80,7 @@ class SegmentInfosResponse(BaseModel):
 # segment's root mapping models
 
 class SegmentRootMapping(BaseModel):
+    segment_id: str
     text_id: str
     title: str
     content: str
