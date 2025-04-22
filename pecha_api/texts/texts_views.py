@@ -18,7 +18,8 @@ from .texts_response_models import (
     TextDetailsRequest,
     TableOfContent,
     TextModel,
-    TextVersionResponse
+    TextVersionResponse,
+    DetailTableOfContentResponse
 )
 
 oauth2_scheme = HTTPBearer()
