@@ -24,7 +24,8 @@ from .texts_response_models import (
     TextsCategoryResponse, 
     Text, 
     CreateTextRequest, 
-    TextDetailsRequest
+    TextDetailsRequest,
+    DetailTextMapping
 )
 from .texts_utils import TextUtils
 from ..users.users_service import verify_admin_access
@@ -34,8 +35,6 @@ from .segments.segments_utils import SegmentUtils
 from typing import List
 from pecha_api.config import get
 
-
-# These functions have been moved to the TextUtils class
 
 async def get_texts_by_term_id(term_id: str, skip: int, limit: int) -> List[Text]:
     texts = await get_texts_by_term(term_id=term_id, skip=skip, limit=limit)
@@ -54,10 +53,6 @@ async def get_texts_by_term_id(term_id: str, skip: int, limit: int) -> List[Text
         for text in texts
     ]
     return text_list
-
-
-
-# This function has been moved to TextUtils class
 
 
 async def get_text_by_text_id_or_term(
@@ -171,6 +166,10 @@ async def get_text_details_by_text_id(
         )   
         return DetailTableOfContentResponse(
             text_detail=text,
+            mapping=DetailTextMapping(
+                segment_id=text_details_request.segment_id,
+                section_id=text_details_request.section_id
+            ),
             content=detail_table_of_content,
             skip=text_details_request.skip,
             current_section=min(total_sections,text_details_request.skip + 1),
