@@ -903,3 +903,20 @@ async def test_get_text_details_by_text_id_with_content_id_and_section_id_only_s
                 )
                 for i in range(1,6)
             ]
+
+@pytest.mark.asyncio
+async def test_get_text_details_by_text_id_empty_text_id():
+    with patch("pecha_api.texts.texts_service.TextUtils.validate_text_exists", new_callable=AsyncMock, return_value=False):
+        with pytest.raises(HTTPException) as exec_info:
+            await get_text_details_by_text_id(text_id=None, text_details_request=TextDetailsRequest())
+        assert exec_info.value.status_code == 400
+        assert exec_info.value.detail == ErrorConstants.TEXT_OR_TERM_NOT_FOUND_MESSAGE
+
+@pytest.mark.asyncio
+async def test_get_text_details_by_text_id_invalid_text_id():
+    with patch("pecha_api.texts.texts_service.TextUtils.validate_text_exists", new_callable=AsyncMock, return_value=False):
+        with pytest.raises(HTTPException) as exec_info:
+            await get_text_details_by_text_id(text_id="invalid_id", text_details_request=TextDetailsRequest())
+        assert exec_info.value.status_code == 404
+        assert exec_info.value.detail == ErrorConstants.TEXT_NOT_FOUND_MESSAGE
+

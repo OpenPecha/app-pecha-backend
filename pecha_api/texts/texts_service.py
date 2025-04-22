@@ -108,9 +108,6 @@ async def get_text_details_by_text_id(
             detail=ErrorConstants.TEXT_OR_TERM_NOT_FOUND_MESSAGE
         )
 
-    if text_details_request.content_id == "":
-        text_details_request.content_id = None
-
     is_valid_text = await TextUtils.validate_text_exists(text_id=text_id)
 
     if text_details_request.version_id is not None:
