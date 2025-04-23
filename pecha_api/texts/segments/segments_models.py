@@ -24,7 +24,7 @@ class Segment(Document):
 
     @classmethod
     async def get_segment_by_id(cls, segment_id: str) -> Optional["Segment"]:
-        return await cls.find_one(cls.id == uuid.UUID(segment_id))
+        return await cls.find_one({"_id": uuid.UUID(segment_id)})
 
     @classmethod
     async def get_segment_by_id_and_text_id(cls, segment_id: uuid.UUID, text_id: str) -> Optional["Segment"]:
