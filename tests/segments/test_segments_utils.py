@@ -273,3 +273,10 @@ async def test_mapped_segment_content_for_table_of_content_without_version_id_su
         patch("pecha_api.texts.segments.segments_utils.get_related_mapped_segments", new_callable=AsyncMock, return_value=related_mapped_segments):
         response = await SegmentUtils.get_mapped_segment_content_for_table_of_content(table_of_content=table_of_content, version_id=None)
         assert isinstance(response, DetailTableOfContent)
+        assert response.text_id == "5f3c2e9d-9b7a-4f5e-8e2a-6a8b7c9d4e0f"
+        assert response.sections[0].title == "title"
+        assert response.sections[0].section_number == 1
+        assert response.sections[0].parent_id is None
+        assert response.sections[0].segments[0].segment_id == "anju6a06-f373-a50b-ba57-e7a8d4dd5555"
+        assert response.sections[0].segments[0].segment_number == 1
+        assert response.sections[0].segments[0].content == "content"
