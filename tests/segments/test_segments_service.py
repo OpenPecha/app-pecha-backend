@@ -3,11 +3,14 @@ from unittest.mock import AsyncMock, patch
 from fastapi import HTTPException
 from pecha_api.texts.segments.segments_models import Segment
 import pytest
+from typing import List
 from pecha_api.texts.segments.segments_service import (
     create_new_segment,
     get_translations_by_segment_id,
     get_segment_details_by_id,
-    get_commentaries_by_segment_id
+    get_commentaries_by_segment_id,
+    get_infos_by_segment_id,
+    get_root_text_mapping_by_segment_id
 )
 from pecha_api.texts.segments.segments_utils import SegmentUtils
 from pecha_api.texts.segments.segments_response_models import (
@@ -20,7 +23,13 @@ from pecha_api.texts.segments.segments_response_models import (
     SegmentDTO,
     MappingResponse,
     SegmentCommentariesResponse,
-    SegmentCommentry
+    SegmentCommentry,
+    SegmentInfosResponse,
+    SegmentInfos,
+    RelatedText,
+    Resources,
+    SegmentRootMappingResponse,
+    SegmentRootMapping
 )
 from pecha_api.error_contants import ErrorConstants
 
@@ -269,3 +278,83 @@ async def test_get_commentaries_by_segment_id_not_found():
             await get_commentaries_by_segment_id(segment_id=segment_id)
         assert exc_info.value.status_code == 404
         assert exc_info.value.detail == ErrorConstants.SEGMENT_NOT_FOUND_MESSAGE
+
+@pytest.mark.asyncio
+async def test_get_infos_by_segment_id_success():
+    segment_id = "efb26a06-f373-450b-ba57-e7a8d4dd5b64"
+    related_mapped_segments = [
+        SegmentDTO(
+            id=f"id_{i}",
+            text_id=f"text_id_{i}",
+            content=f"content_{i}",
+            mapping=[]
+        )
+        for i in range(1,6)
+    ]
+    with patch("pecha_api.texts.segments.segments_service.SegmentUtils.validate_segment_exists", new_callable=AsyncMock, return_value=True), \
+        patch("pecha_api.texts.segments.segments_service.get_related_mapped_segments", new_callable=AsyncMock) as mock_get_related_mapped_segment, \
+        patch("pecha_api.texts.segments.segments_service.SegmentUtils.get_count_of_each_commentary_and_version", new_callable=AsyncMock, return_value={"version": 1, "commentary": 2}), \
+        patch("pecha_api.texts.segments.segments_service.SegmentUtils.get_root_mapping_count", new_callable=AsyncMock, return_value=3):
+        mock_get_related_mapped_segment.return_value = related_mapped_segments
+        response = await get_infos_by_segment_id(segment_id=segment_id)
+        assert isinstance(response, SegmentInfosResponse)
+        assert isinstance(response.segment_infos, SegmentInfos)
+        assert isinstance(response.segment_infos.related_text, RelatedText)
+        assert isinstance(response.segment_infos.resources, Resources)
+        assert response.segment_infos.segment_id == segment_id
+        assert response.segment_infos.translations == 1
+        assert response.segment_infos.related_text.commentaries == 2
+        assert response.segment_infos.related_text.root_text == 3
+
+@pytest.mark.asyncio
+async def test_get_infos_by_segment_id_invalid_segment_id():
+    segment_id = "efb26a06-f373-450b-ba57-e7a8d4dd5b64"
+    with patch("pecha_api.texts.segments.segments_service.SegmentUtils.validate_segment_exists", new_callable=AsyncMock, return_value=False):
+        with pytest.raises(HTTPException) as exc_info:
+            await get_infos_by_segment_id(segment_id=segment_id)
+        assert exc_info.value.status_code == 404
+        assert exc_info.value.detail == ErrorConstants.SEGMENT_NOT_FOUND_MESSAGE
+
+@pytest.mark.asyncio
+async def test_get_root_text_mapping_by_segment_id_success():
+    segment_id = "efb26a06-f373-450b-ba57-e7a8d4dd5b64"
+    with patch("pecha_api.texts.segments.segments_service.SegmentUtils.validate_segment_exists", new_callable=AsyncMock, return_value=True), \
+        patch("pecha_api.texts.segments.segments_service.get_segment_by_id", new_callable=AsyncMock) as mock_get_segment_by_id, \
+        patch("pecha_api.texts.segments.segments_service.SegmentUtils.get_segment_root_mapping_details", new_callable=AsyncMock) as mock_get_segment_root_mapping_details:
+        mock_get_segment_by_id.return_value = type('SegmentDTO', (), {
+            'id': segment_id,
+            'text_id': "efb26a06-f373-450b-ba57-e7a8d4dd5b64",
+            'content': "test content",
+            'mapping': []
+        })
+        mock_get_segment_root_mapping_details.return_value = [
+            SegmentRootMapping(
+                segment_id=f"id_{i}",
+                text_id=f"text_id_{i}",
+                title=f"title_{i}",
+                content=f"content_{i}",
+                language=f"language_{i}"
+            )
+            for i in range(1,6)
+        ]
+        response = await get_root_text_mapping_by_segment_id(segment_id=segment_id)
+        assert isinstance(response, SegmentRootMappingResponse)
+        assert isinstance(response.parent_segment, ParentSegment)
+        assert isinstance(response.segment_root_mapping[0], SegmentRootMapping)
+        assert response.parent_segment.segment_id == segment_id
+        assert response.parent_segment.content == "test content"
+        assert response.segment_root_mapping[0].segment_id == "id_1"
+        assert response.segment_root_mapping[0].content == "content_1"
+        assert response.segment_root_mapping[0].language == "language_1"
+        assert response.segment_root_mapping[0].title == "title_1"
+        assert response.segment_root_mapping[0].text_id == "text_id_1"
+
+@pytest.mark.asyncio
+async def test_get_root_text_mapping_by_segment_id_invalid_segment_id():
+    segment_id = "efb26a06-f373-450b-ba57-e7a8d4dd5b64"
+    with patch("pecha_api.texts.segments.segments_service.SegmentUtils.validate_segment_exists", new_callable=AsyncMock, return_value=False):
+        with pytest.raises(HTTPException) as exc_info:
+            await get_root_text_mapping_by_segment_id(segment_id=segment_id)
+        assert exc_info.value.status_code == 404
+        assert exc_info.value.detail == ErrorConstants.SEGMENT_NOT_FOUND_MESSAGE
+        

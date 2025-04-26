@@ -1,4 +1,4 @@
-from typing import Dict, List, Optional
+from typing import Dict, List, Optional, Union
 from uuid import UUID
 
 from fastapi import HTTPException
@@ -78,7 +78,7 @@ class SegmentUtils:
     @staticmethod
     async def filter_segment_mapping_by_type_or_text_id(
         segments: List[SegmentDTO], type: str, text_id: Optional[str] = None
-    ) -> List[SegmentDTO]:
+    ) -> List[Union[SegmentCommentry, SegmentTranslation]]:
         """
         Filter segment mappings by type and optionally by text_id.
         """
