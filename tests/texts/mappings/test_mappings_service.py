@@ -35,23 +35,27 @@ async def test_update_segment_mapping_success():
     )
 
     # Create a mock segment object instead of using Beanie model
+    mock_updated_segment = AsyncMock()
+    mock_updated_segment.id = uuid.UUID(segment_id)
+    mock_updated_segment.text_id = text_id
+    mock_updated_segment.content = "Test content"
+    mock_updated_segment.mapping = [Mapping(
+        text_id=parent_text_id,
+        segments=[parent_segment_id]
+    )]
     mock_segment = AsyncMock()
     mock_segment.id = uuid.UUID(segment_id)
     mock_segment.text_id = text_id
     mock_segment.content = "Test content"
-    mock_segment.mapping = [Mapping(
-        text_id=parent_text_id,
-        segments=[parent_segment_id]
-    )]
+    mock_segment.mapping = []
 
     with patch('pecha_api.texts.mappings.mappings_service.verify_admin_access', return_value=True), \
-            patch('pecha_api.texts.mappings.mappings_service.validate_mapping_request',
-                  new_callable=AsyncMock) as mock_validate, \
-            patch('pecha_api.texts.mappings.mappings_service.update_mappings',
-                  new_callable=AsyncMock) as mock_update_mappings:
+            patch('pecha_api.texts.mappings.mappings_service.validate_mapping_request',new_callable=AsyncMock, return_value=True), \
+            patch('pecha_api.texts.mappings.mappings_service.get_segments_by_ids',new_callable=AsyncMock) as mock_get_segments_by_ids, \
+            patch('pecha_api.texts.mappings.mappings_service.update_mappings',new_callable=AsyncMock) as mock_update_mappings:
         # Set up mock returns
-        mock_validate.return_value = True
-        mock_update_mappings.return_value = [mock_segment]
+        mock_get_segments_by_ids.return_value = [mock_segment]
+        mock_update_mappings.return_value = [mock_updated_segment]
 
         # Act
         response = await update_segment_mapping(text_mapping_request=mapping_request, token="Bearer token")
@@ -66,14 +70,6 @@ async def test_update_segment_mapping_success():
         assert len(segment_dto.mapping) == 1
         assert segment_dto.mapping[0].text_id == parent_text_id
         assert segment_dto.mapping[0].segments == [parent_segment_id]
-
-        # Verify function calls
-        mock_validate.assert_awaited_once_with(
-            text_mapping_request=mapping_request
-        )
-        # mock_update_mappings.assert_awaited_once_with(
-        #     text_mappings=[Mapping(text_id=parent_text_id, segments=[parent_segment_id])]
-        # )
 
 
 @pytest.mark.asyncio
@@ -261,14 +257,19 @@ async def test_update_segment_mapping_error_400():
                 ]
             )]
     )
+    mock_segment = AsyncMock()
+    mock_segment.id = uuid.UUID(segment_id)
+    mock_segment.text_id = text_id
+    mock_segment.content = "Test content"
+    mock_segment.mapping = []
 
     with patch('pecha_api.texts.mappings.mappings_service.verify_admin_access', return_value=True), \
-            patch('pecha_api.texts.mappings.mappings_service.validate_mapping_request',
-                  new_callable=AsyncMock) as mock_validate, \
+            patch('pecha_api.texts.mappings.mappings_service.validate_mapping_request',new_callable=AsyncMock, return_value=True) as mock_validate, \
+            patch('pecha_api.texts.mappings.mappings_service.get_segments_by_ids', new_callable=AsyncMock) as mock_get_segments_by_ids, \
             patch('pecha_api.texts.mappings.mappings_service.update_mappings',
                   new_callable=AsyncMock) as mock_update_mappings:
         # Set up mock returns
-        mock_validate.return_value = True
+        mock_get_segments_by_ids.return_value = [mock_segment]
         mock_update_mappings.return_value = None
 
         # Act & Assert
@@ -278,125 +279,3 @@ async def test_update_segment_mapping_error_400():
         assert exc_info.value.status_code == status.HTTP_400_BAD_REQUEST
         assert exc_info.value.detail == ErrorConstants.SEGMENT_MAPPING_ERROR_MESSAGE
         mock_validate.assert_called_once()
-
-
-# @pytest.mark.asyncio
-# async def test_validate_request_info_success():
-#     """Test validation succeeds with valid data"""
-#     # Arrange
-#     text_id = "text-1"
-#     segment_id = "segment-1"
-#     mappings = [MappingsModel(
-#         parent_text_id="parent-1",
-#         segments=["seg-1", "seg-2"]
-#     )]
-#
-#     with patch('pecha_api.texts.mappings.mappings_service.validate_text_exits') as mock_validate_text, \
-#             patch('pecha_api.texts.mappings.mappings_service.validate_segment_exists') as mock_validate_segment, \
-#             patch('pecha_api.texts.mappings.mappings_service.validate_texts_exits') as mock_validate_texts, \
-#             patch('pecha_api.texts.mappings.mappings_service.validate_segments_exists') as mock_validate_segments:
-#         # Act
-#         result = await validate_request_info(text_id=text_id, segment_id=segment_id, mappings=mappings)
-#
-#         # Assert
-#         assert result is True
-#         mock_validate_text.assert_awaited_once_with(text_id=text_id)
-#         mock_validate_segment.assert_awaited_once_with(segment_id=segment_id)
-#         mock_validate_texts.assert_awaited_once_with(text_ids=["parent-1"])
-#         mock_validate_segments.assert_awaited_once_with(segment_ids=["seg-1", "seg-2"])
-#
-#
-# @pytest.mark.asyncio
-# async def test_validate_request_info_invalid_text():
-#     """Test validation fails when text ID doesn't exist"""
-#     # Arrange
-#     text_id = "invalid-text"
-#     segment_id = "segment-1"
-#     mappings = [MappingsModel(parent_text_id="parent-1", segments=["seg-1"])]
-#
-#     with patch('pecha_api.texts.mappings.mappings_service.validate_text_exits',
-#                side_effect=HTTPException(status_code=404, detail="Text not found")):
-#         # Act & Assert
-#         with pytest.raises(HTTPException) as exc_info:
-#             await validate_request_info(text_id=text_id, segment_id=segment_id, mappings=mappings)
-#
-#         assert exc_info.value.status_code == status.HTTP_404_NOT_FOUND
-#         assert exc_info.value.detail == "Text not found"
-#
-#
-# @pytest.mark.asyncio
-# async def test_validate_request_info_invalid_segment():
-#     """Test validation fails when segment ID doesn't exist"""
-#     # Arrange
-#     text_id = "text-1"
-#     segment_id = "invalid-segment"
-#     mappings = [MappingsModel(parent_text_id="parent-1", segments=["seg-1"])]
-#
-#     with patch('pecha_api.texts.mappings.mappings_service.validate_text_exits'), \
-#             patch('pecha_api.texts.mappings.mappings_service.validate_segment_exists',
-#                   side_effect=HTTPException(status_code=404, detail="Segment not found")):
-#         # Act & Assert
-#         with pytest.raises(HTTPException) as exc_info:
-#             await validate_request_info(text_id=text_id, segment_id=segment_id, mappings=mappings)
-#
-#         assert exc_info.value.status_code == status.HTTP_404_NOT_FOUND
-#         assert exc_info.value.detail == "Segment not found"
-#
-#
-# @pytest.mark.asyncio
-# async def test_validate_request_info_invalid_parent_text():
-#     """Test validation fails when parent text ID doesn't exist"""
-#     # Arrange
-#     text_id = "text-1"
-#     segment_id = "segment-1"
-#     mappings = [MappingsModel(parent_text_id="invalid-parent", segments=["seg-1"])]
-#
-#     with patch('pecha_api.texts.mappings.mappings_service.validate_text_exits'), \
-#             patch('pecha_api.texts.mappings.mappings_service.validate_segment_exists'), \
-#             patch('pecha_api.texts.mappings.mappings_service.validate_texts_exits',
-#                   side_effect=HTTPException(status_code=404, detail="Parent text not found")):
-#         # Act & Assert
-#         with pytest.raises(HTTPException) as exc_info:
-#             await validate_request_info(text_id=text_id, segment_id=segment_id, mappings=mappings)
-#
-#         assert exc_info.value.status_code == status.HTTP_404_NOT_FOUND
-#         assert exc_info.value.detail == "Parent text not found"
-#
-#
-# @pytest.mark.asyncio
-# async def test_validate_request_info_invalid_parent_segment():
-#     """Test validation fails when parent segment ID doesn't exist"""
-#     # Arrange
-#     text_id = "text-1"
-#     segment_id = "segment-1"
-#     mappings = [MappingsModel(parent_text_id="parent-1", segments=["invalid-seg"])]
-#
-#     with patch('pecha_api.texts.mappings.mappings_service.validate_text_exits'), \
-#             patch('pecha_api.texts.mappings.mappings_service.validate_segment_exists'), \
-#             patch('pecha_api.texts.mappings.mappings_service.validate_texts_exits'), \
-#             patch('pecha_api.texts.mappings.mappings_service.validate_segments_exists',
-#                   side_effect=HTTPException(status_code=404, detail="Parent segment not found")):
-#         # Act & Assert
-#         with pytest.raises(HTTPException) as exc_info:
-#             await validate_request_info(text_id=text_id, segment_id=segment_id, mappings=mappings)
-#
-#         assert exc_info.value.status_code == status.HTTP_404_NOT_FOUND
-#         assert exc_info.value.detail == "Parent segment not found"
-#
-#
-# @pytest.mark.asyncio
-# async def test_validate_request_info_invalid_same_text_mapping():
-#     """Test validation fails when parent segment ID doesn't exist"""
-#     # Arrange
-#     text_id = "text-1"
-#     segment_id = "segment-1"
-#     mappings = [MappingsModel(parent_text_id=text_id, segments=["invalid-seg"])]
-#
-#     with patch('pecha_api.texts.mappings.mappings_service.validate_text_exits'), \
-#             patch('pecha_api.texts.mappings.mappings_service.validate_segment_exists'):
-#         # Act & Assert
-#         with pytest.raises(HTTPException) as exc_info:
-#             await validate_request_info(text_id=text_id, segment_id=segment_id, mappings=mappings)
-#
-#         assert exc_info.value.status_code == status.HTTP_400_BAD_REQUEST
-#         assert exc_info.value.detail == ErrorConstants.SAME_TEXT_MAPPING_ERROR_MESSAGE

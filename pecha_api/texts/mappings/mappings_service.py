@@ -1,42 +1,70 @@
 import asyncio
-from typing import List
+from typing import List, Dict
 
 from fastapi import HTTPException
 from starlette import status
 
 from pecha_api.error_contants import ErrorConstants
-from .mappings_repository import update_mappings
-from .mappings_response_models import TextMappingRequest, MappingsModel
+from .mappings_repository import update_mappings, get_segments_by_ids
+from .mappings_response_models import TextMappingRequest, MappingsModel, TextMapping
+from ..segments.segments_models import Segment, Mapping
 from ..segments.segments_response_models import SegmentResponse, SegmentDTO, MappingResponse
 from ..segments.segments_utils import SegmentUtils
 from ..texts_utils import TextUtils
 from pecha_api.users.users_service import verify_admin_access
 
 
+# Mappings Service
+# ===============
+
 async def update_segment_mapping(text_mapping_request: TextMappingRequest, token: str) -> SegmentResponse:
-    # validate if the user is admin or not
-    is_admin = verify_admin_access(token=token)
-    if is_admin:
-        # validate the text id
-        await validate_mapping_request(
-           text_mapping_request=text_mapping_request
+    # Verify admin access
+    is_admin: bool = verify_admin_access(token=token)
+    if not is_admin:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail=ErrorConstants.ADMIN_ERROR_MESSAGE
         )
-        updated_segments = await update_mappings(text_mappings=text_mapping_request.text_mappings)
-        if updated_segments:
-            # Convert all segments to SegementDTO
-            segment_dtos = [
-                SegmentDTO(
-                    id=str(segment.id),
-                    text_id=segment.text_id,
-                    content=segment.content,
-                    mapping=[MappingResponse(**mapping.model_dump()) for mapping in segment.mapping]
-                ) for segment in updated_segments
-            ]
-            return SegmentResponse(segments=segment_dtos)
-        else:
-            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=ErrorConstants.SEGMENT_MAPPING_ERROR_MESSAGE)
+    
+    # Validate mapping request
+    await validate_mapping_request(text_mapping_request=text_mapping_request)
+    
+    # Process segments
+    segment_dict: Dict[str, List[Mapping]] = get_segments_from_text_mapping(
+        text_mappings=text_mapping_request.text_mappings
+    )
+    segment_ids: List[str] = list(segment_dict.keys())
+    
+    # Fetch and validate segments
+    segments: List[Segment] = await get_segments_by_ids(segment_ids=segment_ids)
+    if not segments:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="No valid segments found to update"
+        )
+    
+    # Update segments
+    segments_to_update: List[Segment] = await construct_update_segments(
+        segments=segments,
+        update_segment_dict=segment_dict
+    )
+    updated_segments: List[Segment] = await update_mappings(segments=segments_to_update)
+    if updated_segments:
+        # Convert all segments to SegmentDTO
+        segment_dtos = [
+            SegmentDTO(
+                id=str(segment.id),
+                text_id=segment.text_id,
+                content=segment.content,
+                mapping=[MappingResponse(**mapping.model_dump()) for mapping in segment.mapping]
+            ) for segment in updated_segments
+        ]
+        return SegmentResponse(segments=segment_dtos)
     else:
-        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail=ErrorConstants.ADMIN_ERROR_MESSAGE)
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=ErrorConstants.SEGMENT_MAPPING_ERROR_MESSAGE
+        )
 
 async def validate_mapping_request(text_mapping_request: TextMappingRequest) -> bool:
     tasks = [
@@ -59,6 +87,65 @@ async def validate_mapping_request(text_mapping_request: TextMappingRequest) -> 
         pass
 
     return True
+
+def _merge_segment_mappings(existing_mapping: Mapping, new_mapping: Mapping) -> Mapping:
+    # Create a set of unique segments and update existing mapping
+    unique_segments = set(existing_mapping.segments + new_mapping.segments)
+    existing_mapping.segments = list(unique_segments)
+    return existing_mapping
+
+def _get_existing_mappings(segment: Segment) -> Dict[str, Mapping]:
+    # Create a dictionary of existing mappings by text_id for easy lookup
+    return {m.text_id: m for m in (segment.mapping or [])}
+
+def _process_new_mappings(new_mappings: List[Mapping], existing_mappings: Dict[str, Mapping]) -> List[Mapping]:
+    merged = []
+    processed_text_ids = set()
+    
+    # Process new mappings
+    for new_mapping in new_mappings:
+        processed_text_ids.add(new_mapping.text_id)
+        if new_mapping.text_id in existing_mappings:
+            merged.append(_merge_segment_mappings(
+                existing_mappings[new_mapping.text_id],
+                new_mapping
+            ))
+        else:
+            merged.append(new_mapping)
+    
+    # Add unprocessed existing mappings
+    merged.extend(
+        mapping for text_id, mapping in existing_mappings.items()
+        if text_id not in processed_text_ids
+    )
+    
+    return merged
+
+async def construct_update_segments(segments: List[Segment], update_segment_dict: Dict[str, List[Mapping]]) -> List[Segment]:
+    updated_segments = []
+    
+    for segment in segments:
+        segment_id = str(segment.id)
+        if segment_id in update_segment_dict:
+            existing_mappings = _get_existing_mappings(segment)
+            new_mappings = update_segment_dict[segment_id]
+            
+            segment.mapping = _process_new_mappings(new_mappings, existing_mappings)
+            updated_segments.append(segment)
+            
+    return updated_segments
+
+def get_segments_from_text_mapping(text_mappings: List[TextMapping]) -> Dict[str, List[Mapping]]:
+    segment_dict = {}
+    for text_mapping in text_mappings:
+        # Convert MappingsModel to Mapping objects
+        mappings = [
+            Mapping(text_id=m.parent_text_id, segments=m.segments)
+            for m in text_mapping.mappings
+        ]
+        # Ensure segment_id is stored as string
+        segment_dict[str(text_mapping.segment_id)] = mappings
+    return segment_dict
 
 async def validate_request_info(text_id: str, segment_id: str, mappings: List[MappingsModel]) -> bool:
     # validate the text id
