@@ -14,6 +14,7 @@ async def get_segments_by_ids(segment_ids: List[str]) -> List[Segment]:
     return await Segment.get_segments_by_ids(segment_ids=segment_ids)
 
 async def update_mappings(segments: List[Segment]) -> List[Segment]:
-    # Save all segments in bulk
-    await Segment.save_all(segments)
+    # Update all segments in bulk
+    for segment in segments:
+        await segment.save()
     return segments

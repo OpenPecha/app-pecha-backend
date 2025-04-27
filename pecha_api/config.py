@@ -10,7 +10,7 @@ DEFAULTS = dict(
     BASE_URL="https://pech.org",
     CLIENT_ID="7SPZ8BDNHuAzdqy1YPdkHh2sxdZNRLXy",
     COMPRESSED_QUALITY=80,
-    DATABASE_URL="postgresql://admin:password@localhost:5434/pecha",
+    DATABASE_URL="postgresql://admin:pechaAdmin@localhost:5434/pecha",
     DEFAULT_LANGUAGE="en",
     DEFAULT_PAGE_SIZE=10,
     DEPLOYMENT_MODE="DEBUG",
@@ -22,7 +22,7 @@ DEFAULTS = dict(
     JWT_SECRET_KEY="oJvUxI5jY7nXaD4sC_kFGoM0_qAuewVxg3p6F8CH-tI",
     MAX_FILE_SIZE_MB=1,
 
-    MONGO_CONNECTION_STRING="mongodb://admin:password@localhost:27017/",
+    MONGO_CONNECTION_STRING="mongodb://admin:pechaAdmin@localhost:27017/",
 
     MONGO_DATABASE_NAME="pecha",
     REFRESH_TOKEN_EXPIRE_DAYS=30,

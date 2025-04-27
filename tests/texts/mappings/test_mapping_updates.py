@@ -7,7 +7,7 @@ from pecha_api.texts.mappings.mappings_service import (
     _merge_segment_mappings,
     _get_existing_mappings,
     _process_new_mappings,
-    construct_update_segments
+    _construct_update_segments
 )
 from pecha_api.texts.segments.segments_models import Mapping, Segment
 
@@ -149,7 +149,7 @@ async def test_construct_update_segments(mock_segment):
     }
 
     # Act
-    result = await construct_update_segments(segments, update_dict)
+    result = await _construct_update_segments(segments, update_dict)
 
     # Assert
     assert len(result) == 1
