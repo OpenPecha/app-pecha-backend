@@ -42,6 +42,7 @@ class Text(Document):
     title: str
     language: str
     parent_id: Optional[str] = None
+    group_id: str
     is_published: bool
     created_date: str
     updated_date: str
