@@ -108,8 +108,8 @@ class Text(Document):
         return texts
     
     @classmethod
-    async def get_versions_by_text_id(cls, text_id: str, skip: int, limit: int) -> List["Text"]:
-        query = {"parent_id": text_id, "type": "version"}
+    async def get_versions_by_group_id(cls, group_id: str, skip: int, limit: int) -> List["Text"]:
+        query = {"group_id": group_id, "type": "version"}
         texts = (
             await cls.find(query)
             .skip(skip)

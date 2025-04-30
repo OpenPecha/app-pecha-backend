@@ -7,7 +7,7 @@ from pecha_api.error_contants import ErrorConstants
 from pecha_api.utils import Utils
 from .texts_repository import (
     get_texts_by_term, 
-    get_versions_by_id, 
+    get_versions_text_by_group_id, 
     create_text,
     create_table_of_content_detail,
     get_contents_by_id, 
@@ -179,11 +179,11 @@ async def get_text_details_by_text_id(
 
 
 
-async def get_versions_by_text_id(text_id: str, skip: int, limit: int) -> TextVersionResponse:
-    root_text = await TextUtils.get_text_detail_by_id(text_id=text_id)
+async def get_versions_by_group_id(group_id: str, skip: int, limit: int) -> TextVersionResponse:
+    root_text = await TextUtils.get_text_detail_by_id(text_id=group_id)
     if root_text is None:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=ErrorConstants.TEXT_NOT_FOUND_MESSAGE)
-    versions = await get_versions_by_id(text_id=text_id, skip=skip, limit=limit)
+    versions = await get_versions_text_by_group_id(group_id=group_id, skip=skip, limit=limit)
     list_of_version = [
         TextVersion(
             id=str(version.id),

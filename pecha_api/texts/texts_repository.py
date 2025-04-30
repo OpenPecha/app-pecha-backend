@@ -60,8 +60,8 @@ async def check_all_text_exists(text_ids: List[UUID]) -> bool:
 async def get_texts_by_term(term_id: str, language: str, skip: int, limit: int) -> List[Text]:
     return await Text.get_texts_by_term_id(term_id=term_id, language=language, skip=skip, limit=limit)
 
-async def get_versions_by_id(text_id: str, skip: int, limit: int) -> List[Text]:
-    return await Text.get_versions_by_text_id(text_id=text_id, skip=skip, limit=limit)
+async def get_versions_text_by_group_id(group_id: str, skip: int, limit: int) -> List[Text]:
+    return await Text.get_versions_by_group_id(group_id=group_id, skip=skip, limit=limit)
 
 
 async def create_text(create_text_request: CreateTextRequest) -> Text:
