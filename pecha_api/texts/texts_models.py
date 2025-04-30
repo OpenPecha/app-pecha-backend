@@ -98,7 +98,7 @@ class Text(Document):
     
     @classmethod
     async def get_texts_by_term_id(cls, term_id: str, language: str, skip: int, limit: int) -> List["Text"]:
-        query = {"categories": term_id, "type": {"$ne": "version"}, "language": language}
+        query = {"categories": term_id, "$or": [{"language": language}, {"type": "commentary"}]}
         texts = (
             await cls.find(query)
             .skip(skip)
