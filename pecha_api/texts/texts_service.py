@@ -36,8 +36,8 @@ from typing import List
 from pecha_api.config import get
 
 
-async def get_texts_by_term_id(term_id: str, skip: int, limit: int) -> List[Text]:
-    texts = await get_texts_by_term(term_id=term_id, skip=skip, limit=limit)
+async def get_texts_by_term_id(term_id: str, language: str, skip: int, limit: int) -> List[Text]:
+    texts = await get_texts_by_term(term_id=term_id, language=language, skip=skip, limit=limit)
     text_list = [
         Text(
             id=str(text.id),
@@ -67,7 +67,7 @@ async def get_text_by_text_id_or_term(
 
     if term_id is not None:
         term = await get_term(term_id=term_id, language=language)
-        texts = await get_texts_by_term_id(term_id=term_id, skip=skip, limit=limit)
+        texts = await get_texts_by_term_id(term_id=term_id, language=language,skip=skip, limit=limit)
         return TextsCategoryResponse(
             term=term,
             texts=texts,
