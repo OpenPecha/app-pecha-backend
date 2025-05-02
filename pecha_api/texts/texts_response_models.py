@@ -118,8 +118,8 @@ class TextVersion(BaseModel):
     published_by: str
 
 class TextVersionResponse(BaseModel):
-    text: TextModel
-    versions: List[TextVersion]
+    text: Optional[TextModel] = None
+    versions: Optional[List[TextVersion]] = None
 
 # Texts Category Response Models
 class Text(BaseModel):

@@ -224,20 +224,7 @@ async def get_text_list_by_group_id(group_id: str, language: str, skip: int, lim
         for version in versions
     ]
     return TextVersionResponse(
-        text = TextModel(
-            id=str(root_text.id),
-            title=root_text.title,
-            parent_id=root_text.parent_id,
-            language=root_text.language,
-            type=root_text.type,
-            group_id=root_text.group_id,
-            categories=root_text.categories,
-            is_published=root_text.is_published,
-            created_date=root_text.created_date,
-            updated_date=root_text.updated_date,
-            published_date=root_text.published_date,
-            published_by=root_text.published_by
-        ),
+        text=root_text,
         versions=list_of_version
     )
 
