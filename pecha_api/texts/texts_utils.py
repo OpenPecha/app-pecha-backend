@@ -276,7 +276,7 @@ class TextUtils:
         return filtered_text
     
     @staticmethod
-    async def filter_text_base_on_group_id_type(texts: List[TextModel]) -> Dict[str, Union[TextModel, List[TextModel]]]:
+    async def filter_text_base_on_group_id_type(texts: List[TextModel], language: str) -> Dict[str, Union[TextModel, List[TextModel]]]:
         '''
             This method filters the texts base on the group_id type.
             If the group_id type is root_text then the text with respective group_id will be consider as root_text
@@ -285,7 +285,7 @@ class TextUtils:
         filtere_text = {}
         commentary = []
         for text in texts:
-            if (text.group_id == "7e21b506-6891-4d8d-8b0a-b5d694102d28"):
+            if (text.group_id == "7e21b506-6891-4d8d-8b0a-b5d694102d28") and (text.language == language) and "root_text" not in filtere_text:
                 filtere_text["root_text"] = text
             else:
                 commentary.append(text)

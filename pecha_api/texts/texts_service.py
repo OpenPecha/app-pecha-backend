@@ -38,7 +38,7 @@ from pecha_api.config import get
 
 async def get_texts_by_term_id(term_id: str, language: str, skip: int, limit: int) -> List[Text]:
     texts = await get_texts_by_term(term_id=term_id, language=language, skip=skip, limit=limit)
-    filter_text_base_on_group_id_type = await TextUtils.filter_text_base_on_group_id_type(texts=texts)
+    filter_text_base_on_group_id_type = await TextUtils.filter_text_base_on_group_id_type(texts=texts, language=language)
     root_text = filter_text_base_on_group_id_type["root_text"]
     commentary = filter_text_base_on_group_id_type["commentary"]
     text_list = [
