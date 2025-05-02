@@ -287,7 +287,7 @@ class TextUtils:
         for text in texts:
             if (text.group_id == "7e21b506-6891-4d8d-8b0a-b5d694102d28") and (text.language == language) and "root_text" not in filtere_text:
                 filtere_text["root_text"] = text
-            else:
+            elif text.group_id != "7e21b506-6891-4d8d-8b0a-b5d694102d28":
                 commentary.append(text)
         filtere_text["commentary"] = commentary
         return filtere_text
