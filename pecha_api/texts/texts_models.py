@@ -113,8 +113,7 @@ class Text(Document):
     @classmethod
     async def get_texts_by_group_id(cls, group_id: str, skip: int, limit: int) -> List["Text"]:
         query = {
-            "group_id": group_id,
-            "type": "version"
+            "group_id": group_id
         }
         texts = (
             await cls.find(query)
