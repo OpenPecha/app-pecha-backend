@@ -10,7 +10,8 @@ from .texts_response_models import TextModel
 from .texts_response_models import (
     TableOfContent, 
     TextSegment,
-    Section
+    Section,
+    Text
 )
 from .texts_repository import get_contents_by_id, get_texts_by_id
 
@@ -33,6 +34,7 @@ class TextUtils:
             language=text_detail.language,
             parent_id=text_detail.parent_id,
             type=text_detail.type,
+            group_id=text_detail.group_id,
             is_published=text_detail.is_published,
             created_date=text_detail.created_date,
             updated_date=text_detail.updated_date,
@@ -143,6 +145,7 @@ class TextUtils:
             language=text.language,
             parent_id=text.parent_id,
             type=text.type,
+            group_id=text.group_id,
             is_published=text.is_published,
             created_date=text.created_date,
             updated_date=text.updated_date,
@@ -255,3 +258,15 @@ class TextUtils:
                 return filtered_content
                 
         return None  # Return None if segment not found in any section
+
+    @staticmethod
+    async def filter_text_on_root_and_version(texts: List[Text], language: str) -> Dict[str, Union[Text, List[Text]]]:
+        filtered_text = {}
+        versions = []
+        for text in texts:
+            if text.language == language and "root_text" not in filtered_text:
+                filtered_text["root_text"] = text
+            else:
+                versions.append(text)
+        filtered_text["versions"] = versions
+        return filtered_text

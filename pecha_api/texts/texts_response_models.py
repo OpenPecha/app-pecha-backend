@@ -18,6 +18,7 @@ class TextModel(BaseModel):
     title: str
     language: str
     type: str
+    group_id: str
     is_published: bool
     created_date: str
     updated_date: str
@@ -109,6 +110,7 @@ class TextVersion(BaseModel):
     priority: Optional[int] = None
     language: str
     type: str
+    group_id: str
     is_published: bool
     created_date: str
     updated_date: str
@@ -125,6 +127,7 @@ class Text(BaseModel):
     title: str
     language : str
     type : str
+    group_id: str
     is_published : bool
     created_date: str
     updated_date: str

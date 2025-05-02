@@ -99,7 +99,9 @@ class Text(Document):
     
     @classmethod
     async def get_texts_by_term_id(cls, term_id: str, language: str, skip: int, limit: int) -> List["Text"]:
-        query = {"categories": term_id, "$or": [{"language": language}, {"type": "commentary"}]}
+        query = {
+            "categories": term_id,
+        }
         texts = (
             await cls.find(query)
             .skip(skip)
@@ -109,8 +111,11 @@ class Text(Document):
         return texts
     
     @classmethod
-    async def get_versions_by_group_id(cls, group_id: str, skip: int, limit: int) -> List["Text"]:
-        query = {"group_id": group_id, "type": "version"}
+    async def get_texts_by_group_id(cls, group_id: str, skip: int, limit: int) -> List["Text"]:
+        query = {
+            "group_id": group_id,
+            "type": "version"
+        }
         texts = (
             await cls.find(query)
             .skip(skip)
