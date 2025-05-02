@@ -38,12 +38,15 @@ from pecha_api.config import get
 
 async def get_texts_by_term_id(term_id: str, language: str, skip: int, limit: int) -> List[Text]:
     texts = await get_texts_by_term(term_id=term_id, language=language, skip=skip, limit=limit)
+    filter_text_base_on_group_id_type = await TextUtils.filter_text_base_on_group_id_type(texts=texts)
+    root_text = filter_text_base_on_group_id_type["root_text"]
+    commentary = filter_text_base_on_group_id_type["commentary"]
     text_list = [
         Text(
             id=str(text.id),
             title=text.title,
             language=text.language,
-            type=text.type,
+            type="commentary",
             group_id=text.group_id,
             is_published=text.is_published,
             created_date=text.created_date,
@@ -51,8 +54,22 @@ async def get_texts_by_term_id(term_id: str, language: str, skip: int, limit: in
             published_date=text.published_date,
             published_by=text.published_by
         )
-        for text in texts
+        for text in commentary
     ]
+    text_list.append(
+        Text(
+            id=str(root_text.id),
+            title=root_text.title,
+            language=root_text.language,
+            type="root_text",
+            group_id=root_text.group_id,
+            is_published=root_text.is_published,
+            created_date=root_text.created_date,
+            updated_date=root_text.updated_date,
+            published_date=root_text.published_date,
+            published_by=root_text.published_by
+        )
+    )
     return text_list
 
 

@@ -260,7 +260,11 @@ class TextUtils:
         return None  # Return None if segment not found in any section
 
     @staticmethod
-    async def filter_text_on_root_and_version(texts: List[Text], language: str) -> Dict[str, Union[Text, List[Text]]]:
+    async def filter_text_on_root_and_version(texts: List[TextModel], language: str) -> Dict[str, Union[Text, List[Text]]]:
+        '''
+            This method filters the root text and versions base on the selected language from the frontend.
+            If selected language is en then root text will be text which is the language of en other all will be considered as current text version.
+        '''
         filtered_text = {}
         versions = []
         for text in texts:
@@ -270,3 +274,20 @@ class TextUtils:
                 versions.append(text)
         filtered_text["versions"] = versions
         return filtered_text
+    
+    @staticmethod
+    async def filter_text_base_on_group_id_type(texts: List[TextModel]) -> Dict[str, Union[TextModel, List[TextModel]]]:
+        '''
+            This method filters the texts base on the group_id type.
+            If the group_id type is root_text then the text with respective group_id will be consider as root_text
+            If the group_id type is commentary then the text with respective group_id will be consider as commentary
+        '''
+        filtere_text = {}
+        commentary = []
+        for text in texts:
+            if (text.group_id == "7e21b506-6891-4d8d-8b0a-b5d694102d28"):
+                filtere_text["root_text"] = text
+            else:
+                commentary.append(text)
+        filtere_text["commentary"] = commentary
+        return filtere_text
