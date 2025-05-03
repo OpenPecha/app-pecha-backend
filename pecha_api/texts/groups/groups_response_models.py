@@ -1,3 +1,4 @@
+from pydantic import BaseModel
 
 class GroupDTO(BaseModel):
     id: str

@@ -2,6 +2,7 @@ import uuid
 from beanie import Document
 from uuid import UUID
 from typing import List
+from pydantic import Field
 
 from .groups_response_models import (
     GroupDTO
