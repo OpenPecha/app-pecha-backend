@@ -1,7 +1,7 @@
 from uuid import UUID
 from beanie.exceptions import CollectionWasNotInitialized
 import logging
-from typing import List
+from typing import List, Dict
 from ...constants import Constants
 
 from .groups_models import Group
@@ -24,6 +24,19 @@ async def get_group_by_id(group_id: UUID) -> GroupDTO:
         id=str(group.id),
         type=group.type
     )
+
+async def get_groups_by_ids(group_ids: List[str]) -> Dict[str, GroupDTO]:
+    try:
+        if not group_ids:
+            return {}
+        list_of_groups = await Group.get_groups_by_ids(group_ids=group_ids)
+        return {str(group.id): GroupDTO(
+            id=str(group.id),
+            type=group.type
+        ) for group in list_of_groups}
+    except CollectionWasNotInitialized as e:
+        logging.debug(e)
+        return {}
 
 async def create_group(
     create_group_request: CreateGroupRequest

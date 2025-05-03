@@ -1,6 +1,7 @@
 import uuid
 from beanie import Document
 from uuid import UUID
+from typing import List
 
 from .groups_response_models import (
     GroupDTO
@@ -21,3 +22,8 @@ class Group(Document):
     @classmethod
     async def get_group_by_id(cls, group_id: UUID):
         return await cls.find_one(cls.id == group_id)
+
+    @classmethod
+    async def get_groups_by_ids(cls, group_ids: List[str]) -> List["Group"]:
+        group_ids = [UUID(group_id) for group_id in group_ids]
+        return await cls.find({"_id": {"$in": group_ids}}).to_list(length=len(group_ids))

@@ -3,12 +3,13 @@ from ...error_contants import ErrorConstants
 from fastapi import HTTPException
 from starlette import status
 from uuid import UUID
-
+from typing import Dict, List
 
 from .groups_repository import (
     create_group,
     check_group_exists,
-    get_group_by_id
+    get_group_by_id,
+    get_groups_by_ids
 )
 
 from .groups_response_models import (
@@ -26,6 +27,8 @@ async def validate_group_exists(group_id: str) -> bool:
         )
     return is_exists
     
+async def get_groups_by_list_of_ids(group_ids: List[str]) -> Dict[str, GroupDTO]:
+    return await get_groups_by_ids(group_ids=group_ids)
 
 async def get_group_details(group_id: str) -> GroupDTO:
     uuid_group_id = UUID(group_id)
