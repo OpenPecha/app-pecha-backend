@@ -6,6 +6,9 @@ from starlette import status
 from .groups_response_models import (
     CreateGroupRequest,
 )
+from .groups_service import (
+    create_new_group
+)
 
 oauth2_scheme = HTTPBearer()
 group_router = APIRouter(
