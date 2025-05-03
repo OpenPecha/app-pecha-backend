@@ -8,3 +8,4 @@ class ErrorConstants:
     SAME_TEXT_MAPPING_ERROR_MESSAGE = "Mapping within same text not allowed"
     TABLE_OF_CONTENT_NOT_FOUND_MESSAGE = "Table of content not found"
     CONTENT_ID_NOT_FOUND_MESSAGE="Content ID is required"
+    GROUP_NOT_FOUND_MESSAGE="Group not found"

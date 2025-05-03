@@ -13,7 +13,11 @@ class Group(Document):
     class Settings:
         collection = "groups"
     
+    @classmethod
+    async def check_exists(cls, group_id: UUID) -> bool:
+        group = await cls.find_one(cls.id == group_id)
+        return group is not None
 
     @classmethod
-    async def get_group_by_id(cls, group_id: str):
-        return await cls.find_one(cls.id == UUID(group_id))
+    async def get_group_by_id(cls, group_id: UUID):
+        return await cls.find_one(cls.id == group_id)
