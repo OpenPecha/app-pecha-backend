@@ -18,6 +18,7 @@ class TextModel(BaseModel):
     title: str
     language: str
     type: str
+    group_id: str
     is_published: bool
     created_date: str
     updated_date: str
@@ -109,6 +110,7 @@ class TextVersion(BaseModel):
     priority: Optional[int] = None
     language: str
     type: str
+    group_id: str
     is_published: bool
     created_date: str
     updated_date: str
@@ -116,8 +118,8 @@ class TextVersion(BaseModel):
     published_by: str
 
 class TextVersionResponse(BaseModel):
-    text: TextModel
-    versions: List[TextVersion]
+    text: Optional[TextModel] = None
+    versions: Optional[List[TextVersion]] = None
 
 # Texts Category Response Models
 class Text(BaseModel):
@@ -125,6 +127,7 @@ class Text(BaseModel):
     title: str
     language : str
     type : str
+    group_id: str
     is_published : bool
     created_date: str
     updated_date: str

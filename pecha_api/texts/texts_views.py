@@ -6,7 +6,7 @@ from typing import Optional, Annotated
 
 from .texts_service import (
     get_table_of_contents_by_text_id,
-    get_versions_by_text_id,
+    get_text_list_by_group_id,
     create_new_text,
     get_text_by_text_id_or_term,
     get_text_details_by_text_id,
@@ -53,11 +53,12 @@ async def create_text(
 
 @text_router.get("/{text_id}/versions", status_code=status.HTTP_200_OK)
 async def get_versions(
-        text_id: str,
+        group_id: str,
+        language: str = Query(default=None),
         skip: int = Query(default=0),
         limit: int = Query(default=10)
 ) -> TextVersionResponse:
-    return await get_versions_by_text_id(text_id=text_id, skip=skip, limit=limit)
+    return await get_text_list_by_group_id(group_id=group_id, language=language, skip=skip, limit=limit)
 
 
 @text_router.get("/{text_id}/contents", status_code=status.HTTP_200_OK)
