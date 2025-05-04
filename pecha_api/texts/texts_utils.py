@@ -285,15 +285,17 @@ class TextUtils:
             If the group_id type is root_text then the text with respective group_id will be consider as root_text
             If the group_id type is commentary then the text with respective group_id will be consider as commentary
         '''
+        group_ids = [text.group_id for text in texts]
+        group_ids_type_dict = await get_groups_by_list_of_ids(group_ids=group_ids)
         filtere_text = {
             "root_text": None,
             "commentary": []
         }
         commentary = []
         for text in texts:
-            if (text.group_id == "7e21b506-6891-4d8d-8b0a-b5d694102d28") and (text.language == language) and filtere_text["root_text"] is None:
+            if (group_ids_type_dict.get(text.group_id).type == "TEXT") and (text.language == language) and filtere_text["root_text"] is None:
                 filtere_text["root_text"] = text
-            elif text.group_id != "7e21b506-6891-4d8d-8b0a-b5d694102d28":
+            elif (group_ids_type_dict.get(text.group_id).type == "COMMENTARY") and (text.language == language):
                 commentary.append(text)
         filtere_text["commentary"] = commentary
         return filtere_text
