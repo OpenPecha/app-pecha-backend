@@ -7,7 +7,7 @@ from pecha_api.error_contants import ErrorConstants
 from pecha_api.utils import Utils
 from .texts_repository import (
     get_texts_by_term, 
-    get_versions_by_id, 
+    get_texts_by_group_id, 
     create_text,
     create_table_of_content_detail,
     get_contents_by_id, 
@@ -36,22 +36,40 @@ from typing import List
 from pecha_api.config import get
 
 
-async def get_texts_by_term_id(term_id: str, skip: int, limit: int) -> List[Text]:
-    texts = await get_texts_by_term(term_id=term_id, skip=skip, limit=limit)
+async def get_texts_by_term_id(term_id: str, language: str, skip: int, limit: int) -> List[Text]:
+    texts = await get_texts_by_term(term_id=term_id, language=language, skip=skip, limit=limit)
+    filter_text_base_on_group_id_type = await TextUtils.filter_text_base_on_group_id_type(texts=texts, language=language)
+    root_text = filter_text_base_on_group_id_type["root_text"]
+    commentary = filter_text_base_on_group_id_type["commentary"]
     text_list = [
         Text(
             id=str(text.id),
             title=text.title,
             language=text.language,
-            type=text.type,
+            type="commentary",
+            group_id=text.group_id,
             is_published=text.is_published,
             created_date=text.created_date,
             updated_date=text.updated_date,
             published_date=text.published_date,
             published_by=text.published_by
         )
-        for text in texts
+        for text in commentary
     ]
+    text_list.append(
+        Text(
+            id=str(root_text.id),
+            title=root_text.title,
+            language=root_text.language,
+            type="root_text",
+            group_id=root_text.group_id,
+            is_published=root_text.is_published,
+            created_date=root_text.created_date,
+            updated_date=root_text.updated_date,
+            published_date=root_text.published_date,
+            published_by=root_text.published_by
+        )
+    )
     return text_list
 
 
@@ -67,7 +85,7 @@ async def get_text_by_text_id_or_term(
 
     if term_id is not None:
         term = await get_term(term_id=term_id, language=language)
-        texts = await get_texts_by_term_id(term_id=term_id, skip=skip, limit=limit)
+        texts = await get_texts_by_term_id(term_id=term_id, language=language,skip=skip, limit=limit)
         return TextsCategoryResponse(
             term=term,
             texts=texts,
@@ -179,11 +197,16 @@ async def get_text_details_by_text_id(
 
 
 
-async def get_versions_by_text_id(text_id: str, skip: int, limit: int) -> TextVersionResponse:
-    root_text = await TextUtils.get_text_detail_by_id(text_id=text_id)
-    if root_text is None:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=ErrorConstants.TEXT_NOT_FOUND_MESSAGE)
-    versions = await get_versions_by_id(text_id=text_id, skip=skip, limit=limit)
+async def get_text_list_by_group_id(group_id: str, language: str, skip: int, limit: int) -> TextVersionResponse:
+    if language is None:
+        language = get("DEFAULT_LANGUAGE")
+    # root_text = await TextUtils.get_text_detail_by_id(text_id=group_id)
+    # if root_text is None:
+    #     raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=ErrorConstants.TEXT_NOT_FOUND_MESSAGE)
+    texts = await get_texts_by_group_id(group_id=group_id, skip=skip, limit=limit)
+    filtered_text_on_root_and_version = await TextUtils.filter_text_on_root_and_version(texts=texts, language=language)
+    root_text = filtered_text_on_root_and_version["root_text"]
+    versions = filtered_text_on_root_and_version["versions"]
     list_of_version = [
         TextVersion(
             id=str(version.id),
@@ -191,6 +214,7 @@ async def get_versions_by_text_id(text_id: str, skip: int, limit: int) -> TextVe
             parent_id=version.parent_id,
             language=version.language,
             type=version.type,
+            group_id=version.group_id,
             is_published=version.is_published,
             created_date=version.created_date,
             updated_date=version.updated_date,
@@ -199,20 +223,6 @@ async def get_versions_by_text_id(text_id: str, skip: int, limit: int) -> TextVe
         )
         for version in versions
     ]
-    list_of_version.append(
-        TextVersion(
-            id=str(root_text.id),
-            title=root_text.title,
-            parent_id=root_text.parent_id,
-            language=root_text.language,
-            type=root_text.type,
-            is_published=root_text.is_published,
-            created_date=root_text.created_date,
-            updated_date=root_text.updated_date,
-            published_date=root_text.published_date,
-            published_by=root_text.published_by
-        )
-    )
     return TextVersionResponse(
         text=root_text,
         versions=list_of_version

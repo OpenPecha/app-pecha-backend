@@ -57,11 +57,28 @@ async def check_all_text_exists(text_ids: List[UUID]) -> bool:
         logging.debug(e)
         return False
 
-async def get_texts_by_term(term_id: str, skip: int, limit: int) -> List[Text]:
-    return await Text.get_texts_by_term_id(term_id=term_id, skip=skip, limit=limit)
+async def get_texts_by_term(term_id: str, language: str, skip: int, limit: int) -> List[Text]:
+    return await Text.get_texts_by_term_id(term_id=term_id, language=language, skip=skip, limit=limit)
 
-async def get_versions_by_id(text_id: str, skip: int, limit: int) -> List[Text]:
-    return await Text.get_versions_by_text_id(text_id=text_id, skip=skip, limit=limit)
+async def get_texts_by_group_id(group_id: str, skip: int, limit: int) -> List[TextModel]:
+    texts = await Text.get_texts_by_group_id(group_id=group_id, skip=skip, limit=limit)
+    return [
+        TextModel(
+            id=str(text.id),
+            title=text.title,
+            language=text.language,
+            parent_id=text.parent_id,
+            type=text.type,
+            group_id=text.group_id,
+            is_published=text.is_published,
+            created_date=text.created_date,
+            updated_date=text.updated_date,
+            published_date=text.published_date,
+            published_by=text.published_by,
+            categories=text.categories
+        )
+        for text in texts
+    ]
 
 
 async def create_text(create_text_request: CreateTextRequest) -> Text:

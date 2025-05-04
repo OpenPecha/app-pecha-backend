@@ -42,6 +42,7 @@ class Text(Document):
     title: str
     language: str
     parent_id: Optional[str] = None
+    group_id: str
     is_published: bool
     created_date: str
     updated_date: str
@@ -97,8 +98,10 @@ class Text(Document):
         return True  # All IDs exist
     
     @classmethod
-    async def get_texts_by_term_id(cls, term_id: str, skip: int, limit: int) -> List["Text"]:
-        query = {"categories": term_id, "type": {"$ne": "version"}}
+    async def get_texts_by_term_id(cls, term_id: str, language: str, skip: int, limit: int) -> List["Text"]:
+        query = {
+            "categories": term_id,
+        }
         texts = (
             await cls.find(query)
             .skip(skip)
@@ -108,8 +111,10 @@ class Text(Document):
         return texts
     
     @classmethod
-    async def get_versions_by_text_id(cls, text_id: str, skip: int, limit: int) -> List["Text"]:
-        query = {"parent_id": text_id, "type": "version"}
+    async def get_texts_by_group_id(cls, group_id: str, skip: int, limit: int) -> List["Text"]:
+        query = {
+            "group_id": group_id
+        }
         texts = (
             await cls.find(query)
             .skip(skip)
