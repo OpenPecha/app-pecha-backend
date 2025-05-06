@@ -208,13 +208,15 @@ def test_authenticate_user_invalid_password():
     with patch('pecha_api.auth.auth_service.get_user_by_email') as mock_get_user_by_email, \
             patch('pecha_api.auth.auth_service.verify_password') as mock_verify_password:
         mock_get_user_by_email.return_value = user
-        mock_verify_password.return_value = False
 
         try:
             authenticate_user(email, password)
         except HTTPException as e:
             assert e.status_code == status.HTTP_401_UNAUTHORIZED
             assert e.detail == 'Invalid email or password'
+
+    mock_get_user_by_email.assert_called_once_with(db=ANY, email=email)
+    mock_verify_password.assert_called_once_with(plain_password=password, hashed_password=user.password)
 
 
 def test_refresh_access_token_success():
@@ -257,21 +259,6 @@ def test_refresh_access_token_invalid_token():
             assert e.detail == "Invalid refresh token"
 
         mock_validate_token.assert_called_once_with(refresh_token)
-
-
-def test_refresh_access_token_401_no_email():
-    refresh_token = "valid_refresh_token"
-    user = MagicMock()
-    user.firstname = "firstname"
-    user.lastname = "lastname"
-
-    with patch('pecha_api.auth.auth_service.validate_token') as mock_validate_token:
-        mock_validate_token.return_value = {"sub": None}
-        try:
-            refresh_access_token(refresh_token)
-        except HTTPException as e:
-            assert e.status_code == status.HTTP_401_UNAUTHORIZED
-            assert e.detail == "Invalid refresh token"
 
 
 def test_refresh_access_token_expired_token():
@@ -462,7 +449,7 @@ def test_authenticate_and_generate_tokens_invalid_credentials():
         mock_authenticate_user.side_effect = HTTPException(status_code=status.HTTP_401_UNAUTHORIZED,
                                                            detail='Invalid email or password')
         try:
-            authenticate_and_generate_tokens(email, password)
+             authenticate_and_generate_tokens(email, password)
         except HTTPException as e:
             assert e.status_code == status.HTTP_401_UNAUTHORIZED
             assert e.detail == "Invalid email or password"

@@ -12,7 +12,6 @@ DEFAULTS = dict(
     COMPRESSED_QUALITY=80,
     DATABASE_URL="postgresql://admin:pechaAdmin@localhost:5434/pecha",
     DEFAULT_LANGUAGE="en",
-    DEFAULT_PAGE_SIZE=10,
     DEPLOYMENT_MODE="DEBUG",
     DOMAIN_NAME="dev-pecha-esukhai.us.auth0.com",
     IMAGE_EXPIRATION_IN_SEC=3600,
@@ -21,9 +20,7 @@ DEFAULTS = dict(
     JWT_ISSUER="https://pecha.org",
     JWT_SECRET_KEY="oJvUxI5jY7nXaD4sC_kFGoM0_qAuewVxg3p6F8CH-tI",
     MAX_FILE_SIZE_MB=1,
-
-    MONGO_CONNECTION_STRING="mongodb://admin:pechaAdmin@localhost:27017/",
-
+    MONGO_CONNECTION_STRING="mongodb://admin:pechaAdmin@localhost:27017",
     MONGO_DATABASE_NAME="pecha",
     REFRESH_TOKEN_EXPIRE_DAYS=30,
     SENDGRID_API_KEY="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",
@@ -46,8 +43,8 @@ def get_float(key: str) -> float:
         raise ValueError(f"Could not convert the value for key '{key}' to float: {e}")
 
 
-def get_int(key: str) -> int:
+def get_int(key: str) -> float:
     try:
         return int(get(key))
     except (TypeError, ValueError) as e:
-        raise ValueError(f"Could not convert the value for key '{key}' to int: {e}")
+        raise ValueError(f"Could not convert the value for key '{key}' to float: {e}")

@@ -1,9 +1,9 @@
 from __future__ import annotations
 
-from fastapi import APIRouter, Depends, Query
+from fastapi import APIRouter, Depends
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from starlette import status
-from typing import Annotated, Optional
+from typing import Annotated
 
 from ..terms.terms_response_models import CreateTermRequest, UpdateTermRequest
 from ..terms.terms_service import get_all_terms, create_new_term, update_existing_term, delete_existing_term
@@ -16,18 +16,8 @@ terms_router = APIRouter(
 
 
 @terms_router.get("", status_code=status.HTTP_200_OK)
-async def read_terms(
-        parent_id: Optional[str] = Query(None, description="Filter topics by title prefix"),
-        language: Optional[str] = None,
-        skip: int = Query(default=0, ge=0, description="Number of records to skip"),
-        limit: int = Query(default=10, ge=1, le=100, description="Number of records to return")
-):
-    return await get_all_terms(
-        parent_id=parent_id,
-        language=language,
-        skip=skip,
-        limit=limit
-    )
+async def read_terms(language: str | None):
+    return await get_all_terms(language=language)
 
 
 @terms_router.post("", status_code=status.HTTP_201_CREATED)
