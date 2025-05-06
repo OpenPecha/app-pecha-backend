@@ -22,7 +22,6 @@ DEFAULTS = dict(
     JWT_SECRET_KEY="oJvUxI5jY7nXaD4sC_kFGoM0_qAuewVxg3p6F8CH-tI",
     MAX_FILE_SIZE_MB=1,
 
-    # MONGO_CONNECTION_STRING="mongodb+srv://pecha_user:JYtqiTyPA6FxzWz5@pecha-backend.i3b0a.mongodb.net/",
     MONGO_CONNECTION_STRING="mongodb://admin:pechaAdmin@localhost:27017/",
 
     MONGO_DATABASE_NAME="pecha",
@@ -47,8 +46,8 @@ def get_float(key: str) -> float:
         raise ValueError(f"Could not convert the value for key '{key}' to float: {e}")
 
 
-def get_int(key: str) -> float:
+def get_int(key: str) -> int:
     try:
         return int(get(key))
     except (TypeError, ValueError) as e:
-        raise ValueError(f"Could not convert the value for key '{key}' to float: {e}")
+        raise ValueError(f"Could not convert the value for key '{key}' to int: {e}")

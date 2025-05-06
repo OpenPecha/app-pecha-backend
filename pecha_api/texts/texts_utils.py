@@ -45,18 +45,6 @@ class TextUtils:
     
     @staticmethod
     async def validate_text_exists(text_id: str):
-        """
-        Validate if a text exists by its ID.
-        
-        Args:
-            text_id: The ID of the text to validate
-            
-        Returns:
-            bool: True if the text exists
-            
-        Raises:
-            HTTPException: If the text does not exist
-        """
         uuid_text_id = UUID(text_id)
         is_exists = await check_text_exists(text_id=uuid_text_id)
         if not is_exists:

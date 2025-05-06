@@ -48,7 +48,7 @@ class Segment(Document):
         return True  # All IDs exist
 
     @classmethod
-    async def get_segments(cls, segment_ids: List[str]) -> List["Segment"]:
+    async def get_segments_by_ids(cls, segment_ids: List[str]) -> List["Segment"]:
         segment_ids = [uuid.UUID(segment_id) for segment_id in segment_ids]
         return await cls.find({"_id": {"$in": segment_ids}}).to_list(length=len(segment_ids))
     
