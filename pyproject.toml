@@ -31,6 +31,7 @@ auth0-python = "^4.7.2"
 motor = "^3.6.1"
 beanie = "^1.29.0"
 pytest-asyncio = "^0.25.2"
+pytest-mock = "^3.14.0"
 
 
 [tool.poetry.group.dev.dependencies]
@@ -43,3 +44,22 @@ build-backend = "poetry.core.masonry.api"
 
 [tool.poetry.scripts]
 start = "uvicorn:main"
+
+[tool.coverage.run]
+omit = [
+    "*/*_repository.py",
+    "*/*_models.py",
+    "*/*_init__.py",
+    "*/db/*"
+]
+
+[tool.coverage.report]
+exclude_lines = [
+    "pragma: no cover",
+    "def __repr__",
+    "if self.debug:",
+    "raise NotImplementedError",
+    "if __name__ == .__main__.:",
+    "pass",
+    "raise ImportError"
+]

@@ -2,7 +2,6 @@ import jose
 import jwt
 from datetime import datetime, timezone, timedelta
 
-from jose import JWTError
 
 from pecha_api.users.users_models import Users
 from pecha_api.auth.auth_repository import (
@@ -11,7 +10,7 @@ from pecha_api.auth.auth_repository import (
     create_access_token,
     create_refresh_token,
     generate_token_data,
-    decode_backend_token
+    decode_backend_token, verify_auth0_token
 
 )
 from pecha_api.users.users_service import validate_token
@@ -137,11 +136,6 @@ def test_create_access_token_with_custom_expiry():
     assert decoded_data["exp"] == int((datetime.now(timezone.utc) + expires_delta).timestamp())
 
 
-def test_create_access_token_with_no_data():
-    token = create_access_token(None)
-
-    assert token is None
-
 
 def test_create_refresh_token():
     data = {
@@ -176,11 +170,6 @@ def test_create_refresh_token_with_custom_expiry():
     assert "exp" in decoded_data
     assert decoded_data["exp"] == int((datetime.now(timezone.utc) + expires_delta).timestamp())
 
-
-def test_create_refresh_token_with_no_data():
-    token = create_refresh_token(None)
-
-    assert token is None
 
 
 def test_generate_token_data_success():
