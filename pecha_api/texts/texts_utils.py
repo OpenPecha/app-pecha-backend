@@ -13,6 +13,9 @@ from .texts_response_models import (
     Section,
     Text
 )
+from .groups.groups_service import (
+    get_groups_by_list_of_ids
+)
 from .texts_repository import get_contents_by_id, get_texts_by_id
 
 class TextUtils:

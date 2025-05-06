@@ -27,6 +27,10 @@ from .texts_response_models import (
     TextDetailsRequest,
     DetailTextMapping
 )
+from .groups.groups_service import (
+    validate_group_exists
+)
+
 from .texts_utils import TextUtils
 from ..users.users_service import verify_admin_access
 from ..terms.terms_service import get_term
@@ -235,6 +239,9 @@ async def create_new_text(
 ) -> TextModel:
     is_admin = verify_admin_access(token=token)
     if is_admin:
+        valid_group = await validate_group_exists(group_id=create_text_request.group_id)
+        if not valid_group:
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=ErrorConstants.GROUP_NOT_FOUND_MESSAGE)
         new_text = await create_text(create_text_request=create_text_request)
         return TextModel(
             id=str(new_text.id),
