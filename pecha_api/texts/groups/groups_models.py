@@ -27,4 +27,5 @@ class Group(Document):
     @classmethod
     async def get_groups_by_ids(cls, group_ids: List[str]) -> List["Group"]:
         group_ids = [UUID(group_id) for group_id in group_ids]
-        return await cls.find({"_id": {"$in": group_ids}}).to_list(length=len(group_ids))
+        search = await cls.find({"_id": {"$in": group_ids}}).to_list()
+        return search

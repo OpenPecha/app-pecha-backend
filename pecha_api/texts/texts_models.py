@@ -104,8 +104,6 @@ class Text(Document):
         }
         texts = (
             await cls.find(query)
-            .skip(skip)
-            .limit(limit)
             .to_list()
         )
         return texts
@@ -121,5 +119,7 @@ class Text(Document):
             .limit(limit)
             .to_list()
         )
+        print()
+        print(len(texts))
         return texts
 
