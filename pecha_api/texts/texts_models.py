@@ -119,7 +119,5 @@ class Text(Document):
             .limit(limit)
             .to_list()
         )
-        print()
-        print(len(texts))
         return texts
 
