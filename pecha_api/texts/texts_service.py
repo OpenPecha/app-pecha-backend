@@ -216,10 +216,10 @@ async def get_text_list_by_group_id(text_id: str, language: str, skip: int, limi
     versions_table_of_content_id_dict = {}
     for version in versions:
         list_of_table_of_contents = await get_contents_by_id(text_id=str(version.id))
-        versions_table_of_content_id_dict[str(version.id)] = [
-            str(table_of_content.id)
-            for table_of_content in list_of_table_of_contents
-        ]
+        list_of_table_of_contents_ids = []
+        for table_of_content in list_of_table_of_contents:
+            list_of_table_of_contents_ids.append(str(table_of_content.id))
+        versions_table_of_content_id_dict[str(version.id)] = list_of_table_of_contents_ids
     list_of_version = [
         TextVersion(
             id=str(version.id),
@@ -228,7 +228,7 @@ async def get_text_list_by_group_id(text_id: str, language: str, skip: int, limi
             language=version.language,
             type=version.type,
             group_id=version.group_id,
-            table_of_content=versions_table_of_content_id_dict[str(version.id)],
+            table_of_contents=versions_table_of_content_id_dict.get(str(version.id), []),
             is_published=version.is_published,
             created_date=version.created_date,
             updated_date=version.updated_date,
