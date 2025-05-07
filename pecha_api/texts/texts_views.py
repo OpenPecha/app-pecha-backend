@@ -53,12 +53,12 @@ async def create_text(
 
 @text_router.get("/{text_id}/versions", status_code=status.HTTP_200_OK)
 async def get_versions(
-        group_id: str,
+        text_id: str,
         language: str = Query(default=None),
         skip: int = Query(default=0),
         limit: int = Query(default=10)
 ) -> TextVersionResponse:
-    return await get_text_list_by_group_id(group_id=group_id, language=language, skip=skip, limit=limit)
+    return await get_text_list_by_group_id(text_id=text_id, language=language, skip=skip, limit=limit)
 
 
 @text_router.get("/{text_id}/contents", status_code=status.HTTP_200_OK)
