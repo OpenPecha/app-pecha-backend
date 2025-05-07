@@ -1,6 +1,7 @@
 
 
 from fastapi import HTTPException
+from sqlalchemy import table
 from starlette import status
 
 from pecha_api.error_contants import ErrorConstants
@@ -212,6 +213,13 @@ async def get_text_list_by_group_id(text_id: str, language: str, skip: int, limi
     filtered_text_on_root_and_version = await TextUtils.filter_text_on_root_and_version(texts=texts, language=language)
     root_text = filtered_text_on_root_and_version["root_text"]
     versions = filtered_text_on_root_and_version["versions"]
+    versions_table_of_content_id_dict = {}
+    for version in versions:
+        list_of_table_of_contents = await get_contents_by_id(text_id=str(version.id))
+        versions_table_of_content_id_dict[str(version.id)] = [
+            str(table_of_content.id)
+            for table_of_content in list_of_table_of_contents
+        ]
     list_of_version = [
         TextVersion(
             id=str(version.id),
@@ -220,6 +228,7 @@ async def get_text_list_by_group_id(text_id: str, language: str, skip: int, limi
             language=version.language,
             type=version.type,
             group_id=version.group_id,
+            table_of_content=versions_table_of_content_id_dict[str(version.id)],
             is_published=version.is_published,
             created_date=version.created_date,
             updated_date=version.updated_date,

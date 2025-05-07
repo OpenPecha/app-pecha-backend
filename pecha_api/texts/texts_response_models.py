@@ -111,6 +111,7 @@ class TextVersion(BaseModel):
     language: str
     type: str
     group_id: str
+    table_of_contents: List[str] = []
     is_published: bool
     created_date: str
     updated_date: str
