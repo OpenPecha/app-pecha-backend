@@ -201,10 +201,10 @@ async def get_text_details_by_text_id(
 
 
 
-async def get_text_list_by_group_id(group_id: str, language: str, skip: int, limit: int) -> TextVersionResponse:
+async def get_text_list_by_group_id(text_id: str, language: str, skip: int, limit: int) -> TextVersionResponse:
     if language is None:
         language = get("DEFAULT_LANGUAGE")
-    root_text = await TextUtils.get_text_detail_by_id(text_id=group_id)
+    root_text = await TextUtils.get_text_detail_by_id(text_id=text_id)
     if root_text is None:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=ErrorConstants.TEXT_NOT_FOUND_MESSAGE)
     group_id = root_text.group_id
