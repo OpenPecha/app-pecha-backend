@@ -9,6 +9,7 @@ class CreateTextRequest(BaseModel):
     title: str
     language: str
     parent_id: Optional[str] = None
+    group_id: str
     published_by: str
     type: str
     categories: List[str]
@@ -111,6 +112,7 @@ class TextVersion(BaseModel):
     language: str
     type: str
     group_id: str
+    table_of_contents: List[str] = []
     is_published: bool
     created_date: str
     updated_date: str

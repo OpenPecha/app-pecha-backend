@@ -1,6 +1,7 @@
 
 
 from fastapi import HTTPException
+from sqlalchemy import table
 from starlette import status
 
 from pecha_api.error_contants import ErrorConstants
@@ -27,6 +28,10 @@ from .texts_response_models import (
     TextDetailsRequest,
     DetailTextMapping
 )
+from .groups.groups_service import (
+    validate_group_exists
+)
+
 from .texts_utils import TextUtils
 from ..users.users_service import verify_admin_access
 from ..terms.terms_service import get_term
@@ -197,16 +202,24 @@ async def get_text_details_by_text_id(
 
 
 
-async def get_text_list_by_group_id(group_id: str, language: str, skip: int, limit: int) -> TextVersionResponse:
+async def get_text_list_by_group_id(text_id: str, language: str, skip: int, limit: int) -> TextVersionResponse:
     if language is None:
         language = get("DEFAULT_LANGUAGE")
-    # root_text = await TextUtils.get_text_detail_by_id(text_id=group_id)
-    # if root_text is None:
-    #     raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=ErrorConstants.TEXT_NOT_FOUND_MESSAGE)
+    root_text = await TextUtils.get_text_detail_by_id(text_id=text_id)
+    if root_text is None:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=ErrorConstants.TEXT_NOT_FOUND_MESSAGE)
+    group_id = root_text.group_id
     texts = await get_texts_by_group_id(group_id=group_id, skip=skip, limit=limit)
     filtered_text_on_root_and_version = await TextUtils.filter_text_on_root_and_version(texts=texts, language=language)
     root_text = filtered_text_on_root_and_version["root_text"]
     versions = filtered_text_on_root_and_version["versions"]
+    versions_table_of_content_id_dict = {}
+    for version in versions:
+        list_of_table_of_contents = await get_contents_by_id(text_id=str(version.id))
+        list_of_table_of_contents_ids = []
+        for table_of_content in list_of_table_of_contents:
+            list_of_table_of_contents_ids.append(str(table_of_content.id))
+        versions_table_of_content_id_dict[str(version.id)] = list_of_table_of_contents_ids
     list_of_version = [
         TextVersion(
             id=str(version.id),
@@ -215,6 +228,7 @@ async def get_text_list_by_group_id(group_id: str, language: str, skip: int, lim
             language=version.language,
             type=version.type,
             group_id=version.group_id,
+            table_of_contents=versions_table_of_content_id_dict.get(str(version.id), []),
             is_published=version.is_published,
             created_date=version.created_date,
             updated_date=version.updated_date,
@@ -235,6 +249,9 @@ async def create_new_text(
 ) -> TextModel:
     is_admin = verify_admin_access(token=token)
     if is_admin:
+        valid_group = await validate_group_exists(group_id=create_text_request.group_id)
+        if not valid_group:
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=ErrorConstants.GROUP_NOT_FOUND_MESSAGE)
         new_text = await create_text(create_text_request=create_text_request)
         return TextModel(
             id=str(new_text.id),

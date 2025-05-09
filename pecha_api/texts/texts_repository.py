@@ -30,6 +30,7 @@ async def get_texts_by_ids(text_ids: List[str]) -> Dict[str, TextModel]:
             language=text.language,
             parent_id=text.parent_id,
             type=text.type,
+            group_id=text.group_id,
             is_published=text.is_published,
             created_date=text.created_date,
             updated_date=text.updated_date,

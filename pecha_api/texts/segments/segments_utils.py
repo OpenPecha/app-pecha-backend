@@ -5,12 +5,16 @@ from fastapi import HTTPException
 from starlette import status
 
 from pecha_api.error_contants import ErrorConstants
+from pecha_api.texts.groups.groups_service import get_group_details
 from .segments_response_models import SegmentDTO
 from .segments_repository import (
     check_segment_exists,
     check_all_segment_exists,
     get_segment_by_id,
     get_related_mapped_segments,
+)
+from ..groups.groups_service import (
+    get_group_details
 )
 from ..texts_utils import TextUtils
 from ..texts_response_models import (
@@ -120,6 +124,12 @@ class SegmentUtils:
     @staticmethod
     async def get_root_mapping_count(segment_id: str) -> int:
         segment = await get_segment_by_id(segment_id=segment_id)
+        text_id = segment.text_id
+        text_detail = await TextUtils.get_text_details_by_id(text_id=text_id)
+        group_id = text_detail.group_id
+        group_detail = await get_group_details(group_id=group_id)
+        if group_detail.type == "TEXT":
+            return 0
         root_mapping_count = len(segment.mapping)
         return root_mapping_count
 

@@ -13,6 +13,9 @@ from .texts_response_models import (
     Section,
     Text
 )
+from .groups.groups_service import (
+    get_groups_by_list_of_ids
+)
 from .texts_repository import get_contents_by_id, get_texts_by_id
 
 class TextUtils:
@@ -283,7 +286,7 @@ class TextUtils:
         for text in texts:
             if (group_ids_type_dict.get(text.group_id).type == "TEXT") and (text.language == language) and filtere_text["root_text"] is None:
                 filtere_text["root_text"] = text
-            elif (group_ids_type_dict.get(text.group_id).type == "COMMENTARY") and (text.language == language):
+            elif (group_ids_type_dict.get(text.group_id).type == "COMMENTARY"):
                 commentary.append(text)
         filtere_text["commentary"] = commentary
         return filtere_text
