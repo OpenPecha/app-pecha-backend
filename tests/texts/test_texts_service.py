@@ -5,7 +5,7 @@ from pecha_api.terms.terms_response_models import TermsModel
 import pytest
 from pecha_api.texts.texts_service import (
     create_new_text,
-    get_versions_by_text_id,
+    get_text_versions_by_group_id,
     get_text_by_text_id_or_term,
     create_table_of_content,
     get_table_of_contents_by_text_id,
@@ -63,7 +63,9 @@ async def test_get_text_by_term_id():
     ]
 
     with patch('pecha_api.texts.texts_service.get_texts_by_term', new_callable=AsyncMock) as mock_get_texts_by_category, \
-            patch('pecha_api.terms.terms_service.get_term_by_id', new_callable=AsyncMock) as mock_get_term:
+            patch('pecha_api.terms.terms_service.get_term_by_id', new_callable=AsyncMock) as mock_get_term, \
+            patch('pecha_api.texts.texts_service.TextUtils.filter_text_base_on_group_id_type', new_callable=AsyncMock) as mock_filter_text_base_on_group_id_type:
+        mock_filter_text_base_on_group_id_type.return_value = {"root_text": mock_texts_by_category[0], "commentary": mock_texts_by_category[1]}
         mock_get_texts_by_category.return_value = mock_texts_by_category
         mock_get_term.return_value = mock_term
         response = await get_text_by_text_id_or_term(text_id="", term_id="id_1", language="bo", skip=0, limit=10)
@@ -96,7 +98,7 @@ async def test_get_text_by_term_id():
 
 
 @pytest.mark.asyncio
-async def test_get_versions_by_text_id():
+async def test_get_versions_by_group_id():
     text_detail = TextModel(
         id="id_1",
         title="བྱང་ཆུབ་སེམས་དཔའི་སྤྱོད་པ་ལ་འཇུག་པ།",
@@ -110,7 +112,7 @@ async def test_get_versions_by_text_id():
         categories=["67dd22a8d9f06ab28feedc90"],
         parent_id=None
     )
-    versions_by_text_id = [
+    texts_by_group_id = [
         TextVersion(
             id="59769286-2787-4181-953d-9149cdeef959",
             title="The Way of the Bodhisattva",
@@ -138,13 +140,32 @@ async def test_get_versions_by_text_id():
             published_by="pecha"
         )
     ]
+    mock_table_of_content = TableOfContent(
+            id="id_1",
+            text_id="text_id 1",
+            sections=[
+                Section(
+                    id="id_1",
+                    title="section_1",
+                    section_number=1,
+                    parent_id="id_1",
+                    segments=[],
+                    sections=[],
+                    created_date="2025-03-16 04:40:54.757652",
+                    updated_date="2025-03-16 04:40:54.757652",
+                    published_date="2025-03-16 04:40:54.757652",
+                    published_by="pecha"
+                )
+            ]
+        )
     with patch('pecha_api.texts.texts_service.TextUtils.get_text_detail_by_id', new_callable=AsyncMock) as mock_text_detail, \
-            patch('pecha_api.texts.texts_service.get_versions_by_id',
-                  new_callable=AsyncMock) as mock_get_versions_by_text_id:
+        patch('pecha_api.texts.texts_service.get_texts_by_group_id', new_callable=AsyncMock) as mock_get_texts_by_group_id,\
+        patch('pecha_api.texts.texts_service.TextUtils.filter_text_on_root_and_version', new_callable=AsyncMock) as mock_filter_text_on_root_and_version, \
+        patch('pecha_api.texts.texts_service.get_contents_by_id', new_callable=AsyncMock) as mock_get_contents_by_id:
         mock_text_detail.return_value = text_detail
-        mock_get_versions_by_text_id.return_value = versions_by_text_id
-        response = await get_versions_by_text_id(text_id="id_1", skip=0, limit=10)
-
+        mock_filter_text_on_root_and_version.return_value = {"root_text": text_detail, "versions": texts_by_group_id}
+        mock_get_contents_by_id.return_value = mock_table_of_content
+        response = await get_text_versions_by_group_id(text_id="id_1",language="en", skip=0, limit=10)
         assert response.text == TextModel(
             id="id_1",
             title="བྱང་ཆུབ་སེམས་དཔའི་སྤྱོད་པ་ལ་འཇུག་པ།",
@@ -164,6 +185,7 @@ async def test_get_versions_by_text_id():
             parent_id="032b9a5f-0712-40d8-b7ec-73c8c94f1c15",
             priority=None,
             language="en",
+            table_of_contents=["id_1"],
             type="version",
             is_published=True,
             created_date="2025-03-20 09:28:28.076920",
@@ -176,6 +198,7 @@ async def test_get_versions_by_text_id():
             title="བྱང་ཆུབ་སེམས་དཔའི་སྤྱོད་པ་ལ་འཇུག་པ།",
             language="bo",
             type="root_text",
+            table_of_contents=["id_1"],
             is_published=True,
             created_date="2025-03-20 09:26:16.571522",
             updated_date="2025-03-20 09:26:16.571532",
@@ -188,19 +211,23 @@ async def test_get_versions_by_text_id():
 @pytest.mark.asyncio
 async def test_create_new_root_text():
     with patch('pecha_api.texts.texts_service.verify_admin_access', return_value=True), \
-            patch('pecha_api.texts.texts_service.create_text', new_callable=AsyncMock) as mock_create_text:
+            patch('pecha_api.texts.texts_service.create_text', new_callable=AsyncMock) as mock_create_text,\
+            patch('pecha_api.texts.texts_service.validate_group_exists', new_callable=AsyncMock) as mock_validate_group_exists:
         mock_create_text.return_value = AsyncMock(id="efb26a06-f373-450b-ba57-e7a8d4dd5b64",
                                                   title="བྱང་ཆུབ་སེམས་དཔའི་སྤྱོད་པ་ལ་འཇུག་པ།", language="bo",
                                                   parent_id=None, is_published=True,
+                                                  group_id="67dd22a8d9f06ab28feedc90",
                                                   created_date="2025-03-16 04:40:54.757652",
                                                   updated_date="2025-03-16 04:40:54.757652",
                                                   published_date="2025-03-16 04:40:54.757652",
                                                   published_by="pecha", type="root_text", categories=[])
+        mock_validate_group_exists.return_value = True
         response = await create_new_text(
             create_text_request=CreateTextRequest(
                 title="བྱང་ཆུབ་སེམས་དཔའི་སྤྱོད་པ་ལ་འཇུག་པ།",
                 language="bo",
                 parent_id=None,
+                group_id="67dd22a8d9f06ab28feedc90",
                 published_by="pecha",
                 type="root_text",
                 categories=[]
@@ -230,6 +257,7 @@ async def test_create_new_root_text_not_admin():
                     title="བྱང་ཆུབ་སེམས་དཔའི་སྤྱོད་པ་ལ་འཇུག་པ།",
                     language="bo",
                     parent_id=None,
+                    group_id="67dd22a8d9f06ab28feedc90",
                     published_by="pecha",
                     type="root_text",
                     categories=[]
