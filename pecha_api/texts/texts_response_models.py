@@ -111,7 +111,7 @@ class TextVersion(BaseModel):
     priority: Optional[int] = None
     language: str
     type: str
-    group_id: Optional[str] = None
+    group_id: Optional[str] = None 
     table_of_contents: List[str] = []
     is_published: bool
     created_date: str
