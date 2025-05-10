@@ -31,9 +31,9 @@ from .texts_response_models import (
 from .groups.groups_service import (
     validate_group_exists
 )
-from ..cache import (
-    get_text_details_cache,
-    set_text_details_cache
+from pecha_api.cache.cache_service import (
+    set_text_details_cache,
+    get_text_details_cache
 )
 
 from .texts_utils import TextUtils
@@ -132,10 +132,7 @@ async def get_text_details_by_text_id(
 
     cached_data = get_text_details_cache(
         text_id=text_id,
-        content_id=text_details_request.content_id,
-        segment_id=text_details_request.segment_id,
-        version_id=text_details_request.version_id,
-        section_id=text_details_request.section_id
+        text_details_request=text_details_request
     )
 
     if cached_data is not None:
@@ -214,10 +211,7 @@ async def get_text_details_by_text_id(
         )
         set_text_details_cache(
             text_id=text_id,
-            content_id=text_details_request.content_id,
-            segment_id=text_details_request.segment_id,
-            version_id=text_details_request.version_id,
-            section_id=text_details_request.section_id,
+            text_details_request=text_details_request,
             text_details=detail_table_of_content
         )
         return detail_table_of_content
