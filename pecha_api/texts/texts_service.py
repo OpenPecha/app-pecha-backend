@@ -31,6 +31,10 @@ from .texts_response_models import (
 from .groups.groups_service import (
     validate_group_exists
 )
+from ..cache import (
+    get_text_details_cache,
+    set_text_details_cache
+)
 
 from .texts_utils import TextUtils
 from ..users.users_service import verify_admin_access
@@ -125,6 +129,18 @@ async def get_text_details_by_text_id(
     text_id: str,
     text_details_request: TextDetailsRequest
 ) -> DetailTableOfContentResponse:
+
+    cached_data = get_text_details_cache(
+        text_id=text_id,
+        content_id=text_details_request.content_id,
+        segment_id=text_details_request.segment_id,
+        version_id=text_details_request.version_id,
+        section_id=text_details_request.section_id
+    )
+
+    if cached_data is not None:
+        return cached_data
+
     if text_id is None:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
@@ -184,7 +200,7 @@ async def get_text_details_by_text_id(
             table_of_content=table_of_content,
             version_id=text_details_request.version_id
         )   
-        return DetailTableOfContentResponse(
+        detail_table_of_content = DetailTableOfContentResponse(
             text_detail=text,
             mapping=DetailTextMapping(
                 segment_id=text_details_request.segment_id,
@@ -196,6 +212,15 @@ async def get_text_details_by_text_id(
             limit=text_details_request.limit,
             total=total_sections
         )
+        set_text_details_cache(
+            text_id=text_id,
+            content_id=text_details_request.content_id,
+            segment_id=text_details_request.segment_id,
+            version_id=text_details_request.version_id,
+            section_id=text_details_request.section_id,
+            text_details=detail_table_of_content
+        )
+        return detail_table_of_content
             
     else:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=ErrorConstants.TEXT_NOT_FOUND_MESSAGE)
