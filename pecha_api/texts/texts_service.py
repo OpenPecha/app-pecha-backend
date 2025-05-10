@@ -202,7 +202,7 @@ async def get_text_details_by_text_id(
 
 
 
-async def get_text_list_by_group_id(text_id: str, language: str, skip: int, limit: int) -> TextVersionResponse:
+async def get_text_versions_by_group_id(text_id: str, language: str, skip: int, limit: int) -> TextVersionResponse:
     if language is None:
         language = get("DEFAULT_LANGUAGE")
     root_text = await TextUtils.get_text_detail_by_id(text_id=text_id)
