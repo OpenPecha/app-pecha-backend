@@ -1,11 +1,9 @@
 
 
 from fastapi import HTTPException
-from sqlalchemy import table
 from starlette import status
 
 from pecha_api.error_contants import ErrorConstants
-from pecha_api.utils import Utils
 from .texts_repository import (
     get_texts_by_term, 
     get_texts_by_group_id, 
@@ -130,7 +128,7 @@ async def get_text_details_by_text_id(
     text_details_request: TextDetailsRequest
 ) -> DetailTableOfContentResponse:
 
-    cached_data = get_text_details_cache(
+    cached_data = await get_text_details_cache(
         text_id=text_id,
         text_details_request=text_details_request
     )
@@ -209,7 +207,7 @@ async def get_text_details_by_text_id(
             limit=text_details_request.limit,
             total=total_sections
         )
-        set_text_details_cache(
+        await set_text_details_cache(
             text_id=text_id,
             text_details_request=text_details_request,
             text_details=detail_table_of_content
