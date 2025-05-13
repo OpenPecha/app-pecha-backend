@@ -11,6 +11,10 @@ from .cache_repository import (
     get_cache_data
 )
 
+def generate_key(text_id: str, text_details_request: TextDetailsRequest):
+    params_str = f"{text_id}{text_details_request.content_id}{text_details_request.skip}{text_details_request.limit}"
+    hash_value = hashlib.sha256(params_str.encode()).hexdigest()
+    return hash_value
 
 async def set_text_details_cache(text_id: str = None, text_details_request: TextDetailsRequest = None,
                                  text_details: DetailTableOfContentResponse = None):
@@ -24,7 +28,3 @@ async def get_text_details_cache(text_id: str = None, text_details_request: Text
     return cache_data
 
 
-def generate_key(text_id: str, text_details_request: TextDetailsRequest):
-    params_str = f"{text_id}{text_details_request.content_id}{text_details_request.segment_id}{text_details_request.version_id}{text_details_request.section_id}{text_details_request.skip}{text_details_request.limit}"
-    hash_value = hashlib.sha256(params_str.encode()).hexdigest()
-    return hash_value
