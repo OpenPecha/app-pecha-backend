@@ -128,22 +128,27 @@ async def get_text_details_by_text_id(
     text_details_request: TextDetailsRequest
 ) -> DetailTableOfContentResponse:
 
-    cached_data = await get_text_details_cache(
-        text_id=text_id,
-        text_details_request=text_details_request
-    )
+    cached_data = None
+    if text_details_request.content_id is not None:
+        cached_data = await get_text_details_cache(
+            text_id=text_id,
+            content_id=text_details_request.content_id,
+            skip=text_details_request.skip,
+            limit=text_details_request.limit
+        )
 
     if cached_data is not None:
         return cached_data
 
+    # Check if text_id is provided
     if text_id is None:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail=ErrorConstants.TEXT_OR_TERM_NOT_FOUND_MESSAGE
         )
 
-    is_valid_text = await TextUtils.validate_text_exists(text_id=text_id)
 
+    # Check if valid version_id is provided
     if text_details_request.version_id is not None:
         is_valid_version = await TextUtils.validate_text_exists(
             text_id=text_details_request.version_id
@@ -154,6 +159,7 @@ async def get_text_details_by_text_id(
                 detail=ErrorConstants.VERSION_NOT_FOUND_MESSAGE
             )
 
+    # Check if valid segment_id is provided
     if text_details_request.segment_id is not None:
         is_valid_segment = await SegmentUtils.validate_segment_exists(
             segment_id=text_details_request.segment_id
@@ -163,6 +169,8 @@ async def get_text_details_by_text_id(
                 status_code=status.HTTP_404_NOT_FOUND,
                 detail=ErrorConstants.SEGMENT_NOT_FOUND_MESSAGE
             )
+
+    is_valid_text = await TextUtils.validate_text_exists(text_id=text_id)
 
     if is_valid_text:
         text = await TextUtils.get_text_detail_by_id(text_id=text_id)
@@ -180,6 +188,17 @@ async def get_text_details_by_text_id(
             )
             text_details_request.skip = max(0, table_of_content.sections[0].section_number - 1)
             text_details_request.limit = 1
+
+        # Check if the table of content exists in the cache database
+        cached_data = await get_text_details_cache(
+            text_id=text_id,
+            content_id=str(table_of_content.id),
+            skip=text_details_request.skip,
+            limit=text_details_request.limit
+        )
+        # if the same table of content with same skip and limit is again found when searching segments in toc. It's returned from cache
+        if cached_data is not None:
+            return cached_data
 
         if table_of_content is None:
             raise HTTPException(
@@ -209,7 +228,9 @@ async def get_text_details_by_text_id(
         )
         await set_text_details_cache(
             text_id=text_id,
-            text_details_request=text_details_request,
+            content_id=str(table_of_content.id),
+            skip=text_details_request.skip,
+            limit=text_details_request.limit,
             text_details=detail_table_of_content
         )
         return detail_table_of_content
