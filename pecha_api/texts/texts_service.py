@@ -133,6 +133,7 @@ async def get_text_details_by_text_id(
         cached_data = await get_text_details_cache(
             text_id=text_id,
             content_id=text_details_request.content_id,
+            version_id=text_details_request.version_id,
             skip=text_details_request.skip,
             limit=text_details_request.limit
         )
@@ -193,6 +194,7 @@ async def get_text_details_by_text_id(
         cached_data = await get_text_details_cache(
             text_id=text_id,
             content_id=str(table_of_content.id),
+            version_id=text_details_request.version_id,
             skip=text_details_request.skip,
             limit=text_details_request.limit
         )
@@ -229,6 +231,7 @@ async def get_text_details_by_text_id(
         await set_text_details_cache(
             text_id=text_id,
             content_id=str(table_of_content.id),
+            version_id=text_details_request.version_id,
             skip=text_details_request.skip,
             limit=text_details_request.limit,
             text_details=detail_table_of_content
