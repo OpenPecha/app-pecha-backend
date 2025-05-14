@@ -1,7 +1,7 @@
 import hashlib
 
 from pecha_api.texts.texts_response_models import (
-    TextDetailsRequest
+    DetailTableOfContentResponse
 )
 
 
@@ -15,8 +15,7 @@ def generate_key(text_id: str, content_id: str, skip: int, limit: int):
     hash_value = hashlib.sha256(params_str.encode()).hexdigest()
     return hash_value
 
-async def set_text_details_cache(text_id: str = None, content_id: str = None, skip: int = None, limit: int = None,
-                                 text_details: DetailTableOfContentResponse = None):
+async def set_text_details_cache(text_id: str = None, content_id: str = None, skip: int = None, limit: int = None, text_details: DetailTableOfContentResponse = None):
     hashed_key = generate_key(text_id, content_id, skip, limit)
     await set_cache(hashed_key, text_details)
 
