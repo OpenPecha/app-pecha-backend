@@ -128,19 +128,6 @@ async def get_text_details_by_text_id(
     text_details_request: TextDetailsRequest
 ) -> DetailTableOfContentResponse:
 
-    cached_data = None
-    if text_details_request.content_id is not None:
-        cached_data = await get_text_details_cache(
-            text_id=text_id,
-            content_id=text_details_request.content_id,
-            version_id=text_details_request.version_id,
-            skip=text_details_request.skip,
-            limit=text_details_request.limit
-        )
-
-    if cached_data is not None:
-        return cached_data
-
     # Check if text_id is provided
     if text_id is None:
         raise HTTPException(
@@ -228,7 +215,7 @@ async def get_text_details_by_text_id(
             limit=text_details_request.limit,
             total=total_sections
         )
-        await set_text_details_cache(
+        new_cached_text_detail = await set_text_details_cache(
             text_id=text_id,
             content_id=str(table_of_content.id),
             version_id=text_details_request.version_id,
@@ -254,6 +241,8 @@ async def get_text_versions_by_group_id(text_id: str, language: str, skip: int, 
     filtered_text_on_root_and_version = await TextUtils.filter_text_on_root_and_version(texts=texts, language=language)
     root_text = filtered_text_on_root_and_version["root_text"]
     versions = filtered_text_on_root_and_version["versions"]
+
+    # Storing all the table of contents of each version text in a dict
     versions_table_of_content_id_dict = {}
     for version in versions:
         list_of_table_of_contents = await get_contents_by_id(text_id=str(version.id))
@@ -261,6 +250,7 @@ async def get_text_versions_by_group_id(text_id: str, language: str, skip: int, 
         for table_of_content in list_of_table_of_contents:
             list_of_table_of_contents_ids.append(str(table_of_content.id))
         versions_table_of_content_id_dict[str(version.id)] = list_of_table_of_contents_ids
+    
     list_of_version = [
         TextVersion(
             id=str(version.id),
