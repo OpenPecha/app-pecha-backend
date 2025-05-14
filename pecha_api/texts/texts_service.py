@@ -161,6 +161,12 @@ async def get_text_details_by_text_id(
     is_valid_text = await TextUtils.validate_text_exists(text_id=text_id)
 
     if is_valid_text:
+        '''
+        In the following process first we will get the table of content if content_id is provided
+        Otherwise the frontend should have send segment_id which means we'll have to search this segment_id in table of contents
+        Later after getting the table of content we need to map each segment_id with it's content
+        If version ID is provied then we need to first identify the text_id in the mapping field and check if it's matching with the version_id, if yes we just map the segment_id with it's content
+        '''
         text = await TextUtils.get_text_detail_by_id(text_id=text_id)
         table_of_content = None
         if text_details_request.content_id is not None:
@@ -231,6 +237,12 @@ async def get_text_details_by_text_id(
 
 
 async def get_text_versions_by_group_id(text_id: str, language: str, skip: int, limit: int) -> TextVersionResponse:
+    '''
+    This function will first retrive the group_id from the text_id details
+    It will retrieve all the texts with same group_id
+    Then root text will be determined by the language provied
+    Left texts will be considered as versions
+    '''
     if language is None:
         language = get("DEFAULT_LANGUAGE")
     root_text = await TextUtils.get_text_detail_by_id(text_id=text_id)
