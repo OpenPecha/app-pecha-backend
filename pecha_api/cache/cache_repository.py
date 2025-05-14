@@ -4,7 +4,7 @@ from typing import Any, Optional
 from redis import Redis
 
 from pecha_api import config
-
+import logging
 from pydantic.json import pydantic_encoder
 
 
@@ -40,9 +40,7 @@ async def set_cache(hash_key: str, value: Any) -> bool:
             value = json.dumps(value, default=pydantic_encoder)
         return client.setex(full_key, timeout, value)
     except Exception:
-        import logging
         logging.error("An error occurred in set_cache", exc_info=True)
-
         return False
 
 
@@ -58,8 +56,10 @@ async def get_cache_data(hash_key: str) -> Optional[Any]:
         try:
             return json.loads(value)
         except json.JSONDecodeError:
+            logging.error("Failed to decode JSON from cache", exc_info=True)
             return value
     except Exception:
+        logging.error("An error occurred in get_cache_data", exc_info=True)
         return None
 
 
@@ -70,6 +70,7 @@ async def delete_cache(hash_key: str) -> bool:
         full_key = _build_key(hash_key)
         return bool(client.delete(full_key))
     except Exception:
+        logging.error("An error occurred in delete_cache", exc_info=True)
         return False
 
 
@@ -80,6 +81,7 @@ async def exists_in_cache(hash_key: str) -> bool:
         full_key = _build_key(hash_key)
         return bool(client.exists(full_key))
     except Exception:
+        logging.error("An error occurred in exists_in_cache", exc_info=True)
         return False
 
 
@@ -93,4 +95,5 @@ async def clear_cache(pattern: str = "*") -> bool:
             return bool(client.delete(*keys))
         return True
     except Exception:
+        logging.error("An error occurred in clear_cache", exc_info=True)
         return False
