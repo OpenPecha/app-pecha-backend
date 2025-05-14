@@ -5,6 +5,8 @@ from redis import Redis
 
 from pecha_api import config
 
+from pydantic.json import pydantic_encoder
+
 
 _client: Optional[Redis] = None
 
@@ -34,11 +36,13 @@ async def set_cache(hash_key: str, value: Any) -> bool:
         client = get_client()
         full_key = _build_key(hash_key)
         timeout = config.get_int("CACHE_DEFAULT_TIMEOUT")
-
         if not isinstance(value, (str, bytes)):
-            value = json.dumps(value)
+            value = json.dumps(value, default=pydantic_encoder)
         return client.setex(full_key, timeout, value)
     except Exception:
+        import logging
+        logging.error("An error occurred in set_cache", exc_info=True)
+
         return False
 
 
@@ -48,7 +52,6 @@ async def get_cache_data(hash_key: str) -> Optional[Any]:
         client = get_client()
         full_key = _build_key(hash_key)
         value = client.get(full_key)
-        
         if value is None:
             return None
 

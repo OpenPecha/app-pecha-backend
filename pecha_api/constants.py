@@ -6,9 +6,6 @@ class Constants:
     HOUR_IN_SECONDS = 3600
     DAY_IN_SECONDS = 86400
 
-    MAX_CACHE_SIZE = 100
-    CACHE_TTL = 3600
-
     LANGUAGE_NUMBER = {
         "bo": {
             "0": "༠",
