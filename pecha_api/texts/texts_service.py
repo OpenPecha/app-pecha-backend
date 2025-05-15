@@ -1,11 +1,9 @@
 
 
 from fastapi import HTTPException
-from sqlalchemy import table
 from starlette import status
 
 from pecha_api.error_contants import ErrorConstants
-from pecha_api.utils import Utils
 from .texts_repository import (
     get_texts_by_term, 
     get_texts_by_group_id, 
@@ -130,22 +128,15 @@ async def get_text_details_by_text_id(
     text_details_request: TextDetailsRequest
 ) -> DetailTableOfContentResponse:
 
-    cached_data = get_text_details_cache(
-        text_id=text_id,
-        text_details_request=text_details_request
-    )
-
-    if cached_data is not None:
-        return cached_data
-
+    # Check if text_id is provided
     if text_id is None:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail=ErrorConstants.TEXT_OR_TERM_NOT_FOUND_MESSAGE
         )
 
-    is_valid_text = await TextUtils.validate_text_exists(text_id=text_id)
 
+    # Check if valid version_id is provided
     if text_details_request.version_id is not None:
         is_valid_version = await TextUtils.validate_text_exists(
             text_id=text_details_request.version_id
@@ -156,6 +147,7 @@ async def get_text_details_by_text_id(
                 detail=ErrorConstants.VERSION_NOT_FOUND_MESSAGE
             )
 
+    # Check if valid segment_id is provided
     if text_details_request.segment_id is not None:
         is_valid_segment = await SegmentUtils.validate_segment_exists(
             segment_id=text_details_request.segment_id
@@ -166,7 +158,15 @@ async def get_text_details_by_text_id(
                 detail=ErrorConstants.SEGMENT_NOT_FOUND_MESSAGE
             )
 
+    is_valid_text = await TextUtils.validate_text_exists(text_id=text_id)
+
     if is_valid_text:
+        '''
+        In the following process first we will get the table of content if content_id is provided
+        Otherwise the frontend should have send segment_id which means we'll have to search this segment_id in table of contents
+        Later after getting the table of content we need to map each segment_id with it's content
+        If version ID is provied then we need to first identify the text_id in the mapping field and check if it's matching with the version_id, if yes we just map the segment_id with it's content
+        '''
         text = await TextUtils.get_text_detail_by_id(text_id=text_id)
         table_of_content = None
         if text_details_request.content_id is not None:
@@ -182,6 +182,18 @@ async def get_text_details_by_text_id(
             )
             text_details_request.skip = max(0, table_of_content.sections[0].section_number - 1)
             text_details_request.limit = 1
+
+        # Check if the table of content exists in the cache database
+        cached_data = await get_text_details_cache(
+            text_id=text_id,
+            content_id=str(table_of_content.id),
+            version_id=text_details_request.version_id,
+            skip=text_details_request.skip,
+            limit=text_details_request.limit
+        )
+        # if the same table of content with same skip and limit is again found when searching segments in toc. It's returned from cache
+        if cached_data is not None:
+            return cached_data
 
         if table_of_content is None:
             raise HTTPException(
@@ -209,9 +221,12 @@ async def get_text_details_by_text_id(
             limit=text_details_request.limit,
             total=total_sections
         )
-        set_text_details_cache(
+        new_cached_text_detail = await set_text_details_cache(
             text_id=text_id,
-            text_details_request=text_details_request,
+            content_id=str(table_of_content.id),
+            version_id=text_details_request.version_id,
+            skip=text_details_request.skip,
+            limit=text_details_request.limit,
             text_details=detail_table_of_content
         )
         return detail_table_of_content
@@ -222,6 +237,12 @@ async def get_text_details_by_text_id(
 
 
 async def get_text_versions_by_group_id(text_id: str, language: str, skip: int, limit: int) -> TextVersionResponse:
+    '''
+    This function will first retrive the group_id from the text_id details
+    It will retrieve all the texts with same group_id
+    Then root text will be determined by the language provied
+    Left texts will be considered as versions
+    '''
     if language is None:
         language = get("DEFAULT_LANGUAGE")
     root_text = await TextUtils.get_text_detail_by_id(text_id=text_id)
@@ -232,6 +253,8 @@ async def get_text_versions_by_group_id(text_id: str, language: str, skip: int, 
     filtered_text_on_root_and_version = await TextUtils.filter_text_on_root_and_version(texts=texts, language=language)
     root_text = filtered_text_on_root_and_version["root_text"]
     versions = filtered_text_on_root_and_version["versions"]
+
+    # Storing all the table of contents of each version text in a dict
     versions_table_of_content_id_dict = {}
     for version in versions:
         list_of_table_of_contents = await get_contents_by_id(text_id=str(version.id))
@@ -239,6 +262,7 @@ async def get_text_versions_by_group_id(text_id: str, language: str, skip: int, 
         for table_of_content in list_of_table_of_contents:
             list_of_table_of_contents_ids.append(str(table_of_content.id))
         versions_table_of_content_id_dict[str(version.id)] = list_of_table_of_contents_ids
+    
     list_of_version = [
         TextVersion(
             id=str(version.id),
