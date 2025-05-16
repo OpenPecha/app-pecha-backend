@@ -15,12 +15,8 @@ def get_client() -> Redis:
     """Get or create Redis client instance"""
     global _client
     if _client is None:
-        _client = Redis(
-            host=config.get("CACHE_HOST"),
-            port=config.get_int("CACHE_PORT"),
-            db=config.get_int("CACHE_DB"),
-            decode_responses=True
-        )
+        redis_url = config.get("CACHE_CONNECTION_STRING")
+        _client = Redis.from_url(redis_url)
     return _client
 
 
