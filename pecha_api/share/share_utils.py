@@ -48,7 +48,7 @@ class ShareUtils:
         if not os.path.exists(font_path):
             font = ImageFont.load_default()
         else:
-            font = ImageFont.truetype(font_path, 36)
+            font = ImageFont.truetype(font_path, 64)
 
         # Draw the cleaned text
         draw.multiline_text((100, 100), text, fill=text_color, font=font, spacing=10)
