@@ -34,7 +34,7 @@ DEFAULTS = dict(
     CACHE_PORT=6379,
     CACHE_DB=0,
     CACHE_PREFIX="pecha:",
-    CACHE_DEFAULT_TIMEOUT=7200 # 2 hours in seconds
+    CACHE_DEFAULT_TIMEOUT=14400 # 4 hours in seconds
 )
 
 
