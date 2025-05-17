@@ -5,7 +5,7 @@ from ..texts.segments.segments_service import get_segment_details_by_id
 from ..texts.segments.segments_utils import SegmentUtils
 from starlette import status
 from starlette.responses import StreamingResponse
-
+from .share_utils import ShareUtils
 from .share_response_models import (
     ImageGenerationRequest
 )
