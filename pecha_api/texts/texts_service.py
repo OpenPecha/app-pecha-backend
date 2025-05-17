@@ -63,20 +63,21 @@ async def get_texts_by_term_id(term_id: str, language: str, skip: int, limit: in
         )
         for text in commentary
     ]
-    text_list.append(
-        Text(
-            id=str(root_text.id),
-            title=root_text.title,
-            language=root_text.language,
-            type="root_text",
-            group_id=root_text.group_id,
-            is_published=root_text.is_published,
-            created_date=root_text.created_date,
-            updated_date=root_text.updated_date,
-            published_date=root_text.published_date,
-            published_by=root_text.published_by
+    if root_text is not None:
+        text_list.append(
+            Text(
+                id=str(root_text.id),
+                title=root_text.title,
+                language=root_text.language,
+                type="root_text",
+                group_id=root_text.group_id,
+                is_published=root_text.is_published,
+                created_date=root_text.created_date,
+                updated_date=root_text.updated_date,
+                published_date=root_text.published_date,
+                published_by=root_text.published_by
+            )
         )
-    )
     return text_list
 
 
