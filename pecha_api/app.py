@@ -14,6 +14,7 @@ from pecha_api.users import users_views
 from pecha_api.texts.mappings import mappings_views
 from pecha_api.texts.segments import segments_views
 from pecha_api.texts.groups import groups_views
+from pecha_api.share import share_views
 import uvicorn
 
 
@@ -33,6 +34,7 @@ api.include_router(segments_views.segment_router)
 api.include_router(topics_views.topics_router)
 api.include_router(users_views.user_router)
 api.include_router(mappings_views.mapping_router)
+api.include_router(share_views.share_router)
 
 api.add_middleware(
     CORSMiddleware,
