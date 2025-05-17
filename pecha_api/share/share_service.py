@@ -6,12 +6,8 @@ from ..texts.segments.segments_utils import SegmentUtils
 from starlette import status
 from starlette.responses import StreamingResponse
 from .share_utils import ShareUtils
-from .share_response_models import (
-    ImageGenerationRequest
-)
 
-async def generate_image(image_generation_request: ImageGenerationRequest):
-    segment_id = image_generation_request.segment_id
+async def generate_image(segment_id: str, language: str):
     if segment_id is not None:
         is_valid_segment = await SegmentUtils.validate_segment_exists(segment_id=segment_id)
         if not is_valid_segment:
@@ -19,11 +15,11 @@ async def generate_image(image_generation_request: ImageGenerationRequest):
         segment = await get_segment_details_by_id(segment_id=segment_id)
 
         cleaned_content = ShareUtils.clean_html(segment.content)
-        image_bytes = ShareUtils.create_image_bytes(cleaned_content, language=image_generation_request.language)
+        image_bytes = ShareUtils.create_image_bytes(cleaned_content, language=language)
         
         return StreamingResponse(image_bytes, media_type="image/png")
     else:
-        image_bytes = ShareUtils.create_image_bytes("PECHA", language="en")
+        image_bytes = ShareUtils.create_image_bytes("PECHA", language=language)
 
         return StreamingResponse(image_bytes, media_type="image/png")
         
