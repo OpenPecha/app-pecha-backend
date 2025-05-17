@@ -19,7 +19,11 @@ async def generate_image(image_generation_request: ImageGenerationRequest):
         segment = await get_segment_details_by_id(segment_id=segment_id)
 
         cleaned_content = ShareUtils.clean_html(segment.content)
-        image_bytes = ShareUtils.create_image_bytes(cleaned_content)
+        image_bytes = ShareUtils.create_image_bytes(cleaned_content, language=image_generation_request.language)
         
+        return StreamingResponse(image_bytes, media_type="image/png")
+    else:
+        image_bytes = ShareUtils.create_image_bytes("PECHA", language="en")
+
         return StreamingResponse(image_bytes, media_type="image/png")
         
