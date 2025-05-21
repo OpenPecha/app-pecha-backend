@@ -32,6 +32,7 @@ async def generate_image(segment_id: str, language: str):
         env["LANGUAGE"] = language
 
         subprocess.run(
+            # add /usr/local/bin/python3 if using MAC_OS
             ["/usr/bin/python3", "pecha_api/share/pecha_text_image.py"],
             env=env,
             check=True
