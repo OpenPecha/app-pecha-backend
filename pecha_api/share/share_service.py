@@ -2,6 +2,8 @@ from fastapi import HTTPException
 from pecha_api.error_contants import ErrorConstants
 import subprocess
 
+import os
+
 from ..texts.segments.segments_service import get_segment_details_by_id
 from ..texts.segments.segments_utils import SegmentUtils
 from starlette import status
@@ -24,8 +26,12 @@ async def generate_image(segment_id: str, language: str):
 
         language = text_detail.language
 
+        env = os.environ.copy()
+        env["SEGMENT_TEXT"] = segment_text
+        env["REFERENCE_TEXT"] = reference_text
+        env["LANGUAGE"] = language
 
-        subprocess.run(["python3", "pecha_api/share/pecha_text_image.py"], check=True)
+        subprocess.run(["python3", "pecha_api/share/pecha_text_image.py"], env=env,check=True)
         
         return StreamingResponse(image_bytes, media_type="image/png")
     else:

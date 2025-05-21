@@ -158,8 +158,8 @@ def create_synthetic_data(text, ref_str, lang, version_lang, logo_path=None):
         
 
 if __name__ == "__main__":
-    text = os.environ.get('PECHA_TEXT', "Default text")
-    ref_str = os.environ.get('PECHA_REF', "Default ref")
-    version_lang = os.environ.get('PECHA_VERSION_LANG', None)
-    lang = os.environ.get('PECHA_LANG', None)
+    text = os.environ.get("SEGMENT_TEXT")
+    ref_str = os.environ.get("REFERENCE_TEXT")
+    version_lang = os.environ.get("LANGUAGE")
+    lang = version_lang
     create_synthetic_data(text, ref_str, lang, version_lang, logo_path="pecha_api/share/static/img/pecha-icon.png")
