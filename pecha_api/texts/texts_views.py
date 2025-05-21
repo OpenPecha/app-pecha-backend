@@ -37,7 +37,13 @@ async def get_text(
     skip: int = Query(default=0),
     limit: int = Query(default=10)
 ):
-    return await get_text_by_text_id_or_term(text_id=text_id, term_id=term_id, language=language, skip=skip, limit=limit)
+    return await get_text_by_text_id_or_term(
+        text_id=text_id,
+        term_id=term_id,
+        language=language,
+        skip=skip,
+        limit=limit
+    )
 
 
 @text_router.post("", status_code=status.HTTP_201_CREATED)
@@ -58,7 +64,9 @@ async def get_versions(
         skip: int = Query(default=0),
         limit: int = Query(default=10)
 ) -> TextVersionResponse:
-    return await get_text_versions_by_group_id(text_id=text_id, language=language, skip=skip, limit=limit)
+    return await get_text_versions_by_group_id(
+        text_id=text_id,
+        language=language, skip=skip, limit=limit)
 
 
 @text_router.get("/{text_id}/contents", status_code=status.HTTP_200_OK)
