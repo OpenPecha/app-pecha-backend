@@ -10,6 +10,7 @@ from starlette import status
 from starlette.responses import StreamingResponse
 from .share_utils import ShareUtils
 from ..texts.texts_utils import TextUtils
+from .pecha_text_image import create_synthetic_data
 
 async def generate_image(segment_id: str, language: str):
     if segment_id is not None and segment_id != "":
@@ -31,12 +32,15 @@ async def generate_image(segment_id: str, language: str):
         env["REFERENCE_TEXT"] = reference_text
         env["LANGUAGE"] = language
 
-        subprocess.run(
-            # add /usr/local/bin/python3 if using MAC_OS
-            ["/usr/bin/python3", "pecha_api/share/pecha_text_image.py"],
-            env=env,
-            check=True
-        )
+        create_synthetic_data(segment_text, reference_text, language, language, logo_path="pecha_api/share/static/img/pecha-logo.png")
+
+    
+        # subprocess.run(
+        #     # add /usr/local/bin/python3 if using MAC_OS
+        #     ["/usr/bin/python3", "pecha_api/share/pecha_text_image.py"],
+        #     env=env,
+        #     check=True
+        # )
         
         image_path = "pecha_api/share/static/img/output.png"
         with open(image_path, "rb") as image_file:

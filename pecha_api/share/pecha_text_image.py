@@ -161,8 +161,4 @@ if __name__ == "__main__":
     ref_str = os.environ.get("REFERENCE_TEXT")
     version_lang = os.environ.get("LANGUAGE")
     lang = version_lang
-    text = "བོད་སྐད་དུ། བྱང་ཆུབ་སེམས་དཔའི་སྤྱོད་པ་ལ་འཇུག་པ།"
-    ref_str = "བོད་སྐད་དུ། བྱང་ཆུབ་སེམས་དཔའི་སྤྱོད་པ་ལ་འཇུག་པ།"
-    version_lang = "bo"
-    lang = "bo"
     create_synthetic_data(text, ref_str, lang, version_lang, logo_path="pecha_api/share/static/img/pecha-logo.png")
