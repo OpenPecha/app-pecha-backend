@@ -31,9 +31,13 @@ async def generate_image(segment_id: str, language: str):
         env["REFERENCE_TEXT"] = reference_text
         env["LANGUAGE"] = language
 
-        subprocess.run(["python3", "pecha_api/share/pecha_text_image.py"], env=env,check=True)
+        subprocess.run(
+            ["/usr/bin/python3", "pecha_api/share/pecha_text_image.py"],
+            env=env,
+            check=True
+        )
         
-        image_path = "pecha_api/share/img/output.png"
+        image_path = "pecha_api/share/static/img/output.png"
         with open(image_path, "rb") as image_file:
             image_bytes = image_file.read()
 

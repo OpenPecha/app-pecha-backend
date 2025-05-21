@@ -1,4 +1,3 @@
-from pathlib import Path
 from PIL import Image, ImageDraw, ImageFont
 import textwrap
 import os
@@ -10,7 +9,7 @@ FONT_PATHS = {
 
 class SyntheticImageGenerator:
 
-    def __init__(self, image_width, image_height, font_size=24, font_type="Uchen", bg_color="#ac1c22") -> None:
+    def __init__(self, image_width, image_height, font_size=24, font_type="bo", bg_color="#ac1c22") -> None:
         self.image_width = int(image_width)
         self.image_height = int(image_height)
         self.font_size = int(font_size)
@@ -71,8 +70,8 @@ class SyntheticImageGenerator:
 
     def save_image(self, text, ref_str, lang, img_file_name, logo_path=None):
         
-        font_file_name_text = FONT_PATHS.get(self.font_type, 'en')
-        font_file_name_ref = FONT_PATHS.get(self.font_type, 'he') if lang == "he" else FONT_PATHS.get('en')
+        font_file_name_text = FONT_PATHS.get(self.font_type, 'bo')
+        font_file_name_ref = FONT_PATHS.get(self.font_type, 'bo') if lang == "bo" else FONT_PATHS.get('bo')
 
         
         # Create base image with RGBA mode to support transparency
@@ -154,7 +153,7 @@ def create_synthetic_data(text, ref_str, lang, version_lang, logo_path=None):
         font_type=font_type_lang,
         bg_color="#ac1c22"
     )
-    synthetic_image_generator.save_image(cleaned_text, ref_str, lang, "output.png", logo_path)
+    synthetic_image_generator.save_image(cleaned_text, ref_str, lang, "pecha_api/share/static/img/output.png", logo_path)
         
 
 if __name__ == "__main__":
@@ -162,4 +161,8 @@ if __name__ == "__main__":
     ref_str = os.environ.get("REFERENCE_TEXT")
     version_lang = os.environ.get("LANGUAGE")
     lang = version_lang
-    create_synthetic_data(text, ref_str, lang, version_lang, logo_path="pecha_api/share/static/img/pecha-icon.png")
+    text = "བོད་སྐད་དུ། བྱང་ཆུབ་སེམས་དཔའི་སྤྱོད་པ་ལ་འཇུག་པ།"
+    ref_str = "བོད་སྐད་དུ། བྱང་ཆུབ་སེམས་དཔའི་སྤྱོད་པ་ལ་འཇུག་པ།"
+    version_lang = "bo"
+    lang = "bo"
+    create_synthetic_data(text, ref_str, lang, version_lang, logo_path="pecha_api/share/static/img/pecha-logo.png")
