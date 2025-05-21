@@ -1,8 +1,7 @@
 from fastapi import HTTPException
 from pecha_api.error_contants import ErrorConstants
 import subprocess
-
-
+import io
 import os
 
 from ..texts.segments.segments_service import get_segment_details_by_id
@@ -39,7 +38,7 @@ async def generate_image(segment_id: str, language: str):
             image_bytes = image_file.read()
 
         return StreamingResponse(io.BytesIO(image_bytes), media_type="image/png")
-        
+
     else:
         image_bytes = ShareUtils.create_image_bytes("PECHA", language=language)
 
