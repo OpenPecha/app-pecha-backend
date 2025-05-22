@@ -71,11 +71,9 @@ async def get_versions(
 
 @text_router.get("/{text_id}/contents", status_code=status.HTTP_200_OK)
 async def get_contents(
-        text_id: str,
-        skip: int = Query(default=0),
-        limit: int = Query(default=5)
+        text_id: str
 ) -> TableOfContentResponse:
-    return await get_table_of_contents_by_text_id(text_id=text_id, skip=skip, limit=limit)
+    return await get_table_of_contents_by_text_id(text_id=text_id)
 
 
 @text_router.post("/{text_id}/details", status_code=status.HTTP_200_OK)
