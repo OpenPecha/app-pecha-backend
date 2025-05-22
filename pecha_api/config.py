@@ -35,6 +35,9 @@ DEFAULTS = dict(
     CACHE_DB=0,
     CACHE_PREFIX="pecha:",
     CACHE_DEFAULT_TIMEOUT=14400 # 4 hours in seconds
+
+    SHORT_URL_GENERATION_ENDPOINT="https://url-shortening-14682653622-b69c6fd.onrender.com/api/v1"
+    PECHA_BACKEND_ENDPOINT="https://pecha-backend-12341825340-1fb0112.onrender.com/api/v1"
 )
 
 

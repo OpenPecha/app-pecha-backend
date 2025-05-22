@@ -10,3 +10,4 @@ class ErrorConstants:
     CONTENT_ID_NOT_FOUND_MESSAGE="Content ID is required"
     GROUP_NOT_FOUND_MESSAGE="Group not found"
     VERSION_NOT_FOUND_MESSAGE="Version not found"
+    SHORT_URL_GENERATION_FAILED_MESSAGE="Short URL generation failed"
