@@ -1,6 +1,6 @@
 from PIL import Image, ImageDraw, ImageFont
+from bs4 import BeautifulSoup
 import textwrap
-import os
 
 FONT_PATHS = {
     "bo": "pecha_api/share/static/fonts/wujin+gangbi.ttf",
@@ -129,15 +129,24 @@ class SyntheticImageGenerator:
         img.save(img_file_name)
 
 
-def clean_text(text):
-    if len(text) > 180:
-        text = text[:180] + " ..."
-    """Remove HTML break tags and clean up the text"""
-    # Replace </br> with space or newline depending on your preference
-    cleaned_text = text.replace('</br>', ' ').replace('<br>', ' ').replace('<br/>', ' ').replace('<b', ' ').replace('</', ' ').replace('<', ' ').replace('>', ' ')
-    # Remove multiple spaces that might have been created
-    cleaned_text = ' '.join(cleaned_text.split())
-    return cleaned_text
+def clean_text(content: str, max_lines: int = 4) -> str:
+    soup = BeautifulSoup(content, "html.parser")
+
+    # Replace <br> with newline character
+    for br in soup.find_all("br"):
+        br.replace_with("\n")
+
+    # Remove all other HTML tags and their contents
+    for tag in soup.find_all():
+        tag.decompose()
+
+    # Get cleaned text
+    text = soup.get_text()
+    lines = text.strip().splitlines()
+    if len(lines) > max_lines:
+        lines = lines[:max_lines]
+        lines.append("...")
+    return "\n".join(lines)
 
 
 def create_synthetic_data(text, ref_str, lang, version_lang, logo_path=None):
@@ -156,9 +165,24 @@ def create_synthetic_data(text, ref_str, lang, version_lang, logo_path=None):
     synthetic_image_generator.save_image(cleaned_text, ref_str, lang, "pecha_api/share/static/img/output.png", logo_path)
         
 
-if __name__ == "__main__":
-    text = os.environ.get("SEGMENT_TEXT")
-    ref_str = os.environ.get("REFERENCE_TEXT")
-    version_lang = os.environ.get("LANGUAGE")
-    lang = version_lang
-    create_synthetic_data(text, ref_str, lang, version_lang, logo_path="pecha_api/share/static/img/pecha-logo.png")
+def generate_text_image(text: str = None, ref_str: str = None, lang: str = None, version_lang: str = None, logo_path: str = None):
+    if text is not None and text != "":
+        create_synthetic_data(text, ref_str, lang, version_lang, logo_path)
+    else:
+        width = 1200
+        height = 630
+        img = Image.new('RGBA', (width, height), color="#b5343c")
+        logo = Image.open("pecha_api/share/static/img/pecha-logo.png")
+        logo.thumbnail((400, 400))
+        logo_padded = Image.new('RGBA', (width, height))
+        logo_padded.paste(logo, (int(width/2-logo.size[0]/2), int(height/2-logo.size[1]/2)))
+        img = Image.alpha_composite(img, logo_padded)
+        img.save("pecha_api/share/static/img/output.png")
+        
+
+# if __name__ == "__main__":
+#     text = os.environ.get("SEGMENT_TEXT")
+#     ref_str = os.environ.get("REFERENCE_TEXT")
+#     version_lang = os.environ.get("LANGUAGE")
+#     lang = version_lang
+#     create_synthetic_data(text, ref_str, lang, version_lang, logo_path="pecha_api/share/static/img/pecha-logo.png")
