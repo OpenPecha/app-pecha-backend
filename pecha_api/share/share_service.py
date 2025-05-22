@@ -43,7 +43,7 @@ async def generate_image(segment_id: str, language: str):
 
 
 
-async def get_short_url(share_request: ShareRequest):
+async def get_short_url(share_request: ShareRequest) -> str:
     short_url_endpoint = get("SHORT_URL_GENERATION_ENDPOINT")
     pecha_backend_endpoint = get("PECHA_BACKEND_ENDPOINT")
     url = f"{short_url_endpoint}/shorten"

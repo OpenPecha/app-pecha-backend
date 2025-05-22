@@ -24,5 +24,5 @@ async def image_generation(
     return await generate_image(segment_id=segment_id, language=language)
 
 @share_router.post("", status_code=status.HTTP_200_OK)
-async def share(share_request: ShareRequest):
+async def share(share_request: ShareRequest) -> str:
     return await get_short_url(share_request=share_request)
