@@ -20,6 +20,8 @@ search_router = APIRouter(
 @search_router.get("", status_code=status.HTTP_200_OK)
 async def search(
     query: str = Query(default=None, description="Search query"),
-    type: str = Query(default=None, description="Search type (Source / Sheet)")
+    type: str = Query(default=None, description="Search type (Source / Sheet)"),
+    skip: int = Query(default=0),
+    limit: int = Query(default=10)
 ) -> Union[SearchSourceResponse, SearchSheetResponse, str]:
     return await get_search_results(query=query, type=type)
