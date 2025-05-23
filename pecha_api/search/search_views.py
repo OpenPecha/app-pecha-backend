@@ -21,5 +21,5 @@ search_router = APIRouter(
 async def search(
     query: str = Query(default=None, description="Search query"),
     type: str = Query(default=None, description="Search type (Source / Sheet)")
-) -> Union[SearchSourceResponse, SearchSheetResponse]:
+) -> Union[SearchSourceResponse, SearchSheetResponse, str]:
     return await get_search_results(query=query, type=type)

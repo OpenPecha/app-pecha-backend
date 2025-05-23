@@ -11,7 +11,7 @@ from .search_response_models import (
     Search
 )
 
-async def get_search_results(query: str, type: str) -> Union[SearchSourceResponse, SearchSheetResponse]:
+async def get_search_results(query: str, type: str) -> Union[SearchSourceResponse, SearchSheetResponse, str]:
     if type.lower() == "source":
         # Example data (replace with actual logic as needed)
         sources = [
