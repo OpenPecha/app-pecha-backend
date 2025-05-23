@@ -29,8 +29,16 @@ class Sheet(BaseModel):
     publisher_position: str
     publisher_organization: str
 
-class SearchResponse(BaseModel):
-    search: Search
-    sources: List[Source] = []
+class SearchSheetResponse(BaseModel):
+    text: Text
     sheets: List[Sheet] = []
+    skip: int
+    limit: int
+    total: int
 
+class SearchSourceResponse(BaseModel):
+    text: Text
+    sources: List[Source] = []
+    skip: int
+    limit: int
+    total: int

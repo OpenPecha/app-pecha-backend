@@ -1,13 +1,18 @@
+
+from typing import Union
+
 from .search_response_models import (
-    SearchResponse
+    SearchSourceResponse,
+    SearchSheetResponse
 )
 
-async def get_search_results(query: str) -> SearchResponse:
-    return {
-        "search":{
-            "text": "buddhist"
-        },
-        "sources": [
+async def get_search_results(query: str, type: str) -> Union[SearchSourceResponse, SearchSheetResponse]:
+    if type.lower() == "source":
+        return {
+            "text": {
+                "text": "buddhist"
+            },
+            "sources": [
             {
                 "text": {
                     "text_id": "91a616af-c8f4-4797-baf7-9772a3474cff",
@@ -41,28 +46,42 @@ async def get_search_results(query: str) -> SearchResponse:
                 ]
             }
         ],
-        "sheets": [
-            {
-                "sheet_title": "བཟོད་པའི་མཐུ་སྟོབས།",
-                "sheet_summary": "བཟོད་པའི་ཕན་ཡོན་དང་ཁོང་ཁྲོའི་ཉེས་དམིགས་ཀྱི་གཏམ་རྒྱུད་འདི། ད་ལྟའང་བོད་ཀྱི་གྲོང་གསེབ་དེར་གླེང་སྒྲོས་སུ་གྱུར་ཡོད་དོ།། །། Buddhist Path",
-                "publisher_id": 48,
-                "sheet_id": 114,
-                "publisher_name": "Yeshi Lhundup",
-                "publisher_url": "/profile/yeshi-lhundup",
-                "publisher_image": "https://storage.googleapis.com/pecha-profile-img/yeshi-lhundup-1742619970-small.png",
-                "publisher_position": "LCM",
-                "publisher_organization": "pecha.org"
-            },
-            {
-                "sheet_title": "Teaching 1st Jan 2025",
-                "sheet_summary": "sadf asdfas dfas Buddhist Path",
-                "publisher_id": 61,
-                "sheet_id": 170,
-                "publisher_name": "Yeshi Lhundup",
-                "publisher_url": "/profile/yeshi-lhundup2",
-                "publisher_image": "",
-                "publisher_position": "",
-                "publisher_organization": ""
-            }
-        ]
+        "skip": 0,
+        "limit": 10,
+        "total": 2
     }
+    elif type.lower() == "sheet":
+        return {
+            "search":{
+                "text": "buddhist"
+            },
+            "sheets": [
+                {
+                    "sheet_title": "བཟོད་པའི་མཐུ་སྟོབས།",
+                    "sheet_summary": "བཟོད་པའི་ཕན་ཡོན་དང་ཁོང་ཁྲོའི་ཉེས་དམིགས་ཀྱི་གཏམ་རྒྱུད་འདི། ད་ལྟའང་བོད་ཀྱི་གྲོང་གསེབ་དེར་གླེང་སྒྲོས་སུ་གྱུར་ཡོད་དོ།། །། Buddhist Path",
+                    "publisher_id": 48,
+                    "sheet_id": 114,
+                    "publisher_name": "Yeshi Lhundup",
+                    "publisher_url": "/profile/yeshi-lhundup",
+                    "publisher_image": "https://storage.googleapis.com/pecha-profile-img/yeshi-lhundup-1742619970-small.png",
+                    "publisher_position": "LCM",
+                    "publisher_organization": "pecha.org"
+                },
+                {
+                    "sheet_title": "Teaching 1st Jan 2025",
+                    "sheet_summary": "sadf asdfas dfas Buddhist Path",
+                    "publisher_id": 61,
+                    "sheet_id": 170,
+                    "publisher_name": "Yeshi Lhundup",
+                    "publisher_url": "/profile/yeshi-lhundup2",
+                    "publisher_image": "",
+                    "publisher_position": "",
+                    "publisher_organization": ""
+                }
+            ],
+            "skip": 0,
+            "limit": 10,
+            "total": 20
+        }
+    else:
+        return "Invalid search type"
