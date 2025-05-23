@@ -38,7 +38,6 @@ class SearchSheetResponse(BaseModel):
 
 class SearchSourceResponse(BaseModel):
     search: Search
-    text: Text
     sources: List[Source] = []
     skip: int
     limit: int
