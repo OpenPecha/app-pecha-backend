@@ -5,6 +5,10 @@ from .search_service import (
     get_search_results
 )
 
+from .search_response_models import (
+    SearchResponse
+)
+
 search_router = APIRouter(
     prefix="/search",
     tags=["Search"]
@@ -13,5 +17,5 @@ search_router = APIRouter(
 @search_router.get("", status_code=status.HTTP_200_OK)
 async def search(
     query: str = Query(default=None, description="Search query")
-):
+) -> SearchResponse:
     return await get_search_results(query=query)
