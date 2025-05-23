@@ -49,13 +49,17 @@ async def get_short_url(share_request: ShareRequest) -> str:
     url = f"{short_url_endpoint}/shorten"
     image_url = f"{pecha_backend_endpoint}/share/image?segment_id={share_request.segment_id}&language={share_request.language}"
     payload = {
-        "withTag": True,
-        "imageUrl": image_url,
-        "longUrl": share_request.url
+        "url": share_request.url,
+        "og_title": "og_title",
+        "og_description": "og_description",
+        "og_image": image_url,
+        "tags": "tags"
     }
     async with httpx.AsyncClient() as client:
         response = await client.post(url, json=payload)
-        if response.status_code == 200:
-            return response.json()
+        if response.status_code == 201:
+            response = response.json()
+            short_url = response["short_url"]
+            return short_url
         else:
             raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=ErrorConstants.SHORT_URL_GENERATION_FAILED_MESSAGE)
