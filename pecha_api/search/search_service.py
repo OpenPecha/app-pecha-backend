@@ -9,8 +9,8 @@ from .search_response_models import (
 async def get_search_results(query: str, type: str) -> Union[SearchSourceResponse, SearchSheetResponse]:
     if type.lower() == "source":
         return {
-            "text": {
-                "text": "buddhist"
+            "search": {
+                "text": query
             },
             "sources": [
             {
@@ -53,7 +53,7 @@ async def get_search_results(query: str, type: str) -> Union[SearchSourceRespons
     elif type.lower() == "sheet":
         return {
             "search":{
-                "text": "buddhist"
+                "text": query
             },
             "sheets": [
                 {
