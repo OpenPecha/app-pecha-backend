@@ -3,7 +3,8 @@ from starlette import status
 from typing import Optional
 
 from .share_response_models import (
-    ShareRequest
+    ShareRequest,
+    ShortUrlResponse
 )
 
 from .share_service import (
@@ -24,5 +25,5 @@ async def image_generation(
     return await generate_image(segment_id=segment_id, language=language)
 
 @share_router.post("", status_code=status.HTTP_200_OK)
-async def share(share_request: ShareRequest) -> str:
+async def share(share_request: ShareRequest) -> ShortUrlResponse:
     return await get_short_url(share_request=share_request)
