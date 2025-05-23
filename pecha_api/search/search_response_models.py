@@ -30,13 +30,14 @@ class Sheet(BaseModel):
     publisher_organization: str
 
 class SearchSheetResponse(BaseModel):
-    text: Text
+    search: Search
     sheets: List[Sheet] = []
     skip: int
     limit: int
     total: int
 
 class SearchSourceResponse(BaseModel):
+    search: Search
     text: Text
     sources: List[Source] = []
     skip: int
