@@ -13,8 +13,18 @@ from .search_response_models import (
 
 async def get_search_results(query: str, type: str) -> Union[SearchSourceResponse, SearchSheetResponse, str]:
     if type.lower() == "source":
-        # Example data (replace with actual logic as needed)
-        sources = [
+        hits: SearchSourceResponse = await _source_search_(query)
+        return hits
+        
+    elif type.lower() == "sheet":
+        hits: SearchSheetResponse = await _sheet_search_(query)
+        return hits
+        
+    else:
+        return "Invalid search type"
+
+async def _source_search_(query: str) -> SearchSourceResponse:
+    sources = [
             Source(
                 text=Text(
                     text_id="91a616af-c8f4-4797-baf7-9772a3474cff",
@@ -48,15 +58,16 @@ async def get_search_results(query: str, type: str) -> Union[SearchSourceRespons
                 ]
             )
         ]
-        return SearchSourceResponse(
-            search=Search(text=query),
-            sources=sources,
-            skip=0,
-            limit=10,
-            total=2
-        )
-    elif type.lower() == "sheet":
-        sheets = [
+    return SearchSourceResponse(
+        search=Search(text=query),
+        sources=sources,
+        skip=0,
+        limit=10,
+        total=2
+    )
+
+async def _sheet_search_(query: str) -> SearchSheetResponse:
+    sheets = [
             Sheet(
                 sheet_title="བཟོད་པའི་མཐུ་སྟོབས།",
                 sheet_summary="བཟོད་པའི་ཕན་ཡོན་དང་ཁོང་ཁྲོའི་ཉེས་དམིགས་ཀྱི་གཏམ་རྒྱུད་འདི། ད་ལྟའང་བོད་ཀྱི་གྲོང་གསེབ་དེར་གླེང་སྒྲོས་སུ་གྱུར་ཡོད་དོ།། །། Buddhist Path",
@@ -80,12 +91,10 @@ async def get_search_results(query: str, type: str) -> Union[SearchSourceRespons
                 publisher_organization=""
             )
         ]
-        return SearchSheetResponse(
-            search=Search(text=query),
-            sheets=sheets,
-            skip=0,
-            limit=10,
-            total=20
-        )
-    else:
-        return "Invalid search type"
+    return SearchSheetResponse(
+        search=Search(text=query),
+        sheets=sheets,
+        skip=0,
+        limit=10,
+        total=20
+    )
