@@ -3,6 +3,7 @@ from typing import List, Optional
 
 class Search(BaseModel):
     text: Optional[str] = None
+    type: Optional[str] = None
 
 class Text(BaseModel):
     text_id: str
@@ -29,16 +30,10 @@ class Sheet(BaseModel):
     publisher_position: str
     publisher_organization: str
 
-class SearchSheetResponse(BaseModel):
+class SearchResponse(BaseModel):
     search: Search
-    sheets: List[Sheet] = []
-    skip: int
-    limit: int
-    total: int
-
-class SearchSourceResponse(BaseModel):
-    search: Search
-    sources: List[Source] = []
+    sources: Optional[List[Source]] = []
+    sheets: Optional[List[Sheet]] = []
     skip: int
     limit: int
     total: int

@@ -2,8 +2,7 @@
 from typing import Union
 
 from .search_response_models import (
-    SearchSourceResponse,
-    SearchSheetResponse,
+    SearchResponse,
     Text,
     SegmentMatch,
     Source,
@@ -11,19 +10,18 @@ from .search_response_models import (
     Search
 )
 
-async def get_search_results(query: str, type: str) -> Union[SearchSourceResponse, SearchSheetResponse, str]:
+async def get_search_results(query: str, type: str) -> SearchResponse:
     if type.lower() == "source":
-        hits: SearchSourceResponse = await _source_search_(query)
+        hits: SearchResponse = await _source_search_(query)
         return hits
         
     elif type.lower() == "sheet":
-        hits: SearchSheetResponse = await _sheet_search_(query)
+        hits: SearchResponse = await _sheet_search_(query)
         return hits
-        
-    else:
-        return "Invalid search type"
+    
 
-async def _source_search_(query: str) -> SearchSourceResponse:
+
+async def _source_search_(query: str) -> SearchResponse:
     sources = [
             Source(
                 text=Text(
@@ -58,15 +56,15 @@ async def _source_search_(query: str) -> SearchSourceResponse:
                 ]
             )
         ]
-    return SearchSourceResponse(
-        search=Search(text=query),
+    return SearchResponse(
+        search=Search(text=query, type="source"),
         sources=sources,
         skip=0,
         limit=10,
         total=2
     )
 
-async def _sheet_search_(query: str) -> SearchSheetResponse:
+async def _sheet_search_(query: str) -> SearchResponse:
     sheets = [
             Sheet(
                 sheet_title="བཟོད་པའི་མཐུ་སྟོབས།",
@@ -91,8 +89,8 @@ async def _sheet_search_(query: str) -> SearchSheetResponse:
                 publisher_organization=""
             )
         ]
-    return SearchSheetResponse(
-        search=Search(text=query),
+    return SearchResponse(
+        search=Search(text=query, type="sheet"),
         sheets=sheets,
         skip=0,
         limit=10,
