@@ -8,8 +8,7 @@ from .search_service import (
 )
 
 from .search_response_models import (
-    SearchSourceResponse,
-    SearchSheetResponse
+    SearchResponse
 )
 
 search_router = APIRouter(
@@ -23,5 +22,5 @@ async def search(
     type: str = Query(default=None, description="Search type (Source / Sheet)"),
     skip: int = Query(default=0),
     limit: int = Query(default=10)
-) -> Union[SearchSourceResponse, SearchSheetResponse, str]:
+) -> SearchResponse:
     return await get_search_results(query=query, type=type)
