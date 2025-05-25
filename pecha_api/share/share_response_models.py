@@ -1,6 +1,10 @@
 from typing import Optional
 from pydantic import BaseModel
 
-class ImageGenerationRequest(BaseModel):
+class ShareRequest(BaseModel):
     segment_id: Optional[str] = None
-    language: str = "en"
+    language: Optional[str] = None
+    url: str
+
+class ShortUrlResponse(BaseModel):
+    shortUrl: str
