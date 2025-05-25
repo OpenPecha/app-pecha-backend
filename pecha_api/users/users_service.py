@@ -147,7 +147,7 @@ def validate_and_extract_user_details(token: str) -> Users:
         logging.debug(f"exception: {jwt_exception}")
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail=ErrorConstants.TOKEN_ERROR_MESSAGE)
 
-def verify_admin_access(token: str) -> bool:
+async def verify_admin_access(token: str) -> bool:
     current_user = validate_and_extract_user_details(token=token)
     if hasattr(current_user, 'is_admin') and current_user.is_admin is not None:
         return current_user.is_admin

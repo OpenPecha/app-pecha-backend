@@ -5,7 +5,7 @@ class Search(BaseModel):
     text: Optional[str] = None
     type: Optional[str] = None
 
-class Text(BaseModel):
+class TextIndex(BaseModel):
     text_id: str
     language: str
     title: str
@@ -15,8 +15,8 @@ class SegmentMatch(BaseModel):
     segment_id: str
     content: str
 
-class Source(BaseModel):
-    text: Text
+class SourceIndex(BaseModel):
+    text: TextIndex
     segment_match: List[SegmentMatch]
 
 class Sheet(BaseModel):
@@ -32,7 +32,7 @@ class Sheet(BaseModel):
 
 class SearchResponse(BaseModel):
     search: Search
-    sources: Optional[List[Source]] = []
+    sources: Optional[List[SourceIndex]] = []
     sheets: Optional[List[Sheet]] = []
     skip: int
     limit: int

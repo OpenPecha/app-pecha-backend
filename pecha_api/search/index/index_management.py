@@ -1,5 +1,6 @@
-from .search_client import search_client
+from ..search_client import search_client
 from pecha_api.config import get
+
 async def setup_indices():
     client = await search_client()
 

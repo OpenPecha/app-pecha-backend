@@ -7,7 +7,7 @@ async def search_client() -> AsyncElasticsearch:
     global _search_client
     if _search_client is None:
         elasticsearch_url = get("ELASTICSEARCH_URL")
-        _es_client = AsyncElasticsearch(
+        _search_client = AsyncElasticsearch(
             hosts=[elasticsearch_url]
         )
     return _search_client

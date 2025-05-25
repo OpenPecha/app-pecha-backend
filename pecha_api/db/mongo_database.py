@@ -13,6 +13,8 @@ from ..sheets.sheets_models import Sheet
 from ..texts.texts_models import TableOfContent
 from ..texts.groups.groups_models import Group
 from ..config import get
+from search.index.index_management import setup_indices
+from ..search.search_client import close_search_client
 
 mongodb_client = None
 mongodb = None
@@ -30,6 +32,9 @@ async def lifespan(api: FastAPI):
     try:
         await init_beanie(database=mongodb,document_models=[Term, Topic, Text, Segment, Sheet, TableOfContent, Group])
         logging.info("Beanie initialized with the 'terms' collection.")
+        # Initialize Elasticsearch indices
+        await setup_indices()
+        logging.info("Elasticsearch indices initialized.")
         
     except Exception as e:
         logging.error(f"Error during collection initialization: {e}")
@@ -40,3 +45,7 @@ async def lifespan(api: FastAPI):
     # Close the MongoDB connection when the application shuts down
     if mongodb_client:
         mongodb_client.close()
+
+    # Close the Elasticsearch connection
+    await close_search_client()
+    logging.info("Elasticsearch connection closed.")
