@@ -15,7 +15,7 @@ share_router = APIRouter(
     tags=["Share"]
 )
 
-@share_router.get("/image/", status_code=status.HTTP_200_OK)
+@share_router.get("/image", status_code=status.HTTP_200_OK)
 async def image_generation(
     segment_id: Optional[str] = Query(default=None),
     language: Optional[str] = Query(default="en")
