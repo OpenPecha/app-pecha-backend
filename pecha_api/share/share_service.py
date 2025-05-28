@@ -1,13 +1,19 @@
 import logging
+import httpx
 from fastapi import HTTPException
 from starlette import status
 import io
 from pecha_api.error_contants import ErrorConstants
-from ..texts.segments.segments_utils import SegmentUtils
+from pecha_api.texts.segments.segments_utils import SegmentUtils
 from starlette.responses import StreamingResponse
-from ..texts.texts_utils import TextUtils
+from pecha_api.texts.texts_utils import TextUtils
 from .pecha_text_image_generator import generate_text_image
-from ..texts.segments.segments_service import get_segment_details_by_id
+from pecha_api.texts.segments.segments_service import get_segment_details_by_id
+from pecha_api.config import get
+
+from pecha_api.share.share_response_models import (
+    ShareRequest
+)
 
 async def generate_image(segment_id: str, language: str):
     try:
@@ -34,3 +40,26 @@ async def generate_image(segment_id: str, language: str):
         image_bytes = image_file.read()
 
     return StreamingResponse(io.BytesIO(image_bytes), media_type="image/png")
+
+
+
+async def get_short_url(share_request: ShareRequest) -> str:
+    short_url_endpoint = get("SHORT_URL_GENERATION_ENDPOINT")
+    pecha_backend_endpoint = get("PECHA_BACKEND_ENDPOINT")
+    url = f"{short_url_endpoint}/shorten"
+    image_url = f"{pecha_backend_endpoint}/share/image?segment_id={share_request.segment_id}&language={share_request.language}"
+    payload = {
+        "url": share_request.url,
+        "og_title": "og_title",
+        "og_description": "og_description",
+        "og_image": image_url,
+        "tags": "tags"
+    }
+    async with httpx.AsyncClient() as client:
+        response = await client.post(url, json=payload)
+        if response.status_code == 201:
+            response = response.json()
+            short_url = response["short_url"]
+            return short_url
+        else:
+            raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=ErrorConstants.SHORT_URL_GENERATION_FAILED_MESSAGE)
