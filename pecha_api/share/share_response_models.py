@@ -5,7 +5,7 @@ class ShareRequest(BaseModel):
     segment_id: Optional[str] = None
     language: Optional[str] = None
     url: str
-    tags: Optional[List[str]] = None
+    tags: Optional[str] = None
 
 class ShortUrlResponse(BaseModel):
     shortUrl: str
