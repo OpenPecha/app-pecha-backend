@@ -1,6 +1,6 @@
 import logging
 import httpx
-from fastapi import HTTPException
+from fastapi import HTTPException, Response
 from starlette import status
 from http import HTTPStatus
 import io
@@ -76,4 +76,5 @@ async def get_short_url(share_request: ShareRequest) -> ShortUrlResponse:
                 shortUrl=short_url
             )
         else:
-            raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=ErrorConstants.SHORT_URL_GENERATION_FAILED_MESSAGE)
+            # Pass through the exact response from the server
+            return Response(content=response.content, status_code=response.status_code, media_type=response.headers.get('content-type', 'application/json'))
