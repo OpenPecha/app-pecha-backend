@@ -5,12 +5,14 @@ from bs4 import BeautifulSoup
 
 FONT_PATHS = {
     "bo": "pecha_api/share/static/fonts/wujin+gangbi.ttf",
-    "en": "pecha_api/share/static/fonts/Noto-font/NotoFont-en.ttf"
+    "en": "pecha_api/share/static/fonts/Noto-font/NotoFont-en.ttf",
+    "FALL_BACK": "pecha_api/share/static/fonts/Noto-font/NotoFont-en.ttf"
 }
 
 FONT_SIZE = {
     "bo": 25,
     "en": 22,
+    "FALL_BACK": 22
 }
 
 DEFAULT_OUTPUT_PATH = "pecha_api/share/static/img/output.png"
@@ -91,7 +93,7 @@ class SyntheticImageGenerator:
         """
         Generate and save a synthetic image with the given text, reference, and options.
         """
-        font_file_name = FONT_PATHS.get(self.font_type, FONT_PATHS['en'])
+        font_file_name = FONT_PATHS.get(self.font_type, FONT_PATHS['FALL_BACK'])
         # Create base image with RGBA mode to support transparency
         img = Image.new('RGBA', (self.image_width, self.image_height), color=self.bg_color + (255,))
         d = ImageDraw.Draw(img)
@@ -146,7 +148,7 @@ def create_synthetic_data(text, ref_str, lang, logo_path=None, output_path=DEFAU
     generator = SyntheticImageGenerator(
         image_width=700,
         image_height=400,
-        font_size=FONT_SIZE.get(font_type_lang, 20),
+        font_size=FONT_SIZE.get(font_type_lang, FONT_SIZE['FALL_BACK']),
         font_type=font_type_lang,
         bg_color="#ac1c22"
     )
