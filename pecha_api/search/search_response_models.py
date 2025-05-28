@@ -1,5 +1,10 @@
 from pydantic import BaseModel
 from typing import List, Optional
+from enum import Enum
+
+class SearchType(str, Enum):
+    source = "source"
+    sheet = "sheet"
 
 class Search(BaseModel):
     text: Optional[str] = None
