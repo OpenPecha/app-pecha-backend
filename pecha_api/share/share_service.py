@@ -12,7 +12,8 @@ from pecha_api.texts.segments.segments_service import get_segment_details_by_id
 from pecha_api.config import get
 
 from pecha_api.share.share_response_models import (
-    ShareRequest
+    ShareRequest,
+    ShortUrlResponse
 )
 
 async def generate_image(segment_id: str, language: str):
@@ -43,7 +44,7 @@ async def generate_image(segment_id: str, language: str):
 
 
 
-async def get_short_url(share_request: ShareRequest) -> str:
+async def get_short_url(share_request: ShareRequest) -> ShortUrlResponse:
     short_url_endpoint = get("SHORT_URL_GENERATION_ENDPOINT")
     pecha_backend_endpoint = get("PECHA_BACKEND_ENDPOINT")
     url = f"{short_url_endpoint}/shorten"
@@ -60,6 +61,8 @@ async def get_short_url(share_request: ShareRequest) -> str:
         if response.status_code == 201:
             response = response.json()
             short_url = response["short_url"]
-            return short_url
+            return ShortUrlResponse(
+                shortUrl=short_url
+            )
         else:
             raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=ErrorConstants.SHORT_URL_GENERATION_FAILED_MESSAGE)
