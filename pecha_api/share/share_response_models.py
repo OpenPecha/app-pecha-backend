@@ -1,10 +1,11 @@
-from typing import Optional
+from typing import Optional, List
 from pydantic import BaseModel
 
 class ShareRequest(BaseModel):
     segment_id: Optional[str] = None
     language: Optional[str] = None
     url: str
+    tags: Optional[List[str]] = None
 
 class ShortUrlResponse(BaseModel):
     shortUrl: str

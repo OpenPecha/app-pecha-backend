@@ -51,10 +51,10 @@ async def get_short_url(share_request: ShareRequest) -> ShortUrlResponse:
     image_url = f"{pecha_backend_endpoint}/share/image?segment_id={share_request.segment_id}&language={share_request.language}"
     payload = {
         "url": share_request.url,
-        "og_title": "og_title",
+        "og_title": "PECHA",
         "og_description": "og_description",
         "og_image": image_url,
-        "tags": "tags"
+        "tags": share_request.tags
     }
     async with httpx.AsyncClient() as client:
         response = await client.post(url, json=payload)
