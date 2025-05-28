@@ -31,11 +31,11 @@ async def generate_image(segment_id: str, language: str):
         reference_text = text_detail.title
         language = text_detail.language
 
-        generate_text_image(text=segment_text, ref_str=reference_text, lang=language, version_lang=language, logo_path="pecha_api/share/static/img/pecha-logo.png")
+        generate_text_image(text=segment_text, ref_str=reference_text, lang=language, logo_path="pecha_api/share/static/img/pecha-logo.png")
         
     except Exception as e:
         logging.error(e)
-        generate_text_image(text=None, ref_str=None, lang=None, version_lang=None, logo_path="pecha_api/share/static/img/pecha-logo.png")
+        generate_text_image(text=None, ref_str=None, lang=None, logo_path="pecha_api/share/static/img/pecha-logo.png")
         
     image_path = "pecha_api/share/static/img/output.png"
     with open(image_path, "rb") as image_file:
