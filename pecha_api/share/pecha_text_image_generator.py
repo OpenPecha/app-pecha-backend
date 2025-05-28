@@ -6,6 +6,10 @@ FONT_PATHS = {
     "bo": "pecha_api/share/static/fonts/wujin+gangbi.ttf",
 }
 
+FONT_SIZE ={
+    "bo": 25,
+    "en": 22,
+}
 
 class SyntheticImageGenerator:
 
@@ -158,7 +162,7 @@ def create_synthetic_data(text, ref_str, lang, version_lang, logo_path=None):
     synthetic_image_generator = SyntheticImageGenerator(
         image_width=700,
         image_height=400,
-        font_size=25,
+        font_size=FONT_SIZE.get(font_type_lang, 20),
         font_type=font_type_lang,
         bg_color="#ac1c22"
     )
