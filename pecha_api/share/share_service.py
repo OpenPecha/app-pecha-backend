@@ -17,25 +17,25 @@ from pecha_api.share.share_response_models import (
     ShortUrlResponse
 )
 
-async def generate_image(segment_id: str, language: str):
-    try:
-        is_valid_segment = await SegmentUtils.validate_segment_exists(segment_id=segment_id)
-        if not is_valid_segment:
-            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=ErrorConstants.SEGMENT_NOT_FOUND_MESSAGE)
-        segment = await get_segment_details_by_id(segment_id=segment_id)
+async def get_generated_image(segment_id: str, language: str):
+#     try:
+#         is_valid_segment = await SegmentUtils.validate_segment_exists(segment_id=segment_id)
+#         if not is_valid_segment:
+#             raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=ErrorConstants.SEGMENT_NOT_FOUND_MESSAGE)
+#         segment = await get_segment_details_by_id(segment_id=segment_id)
 
-        text_id = segment.text_id
-        text_detail = await TextUtils.get_text_detail_by_id(text_id=text_id)
+#         text_id = segment.text_id
+#         text_detail = await TextUtils.get_text_detail_by_id(text_id=text_id)
 
-        segment_text = segment.content
-        reference_text = text_detail.title
-        language = text_detail.language
+#         segment_text = segment.content
+#         reference_text = text_detail.title
+#         language = text_detail.language
 
-        generate_text_image(text=segment_text, ref_str=reference_text, lang=language, logo_path="pecha_api/share/static/img/pecha-logo.png")
+#         generate_text_image(text=segment_text, ref_str=reference_text, lang=language, logo_path="pecha_api/share/static/img/pecha-logo.png")
         
-    except Exception as e:
-        logging.error(e)
-        generate_text_image(text=None, ref_str=None, lang=None, logo_path="pecha_api/share/static/img/pecha-logo.png")
+#     except Exception as e:
+#         logging.error(e)
+#         generate_text_image(text=None, ref_str=None, lang=None, logo_path="pecha_api/share/static/img/pecha-logo.png")
         
     image_path = "pecha_api/share/static/img/output.png"
     with open(image_path, "rb") as image_file:
@@ -49,12 +49,27 @@ async def get_short_url(share_request: ShareRequest) -> ShortUrlResponse:
 
     og_description = ""
     try:
+        is_valid_segment = await SegmentUtils.validate_segment_exists(segment_id=share_request.segment_id)
+        if not is_valid_segment:
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=ErrorConstants.SEGMENT_NOT_FOUND_MESSAGE)
         segment = await get_segment_details_by_id(segment_id=share_request.segment_id)
+
         text_id = segment.text_id
         text_detail = await TextUtils.get_text_detail_by_id(text_id=text_id)
+
         og_description = text_detail.title
+
+        segment_text = segment.content
+        reference_text = text_detail.title
+        language = text_detail.language
+
+        generate_text_image(text=segment_text, ref_str=reference_text, lang=language, text_color=share_request.text_color, bg_color=share_request.bg_color, logo_path="pecha_api/share/static/img/pecha-logo.png")
+        
     except Exception as e:
         logging.error(e)
+        og_description = "PECHA"
+        generate_text_image(text=None, ref_str=None, lang=None, text_color=share_request.text_color, bg_color=share_request.bg_color, logo_path="pecha_api/share/static/img/pecha-logo.png")
+
 
     short_url_endpoint = get("SHORT_URL_GENERATION_ENDPOINT")
     pecha_backend_endpoint = get("PECHA_BACKEND_ENDPOINT")
