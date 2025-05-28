@@ -2,6 +2,7 @@ import logging
 import httpx
 from fastapi import HTTPException
 from starlette import status
+from http import HTTPStatus
 import io
 from pecha_api.error_contants import ErrorConstants
 from pecha_api.texts.segments.segments_utils import SegmentUtils
@@ -58,7 +59,7 @@ async def get_short_url(share_request: ShareRequest) -> ShortUrlResponse:
     }
     async with httpx.AsyncClient() as client:
         response = await client.post(url, json=payload)
-        if response.status_code == 201:
+        if response.status_code == HTTPStatus.CREATED:
             response = response.json()
             short_url = response["short_url"]
             return ShortUrlResponse(
