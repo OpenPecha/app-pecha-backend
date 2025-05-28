@@ -46,6 +46,16 @@ async def generate_image(segment_id: str, language: str):
 
 
 async def get_short_url(share_request: ShareRequest) -> ShortUrlResponse:
+
+    og_description = ""
+    try:
+        segment = await get_segment_details_by_id(segment_id=share_request.segment_id)
+        text_id = segment.text_id
+        text_detail = await TextUtils.get_text_detail_by_id(text_id=text_id)
+        og_description = text_detail.title
+    except Exception as e:
+        logging.error(e)
+
     short_url_endpoint = get("SHORT_URL_GENERATION_ENDPOINT")
     pecha_backend_endpoint = get("PECHA_BACKEND_ENDPOINT")
     url = f"{short_url_endpoint}/shorten"
@@ -53,7 +63,7 @@ async def get_short_url(share_request: ShareRequest) -> ShortUrlResponse:
     payload = {
         "url": share_request.url,
         "og_title": "PECHA",
-        "og_description": "og_description",
+        "og_description": og_description,
         "og_image": image_url,
         "tags": share_request.tags
     }
