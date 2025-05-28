@@ -25,33 +25,33 @@ async def _source_search_(query: str) -> SearchResponse:
     sources = [
             Source(
                 text=Text(
-                    text_id="91a616af-c8f4-4797-baf7-9772a3474cff",
-                    language="bo",
-                    title="མཐུ་སྟོབས།",
+                    text_id="59769286-2787-4181-953d-9149cdeef959",
+                    language="en",
+                    title="The Way of the Bodhisattva",
                     published_date="12-02-2025"
                 ),
                 segment_match=[
                     SegmentMatch(
-                        segment_id="a7391925-c9bd-4304-8287-c71b313b2fc6",
-                        content="བོད་ཡིག་གི་ཚིག་གྲུབ་འདི་ནི་བུདྡྷེསཏ་རེད། buddhist"
+                        segment_id="6376cd2b-127f-4230-ab1b-e132bfae493f",
+                        content="From the moment one properly takes up<br>That resolve with an irreversible mind<br>For the purpose of liberating<br>The limitless realm of beings..."
                     ),
                     SegmentMatch(
-                        segment_id="9dd7c2f4-eacc-46a7-80b0-4b24357cce58",
-                        content="བོད་ཡིག་གི་ཚིག་གྲུབ་འདི་ནི་བུདྡྷེསཏ་རེད། བོད་ཡིག་གི་ཚིག་གྲུབ་འདི་ནི་བུདྡྷེསཏ་རེད། buddhist"
+                        segment_id="6a59a87c-9f79-4e0d-9094-72623cf31ec2",
+                        content="From this time forth, even while sleeping<br>Or being heedless, the force of merit<br>Flows forth continuously in numerous streams<br>Equal to the expanse of space."
                     )
                 ]
             ),
             Source(
                 text=Text(
-                    text_id="e597eeb8-3142-4937-b1c7-f211b8230f2c",
+                    text_id="e6370d09-aa0c-4a41-96ef-deffb89c7810",
                     language="en",
-                    title="The Buddhist Path",
+                    title="The Way of the Bodhisattva Claude AI Draft",
                     published_date="12-02-2025"
                 ),
                 segment_match=[
                     SegmentMatch(
-                        segment_id="25e50dbe-9243-4732-b1cf-a25c5e3e25c0",
-                        content="This text is all about Buddhist Path"
+                        segment_id="26dd83d79-8300-49fa-84b8-74933b17b2dd",
+                        content="From the mind of aspiration for enlightenment,<br>Great results arise while in samsara.<br>However, unlike the mind of actual engagement,<br>It does not produce a continuous stream of merit."
                     )
                 ]
             )
