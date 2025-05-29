@@ -1,5 +1,5 @@
 from fastapi import APIRouter, Query
-from .search_response_models import SearchType
+from .search_enums import SearchType
 from starlette import status
 
 from .search_service import (
