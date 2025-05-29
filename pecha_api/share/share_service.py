@@ -2,6 +2,7 @@ import logging
 import httpx
 from fastapi import HTTPException
 from starlette import status
+from http import HTTPStatus
 import io
 from pecha_api.error_contants import ErrorConstants
 from pecha_api.texts.segments.segments_utils import SegmentUtils
@@ -30,11 +31,11 @@ async def generate_image(segment_id: str, language: str):
         reference_text = text_detail.title
         language = text_detail.language
 
-        generate_text_image(text=segment_text, ref_str=reference_text, lang=language, version_lang=language, logo_path="pecha_api/share/static/img/pecha-logo.png")
+        generate_text_image(text=segment_text, ref_str=reference_text, lang=language, logo_path="pecha_api/share/static/img/pecha-logo.png")
         
     except Exception as e:
         logging.error(e)
-        generate_text_image(text=None, ref_str=None, lang=None, version_lang=None, logo_path="pecha_api/share/static/img/pecha-logo.png")
+        generate_text_image(text=None, ref_str=None, lang=None, logo_path="pecha_api/share/static/img/pecha-logo.png")
         
     image_path = "pecha_api/share/static/img/output.png"
     with open(image_path, "rb") as image_file:
@@ -45,20 +46,30 @@ async def generate_image(segment_id: str, language: str):
 
 
 async def get_short_url(share_request: ShareRequest) -> ShortUrlResponse:
+
+    og_description = ""
+    try:
+        segment = await get_segment_details_by_id(segment_id=share_request.segment_id)
+        text_id = segment.text_id
+        text_detail = await TextUtils.get_text_detail_by_id(text_id=text_id)
+        og_description = text_detail.title
+    except Exception as e:
+        logging.error(e)
+
     short_url_endpoint = get("SHORT_URL_GENERATION_ENDPOINT")
     pecha_backend_endpoint = get("PECHA_BACKEND_ENDPOINT")
     url = f"{short_url_endpoint}/shorten"
     image_url = f"{pecha_backend_endpoint}/share/image?segment_id={share_request.segment_id}&language={share_request.language}"
     payload = {
         "url": share_request.url,
-        "og_title": "og_title",
-        "og_description": "og_description",
+        "og_title": "PECHA",
+        "og_description": og_description,
         "og_image": image_url,
-        "tags": "tags"
+        "tags": share_request.tags
     }
     async with httpx.AsyncClient() as client:
         response = await client.post(url, json=payload)
-        if response.status_code == 201:
+        if response.status_code == HTTPStatus.CREATED:
             response = response.json()
             short_url = response["short_url"]
             return ShortUrlResponse(
