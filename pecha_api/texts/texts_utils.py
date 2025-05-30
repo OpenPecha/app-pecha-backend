@@ -1,11 +1,15 @@
 from uuid import UUID
-from typing import List, Optional, Dict, Union
+from typing import List, Dict, Union
 from fastapi import HTTPException
 from starlette import status
 
 from pecha_api.error_contants import ErrorConstants
-from .texts_repository import check_text_exists, check_all_text_exists, get_texts_by_id,\
+from .texts_repository import (
+    check_text_exists, 
+    check_all_text_exists, 
+    get_texts_by_id, 
     get_texts_by_ids
+)
 from .texts_response_models import TextDTO
 from .texts_response_models import (
     TableOfContent, 

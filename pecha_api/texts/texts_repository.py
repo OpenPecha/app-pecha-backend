@@ -6,7 +6,11 @@ from uuid import UUID
 
 from beanie.exceptions import CollectionWasNotInitialized
 from pecha_api.constants import Constants
-from .texts_response_models import CreateTextRequest, TableOfContent, TextDTO
+from .texts_response_models import (
+    CreateTextRequest, 
+    TableOfContent, 
+    TextDTO
+)
 from .texts_models import Text, TableOfContent
 from datetime import datetime, timezone
 
