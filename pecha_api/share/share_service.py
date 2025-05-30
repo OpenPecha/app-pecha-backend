@@ -54,11 +54,17 @@ async def get_short_url(share_request: ShareRequest) -> ShortUrlResponse:
         logging.error(e)
         og_description = "PECHA"
         generate_text_image(text=None, ref_str=None, lang=None, text_color=share_request.text_color, bg_color=share_request.bg_color, logo_path="pecha_api/share/static/img/pecha-logo.png")
+    
+    payload = _generate_short_url_payload_(share_request=share_request, og_description=og_description)
+    
+    short_url: ShortUrlResponse = await _get_short_url_(payload=payload)
+
+    return short_url
 
 
-    short_url_endpoint = get("SHORT_URL_GENERATION_ENDPOINT")
+def _generate_short_url_payload_(share_request: ShareRequest, og_description: str) -> dict:
+
     pecha_backend_endpoint = get("PECHA_BACKEND_ENDPOINT")
-    url = f"{short_url_endpoint}/shorten"
     image_url = f"{pecha_backend_endpoint}/share/image?segment_id={share_request.segment_id}&language={share_request.language}"
     payload = {
         "url": share_request.url,
@@ -67,6 +73,13 @@ async def get_short_url(share_request: ShareRequest) -> ShortUrlResponse:
         "og_image": image_url,
         "tags": share_request.tags
     }
+    return payload
+
+async def _get_short_url_(payload: dict) -> ShortUrlResponse:
+
+    short_url_endpoint = get("SHORT_URL_GENERATION_ENDPOINT")
+    url = f"{short_url_endpoint}/shorten"
+    
     async with httpx.AsyncClient() as client:
         response = await client.post(url, json=payload)
         if response.status_code == HTTPStatus.CREATED:
