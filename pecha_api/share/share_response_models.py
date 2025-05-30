@@ -9,8 +9,8 @@ class ShareRequest(BaseModel):
     segment_id: Optional[str] = None
     language: Optional[str] = None
     url: str
-    text_color: Optional[TextColor] = None
-    bg_color: Optional[BgColor] = None
+    text_color: Optional[TextColor] = TextColor.DEFAULT
+    bg_color: Optional[BgColor] = BgColor.DEFAULT
     tags: Optional[str] = None
 
 class ShortUrlResponse(BaseModel):
