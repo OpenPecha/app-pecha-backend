@@ -15,11 +15,10 @@ from .texts_response_models import (
     TableOfContent,
     DetailTableOfContentResponse,
     TableOfContentResponse,
-    TextModel,
+    TextDTO,
     TextVersionResponse,
     TextVersion,
     TextsCategoryResponse,
-    Text,
     CreateTextRequest,
     TextDetailsRequest,
     DetailTextMapping
@@ -182,14 +181,14 @@ async def get_text_versions_by_group_id(text_id: str, language: str, skip: int, 
 async def create_new_text(
         create_text_request: CreateTextRequest,
         token: str
-) -> TextModel:
+) -> TextDTO:
     is_admin = verify_admin_access(token=token)
     if is_admin:
         valid_group = await validate_group_exists(group_id=create_text_request.group_id)
         if not valid_group:
             raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=ErrorConstants.GROUP_NOT_FOUND_MESSAGE)
         new_text = await create_text(create_text_request=create_text_request)
-        return TextModel(
+        return TextDTO(
             id=str(new_text.id),
             title=new_text.title,
             language=new_text.language,
@@ -312,7 +311,7 @@ async def _get_texts_by_term_id(term_id: str, language: str, skip: int, limit: i
     root_text = filter_text_base_on_group_id_type["root_text"]
     commentary = filter_text_base_on_group_id_type["commentary"]
     text_list = [
-        Text(
+        TextDTO(
             id=str(text.id),
             title=text.title,
             language=text.language,
@@ -322,13 +321,15 @@ async def _get_texts_by_term_id(term_id: str, language: str, skip: int, limit: i
             created_date=text.created_date,
             updated_date=text.updated_date,
             published_date=text.published_date,
-            published_by=text.published_by
+            published_by=text.published_by,
+            categories=text.categories,
+            parent_id=text.parent_id
         )
         for text in commentary
     ]
     if root_text is not None:
         text_list.append(
-            Text(
+            TextDTO(
                 id=str(root_text.id),
                 title=root_text.title,
                 language=root_text.language,
@@ -338,7 +339,9 @@ async def _get_texts_by_term_id(term_id: str, language: str, skip: int, limit: i
                 created_date=root_text.created_date,
                 updated_date=root_text.updated_date,
                 published_date=root_text.published_date,
-                published_by=root_text.published_by
+                published_by=root_text.published_by,
+                categories=root_text.categories,
+                parent_id=root_text.parent_id
             )
         )
     return text_list

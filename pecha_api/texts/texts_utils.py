@@ -6,12 +6,11 @@ from starlette import status
 from pecha_api.error_contants import ErrorConstants
 from .texts_repository import check_text_exists, check_all_text_exists, get_texts_by_id,\
     get_texts_by_ids
-from .texts_response_models import TextModel
+from .texts_response_models import TextDTO
 from .texts_response_models import (
     TableOfContent, 
     TextSegment,
     Section,
-    Text
 )
 from .groups.groups_service import (
     get_groups_by_list_of_ids
@@ -25,13 +24,13 @@ class TextUtils:
     """
 
     @staticmethod
-    async def get_text_details_by_ids(text_ids: List[str]) -> Dict[str, TextModel]:
+    async def get_text_details_by_ids(text_ids: List[str]) -> Dict[str, TextDTO]:
         texts_detail = await get_texts_by_ids(text_ids=text_ids)
         return texts_detail
     
-    async def get_text_details_by_id(text_id: str) -> TextModel:
+    async def get_text_details_by_id(text_id: str) -> TextDTO:
         text_detail = await get_texts_by_id(text_id=text_id)
-        return TextModel(
+        return TextDTO(
             id=str(text_detail.id),
             title=text_detail.title,
             language=text_detail.language,
@@ -112,7 +111,7 @@ class TextUtils:
         return segment_ids
     
     @staticmethod
-    async def get_text_detail_by_id(text_id: str) -> TextModel:
+    async def get_text_detail_by_id(text_id: str) -> TextDTO:
         """
         Get text details by ID.
         
@@ -120,7 +119,7 @@ class TextUtils:
             text_id: The ID of the text to retrieve
             
         Returns:
-            TextModel: The text model with details
+            TextDTO: The text model with details
             
         Raises:
             HTTPException: If the text does not exist or text_id is None
@@ -130,7 +129,7 @@ class TextUtils:
         text = await get_texts_by_id(text_id=text_id)
         if text is None:
             raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=ErrorConstants.TEXT_NOT_FOUND_MESSAGE)
-        return TextModel(
+        return TextDTO(
             id=str(text.id),
             title=text.title,
             language=text.language,
@@ -251,7 +250,7 @@ class TextUtils:
         return None  # Return None if segment not found in any section
 
     @staticmethod
-    async def filter_text_on_root_and_version(texts: List[TextModel], language: str) -> Dict[str, Union[TextModel, List[TextModel]]]:
+    async def filter_text_on_root_and_version(texts: List[TextDTO], language: str) -> Dict[str, Union[TextDTO, List[TextDTO]]]:
         '''
             This method filters the root text and versions base on the selected language from the frontend.
             If selected language is en then root text will be text which is the language of en other all will be considered as current text version.
@@ -270,7 +269,7 @@ class TextUtils:
         return filtered_text
     
     @staticmethod
-    async def filter_text_base_on_group_id_type(texts: List[TextModel], language: str) -> Dict[str, Union[TextModel, List[TextModel]]]:
+    async def filter_text_base_on_group_id_type(texts: List[TextDTO], language: str) -> Dict[str, Union[TextDTO, List[TextDTO]]]:
         '''
             This method filters the texts base on the group_id type.
             If the group_id type is root_text then the text with respective group_id will be consider as root_text

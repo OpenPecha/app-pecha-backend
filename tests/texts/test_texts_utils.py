@@ -6,7 +6,7 @@ from pecha_api.texts.texts_utils import TextUtils
 from pecha_api.error_contants import ErrorConstants
 
 from pecha_api.texts.texts_response_models import (
-    TextModel,
+    TextDTO,
     TableOfContent,
     Section,
     TextSegment
@@ -16,7 +16,7 @@ from pecha_api.texts.texts_response_models import (
 @pytest.mark.asyncio
 async def test_get_text_details_by_ids_success():
     text_details_dict = {
-        "efb26a06-f373-450b-ba57-e7a8d4dd5b64": TextModel(
+        "efb26a06-f373-450b-ba57-e7a8d4dd5b64": TextDTO(
             id="efb26a06-f373-450b-ba57-e7a8d4dd5b64",
             title="title",
             language="language",
@@ -36,7 +36,7 @@ async def test_get_text_details_by_ids_success():
 
 @pytest.mark.asyncio
 async def test_get_text_details_by_id_success():
-    text_details = TextModel(
+    text_details = TextDTO(
         id="efb26a06-f373-450b-ba57-e7a8d4dd5b64",
         title="title",
         language="language",
@@ -94,7 +94,7 @@ async def test_validate_texts_exist_invalid_text_id():
 @pytest.mark.asyncio
 async def test_get_text_detail_by_id_success():
     text_id = "efb26a06-f373-450b-ba57-e7a8d4dd5b64"
-    text = TextModel(
+    text = TextDTO(
         id=text_id,
         title="title",
         language="language",
