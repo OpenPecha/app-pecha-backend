@@ -201,7 +201,7 @@ async def create_table_of_content(table_of_content_request: TableOfContent, toke
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail=ErrorConstants.ADMIN_ERROR_MESSAGE)
 
 
-async def _mapping_table_of_content(text: Text, table_of_content: TableOfContent,
+async def _mapping_table_of_content(text: TextDTO, table_of_content: TableOfContent,
                                     text_details_request: TextDetailsRequest):
     total_sections = await get_sections_count_of_table_of_content(
         content_id=str(table_of_content.id)
@@ -282,7 +282,7 @@ async def _validate_text_detail_request(text_id: str, text_details_request: Text
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=ErrorConstants.TEXT_NOT_FOUND_MESSAGE)
 
 
-async def _get_texts_by_term_id(term_id: str, language: str, skip: int, limit: int) -> List[Text]:
+async def _get_texts_by_term_id(term_id: str, language: str, skip: int, limit: int) -> List[TextDTO]:
     texts = await get_texts_by_term(term_id=term_id, language=language, skip=skip, limit=limit)
     filter_text_base_on_group_id_type = await TextUtils.filter_text_base_on_group_id_type(texts=texts,
                                                                                           language=language)

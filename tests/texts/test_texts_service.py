@@ -14,7 +14,6 @@ from pecha_api.texts.texts_service import (
 from pecha_api.texts.texts_response_models import (
     CreateTextRequest,
     TextDTO,
-    Text,
     TextVersion,
     TextVersionResponse,
     TableOfContent,
@@ -38,7 +37,7 @@ async def test_get_text_by_term_id():
         "bo": "དུས་རབས་ ༨ པའི་ནང་སློབ་དཔོན་ཞི་བ་ལྷས་མཛད་པའི་རྩ་བ་དང་དེའི་འགྲེལ་བ་སོགས།"}, slug="bodhicaryavatara",
                           has_sub_child=False)
     mock_texts_by_category = [
-        Text(
+        TextDTO(
             id="032b9a5f-0712-40d8-b7ec-73c8c94f1c15",
             title="བྱང་ཆུབ་སེམས་དཔའི་སྤྱོད་པ་ལ་འཇུག་པ།",
             language="bo",
@@ -47,9 +46,10 @@ async def test_get_text_by_term_id():
             created_date="2025-03-20 09:26:16.571522",
             updated_date="2025-03-20 09:26:16.571532",
             published_date="2025-03-20 09:26:16.571536",
-            published_by="pecha"
+            published_by="pecha",
+            categories=[]
         ),
-        Text(
+        TextDTO(
             id="a48c0814-ce56-4ada-af31-f74b179b52a9",
             title="སྤྱོད་འཇུག་དཀའ་འགྲེལ།",
             language="bo",
@@ -58,7 +58,8 @@ async def test_get_text_by_term_id():
             created_date="2025-03-21 09:40:34.025024",
             updated_date="2025-03-21 09:40:34.025035",
             published_date="2025-03-21 09:40:34.025038",
-            published_by="pecha"
+            published_by="pecha",
+            categories=[]
         )
     ]
 
@@ -78,7 +79,7 @@ async def test_get_text_by_term_id():
                 slug="bodhicaryavatara"
             ),
             texts=[
-                Text(
+                TextDTO(
                     id=str(mock_texts_by_category[1].id),
                     title=mock_texts_by_category[1].title,
                     language=mock_texts_by_category[1].language,
@@ -87,9 +88,10 @@ async def test_get_text_by_term_id():
                     created_date=mock_texts_by_category[1].created_date,
                     updated_date=mock_texts_by_category[1].updated_date,
                     published_date=mock_texts_by_category[1].published_date,
-                    published_by=mock_texts_by_category[1].published_by
+                    published_by=mock_texts_by_category[1].published_by,
+                    categories=[]
                 ),
-                Text(
+                TextDTO(
                     id=str(mock_texts_by_category[0].id),
                     title=mock_texts_by_category[0].title,
                     language=mock_texts_by_category[0].language,
@@ -98,7 +100,8 @@ async def test_get_text_by_term_id():
                     created_date=mock_texts_by_category[0].created_date,
                     updated_date=mock_texts_by_category[0].updated_date,
                     published_date=mock_texts_by_category[0].published_date,
-                    published_by=mock_texts_by_category[0].published_by
+                    published_by=mock_texts_by_category[0].published_by,
+                    categories=[]
                 )
             ],
             total=len(mock_texts_by_category),
@@ -119,7 +122,7 @@ async def test_get_versions_by_group_id():
         updated_date="2025-03-20 09:26:16.571532",
         published_date="2025-03-20 09:26:16.571536",
         published_by="pecha",
-        categories=["67dd22a8d9f06ab28feedc90"],
+        categories=[],
         parent_id=None
     )
     texts_by_group_id = [
@@ -172,7 +175,6 @@ async def test_get_versions_by_group_id():
         patch('pecha_api.texts.texts_service.get_texts_by_group_id', new_callable=AsyncMock) as mock_get_texts_by_group_id,\
         patch('pecha_api.texts.texts_service.TextUtils.filter_text_on_root_and_version', new_callable=AsyncMock) as mock_filter_text_on_root_and_version, \
         patch('pecha_api.texts.texts_service.get_contents_by_id', new_callable=AsyncMock) as mock_get_contents_by_id:
-        mock_text_detail.return_value = text_detail
         mock_filter_text_on_root_and_version.return_value = {"root_text": text_detail, "versions": texts_by_group_id}
         mock_get_contents_by_id.return_value = [mock_table_of_content]
         response = await get_text_versions_by_group_id(text_id="id_1",language="en", skip=0, limit=10)
@@ -186,7 +188,7 @@ async def test_get_versions_by_group_id():
             updated_date="2025-03-20 09:26:16.571532",
             published_date="2025-03-20 09:26:16.571536",
             published_by="pecha",
-            categories=["67dd22a8d9f06ab28feedc90"],
+            categories=[],
             parent_id=None
         )
         assert isinstance(response.versions[0], TextVersion)
@@ -394,7 +396,7 @@ async def test_get_table_of_contents_by_text_id_success():
         patch("pecha_api.texts.texts_service.get_contents_by_id", new_callable=AsyncMock) as mock_get_contents_by_id:
         mock_get_text_detail_by_id.return_value = text_detail
         mock_get_contents_by_id.return_value = table_of_contents
-        response = await get_table_of_contents_by_text_id(text_id="id_1", skip=0, limit=10)
+        response = await get_table_of_contents_by_text_id(text_id="id_1")
         assert response == TableOfContentResponse(
             text_detail=text_detail,
             contents=[
@@ -423,7 +425,7 @@ async def test_get_table_of_contents_by_text_id_success():
 async def test_get_table_of_contents_by_text_id_invalid_text():
     with patch("pecha_api.texts.texts_service.TextUtils.validate_text_exists", new_callable=AsyncMock, return_value=False):
         with pytest.raises(HTTPException) as exc_info:
-            await get_table_of_contents_by_text_id(text_id="id_1", skip=0, limit=10)
+            await get_table_of_contents_by_text_id(text_id="id_1")
         assert exc_info.value.status_code == 404
         assert exc_info.value.detail == ErrorConstants.TEXT_NOT_FOUND_MESSAGE
 
