@@ -19,8 +19,13 @@ search_router = APIRouter(
 @search_router.get("", status_code=status.HTTP_200_OK)
 async def search(
     query: str = Query(default=None, description="Search query"),
-    type: SearchType = Query(default=None, description="Search type (SOURCE / SHEET)"),
+    search_type: SearchType = Query(default=None, description="Search type (SOURCE / SHEET)"),
     skip: int = Query(default=0),
     limit: int = Query(default=10)
 ) -> SearchResponse:
-    return await get_search_results(query=query, type=type, skip=skip, limit=limit)
+    return await get_search_results(
+        query=query,
+        search_type=search_type,
+        skip=skip,
+        limit=limit
+    )
