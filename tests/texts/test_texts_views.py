@@ -192,7 +192,7 @@ async def test_create_text_success(mocker):
         "metadata": {},
         "categories": [],
         "parent_id": None,
-        "id": "123e4567-e89b-12d3-a456-426614174000"  # Adding ID as it might be required
+        "id": "123e4567-e89b-12d3-a456-426614174000" 
     }
     
     # Make the request
