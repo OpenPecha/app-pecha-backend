@@ -11,11 +11,11 @@ from .search_response_models import (
 )
 
 async def get_search_results(query: str, type: str) -> SearchResponse:
-    if type.lower() == "source":
+    if type.value == "source":
         hits: SearchResponse = await _source_search_(query)
         return hits
         
-    elif type.lower() == "sheet":
+    elif type.value == "sheet":
         hits: SearchResponse = await _sheet_search_(query)
         return hits
     
