@@ -18,7 +18,7 @@ async def check_group_exists(group_id: UUID) -> bool:
         is_group_exists = await Group.check_exists(group_id=group_id)
         return is_group_exists
     except CollectionWasNotInitialized as e:
-        logging.debug(e)
+        logging.error(e)
         return False
 
 async def get_group_by_id(group_id: UUID) -> GroupDTO | None:
@@ -48,12 +48,11 @@ async def create_group(
 ) -> GroupDTO:
 
     group = Group(
-        type=create_group_request.type
+        type=create_group_request.type.value
     )
-
-    await group.insert()
+    saved_group = await group.insert()
 
     return GroupDTO(
-        id=str(group.id),
-        type=group.type
+        id=str(saved_group.id),
+        type=saved_group.type
     )

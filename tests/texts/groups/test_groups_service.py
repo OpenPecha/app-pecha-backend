@@ -26,7 +26,7 @@ async def test_validate_group_exists_success():
 
 @pytest.mark.asyncio
 async def test_validate_group_exists_invalid_group_id():
-    group_id = "invalid_group_id"
+    group_id = "4d2f3498-3cc6-4bc6-9beb-37d2f7dc0163"
     with patch("pecha_api.texts.groups.groups_service.check_group_exists", new_callable=AsyncMock, return_value=False):
         response = await validate_group_exists(group_id=group_id)
         assert response == False
@@ -49,10 +49,19 @@ async def test_get_list_of_group_details_success():
     }
     with patch("pecha_api.texts.groups.groups_service.get_groups_by_ids", new_callable=AsyncMock) as mock_group_details:
         mock_group_details.return_value = group_details
-        response = await get_groups_by_list_of_ids(group_ids=group_ids)
-        assert isinstance(response[group_ids[0]], GroupDTO)
-        assert response[group_ids[0]].id == group_ids[0]
-        assert response[group_ids[0]].type == "version"
+        response: Dict[str, GroupDTO] = await get_groups_by_list_of_ids(group_ids=group_ids)
+        # check if dict is null or not
+        # check if len(dict) is 2
+        # get the fist item and check if the first item is null or not
+        # two assertion for the first item
+        # don't use directly 0 create a variable
+        item_index = 0
+        assert response is not None
+        assert len(response) == 2
+        assert response[group_ids[item_index]] is not None
+        assert isinstance(response[group_ids[item_index]], GroupDTO)
+        assert response[group_ids[item_index]].id == group_ids[0]
+        assert response[group_ids[item_index]].type == "version"
     
 @pytest.mark.asyncio
 async def test_get_group_details_success():
@@ -64,18 +73,20 @@ async def test_get_group_details_success():
     with patch("pecha_api.texts.groups.groups_service.get_group_by_id", new_callable=AsyncMock) as mock_group_details:
         mock_group_details.return_value = group_details
         response = await get_group_details(group_id=group_id)
+        assert response is not None
+        assert isinstance(response, GroupDTO)
         assert response.id == group_id
         assert response.type == "version"
     
 @pytest.mark.asyncio
 async def test_get_group_details_invalid_group_id():
-    group_id = "invalid_group_id"
+    group_id = "4d2f3498-3cc6-4bc6-9beb-37d2f7dc0163"
     with patch("pecha_api.texts.groups.groups_service.get_group_by_id", new_callable=AsyncMock) as mock_group_details:
         mock_group_details.return_value = None
         with pytest.raises(HTTPException) as exc_info:
             await get_group_details(group_id=group_id)
-            assert exc_info.value.status_code == status.HTTP_400_BAD_REQUEST
-            assert exc_info.value.detail == ErrorConstants.INVALID_UUID_MESSAGE
+            assert exc_info.value.status_code == status.HTTP_404_NOT_FOUND
+            assert exc_info.value.detail == ErrorConstants.GROUP_NOT_FOUND_MESSAGE
         
 @pytest.mark.asyncio
 async def test_get_group_details_invalid_uuid():
@@ -89,19 +100,23 @@ async def test_get_group_details_invalid_uuid():
 
 @pytest.mark.asyncio
 async def test_create_new_group_success():
+    group_id = "4d2f3498-3cc6-4bc6-9beb-37d2f7dc0163"
+    type = "version"
     create_group_request = CreateGroupRequest(
-        type="version"
+        type=type
     )
     group_details: GroupDTO = GroupDTO(
-        id="4d2f3498-3cc6-4bc6-9beb-37d2f7dc0163",
-        type="version"
+        id=group_id,
+        type=type
     )
     with patch("pecha_api.texts.groups.groups_service.verify_admin_access", return_value=True), \
         patch("pecha_api.texts.groups.groups_service.create_group", new_callable=AsyncMock) as mock_create_group:
         mock_create_group.return_value = group_details
         response = await create_new_group(create_group_request=create_group_request, token="admin_token")
-        assert response.id == "4d2f3498-3cc6-4bc6-9beb-37d2f7dc0163"
-        assert response.type == create_group_request.type.value
+        assert response is not None
+        assert isinstance(response, GroupDTO)
+        assert response.id == group_id
+        assert response.type == type
 
 @pytest.mark.asyncio
 async def test_create_new_group_not_admin():

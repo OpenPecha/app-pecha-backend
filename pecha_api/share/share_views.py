@@ -23,6 +23,6 @@ async def get_image(
 ):
     return await get_generated_image(segment_id=segment_id)
 
-@share_router.post("", status_code=status.HTTP_200_OK)
+@share_router.post("", status_code=status.HTTP_201_CREATED)
 async def share(share_request: ShareRequest) -> ShortUrlResponse:
     return await get_short_url(share_request=share_request)

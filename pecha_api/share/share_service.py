@@ -48,12 +48,26 @@ async def get_short_url(share_request: ShareRequest) -> ShortUrlResponse:
         reference_text = text_detail.title
         language = text_detail.language
 
-        generate_text_image(text=segment_text, ref_str=reference_text, lang=language, text_color=share_request.text_color, bg_color=share_request.bg_color, logo_path="pecha_api/share/static/img/pecha-logo.png")
+        generate_text_image(
+            text=segment_text, 
+            ref_str=reference_text, 
+            lang=language, 
+            text_color=share_request.text_color, 
+            bg_color=share_request.bg_color, 
+            logo_path="pecha_api/share/static/img/pecha-logo.png"
+        )
         
     except Exception as e:
         logging.error(e)
         og_description = "PECHA"
-        generate_text_image(text=None, ref_str=None, lang=None, text_color=share_request.text_color, bg_color=share_request.bg_color, logo_path="pecha_api/share/static/img/pecha-logo.png")
+        generate_text_image(
+            text=None, 
+            ref_str=None, 
+            lang=None, 
+            text_color=share_request.text_color, 
+            bg_color=share_request.bg_color, 
+            logo_path="pecha_api/share/static/img/pecha-logo.png"
+        )
     
     payload = _generate_short_url_payload_(share_request=share_request, og_description=og_description)
     
@@ -90,4 +104,8 @@ async def _get_short_url_(payload: dict) -> ShortUrlResponse:
             )
         else:
             # Pass through the exact response from the server
-            return Response(content=response.content, status_code=response.status_code, media_type=response.headers.get('content-type', 'application/json'))
+            return Response(
+                content=response.content, 
+                status_code=response.status_code, 
+                media_type=response.headers.get('content-type', 'application/json')
+            )

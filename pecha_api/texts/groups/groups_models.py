@@ -22,10 +22,7 @@ class Group(Document):
 
     @classmethod
     async def get_group_by_id(cls, group_id: UUID):
-        try:
-            return await cls.find_one(cls.id == group_id)
-        except Exception as e:
-            return None
+        return await cls.find_one(cls.id == group_id)
 
     @classmethod
     async def get_groups_by_ids(cls, group_ids: List[str]) -> List["Group"]:

@@ -70,8 +70,6 @@ class SyntheticImageGenerator:
         """
         font_file_name = FONT_PATHS.get(self.font_type, FONT_PATHS['FALL_BACK'])
         # Create base image with RGBA mode to support transparency
-        img = Image.new('RGBA', (self.image_width, self.image_height), color=self.bg_color + (255,))
-        d = ImageDraw.Draw(img)
         # Add header and borders
         self.add_header(d)
         self.add_borders(d)
@@ -91,6 +89,8 @@ class SyntheticImageGenerator:
         chars_per_line = self.calc_letters_per_line(text, main_font, max_width)
         wrapped_text = textwrap.fill(text=text, width=chars_per_line)
         # Draw main text
+        img = Image.new('RGBA', (self.image_width, self.image_height), color=self.bg_color + (255,))
+        d = ImageDraw.Draw(img)
         d.text(
             xy=(self.image_width / 2, self.image_height / 2),
             text=wrapped_text,
@@ -130,7 +130,15 @@ def create_synthetic_data(text: str, ref_str: str, lang: str, bg_color: str, tex
     )
     generator.save_image(cleaned_text, ref_str, lang, img_file_name=output_path, text_color=text_color, logo_path=logo_path)
 
-def generate_text_image(text: str = None, ref_str: str = None, lang: str = None, bg_color: str = None, text_color: str = None, logo_path: str = None, output_path: str = DEFAULT_OUTPUT_PATH):
+def generate_text_image(
+        text: str = None, 
+        ref_str: str = None, 
+        lang: str = None, 
+        bg_color: str = None, 
+        text_color: str = None, 
+        logo_path: str = None, 
+        output_path: str = DEFAULT_OUTPUT_PATH
+    ):
     """
     Main entry to generate a text image or fallback logo image.
     """
@@ -149,9 +157,16 @@ def generate_text_image(text: str = None, ref_str: str = None, lang: str = None,
         height = 630
         img = Image.new('RGBA', (width, height), color=BG_COLOR.get(bg_color, BG_COLOR['DEFAULT']))
         try:
-            img = _add_logo_to_image(img, LOGO_PATH, width, height, header_ratio=0.5, logo_height_ratio=0.3)
+            img = _add_logo_to_image(
+                img, 
+                LOGO_PATH, 
+                width, 
+                height, 
+                header_ratio=0.5, 
+                logo_height_ratio=0.3
+            )
         except Exception as e:
-            logging.warning(f"Error adding fallback logo: {e}")
+            logging.warning(f"Error adding fallback x: {e}")
         img.save(output_path)
 
 
@@ -190,10 +205,4 @@ def _add_logo_to_image(img, logo_path, image_width, image_height, header_ratio=0
     except Exception as e:
         logging.warning(f"Error adding logo: {e}")
         return img
-
-# if __name__ == "__main__":
-#     text = os.environ.get("SEGMENT_TEXT")
-#     ref_str = os.environ.get("REFERENCE_TEXT")
-#     lang = os.environ.get("LANGUAGE")
-#     create_synthetic_data(text, ref_str, lang, logo_path=LOGO_PATH)
 
