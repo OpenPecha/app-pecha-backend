@@ -32,6 +32,14 @@ async def test_validate_group_exists_invalid_group_id():
         assert response == False
     
 @pytest.mark.asyncio
+async def test_validate_group_exists_invalid_uuid():
+    group_id = "invalid_uuid"
+    with pytest.raises(HTTPException) as exc_info:
+        await validate_group_exists(group_id=group_id)
+        assert exc_info.value.status_code == status.HTTP_400_BAD_REQUEST
+        assert exc_info.value.detail == ErrorConstants.INVALID_UUID_MESSAGE
+    
+@pytest.mark.asyncio
 async def test_get_list_of_group_details_success():
     group_ids: List[str] = [
         "4d2f3498-3cc6-4bc6-9beb-37d2f7dc0163",
