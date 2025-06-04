@@ -39,18 +39,6 @@ async def test_get_text_by_term_id():
                           has_sub_child=False)
     mock_texts_by_category = [
         TextDTO(
-            id="032b9a5f-0712-40d8-b7ec-73c8c94f1c15",
-            title="བྱང་ཆུབ་སེམས་དཔའི་སྤྱོད་པ་ལ་འཇུག་པ།",
-            language="bo",
-            type="root_text",
-            is_published=True,
-            created_date="2025-03-20 09:26:16.571522",
-            updated_date="2025-03-20 09:26:16.571532",
-            published_date="2025-03-20 09:26:16.571536",
-            published_by="pecha",
-            categories=[]
-        ),
-        TextDTO(
             id="a48c0814-ce56-4ada-af31-f74b179b52a9",
             title="སྤྱོད་འཇུག་དཀའ་འགྲེལ།",
             language="bo",
@@ -61,13 +49,25 @@ async def test_get_text_by_term_id():
             published_date="2025-03-21 09:40:34.025038",
             published_by="pecha",
             categories=[]
+        ),
+        TextDTO(
+            id="032b9a5f-0712-40d8-b7ec-73c8c94f1c15",
+            title="བྱང་ཆུབ་སེམས་དཔའི་སྤྱོད་པ་ལ་འཇུག་པ།",
+            language="bo",
+            type="root_text",
+            is_published=True,
+            created_date="2025-03-20 09:26:16.571522",
+            updated_date="2025-03-20 09:26:16.571532",
+            published_date="2025-03-20 09:26:16.571536",
+            published_by="pecha",
+            categories=[]
         )
     ]
 
     with patch('pecha_api.texts.texts_service.get_texts_by_term', new_callable=AsyncMock) as mock_get_texts_by_category, \
             patch('pecha_api.terms.terms_service.get_term_by_id', new_callable=AsyncMock) as mock_get_term, \
             patch('pecha_api.texts.texts_service.TextUtils.filter_text_base_on_group_id_type', new_callable=AsyncMock) as mock_filter_text_base_on_group_id_type:
-        mock_filter_text_base_on_group_id_type.return_value = {"root_text": mock_texts_by_category[0], "commentary": [mock_texts_by_category[1]]}
+        mock_filter_text_base_on_group_id_type.return_value = {"root_text": mock_texts_by_category[1], "commentary": [mock_texts_by_category[0]]}
         mock_get_texts_by_category.return_value = mock_texts_by_category
         mock_get_term.return_value = mock_term
         response = await get_text_by_text_id_or_term(text_id="", term_id="id_1", language="bo", skip=0, limit=10)
@@ -80,13 +80,12 @@ async def test_get_text_by_term_id():
         texts: List[TextDTO] = response.texts
         assert len(texts) == 2
         index = 0
-        assert_index = 0
         assert texts[index] is not None
         assert isinstance(texts[index], TextDTO)
-        assert texts[index].id == mock_texts_by_category[assert_index].id
-        assert texts[index].title == mock_texts_by_category[assert_index].title
-        assert texts[index].language == mock_texts_by_category[assert_index].language
-        assert texts[index].type == mock_texts_by_category[assert_index].type
+        assert texts[index].id == mock_texts_by_category[index].id
+        assert texts[index].title == mock_texts_by_category[index].title
+        assert texts[index].language == mock_texts_by_category[index].language
+        assert texts[index].type == mock_texts_by_category[index].type
         assert response.total == 2
         assert response.skip == 0
         assert response.limit == 10
