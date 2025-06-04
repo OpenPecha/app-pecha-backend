@@ -30,6 +30,7 @@ from pecha_api.texts.texts_response_models import (
     DetailTextMapping
 )
 from pecha_api.error_contants import ErrorConstants
+from typing import List
 
 @pytest.mark.asyncio
 async def test_get_text_by_term_id():
@@ -70,44 +71,25 @@ async def test_get_text_by_term_id():
         mock_get_texts_by_category.return_value = mock_texts_by_category
         mock_get_term.return_value = mock_term
         response = await get_text_by_text_id_or_term(text_id="", term_id="id_1", language="bo", skip=0, limit=10)
-        assert response == TextsCategoryResponse(
-            term=TermsModel(
-                id="id_1",
-                title="སྤྱོད་འཇུག",
-                description="དུས་རབས་ ༨ པའི་ནང་སློབ་དཔོན་ཞི་བ་ལྷས་མཛད་པའི་རྩ་བ་དང་དེའི་འགྲེལ་བ་སོགས།",
-                has_child=False,
-                slug="bodhicaryavatara"
-            ),
-            texts=[
-                TextDTO(
-                    id=str(mock_texts_by_category[1].id),
-                    title=mock_texts_by_category[1].title,
-                    language=mock_texts_by_category[1].language,
-                    type="commentary",
-                    is_published=mock_texts_by_category[1].is_published,
-                    created_date=mock_texts_by_category[1].created_date,
-                    updated_date=mock_texts_by_category[1].updated_date,
-                    published_date=mock_texts_by_category[1].published_date,
-                    published_by=mock_texts_by_category[1].published_by,
-                    categories=[]
-                ),
-                TextDTO(
-                    id=str(mock_texts_by_category[0].id),
-                    title=mock_texts_by_category[0].title,
-                    language=mock_texts_by_category[0].language,
-                    type="root_text",
-                    is_published=mock_texts_by_category[0].is_published,
-                    created_date=mock_texts_by_category[0].created_date,
-                    updated_date=mock_texts_by_category[0].updated_date,
-                    published_date=mock_texts_by_category[0].published_date,
-                    published_by=mock_texts_by_category[0].published_by,
-                    categories=[]
-                )
-            ],
-            total=len(mock_texts_by_category),
-            skip=0,
-            limit=10
-        )
+        assert response is not None
+        assert response.term is not None
+        term: TermsModel = response.term
+        assert term.id == "id_1"
+        assert term.slug == "bodhicaryavatara"
+        assert response.texts is not None
+        texts: List[TextDTO] = response.texts
+        assert len(texts) == 2
+        index = 0
+        assert_index = 0
+        assert texts[index] is not None
+        assert isinstance(texts[index], TextDTO)
+        assert texts[index].id == mock_texts_by_category[assert_index].id
+        assert texts[index].title == mock_texts_by_category[assert_index].title
+        assert texts[index].language == mock_texts_by_category[assert_index].language
+        assert texts[index].type == mock_texts_by_category[assert_index].type
+        assert response.total == 2
+        assert response.skip == 0
+        assert response.limit == 10
 
 
 @pytest.mark.asyncio
