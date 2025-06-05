@@ -12,8 +12,8 @@ async def get_short_url(payload: dict) -> ShortUrlResponse:
     async with httpx.AsyncClient() as client:
         response = await client.post(url, json=payload)
         if response.status_code == HTTPStatus.CREATED:
-            response = response.json()
-            short_url = response["short_url"]
+            data = response.json()
+            short_url = data["short_url"]
             return ShortUrlResponse(
                 shortUrl=short_url
             )

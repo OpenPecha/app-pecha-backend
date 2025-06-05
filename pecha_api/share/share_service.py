@@ -40,8 +40,6 @@ async def get_generated_image(segment_id: str):
             detail=ErrorConstants.IMAGE_NOT_FOUND_MESSAGE
         )
 
-
-
 async def generate_short_url(share_request: ShareRequest) -> ShortUrlResponse:
 
     og_description = ""
