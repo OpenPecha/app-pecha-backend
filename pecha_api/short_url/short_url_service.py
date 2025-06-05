@@ -4,7 +4,7 @@ from http import HTTPStatus
 import httpx
 from starlette.responses import Response
 
-async def _get_short_url_(payload: dict) -> ShortUrlResponse:
+async def get_short_url(payload: dict) -> ShortUrlResponse:
 
     short_url_endpoint = get("SHORT_URL_GENERATION_ENDPOINT")
     url = f"{short_url_endpoint}/shorten"

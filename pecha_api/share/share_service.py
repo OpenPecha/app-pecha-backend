@@ -16,7 +16,8 @@ from pecha_api.share.share_response_models import (
     ShareRequest,
     ShortUrlResponse
 )
-from .short_url_service import _get_short_url_
+
+from pecha_api.short_url.short_url_service import get_short_url
 
 from pecha_api.error_contants import ErrorConstants
 
@@ -81,7 +82,7 @@ async def generate_short_url(share_request: ShareRequest) -> ShortUrlResponse:
     
     payload = _generate_short_url_payload_(share_request=share_request, og_description=og_description)
     
-    short_url: ShortUrlResponse = await _get_short_url_(payload=payload)
+    short_url: ShortUrlResponse = await get_short_url(payload=payload)
 
     return short_url
 
