@@ -46,45 +46,53 @@ async def generate_short_url(share_request: ShareRequest) -> ShortUrlResponse:
 
     og_description = ""
     if share_request.logo:
-        og_description = DEFAULT_OG_DESCRIPTION
-        generate_segment_image(
-            text=None, 
-            ref_str=None, 
-            lang=None, 
-            text_color=share_request.text_color, 
-            bg_color=share_request.bg_color, 
-            logo_path=LOGO_PATH
-        )
+        _generate_logo_image_(share_request=share_request)
 
     else:
-        await SegmentUtils.validate_segment_exists(segment_id=share_request.segment_id)
-
-        segment = await get_segment_details_by_id(segment_id=share_request.segment_id)
-
-        text_id = segment.text_id
-        text_detail = await TextUtils.get_text_detail_by_id(text_id=text_id)
-
-        og_description = text_detail.title
-
-        segment_text = segment.content
-        reference_text = text_detail.title
-        language = text_detail.language
-
-        generate_segment_image(
-            text=segment_text, 
-            ref_str=reference_text, 
-            lang=language, 
-            text_color=share_request.text_color, 
-            bg_color=share_request.bg_color, 
-            logo_path=LOGO_PATH
-        )
+        await _generate_segment_content_image_(share_request=share_request)
         
-    
     payload = _generate_short_url_payload_(share_request=share_request, og_description=og_description)
     
     short_url: ShortUrlResponse = await get_short_url(payload=payload)
 
     return short_url
+
+
+
+def _generate_logo_image_(share_request: ShareRequest):
+    og_description = DEFAULT_OG_DESCRIPTION
+    generate_segment_image(
+        text=None, 
+        ref_str=None, 
+        lang=None, 
+        text_color=share_request.text_color, 
+        bg_color=share_request.bg_color, 
+        logo_path=LOGO_PATH
+    )
+
+async def _generate_segment_content_image_(share_request: ShareRequest):
+
+    await SegmentUtils.validate_segment_exists(segment_id=share_request.segment_id)
+
+    segment = await get_segment_details_by_id(segment_id=share_request.segment_id)
+
+    text_id = segment.text_id
+    text_detail = await TextUtils.get_text_detail_by_id(text_id=text_id)
+
+    og_description = text_detail.title
+
+    segment_text = segment.content
+    reference_text = text_detail.title
+    language = text_detail.language
+
+    generate_segment_image(
+        text=segment_text, 
+        ref_str=reference_text, 
+        lang=language, 
+        text_color=share_request.text_color, 
+        bg_color=share_request.bg_color, 
+        logo_path=LOGO_PATH
+    )
 
 
 def _generate_short_url_payload_(share_request: ShareRequest, og_description: str) -> dict:
