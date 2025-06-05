@@ -201,6 +201,8 @@ async def create_table_of_content(table_of_content_request: TableOfContent, toke
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail=ErrorConstants.ADMIN_ERROR_MESSAGE)
 
 
+# PRIVATE FUNCTIONS
+
 async def _mapping_table_of_content(text: TextDTO, table_of_content: TableOfContent,
                                     text_details_request: TextDetailsRequest):
     total_sections = await get_sections_count_of_table_of_content(
