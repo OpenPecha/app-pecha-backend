@@ -54,4 +54,14 @@ CONFIG = {
     "FALLBACK_HEADER_RATIO": 0.5,
     "FALLBACK_LOGO_HEIGHT_RATIO": 0.3,
     "REF_TEXT_Y_OFFSET": 40,
+    # Default font size
+    "DEFAULT_FONT_SIZE": 24,
+    # Default language code
+    "DEFAULT_LANG": "en",
+    # Typical character for width estimation
+    "TYPICAL_CHAR": "བ",
+    # Hex color parsing indices
+    "HEX_COLOR_INDICES": (0, 2, 4),
+    # RGBA transparent color
+    "RGBA_TRANSPARENT": (0, 0, 0, 0),
 } 

@@ -9,19 +9,24 @@ class SyntheticImageGenerator:
         self,
         image_width: int,
         image_height: int,
-        font_size: int = 24,
+        font_size: int = CONFIG["DEFAULT_FONT_SIZE"],
         font_type: str = None,
         bg_color: str = None
     ) -> None:
         self.image_width = int(image_width)
         self.image_height = int(image_height)
         self.font_size = int(font_size)
-        self.font_type = font_type or "en"
-        self.bg_color = tuple(int((bg_color or CONFIG["BG_COLOR"]["DEFAULT"]).lstrip('#')[i:i+2], 16) for i in (0, 2, 4))
+        self.font_type = font_type or CONFIG["DEFAULT_LANG"]
+        self.bg_color = self._parse_hex_color(bg_color or CONFIG["BG_COLOR"]["DEFAULT"])
+
+    def _parse_hex_color(self, hex_color: str) -> tuple:
+        """Parse a hex color string (e.g., '#ac1c22') to an RGB tuple using config indices."""
+        hex_color = hex_color.lstrip('#')
+        return tuple(int(hex_color[i:i+2], 16) for i in CONFIG["HEX_COLOR_INDICES"])
 
     def calc_letters_per_line(self, text: str, font: ImageFont.FreeTypeFont, max_width: int) -> int:
         """Calculate approximately how many characters can fit in the given width."""
-        avg_char_width = font.getlength("བ")  # Use a typical character for estimation
+        avg_char_width = font.getlength(CONFIG["TYPICAL_CHAR"])
         return int(max_width / avg_char_width)
 
     def add_borders(self, draw: ImageDraw.ImageDraw) -> None:
@@ -45,6 +50,33 @@ class SyntheticImageGenerator:
             (0, header_height * 2, self.image_width, header_height * 2),
             fill=CONFIG["COLOR_GRAY_SEPARATOR"],
             width=int(self.image_height * CONFIG["HEADER_SEPARATOR_RATIO"])
+        )
+
+    def _draw_text_and_reference(
+        self,
+        draw: ImageDraw.ImageDraw,
+        main_text: str,
+        ref_text: str,
+        main_font: ImageFont.FreeTypeFont,
+        ref_font: ImageFont.FreeTypeFont,
+        text_color: tuple,
+        main_font_size: int
+    ) -> None:
+        draw.text(
+            xy=(self.image_width / 2, self.image_height / 2),
+            text=main_text,
+            font=main_font,
+            fill=text_color,
+            anchor=CONFIG["ANCHOR_MIDDLE"],
+            align=CONFIG["ALIGN_CENTER"],
+            spacing=int(main_font_size * 0.5)
+        )
+        draw.text(
+            xy=(self.image_width / 2, self.image_height - CONFIG["REF_TEXT_Y_OFFSET"]),
+            text=ref_text,
+            font=ref_font,
+            fill=text_color,
+            anchor=CONFIG["ANCHOR_MIDDLE"]
         )
 
     def save_image(
@@ -78,22 +110,14 @@ class SyntheticImageGenerator:
         draw = ImageDraw.Draw(img)
         self.add_header(draw)
         self.add_borders(draw)
-        draw.text(
-            xy=(self.image_width / 2, self.image_height / 2),
-            text=wrapped_text,
-            font=main_font,
-            fill=text_color_tuple,
-            anchor=CONFIG["ANCHOR_MIDDLE"],
-            align=CONFIG["ALIGN_CENTER"],
-            spacing=int(main_font_size * 0.5)
-        )
-        # Draw reference text
-        draw.text(
-            xy=(self.image_width / 2, self.image_height - CONFIG["REF_TEXT_Y_OFFSET"]),
-            text=ref_str,
-            font=ref_font,
-            fill=text_color_tuple,
-            anchor=CONFIG["ANCHOR_MIDDLE"]
+        self._draw_text_and_reference(
+            draw=draw,
+            main_text=wrapped_text,
+            ref_text=ref_str,
+            main_font=main_font,
+            ref_font=ref_font,
+            text_color=text_color_tuple,
+            main_font_size=main_font_size
         )
         # Add logo if provided
         if logo_path:
@@ -198,7 +222,7 @@ def _add_logo_to_image(
         logo_ratio = logo.size[0] / logo.size[1]
         logo_width = int(logo_height * logo_ratio)
         logo = logo.resize((logo_width, logo_height), Image.Resampling.LANCZOS)
-        logo_padded = Image.new('RGBA', (image_width, image_height), (0, 0, 0, 0))
+        logo_padded = Image.new('RGBA', (image_width, image_height), CONFIG["RGBA_TRANSPARENT"])
         logo_x = int(image_width/2 - logo_width/2)
         logo_y = int(image_height * (header_ratio or CONFIG["HEADER_RATIO"]) - logo_height/2)
         logo_padded.paste(logo, (logo_x, logo_y))
