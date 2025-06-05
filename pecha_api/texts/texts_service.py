@@ -251,29 +251,17 @@ async def _validate_text_detail_request(text_id: str, text_details_request: Text
 
     # Check if valid version_id is provided
     if text_details_request.version_id is not None:
-        is_valid_version = await TextUtils.validate_text_exists(
+        await TextUtils.validate_text_exists(
             text_id=text_details_request.version_id
         )
-        if not is_valid_version:
-            raise HTTPException(
-                status_code=status.HTTP_404_NOT_FOUND,
-                detail=ErrorConstants.VERSION_NOT_FOUND_MESSAGE
-            )
 
     # Check if valid segment_id is provided
     if text_details_request.segment_id is not None:
-        is_valid_segment = await SegmentUtils.validate_segment_exists(
+        await SegmentUtils.validate_segment_exists(
             segment_id=text_details_request.segment_id
         )
-        if not is_valid_segment:
-            raise HTTPException(
-                status_code=status.HTTP_404_NOT_FOUND,
-                detail=ErrorConstants.SEGMENT_NOT_FOUND_MESSAGE
-            )
 
-    is_valid_text = await TextUtils.validate_text_exists(text_id=text_id)
-    if not is_valid_text:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=ErrorConstants.TEXT_NOT_FOUND_MESSAGE)
+    await TextUtils.validate_text_exists(text_id=text_id)
 
 
 async def _get_texts_by_term_id(term_id: str, language: str, skip: int, limit: int) -> List[TextDTO]:
