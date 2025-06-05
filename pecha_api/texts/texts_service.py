@@ -137,7 +137,7 @@ async def get_text_versions_by_group_id(text_id: str, language: str, skip: int, 
     '''
     if language is None:
         language = get("DEFAULT_LANGUAGE")
-    await TextUtils.get_text_detail_by_id(text_id=text_id)
+    root_text = await TextUtils.get_text_detail_by_id(text_id=text_id)
     group_id = root_text.group_id
     texts = await get_texts_by_group_id(group_id=group_id, skip=skip, limit=limit)
     filtered_text_on_root_and_version = TextUtils.filter_text_on_root_and_version(texts=texts, language=language)
