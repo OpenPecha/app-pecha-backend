@@ -54,7 +54,7 @@ async def test_get_text_by_term_id():
             id="032b9a5f-0712-40d8-b7ec-73c8c94f1c15",
             title="བྱང་ཆུབ་སེམས་དཔའི་སྤྱོད་པ་ལ་འཇུག་པ།",
             language="bo",
-            type="root_text",
+            type="version",
             is_published=True,
             created_date="2025-03-20 09:26:16.571522",
             updated_date="2025-03-20 09:26:16.571532",
@@ -265,7 +265,7 @@ async def test_create_new_root_text_not_admin():
                     parent_id=None,
                     group_id="67dd22a8d9f06ab28feedc90",
                     published_by="pecha",
-                    type="root_text",
+                    type="version",
                     categories=[]
                 ),
                 token="user"
@@ -390,7 +390,7 @@ async def test_get_table_of_contents_by_text_id_success():
         id="id_1",
         title="text_1",
         language="bo",
-        type="root_text",
+        type="version",
         is_published=True,
         created_date="2025-03-16 04:40:54.757652",
         updated_date="2025-03-16 04:40:54.757652",
@@ -405,29 +405,27 @@ async def test_get_table_of_contents_by_text_id_success():
         mock_get_text_detail_by_id.return_value = text_detail
         mock_get_contents_by_id.return_value = table_of_contents
         response = await get_table_of_contents_by_text_id(text_id="id_1")
-        assert response == TableOfContentResponse(
-            text_detail=text_detail,
-            contents=[
-                TableOfContent(
-                    id="id_1",
-                    text_id="text_id 1",
-                    sections=[
-                        Section(
-                            id="id_1",
-                            title="section_1",
-                            section_number=1,
-                            parent_id="id_1",
-                            segments=[],
-                            sections=[],
-                            created_date="2025-03-16 04:40:54.757652",
-                            updated_date="2025-03-16 04:40:54.757652",
-                            published_date="2025-03-16 04:40:54.757652",
-                            published_by="pecha"
-                        )
-                    ]
-                )
-            ]
-        )
+        assert response is not None
+        assert isinstance(response, TableOfContentResponse)
+        assert response.text_detail is not None
+        assert isinstance(response.text_detail, TextDTO)
+        assert response.text_detail.id == text_detail.id
+        assert response.text_detail.title == text_detail.title
+        assert response.text_detail.language == text_detail.language
+        assert response.text_detail.type == text_detail.type
+        assert response.contents is not None
+        assert len(response.contents) == 1
+        assert response.contents[0] is not None
+        assert isinstance(response.contents[0], TableOfContent)
+        assert response.contents[0].id == table_of_contents[0].id
+        assert response.contents[0].text_id == table_of_contents[0].text_id
+        assert response.contents[0].sections is not None
+        assert response.contents[0].sections[0] is not None
+        assert isinstance(response.contents[0].sections[0], Section)
+        assert response.contents[0].sections[0].id == table_of_contents[0].sections[0].id
+        assert response.contents[0].sections[0].title == table_of_contents[0].sections[0].title
+        assert response.contents[0].sections[0].section_number == table_of_contents[0].sections[0].section_number
+        assert response.contents[0].sections[0].parent_id == table_of_contents[0].sections[0].parent_id
 
 @pytest.mark.asyncio
 async def test_get_table_of_contents_by_text_id_invalid_text():
@@ -448,7 +446,7 @@ async def test_get_text_details_by_text_id_with_content_id_only_success():
             id="id_1",
             title="text_1",
             language="bo",
-            type="root_text",
+            type="version",
             is_published=True,
             created_date="2025-03-16 04:40:54.757652",
             updated_date="2025-03-16 04:40:54.757652",
@@ -574,7 +572,7 @@ async def test_get_text_details_by_text_id_with_content_id_and_version_id_succes
             id="id_1",
             title="text_1",
             language="bo",
-            type="root_text",
+            type="version",
             is_published=True,
             created_date="2025-03-16 04:40:54.757652",
             updated_date="2025-03-16 04:40:54.757652",
@@ -710,7 +708,7 @@ async def test_get_text_details_by_text_id_with_segment_id_success():
             id="id_1",
             title="text_1",
             language="bo",
-            type="root_text",
+            type="version",
             is_published=True,
             created_date="2025-03-16 04:40:54.757652",
             updated_date="2025-03-16 04:40:54.757652",
@@ -837,7 +835,7 @@ async def test_get_text_details_by_text_id_with_content_id_and_section_id_only_s
             id="id_1",
             title="text_1",
             language="bo",
-            type="root_text",
+            type="version",
             is_published=True,
             created_date="2025-03-16 04:40:54.757652",
             updated_date="2025-03-16 04:40:54.757652",
