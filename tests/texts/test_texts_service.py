@@ -198,43 +198,61 @@ async def test_get_versions_by_group_id():
 
 @pytest.mark.asyncio
 async def test_create_new_root_text():
+    text_id = "efb26a06-f373-450b-ba57-e7a8d4dd5b64"
+    title = "བྱང་ཆུབ་སེམས་དཔའི་སྤྱོད་པ་ལ་འཇུག་པ།"
+    language = "bo"
+    parent_id = None
+    is_published = True
+    group_id = "67dd22a8d9f06ab28feedc90"
+    created_date = "2025-03-16 04:40:54.757652"
+    updated_date = "2025-03-16 04:40:54.757652"
+    published_date = "2025-03-16 04:40:54.757652"
+    published_by = "pecha"
+    type_ = "version"
+    categories = []
     with patch('pecha_api.texts.texts_service.verify_admin_access', return_value=True), \
             patch('pecha_api.texts.texts_service.create_text', new_callable=AsyncMock) as mock_create_text,\
             patch('pecha_api.texts.texts_service.validate_group_exists', new_callable=AsyncMock) as mock_validate_group_exists:
-        mock_create_text.return_value = AsyncMock(id="efb26a06-f373-450b-ba57-e7a8d4dd5b64",
-                                                  title="བྱང་ཆུབ་སེམས་དཔའི་སྤྱོད་པ་ལ་འཇུག་པ།", language="bo",
-                                                  parent_id=None, is_published=True,
-                                                  group_id="67dd22a8d9f06ab28feedc90",
-                                                  created_date="2025-03-16 04:40:54.757652",
-                                                  updated_date="2025-03-16 04:40:54.757652",
-                                                  published_date="2025-03-16 04:40:54.757652",
-                                                  published_by="pecha", type="root_text", categories=[])
+        mock_create_text.return_value = AsyncMock(
+            id=text_id,
+            title=title,
+            language=language,
+            parent_id=parent_id,
+            is_published=is_published,
+            group_id=group_id,
+            created_date=created_date,
+            updated_date=updated_date,
+            published_date=published_date,
+            published_by=published_by,
+            type=type_,
+            categories=categories
+        )
         mock_validate_group_exists.return_value = True
         response = await create_new_text(
             create_text_request=CreateTextRequest(
-                title="བྱང་ཆུབ་སེམས་དཔའི་སྤྱོད་པ་ལ་འཇུག་པ།",
-                language="bo",
-                parent_id=None,
-                group_id="67dd22a8d9f06ab28feedc90",
-                published_by="pecha",
-                type="root_text",
-                categories=[]
+                title=title,
+                language=language,
+                parent_id=parent_id,
+                group_id=group_id,
+                published_by=published_by,
+                type=type_,
+                categories=categories
             ),
             token="admin"
         )
-        assert response == TextDTO(
-            id="efb26a06-f373-450b-ba57-e7a8d4dd5b64",
-            title="བྱང་ཆུབ་སེམས་དཔའི་སྤྱོད་པ་ལ་འཇུག་པ།",
-            language="bo",
-            type="root_text",
-            is_published=True,
-            created_date="2025-03-16 04:40:54.757652",
-            updated_date="2025-03-16 04:40:54.757652",
-            published_date="2025-03-16 04:40:54.757652",
-            published_by="pecha",
-            categories=[],
-            parent_id=None
-        )
+        assert response is not None
+        assert isinstance(response, TextDTO)
+        assert response.id == text_id
+        assert response.title == title
+        assert response.language == language
+        assert response.type == type_
+        assert response.is_published == is_published
+        assert response.created_date == created_date
+        assert response.updated_date == updated_date
+        assert response.published_date == published_date
+        assert response.published_by == published_by
+        assert response.categories == categories
+        assert response.parent_id == parent_id
     
 @pytest.mark.asyncio
 async def test_create_new_root_text_not_admin():
