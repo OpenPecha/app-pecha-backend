@@ -306,7 +306,20 @@ async def test_create_table_of_content_success():
         mock_validate_segments_exists.return_value = True
         mock_create_table_of_content_detail.return_value = table_of_content
         response = await create_table_of_content(table_of_content_request=table_of_content, token="admin")
-        assert response == table_of_content
+        assert response is not None
+        assert isinstance(response, TableOfContent)
+        assert response.id == table_of_content.id
+        assert response.text_id == table_of_content.text_id
+        assert response.sections is not None
+        assert len(response.sections) == 1
+        assert response.sections[0].id == table_of_content.sections[0].id
+        assert response.sections[0].title == table_of_content.sections[0].title
+        assert response.sections[0].section_number == table_of_content.sections[0].section_number
+        assert response.sections[0].parent_id == table_of_content.sections[0].parent_id
+        assert response.sections[0].segments is not None
+        assert len(response.sections[0].segments) == 1
+        assert response.sections[0].segments[0].segment_id == table_of_content.sections[0].segments[0].segment_id
+        assert response.sections[0].segments[0].segment_number == table_of_content.sections[0].segments[0].segment_number
     
 @pytest.mark.asyncio
 async def test_create_table_of_content_not_admin():
