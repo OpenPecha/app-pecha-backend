@@ -13,3 +13,4 @@ class ErrorConstants:
     SHORT_URL_GENERATION_FAILED_MESSAGE="Short URL generation failed"
     INVALID_GROUP_ID_MESSAGE="Invalid group ID"
     INVALID_UUID_MESSAGE="Invalid UUID"
+    IMAGE_NOT_FOUND_MESSAGE="Image not found"

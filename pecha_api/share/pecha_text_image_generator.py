@@ -130,7 +130,7 @@ def create_synthetic_data(text: str, ref_str: str, lang: str, bg_color: str, tex
     )
     generator.save_image(cleaned_text, ref_str, lang, img_file_name=output_path, text_color=text_color, logo_path=logo_path)
 
-def generate_text_image(
+def generate_segment_image(
         text: str = None, 
         ref_str: str = None, 
         lang: str = None, 
