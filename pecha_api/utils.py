@@ -1,10 +1,14 @@
 from typing import Optional
+import io
 import logging
+from PIL import Image
 from beanie import PydanticObjectId
-from fastapi import HTTPException
+from fastapi import HTTPException, UploadFile
 from bson.errors import InvalidId
 from starlette import status
 from datetime import datetime, timezone, timedelta
+from urllib.parse import urlparse
+from .config import get_int
 
 from .constants import Constants
 
@@ -61,5 +65,42 @@ class Utils:
             [Constants.LANGUAGE_NUMBER[language][char] if "0" <= char <= "9" else char for char in str(value)])
 
     @staticmethod
-    def get_word_by_language(word: str, language: str):
-        return Utils.get_value_from_dict(Constants.TIME_PASSED_NOW[word], language)
+    def validate_and_compress_image(file: UploadFile, content_type: str) -> io.BytesIO:
+        max_file_size = get_int("MAX_FILE_SIZE_MB")
+        MAX_FILE_SIZE_BYTES = max_file_size * 1024 * 1024
+        if not content_type.startswith("image/"):
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Only image files are allowed."
+            )
+        file.file.seek(0, 2)  # Move to the end of the file to get its size
+        file_size = file.file.tell()
+        if file_size > MAX_FILE_SIZE_BYTES:
+            raise HTTPException(
+                status_code=status.HTTP_413_REQUEST_ENTITY_TOO_LARGE,
+                detail=f"File size exceeds {max_file_size} MB limit."
+            )
+        file.file.seek(0)  # Reset file pointer
+        # Read and compress the image
+        try:
+            image = Image.open(file.file)
+            compressed_image_io = io.BytesIO()
+            image.save(compressed_image_io, format="JPEG", quality=get_int("COMPRESSED_QUALITY"))
+            compressed_image_io.seek(0)
+            return compressed_image_io
+        except Exception as e:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail=f"Failed to process the image: {str(e)}"
+            )
+
+    @staticmethod
+    def extract_s3_key(presigned_url: str) -> str:
+        if not presigned_url:
+            return ""
+        parsed_url = urlparse(presigned_url)
+        # Extract the path and remove the leading '/'
+        s3_key = parsed_url.path.lstrip('/')
+        if not s3_key:
+            return ""
+        return s3_key

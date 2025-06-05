@@ -1,11 +1,17 @@
+import os
 import uuid
+
+from fastapi import APIRouter, Depends, UploadFile, File
 
 from pecha_api.config import get
 from .sheets_repository import get_sheets_by_topic, get_users_sheets, create_sheet
 from .sheets_response_models import SheetModel, Publisher, SheetsResponse, CreateSheetRequest
 from ..users.users_repository import get_user_by_username
 from ..db.database import SessionLocal
+from ..uploads.S3_utils import delete_file, upload_bytes, generate_presigned_upload_url
 from ..topics.topics_repository import get_topic_by_id
+
+from pecha_api.utils import Utils
 
 async def get_sheets(topic_id: str,language: str):
     sheets = get_sheets_by_topic(topic_id=topic_id)
@@ -70,3 +76,24 @@ async def create_new_sheet(create_sheet_request: CreateSheetRequest):
     new_sheet = await create_sheet(create_sheet_request=create_sheet_request)
     return new_sheet
     
+
+def upload_sheet_image_request(file: UploadFile):
+    # Validate and compress the uploaded image
+    compressed_image = Utils.validate_and_compress_image(file=file, content_type=file.content_type)
+    file_name, ext = os.path.splitext(file.filename)
+    file_path = f'images/sheet_images/{file_name}.{ext}'
+    delete_file(file_path=file_path)
+    upload_key = upload_bytes(
+        bucket_name=get("AWS_BUCKET_NAME"),
+        s3_key=file_path,
+        file=compressed_image,
+        content_type=file.content_type
+    )
+    presigned_url = generate_presigned_upload_url(
+        bucket_name=get("AWS_BUCKET_NAME"),
+        s3_key=upload_key
+    )
+    
+    return {
+        "url": presigned_url
+    }
