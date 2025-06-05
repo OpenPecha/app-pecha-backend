@@ -255,7 +255,7 @@ class TextUtils:
         return None  # Return None if segment not found in any section
 
     @staticmethod
-    async def filter_text_on_root_and_version(texts: List[TextDTO], language: str) -> Dict[str, Union[TextDTO, List[TextDTO]]]:
+    def filter_text_on_root_and_version(texts: List[TextDTO], language: str) -> Dict[str, Union[TextDTO, List[TextDTO]]]:
         filtered_text = {
             "root_text": None,
             "versions": []

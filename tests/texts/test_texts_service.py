@@ -96,8 +96,9 @@ async def test_get_versions_by_group_id():
     text_detail = TextDTO(
         id="id_1",
         title="བྱང་ཆུབ་སེམས་དཔའི་སྤྱོད་པ་ལ་འཇུག་པ།",
+        group_id="group_id_1",
         language="bo",
-        type="root_text",
+        type="version",
         is_published=True,
         created_date="2025-03-20 09:26:16.571522",
         updated_date="2025-03-20 09:26:16.571532",
@@ -107,8 +108,22 @@ async def test_get_versions_by_group_id():
         parent_id=None
     )
     texts_by_group_id = [
-        TextVersion(
-            id="59769286-2787-4181-953d-9149cdeef959",
+        TextDTO(
+            id="text_id_1",
+            title="བྱང་ཆུབ་སེམས་དཔའི་སྤྱོད་པ་ལ་འཇུག་པ།",
+            group_id="group_id_1",
+            language="bo",
+            type="version",
+            is_published=True,
+            created_date="2025-03-20 09:26:16.571522",
+            updated_date="2025-03-20 09:26:16.571532",
+            published_date="2025-03-20 09:26:16.571536",
+            published_by="pecha",
+            categories=[],
+            parent_id=None
+        ),
+        TextDTO(
+            id="text_id_2",
             title="The Way of the Bodhisattva",
             parent_id="032b9a5f-0712-40d8-b7ec-73c8c94f1c15",
             priority=None,
@@ -118,10 +133,12 @@ async def test_get_versions_by_group_id():
             created_date="2025-03-20 09:28:28.076920",
             updated_date="2025-03-20 09:28:28.076934",
             published_date="2025-03-20 09:28:28.076938",
-            published_by="pecha"
+            published_by="pecha",
+            categories=[],
+            group_id="group_id_1"
         ),
-        TextVersion(
-            id="ee88cb8b-42b2-45af-a6a4-753c0e9d779c",
+        TextDTO(
+            id="text_id_3",
             title="शबोधिचर्यावतार",
             parent_id="032b9a5f-0712-40d8-b7ec-73c8c94f1c15",
             priority=None,
@@ -131,12 +148,14 @@ async def test_get_versions_by_group_id():
             created_date="2025-03-20 09:29:51.154697",
             updated_date="2025-03-20 09:29:51.154708",
             published_date="2025-03-20 09:29:51.154712",
-            published_by="pecha"
+            published_by="pecha",
+            categories=[],
+            group_id="group_id_1"
         )
     ]
     mock_table_of_content = TableOfContent(
-            id="id_1",
-            text_id="text_id 1",
+            id="table_of_content_id",
+            text_id="text_id_1",
             sections=[
                 Section(
                     id="id_1",
@@ -152,52 +171,29 @@ async def test_get_versions_by_group_id():
                 )
             ]
         )
+    language = "en"
     with patch('pecha_api.texts.texts_service.TextUtils.get_text_detail_by_id', new_callable=AsyncMock) as mock_text_detail, \
         patch('pecha_api.texts.texts_service.get_texts_by_group_id', new_callable=AsyncMock) as mock_get_texts_by_group_id,\
-        patch('pecha_api.texts.texts_service.TextUtils.filter_text_on_root_and_version', new_callable=AsyncMock) as mock_filter_text_on_root_and_version, \
         patch('pecha_api.texts.texts_service.get_contents_by_id', new_callable=AsyncMock) as mock_get_contents_by_id:
-        mock_filter_text_on_root_and_version.return_value = {"root_text": text_detail, "versions": texts_by_group_id}
+        mock_text_detail.return_value = text_detail
+        mock_get_texts_by_group_id.return_value = texts_by_group_id
         mock_get_contents_by_id.return_value = [mock_table_of_content]
-        response = await get_text_versions_by_group_id(text_id="id_1",language="en", skip=0, limit=10)
-        assert response.text == TextDTO(
-            id="id_1",
-            title="བྱང་ཆུབ་སེམས་དཔའི་སྤྱོད་པ་ལ་འཇུག་པ།",
-            language="bo",
-            type="root_text",
-            is_published=True,
-            created_date="2025-03-20 09:26:16.571522",
-            updated_date="2025-03-20 09:26:16.571532",
-            published_date="2025-03-20 09:26:16.571536",
-            published_by="pecha",
-            categories=[],
-            parent_id=None
-        )
+        response = await get_text_versions_by_group_id(text_id="id_1",language=language, skip=0, limit=10)
+        assert response is not None
+        assert response.text is not None
+        assert isinstance(response.text, TextDTO)
+        assert response.text.type == "version"
+        assert response.text.language == language
+        assert response.text.id == "text_id_2"
+        assert response.versions is not None
+        assert len(response.versions) == 2
+        assert response.versions[0] is not None
         assert isinstance(response.versions[0], TextVersion)
-        assert response.versions[0].id == "59769286-2787-4181-953d-9149cdeef959"
-        assert response.versions[0].title == "The Way of the Bodhisattva"
-        assert response.versions[0].parent_id == "032b9a5f-0712-40d8-b7ec-73c8c94f1c15"
-        assert response.versions[0].language == "en"
-        assert response.versions[0].type == "version"
-        assert response.versions[0].is_published == True
-        assert response.versions[0].created_date == "2025-03-20 09:28:28.076920"
-        assert response.versions[0].updated_date == "2025-03-20 09:28:28.076934"
-        assert response.versions[0].published_date == "2025-03-20 09:28:28.076938"
-        assert response.versions[0].published_by == "pecha"
-        # assert response.versions[-1] == TextVersion(
-        #     id="id_1",
-        #     title="བྱང་ཆུབ་སེམས་དཔའི་སྤྱོད་པ་ལ་འཇུག་པ།",
-        #     parent_id=None,
-        #     priority=None,
-        #     language="bo",
-        #     type="root_text",
-        #     group_id=None,
-        #     table_of_contents=["id_1"],
-        #     is_published=True,
-        #     created_date="2025-03-20 09:26:16.571522",
-        #     updated_date="2025-03-20 09:26:16.571532",
-        #     published_date="2025-03-20 09:26:16.571536",
-        #     published_by="pecha"
-        # )
+        assert response.versions[0].id == "text_id_1"
+        for version in response.versions:
+            assert isinstance(version, TextVersion)
+            assert version.type == "version"
+
 
 
 @pytest.mark.asyncio

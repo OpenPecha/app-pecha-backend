@@ -142,7 +142,7 @@ async def get_text_versions_by_group_id(text_id: str, language: str, skip: int, 
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=ErrorConstants.TEXT_NOT_FOUND_MESSAGE)
     group_id = root_text.group_id
     texts = await get_texts_by_group_id(group_id=group_id, skip=skip, limit=limit)
-    filtered_text_on_root_and_version = await TextUtils.filter_text_on_root_and_version(texts=texts, language=language)
+    filtered_text_on_root_and_version = TextUtils.filter_text_on_root_and_version(texts=texts, language=language)
     root_text = filtered_text_on_root_and_version["root_text"]
     versions = filtered_text_on_root_and_version["versions"]
 
