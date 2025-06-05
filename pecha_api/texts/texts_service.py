@@ -32,8 +32,8 @@ from pecha_api.cache.cache_service import (
 )
 
 from .texts_utils import TextUtils
-from ..users.users_service import verify_admin_access
-from ..terms.terms_service import get_term
+from pecha_api.users.users_service import verify_admin_access
+from pecha_api.terms.terms_service import get_term
 from .segments.segments_utils import SegmentUtils
 
 from typing import List, Dict
@@ -137,9 +137,7 @@ async def get_text_versions_by_group_id(text_id: str, language: str, skip: int, 
     '''
     if language is None:
         language = get("DEFAULT_LANGUAGE")
-    root_text = await TextUtils.get_text_detail_by_id(text_id=text_id)
-    if root_text is None:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=ErrorConstants.TEXT_NOT_FOUND_MESSAGE)
+    await TextUtils.get_text_detail_by_id(text_id=text_id)
     group_id = root_text.group_id
     texts = await get_texts_by_group_id(group_id=group_id, skip=skip, limit=limit)
     filtered_text_on_root_and_version = TextUtils.filter_text_on_root_and_version(texts=texts, language=language)
@@ -186,17 +184,11 @@ async def create_new_text(
 async def create_table_of_content(table_of_content_request: TableOfContent, token: str) -> TableOfContent:
     is_admin = verify_admin_access(token=token)
     if is_admin:
-        valid_text = await TextUtils.validate_text_exists(text_id=table_of_content_request.text_id)
-        if valid_text:
-            segment_ids = TextUtils.get_all_segment_ids(table_of_content=table_of_content_request)
-            valid_segments = await SegmentUtils.validate_segments_exists(segment_ids=segment_ids)
-            if not valid_segments:
-                raise HTTPException(status_code=status.HTTP_404_NOT_FOUND,
-                                    detail=ErrorConstants.SEGMENT_NOT_FOUND_MESSAGE)
-            table_of_content = await create_table_of_content_detail(table_of_content_request=table_of_content_request)
-            return table_of_content
-        else:
-            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=ErrorConstants.TEXT_NOT_FOUND_MESSAGE)
+        await TextUtils.validate_text_exists(text_id=table_of_content_request.text_id)
+        segment_ids = TextUtils.get_all_segment_ids(table_of_content=table_of_content_request)
+        await SegmentUtils.validate_segments_exists(segment_ids=segment_ids)
+        table_of_content = await create_table_of_content_detail(table_of_content_request=table_of_content_request)
+        return table_of_content
     else:
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail=ErrorConstants.ADMIN_ERROR_MESSAGE)
 
