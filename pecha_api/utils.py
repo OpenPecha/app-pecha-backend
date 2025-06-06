@@ -84,6 +84,16 @@ class Utils:
         # Read and compress the image
         try:
             image = Image.open(file.file)
+            if image.mode in ('RGBA', 'LA') or (image.mode == 'P' and 'transparency' in image.info):
+                
+                background = Image.new('RGB', image.size, (255, 255, 255))
+                if image.mode == 'P':
+                    image = image.convert('RGBA')
+                background.paste(image, mask=image.split()[3] if image.mode == 'RGBA' else image.split()[1])
+                image = background
+            elif image.mode != 'RGB':
+                image = image.convert('RGB')
+                
             compressed_image_io = io.BytesIO()
             image.save(compressed_image_io, format="JPEG", quality=get_int("COMPRESSED_QUALITY"))
             compressed_image_io.seek(0)
