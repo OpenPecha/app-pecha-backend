@@ -1,188 +1,233 @@
+import logging
+import textwrap
 from PIL import Image, ImageDraw, ImageFont
 from bs4 import BeautifulSoup
-import textwrap
-
-FONT_PATHS = {
-    "bo": "pecha_api/share/static/fonts/wujin+gangbi.ttf",
-}
-
+from pecha_api.share.pecha_text_image_generator_config import CONFIG
 
 class SyntheticImageGenerator:
-
-    def __init__(self, image_width, image_height, font_size=24, font_type="bo", bg_color="#ac1c22") -> None:
+    def __init__(
+        self,
+        image_width: int,
+        image_height: int,
+        font_size: int = CONFIG["DEFAULT_FONT_SIZE"],
+        font_type: str = None,
+        bg_color: str = None
+    ) -> None:
         self.image_width = int(image_width)
         self.image_height = int(image_height)
         self.font_size = int(font_size)
-        self.font_type = font_type
-        self.bg_color = tuple(int(bg_color.lstrip('#')[i:i+2], 16) for i in (0, 2, 4))
-        
-    def calc_letters_per_line(self, text, font, max_width):
+        self.font_type = font_type or CONFIG["DEFAULT_LANG"]
+        self.bg_color = self._parse_hex_color(bg_color or CONFIG["BG_COLOR"]["DEFAULT"])
+
+    def _parse_hex_color(self, hex_color: str) -> tuple:
+        """Parse a hex color string (e.g., '#ac1c22') to an RGB tuple using config indices."""
+        hex_color = hex_color.lstrip('#')
+        return tuple(int(hex_color[i:i+2], 16) for i in CONFIG["HEX_COLOR_INDICES"])
+
+    def calc_letters_per_line(self, text: str, font: ImageFont.FreeTypeFont, max_width: int) -> int:
         """Calculate approximately how many characters can fit in the given width."""
-        avg_char_width = font.getlength("བ")  # Use a typical character for estimation
+        avg_char_width = font.getlength(CONFIG["TYPICAL_CHAR"])
         return int(max_width / avg_char_width)
 
-    def add_borders(self, draw):
-        """Add borders to the image"""
-        # Draw border lines
-        border_color = "#666666"
-        draw.line((0, 0, self.image_width, 0), fill=border_color, width=1)  # Top
-        draw.line((0, 0, 0, self.image_height), fill=border_color, width=1)  # Left
-        draw.line((self.image_width-1, 0, self.image_width-1, self.image_height), fill=border_color, width=1)  # Right
-        draw.line((0, self.image_height-1, self.image_width, self.image_height-1), fill=border_color, width=1)  # Bottom
+    def add_borders(self, draw: ImageDraw.ImageDraw) -> None:
+        """Add borders to the image."""
+        draw.line((0, 0, self.image_width, 0), fill=CONFIG["COLOR_GRAY_BORDER"], width=1)  # Top
+        draw.line((0, 0, 0, self.image_height), fill=CONFIG["COLOR_GRAY_BORDER"], width=1)  # Left
+        draw.line((self.image_width-1, 0, self.image_width-1, self.image_height), fill=CONFIG["COLOR_GRAY_BORDER"], width=1)  # Right
+        draw.line((0, self.image_height-1, self.image_width, self.image_height-1), fill=CONFIG["COLOR_GRAY_BORDER"], width=1)  # Bottom
 
-    def add_header(self, draw):
-        """Add white header section"""
-        header_height = int(self.image_height * 0.05)
+    def add_header(self, draw: ImageDraw.ImageDraw) -> None:
+        """Add white header section."""
+        header_height = int(self.image_height * CONFIG["HEADER_RATIO"])
         # White header background
-        draw.line((0, header_height, self.image_width, header_height), 
-                 fill=(255, 255, 255), 
-                 width=int(self.image_height * 0.1))
+        draw.line(
+            (0, header_height, self.image_width, header_height),
+            fill=CONFIG["COLOR_WHITE"],
+            width=int(self.image_height * CONFIG["HEADER_LINE_WIDTH_RATIO"])
+        )
         # Gray separator line
-        draw.line((0, header_height * 2, self.image_width, header_height * 2), 
-                 fill="#CCCCCC", 
-                 width=int(self.image_height * 0.0025))
+        draw.line(
+            (0, header_height * 2, self.image_width, header_height * 2),
+            fill=CONFIG["COLOR_GRAY_SEPARATOR"],
+            width=int(self.image_height * CONFIG["HEADER_SEPARATOR_RATIO"])
+        )
 
-    def add_logo(self, img, logo_path):
-        """Add logo to the image"""
-        try:
-            logo = Image.open(logo_path).convert('RGBA')
-            # Calculate logo size (6% of image height)
-            logo_height = int(self.image_height * 0.06)
-            logo_ratio = logo.size[0] / logo.size[1]
-            logo_width = int(logo_height * logo_ratio)
-            logo = logo.resize((logo_width, logo_height), Image.Resampling.LANCZOS)
-            
-            # Create a padded transparent image for the logo
-            logo_padded = Image.new('RGBA', (self.image_width, self.image_height), (0, 0, 0, 0))
-            
-            # Calculate position to center the logo
-            logo_x = int(self.image_width/2 - logo_width/2)
-            logo_y = int(self.image_height * 0.05 - logo_height/2)
-            
-            # Paste the logo
-            logo_padded.paste(logo, (logo_x, logo_y))
-            
-            # Composite the images
-            return Image.alpha_composite(img, logo_padded)
-        except Exception as e:
-            print(f"Error adding logo: {e}")
-            return img
+    def _draw_text_and_reference(
+        self,
+        draw: ImageDraw.ImageDraw,
+        main_text: str,
+        ref_text: str,
+        main_font: ImageFont.FreeTypeFont,
+        ref_font: ImageFont.FreeTypeFont,
+        text_color: tuple,
+        main_font_size: int
+    ) -> None:
+        draw.text(
+            xy=(self.image_width / 2, self.image_height / 2),
+            text=main_text,
+            font=main_font,
+            fill=text_color,
+            anchor=CONFIG["ANCHOR_MIDDLE"],
+            align=CONFIG["ALIGN_CENTER"],
+            spacing=int(main_font_size * 0.5)
+        )
+        draw.text(
+            xy=(self.image_width / 2, self.image_height - CONFIG["REF_TEXT_Y_OFFSET"]),
+            text=ref_text,
+            font=ref_font,
+            fill=text_color,
+            anchor=CONFIG["ANCHOR_MIDDLE"]
+        )
 
-    def save_image(self, text, ref_str, lang, img_file_name, logo_path=None):
-        
-        font_file_name_text = FONT_PATHS.get(self.font_type, 'bo')
-        font_file_name_ref = FONT_PATHS.get(self.font_type, 'bo') if lang == "bo" else FONT_PATHS.get('bo')
-
-        
-        # Create base image with RGBA mode to support transparency
-        img = Image.new('RGBA', (self.image_width, self.image_height), 
-                       color=self.bg_color + (255,))  # Add alpha channel
-        d = ImageDraw.Draw(img)
-
-        # Add header and borders
-        self.add_header(d)
-        self.add_borders(d)
-
+    def save_image(
+        self,
+        text: str,
+        ref_str: str,
+        lang: str,
+        img_file_name: str = None,
+        text_color: str = None,
+        logo_path: str = None
+    ) -> None:
+        """
+        Generate and save a synthetic image with the given text, reference, and options.
+        """
+        font_file_name = CONFIG["FONT_PATHS"].get(self.font_type, CONFIG["FONT_PATHS"]["FALL_BACK"])
         # Define fonts and text color
         if len(text) < 100:
-            main_size = int(self.font_size * 1.5)
+            main_font_size = int(self.font_size * 1.5)
         else:
-            main_size = self.font_size
-            
-        main_font = ImageFont.truetype(font_file_name_text, size=main_size, encoding='utf-16')
-        ref_font = ImageFont.truetype(font_file_name_ref, size=int(main_size/2), encoding='utf-16')
-        text_color = (255, 255, 255)
-
+            main_font_size = self.font_size
+        main_font = ImageFont.truetype(font_file_name, size=main_font_size, encoding=CONFIG["ENCODING_UTF16"])
+        ref_font = ImageFont.truetype(font_file_name, size=int(main_font_size/2), encoding=CONFIG["ENCODING_UTF16"])
+        text_color_tuple = CONFIG["TEXT_COLOR"].get(text_color, CONFIG["TEXT_COLOR"]["DEFAULT"])
         # Calculate padding and max width
-        padding_x = 5  # Padding from edges
-        max_width = self.image_width - (padding_x * 2)
-        
+        max_width = self.image_width - (CONFIG["PADDING_X"] * 2)
         # Wrap text using textwrap
         chars_per_line = self.calc_letters_per_line(text, main_font, max_width)
         wrapped_text = textwrap.fill(text=text, width=chars_per_line)
-        
         # Draw main text
-        d.text(
-            xy=(self.image_width / 2, self.image_height / 2),
-            text=wrapped_text,
-            font=main_font,
-            fill=text_color,
-            anchor='mm',
-            align='center',
-            spacing=int(main_size * 0.5)
+        img = Image.new(CONFIG["RGBA_MODE"], (self.image_width, self.image_height), color=self.bg_color + (255,))
+        draw = ImageDraw.Draw(img)
+        self.add_header(draw)
+        self.add_borders(draw)
+        self._draw_text_and_reference(
+            draw=draw,
+            main_text=wrapped_text,
+            ref_text=ref_str,
+            main_font=main_font,
+            ref_font=ref_font,
+            text_color=text_color_tuple,
+            main_font_size=main_font_size
         )
-        
-        # Draw reference text
-        d.text(
-            xy=(self.image_width / 2, self.image_height - 40),
-            text=ref_str,
-            font=ref_font,
-            fill=text_color,
-            anchor='mm'
-        )
-
         # Add logo if provided
         if logo_path:
-            img = self.add_logo(img, logo_path)
-
+            img = _add_logo_to_image(img, logo_path, self.image_width, self.image_height)
         # Save the image
-        img.save(img_file_name)
+        img.save(img_file_name or CONFIG["IMG_OUTPUT_PATH"])
 
+def create_synthetic_data(
+    text: str,
+    ref_str: str,
+    lang: str,
+    bg_color: str,
+    text_color: str = None,
+    logo_path: str = None,
+    output_path: str = None
+) -> None:
+    """
+    Generate a synthetic image from text and reference string, saving to output_path.
+    """
+    cleaned_text = _clean_text(text)
+    font_type_lang = lang
+    generator = SyntheticImageGenerator(
+        image_width=CONFIG["IMAGE_WIDTH"],
+        image_height=CONFIG["IMAGE_HEIGHT"],
+        font_size=CONFIG["FONT_SIZE"].get(font_type_lang, CONFIG["FONT_SIZE"]["FALL_BACK"]),
+        font_type=font_type_lang,
+        bg_color=CONFIG["BG_COLOR"].get(bg_color, CONFIG["BG_COLOR"]["DEFAULT"])
+    )
+    generator.save_image(cleaned_text, ref_str, lang, img_file_name=output_path or CONFIG["IMG_OUTPUT_PATH"], text_color=text_color, logo_path=logo_path)
 
-def clean_text(content: str, max_lines: int = 4) -> str:
-    soup = BeautifulSoup(content, "html.parser")
+def generate_segment_image(
+    text: str = None,
+    ref_str: str = None,
+    lang: str = None,
+    bg_color: str = None,
+    text_color: str = None,
+    logo_path: str = None,
+    output_path: str = None
+) -> None:
+    """
+    Main entry to generate a text image or fallback logo image.
+    """
+    if text is not None and text != "":
+        create_synthetic_data(
+            text=text,
+            ref_str=ref_str,
+            lang=lang,
+            bg_color=bg_color,
+            text_color=text_color,
+            logo_path=logo_path,
+            output_path=output_path
+        )
+    else:
+        img = Image.new(
+            CONFIG["RGBA_MODE"], 
+            (CONFIG["FALLBACK_IMAGE_WIDTH"], CONFIG["FALLBACK_IMAGE_HEIGHT"]), 
+            color=CONFIG["BG_COLOR"].get(bg_color, CONFIG["BG_COLOR"]["DEFAULT"])
+        )
+        try:
+            img = _add_logo_to_image(
+                img,
+                CONFIG["IMG_LOGO_PATH"],
+                CONFIG["FALLBACK_IMAGE_WIDTH"],
+                CONFIG["FALLBACK_IMAGE_HEIGHT"],
+                header_ratio=CONFIG["FALLBACK_HEADER_RATIO"],
+                logo_height_ratio=CONFIG["FALLBACK_LOGO_HEIGHT_RATIO"]
+            )
+        except (OSError, ValueError) as e:
+            logging.warning(f"Error adding fallback logo: {e}")
+        img.save(output_path or CONFIG["IMG_OUTPUT_PATH"])
 
-    # Replace <br> with newline character
-    for br in soup.find_all("br"):
-        br.replace_with("\n")
-
-    # Remove all other HTML tags and their contents
+def _clean_text(content: str, max_lines: int = 4) -> str:
+    """
+    Clean HTML content to plain text, limit to max_lines, add ellipsis if truncated.
+    """
+    soup = BeautifulSoup(content, CONFIG["HTML_PARSER"])
+    for br in soup.find_all(CONFIG["HTML_TAG_BR"]):
+        br.replace_with(CONFIG["HTML_NEWLINE"])
     for tag in soup.find_all():
         tag.decompose()
-
-    # Get cleaned text
     text = soup.get_text()
     lines = text.strip().splitlines()
     if len(lines) > max_lines:
         lines = lines[:max_lines]
-        lines.append("...")
-    return "\n".join(lines)
+        lines.append(CONFIG["ELLIPSIS"])
+    return CONFIG["HTML_NEWLINE"].join(lines)
 
+def _add_logo_to_image(
+    img: Image.Image,
+    logo_path: str,
+    image_width: int,
+    image_height: int,
+    header_ratio: float = None,
+    logo_height_ratio: float = None
+) -> Image.Image:
+    """
+    Add a centered logo to an RGBA image, returns composited image.
+    """
+    try:
+        logo = Image.open(logo_path).convert('RGBA')
+        logo_height = int(image_height * (logo_height_ratio or CONFIG["LOGO_HEIGHT_RATIO"]))
+        logo_ratio = logo.size[0] / logo.size[1]
+        logo_width = int(logo_height * logo_ratio)
+        logo = logo.resize((logo_width, logo_height), Image.Resampling.LANCZOS)
+        logo_padded = Image.new('RGBA', (image_width, image_height), CONFIG["RGBA_TRANSPARENT"])
+        logo_x = int(image_width/2 - logo_width/2)
+        logo_y = int(image_height * (header_ratio or CONFIG["HEADER_RATIO"]) - logo_height/2)
+        logo_padded.paste(logo, (logo_x, logo_y))
+        return Image.alpha_composite(img, logo_padded)
+    except (OSError, ValueError) as e:
+        logging.warning(f"Error adding logo: {e}")
+        return img
 
-def create_synthetic_data(text, ref_str, lang, version_lang, logo_path=None):
-    cleaned_text = clean_text(text)
-    font_type_lang = lang
-    if version_lang:
-        font_type_lang = version_lang
-
-    synthetic_image_generator = SyntheticImageGenerator(
-        image_width=700,
-        image_height=400,
-        font_size=25,
-        font_type=font_type_lang,
-        bg_color="#ac1c22"
-    )
-    synthetic_image_generator.save_image(cleaned_text, ref_str, lang, "pecha_api/share/static/img/output.png", logo_path)
-        
-
-def generate_text_image(text: str = None, ref_str: str = None, lang: str = None, version_lang: str = None, logo_path: str = None):
-    if text is not None and text != "":
-        create_synthetic_data(text, ref_str, lang, version_lang, logo_path)
-    else:
-        width = 1200
-        height = 630
-        img = Image.new('RGBA', (width, height), color="#b5343c")
-        logo = Image.open("pecha_api/share/static/img/pecha-logo.png")
-        logo.thumbnail((400, 400))
-        logo_padded = Image.new('RGBA', (width, height))
-        logo_padded.paste(logo, (int(width/2-logo.size[0]/2), int(height/2-logo.size[1]/2)))
-        img = Image.alpha_composite(img, logo_padded)
-        img.save("pecha_api/share/static/img/output.png")
-        
-
-# if __name__ == "__main__":
-#     text = os.environ.get("SEGMENT_TEXT")
-#     ref_str = os.environ.get("REFERENCE_TEXT")
-#     version_lang = os.environ.get("LANGUAGE")
-#     lang = version_lang
-#     create_synthetic_data(text, ref_str, lang, version_lang, logo_path="pecha_api/share/static/img/pecha-logo.png")

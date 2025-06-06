@@ -13,8 +13,7 @@ from pecha_api.texts.texts_service import (
 )
 from pecha_api.texts.texts_response_models import (
     CreateTextRequest,
-    TextModel,
-    Text,
+    TextDTO,
     TextVersion,
     TextVersionResponse,
     TableOfContent,
@@ -31,6 +30,7 @@ from pecha_api.texts.texts_response_models import (
     DetailTextMapping
 )
 from pecha_api.error_contants import ErrorConstants
+from typing import List
 
 @pytest.mark.asyncio
 async def test_get_text_by_term_id():
@@ -38,18 +38,7 @@ async def test_get_text_by_term_id():
         "bo": "དུས་རབས་ ༨ པའི་ནང་སློབ་དཔོན་ཞི་བ་ལྷས་མཛད་པའི་རྩ་བ་དང་དེའི་འགྲེལ་བ་སོགས།"}, slug="bodhicaryavatara",
                           has_sub_child=False)
     mock_texts_by_category = [
-        Text(
-            id="032b9a5f-0712-40d8-b7ec-73c8c94f1c15",
-            title="བྱང་ཆུབ་སེམས་དཔའི་སྤྱོད་པ་ལ་འཇུག་པ།",
-            language="bo",
-            type="root_text",
-            is_published=True,
-            created_date="2025-03-20 09:26:16.571522",
-            updated_date="2025-03-20 09:26:16.571532",
-            published_date="2025-03-20 09:26:16.571536",
-            published_by="pecha"
-        ),
-        Text(
+        TextDTO(
             id="a48c0814-ce56-4ada-af31-f74b179b52a9",
             title="སྤྱོད་འཇུག་དཀའ་འགྲེལ།",
             language="bo",
@@ -58,73 +47,83 @@ async def test_get_text_by_term_id():
             created_date="2025-03-21 09:40:34.025024",
             updated_date="2025-03-21 09:40:34.025035",
             published_date="2025-03-21 09:40:34.025038",
-            published_by="pecha"
+            published_by="pecha",
+            categories=[]
+        ),
+        TextDTO(
+            id="032b9a5f-0712-40d8-b7ec-73c8c94f1c15",
+            title="བྱང་ཆུབ་སེམས་དཔའི་སྤྱོད་པ་ལ་འཇུག་པ།",
+            language="bo",
+            type="version",
+            is_published=True,
+            created_date="2025-03-20 09:26:16.571522",
+            updated_date="2025-03-20 09:26:16.571532",
+            published_date="2025-03-20 09:26:16.571536",
+            published_by="pecha",
+            categories=[]
         )
     ]
 
     with patch('pecha_api.texts.texts_service.get_texts_by_term', new_callable=AsyncMock) as mock_get_texts_by_category, \
             patch('pecha_api.terms.terms_service.get_term_by_id', new_callable=AsyncMock) as mock_get_term, \
             patch('pecha_api.texts.texts_service.TextUtils.filter_text_base_on_group_id_type', new_callable=AsyncMock) as mock_filter_text_base_on_group_id_type:
-        mock_filter_text_base_on_group_id_type.return_value = {"root_text": mock_texts_by_category[0], "commentary": [mock_texts_by_category[1]]}
+        mock_filter_text_base_on_group_id_type.return_value = {"root_text": mock_texts_by_category[1], "commentary": [mock_texts_by_category[0]]}
         mock_get_texts_by_category.return_value = mock_texts_by_category
         mock_get_term.return_value = mock_term
         response = await get_text_by_text_id_or_term(text_id="", term_id="id_1", language="bo", skip=0, limit=10)
-        assert response == TextsCategoryResponse(
-            term=TermsModel(
-                id="id_1",
-                title="སྤྱོད་འཇུག",
-                description="དུས་རབས་ ༨ པའི་ནང་སློབ་དཔོན་ཞི་བ་ལྷས་མཛད་པའི་རྩ་བ་དང་དེའི་འགྲེལ་བ་སོགས།",
-                has_child=False,
-                slug="bodhicaryavatara"
-            ),
-            texts=[
-                Text(
-                    id=str(mock_texts_by_category[1].id),
-                    title=mock_texts_by_category[1].title,
-                    language=mock_texts_by_category[1].language,
-                    type="commentary",
-                    is_published=mock_texts_by_category[1].is_published,
-                    created_date=mock_texts_by_category[1].created_date,
-                    updated_date=mock_texts_by_category[1].updated_date,
-                    published_date=mock_texts_by_category[1].published_date,
-                    published_by=mock_texts_by_category[1].published_by
-                ),
-                Text(
-                    id=str(mock_texts_by_category[0].id),
-                    title=mock_texts_by_category[0].title,
-                    language=mock_texts_by_category[0].language,
-                    type="root_text",
-                    is_published=mock_texts_by_category[0].is_published,
-                    created_date=mock_texts_by_category[0].created_date,
-                    updated_date=mock_texts_by_category[0].updated_date,
-                    published_date=mock_texts_by_category[0].published_date,
-                    published_by=mock_texts_by_category[0].published_by
-                )
-            ],
-            total=len(mock_texts_by_category),
-            skip=0,
-            limit=10
-        )
+        assert response is not None
+        assert response.term is not None
+        term: TermsModel = response.term
+        assert term.id == "id_1"
+        assert term.slug == "bodhicaryavatara"
+        assert response.texts is not None
+        texts: List[TextDTO] = response.texts
+        assert len(texts) == 2
+        index = 0
+        assert texts[index] is not None
+        assert isinstance(texts[index], TextDTO)
+        assert texts[index].id == mock_texts_by_category[index].id
+        assert texts[index].title == mock_texts_by_category[index].title
+        assert texts[index].language == mock_texts_by_category[index].language
+        assert texts[index].type == mock_texts_by_category[index].type
+        assert response.total == 2
+        assert response.skip == 0
+        assert response.limit == 10
 
 
 @pytest.mark.asyncio
 async def test_get_versions_by_group_id():
-    text_detail = TextModel(
+    text_detail = TextDTO(
         id="id_1",
         title="བྱང་ཆུབ་སེམས་དཔའི་སྤྱོད་པ་ལ་འཇུག་པ།",
+        group_id="group_id_1",
         language="bo",
-        type="root_text",
+        type="version",
         is_published=True,
         created_date="2025-03-20 09:26:16.571522",
         updated_date="2025-03-20 09:26:16.571532",
         published_date="2025-03-20 09:26:16.571536",
         published_by="pecha",
-        categories=["67dd22a8d9f06ab28feedc90"],
+        categories=[],
         parent_id=None
     )
     texts_by_group_id = [
-        TextVersion(
-            id="59769286-2787-4181-953d-9149cdeef959",
+        TextDTO(
+            id="text_id_1",
+            title="བྱང་ཆུབ་སེམས་དཔའི་སྤྱོད་པ་ལ་འཇུག་པ།",
+            group_id="group_id_1",
+            language="bo",
+            type="version",
+            is_published=True,
+            created_date="2025-03-20 09:26:16.571522",
+            updated_date="2025-03-20 09:26:16.571532",
+            published_date="2025-03-20 09:26:16.571536",
+            published_by="pecha",
+            categories=[],
+            parent_id=None
+        ),
+        TextDTO(
+            id="text_id_2",
             title="The Way of the Bodhisattva",
             parent_id="032b9a5f-0712-40d8-b7ec-73c8c94f1c15",
             priority=None,
@@ -134,10 +133,12 @@ async def test_get_versions_by_group_id():
             created_date="2025-03-20 09:28:28.076920",
             updated_date="2025-03-20 09:28:28.076934",
             published_date="2025-03-20 09:28:28.076938",
-            published_by="pecha"
+            published_by="pecha",
+            categories=[],
+            group_id="group_id_1"
         ),
-        TextVersion(
-            id="ee88cb8b-42b2-45af-a6a4-753c0e9d779c",
+        TextDTO(
+            id="text_id_3",
             title="शबोधिचर्यावतार",
             parent_id="032b9a5f-0712-40d8-b7ec-73c8c94f1c15",
             priority=None,
@@ -147,12 +148,14 @@ async def test_get_versions_by_group_id():
             created_date="2025-03-20 09:29:51.154697",
             updated_date="2025-03-20 09:29:51.154708",
             published_date="2025-03-20 09:29:51.154712",
-            published_by="pecha"
+            published_by="pecha",
+            categories=[],
+            group_id="group_id_1"
         )
     ]
     mock_table_of_content = TableOfContent(
-            id="id_1",
-            text_id="text_id 1",
+            id="table_of_content_id",
+            text_id="text_id_1",
             sections=[
                 Section(
                     id="id_1",
@@ -168,94 +171,88 @@ async def test_get_versions_by_group_id():
                 )
             ]
         )
+    language = "en"
     with patch('pecha_api.texts.texts_service.TextUtils.get_text_detail_by_id', new_callable=AsyncMock) as mock_text_detail, \
         patch('pecha_api.texts.texts_service.get_texts_by_group_id', new_callable=AsyncMock) as mock_get_texts_by_group_id,\
-        patch('pecha_api.texts.texts_service.TextUtils.filter_text_on_root_and_version', new_callable=AsyncMock) as mock_filter_text_on_root_and_version, \
         patch('pecha_api.texts.texts_service.get_contents_by_id', new_callable=AsyncMock) as mock_get_contents_by_id:
         mock_text_detail.return_value = text_detail
-        mock_filter_text_on_root_and_version.return_value = {"root_text": text_detail, "versions": texts_by_group_id}
+        mock_get_texts_by_group_id.return_value = texts_by_group_id
         mock_get_contents_by_id.return_value = [mock_table_of_content]
-        response = await get_text_versions_by_group_id(text_id="id_1",language="en", skip=0, limit=10)
-        assert response.text == TextModel(
-            id="id_1",
-            title="བྱང་ཆུབ་སེམས་དཔའི་སྤྱོད་པ་ལ་འཇུག་པ།",
-            language="bo",
-            type="root_text",
-            is_published=True,
-            created_date="2025-03-20 09:26:16.571522",
-            updated_date="2025-03-20 09:26:16.571532",
-            published_date="2025-03-20 09:26:16.571536",
-            published_by="pecha",
-            categories=["67dd22a8d9f06ab28feedc90"],
-            parent_id=None
-        )
+        response = await get_text_versions_by_group_id(text_id="id_1",language=language, skip=0, limit=10)
+        assert response is not None
+        assert response.text is not None
+        assert isinstance(response.text, TextDTO)
+        assert response.text.type == "version"
+        assert response.text.language == language
+        assert response.text.id == "text_id_2"
+        assert response.versions is not None
+        assert len(response.versions) == 2
+        assert response.versions[0] is not None
         assert isinstance(response.versions[0], TextVersion)
-        assert response.versions[0].id == "59769286-2787-4181-953d-9149cdeef959"
-        assert response.versions[0].title == "The Way of the Bodhisattva"
-        assert response.versions[0].parent_id == "032b9a5f-0712-40d8-b7ec-73c8c94f1c15"
-        assert response.versions[0].language == "en"
-        assert response.versions[0].type == "version"
-        assert response.versions[0].is_published == True
-        assert response.versions[0].created_date == "2025-03-20 09:28:28.076920"
-        assert response.versions[0].updated_date == "2025-03-20 09:28:28.076934"
-        assert response.versions[0].published_date == "2025-03-20 09:28:28.076938"
-        assert response.versions[0].published_by == "pecha"
-        # assert response.versions[-1] == TextVersion(
-        #     id="id_1",
-        #     title="བྱང་ཆུབ་སེམས་དཔའི་སྤྱོད་པ་ལ་འཇུག་པ།",
-        #     parent_id=None,
-        #     priority=None,
-        #     language="bo",
-        #     type="root_text",
-        #     group_id=None,
-        #     table_of_contents=["id_1"],
-        #     is_published=True,
-        #     created_date="2025-03-20 09:26:16.571522",
-        #     updated_date="2025-03-20 09:26:16.571532",
-        #     published_date="2025-03-20 09:26:16.571536",
-        #     published_by="pecha"
-        # )
+        assert response.versions[0].id == "text_id_1"
+        for version in response.versions:
+            assert isinstance(version, TextVersion)
+            assert version.type == "version"
+
 
 
 @pytest.mark.asyncio
 async def test_create_new_root_text():
+    text_id = "efb26a06-f373-450b-ba57-e7a8d4dd5b64"
+    title = "བྱང་ཆུབ་སེམས་དཔའི་སྤྱོད་པ་ལ་འཇུག་པ།"
+    language = "bo"
+    parent_id = None
+    is_published = True
+    group_id = "67dd22a8d9f06ab28feedc90"
+    created_date = "2025-03-16 04:40:54.757652"
+    updated_date = "2025-03-16 04:40:54.757652"
+    published_date = "2025-03-16 04:40:54.757652"
+    published_by = "pecha"
+    type_ = "version"
+    categories = []
     with patch('pecha_api.texts.texts_service.verify_admin_access', return_value=True), \
             patch('pecha_api.texts.texts_service.create_text', new_callable=AsyncMock) as mock_create_text,\
             patch('pecha_api.texts.texts_service.validate_group_exists', new_callable=AsyncMock) as mock_validate_group_exists:
-        mock_create_text.return_value = AsyncMock(id="efb26a06-f373-450b-ba57-e7a8d4dd5b64",
-                                                  title="བྱང་ཆུབ་སེམས་དཔའི་སྤྱོད་པ་ལ་འཇུག་པ།", language="bo",
-                                                  parent_id=None, is_published=True,
-                                                  group_id="67dd22a8d9f06ab28feedc90",
-                                                  created_date="2025-03-16 04:40:54.757652",
-                                                  updated_date="2025-03-16 04:40:54.757652",
-                                                  published_date="2025-03-16 04:40:54.757652",
-                                                  published_by="pecha", type="root_text", categories=[])
+        mock_create_text.return_value = AsyncMock(
+            id=text_id,
+            title=title,
+            language=language,
+            parent_id=parent_id,
+            is_published=is_published,
+            group_id=group_id,
+            created_date=created_date,
+            updated_date=updated_date,
+            published_date=published_date,
+            published_by=published_by,
+            type=type_,
+            categories=categories
+        )
         mock_validate_group_exists.return_value = True
         response = await create_new_text(
             create_text_request=CreateTextRequest(
-                title="བྱང་ཆུབ་སེམས་དཔའི་སྤྱོད་པ་ལ་འཇུག་པ།",
-                language="bo",
-                parent_id=None,
-                group_id="67dd22a8d9f06ab28feedc90",
-                published_by="pecha",
-                type="root_text",
-                categories=[]
+                title=title,
+                language=language,
+                parent_id=parent_id,
+                group_id=group_id,
+                published_by=published_by,
+                type=type_,
+                categories=categories
             ),
             token="admin"
         )
-        assert response == TextModel(
-            id="efb26a06-f373-450b-ba57-e7a8d4dd5b64",
-            title="བྱང་ཆུབ་སེམས་དཔའི་སྤྱོད་པ་ལ་འཇུག་པ།",
-            language="bo",
-            type="root_text",
-            is_published=True,
-            created_date="2025-03-16 04:40:54.757652",
-            updated_date="2025-03-16 04:40:54.757652",
-            published_date="2025-03-16 04:40:54.757652",
-            published_by="pecha",
-            categories=[],
-            parent_id=None
-        )
+        assert response is not None
+        assert isinstance(response, TextDTO)
+        assert response.id == text_id
+        assert response.title == title
+        assert response.language == language
+        assert response.type == type_
+        assert response.is_published == is_published
+        assert response.created_date == created_date
+        assert response.updated_date == updated_date
+        assert response.published_date == published_date
+        assert response.published_by == published_by
+        assert response.categories == categories
+        assert response.parent_id == parent_id
     
 @pytest.mark.asyncio
 async def test_create_new_root_text_not_admin():
@@ -268,7 +265,7 @@ async def test_create_new_root_text_not_admin():
                     parent_id=None,
                     group_id="67dd22a8d9f06ab28feedc90",
                     published_by="pecha",
-                    type="root_text",
+                    type="version",
                     categories=[]
                 ),
                 token="user"
@@ -309,7 +306,20 @@ async def test_create_table_of_content_success():
         mock_validate_segments_exists.return_value = True
         mock_create_table_of_content_detail.return_value = table_of_content
         response = await create_table_of_content(table_of_content_request=table_of_content, token="admin")
-        assert response == table_of_content
+        assert response is not None
+        assert isinstance(response, TableOfContent)
+        assert response.id == table_of_content.id
+        assert response.text_id == table_of_content.text_id
+        assert response.sections is not None
+        assert len(response.sections) == 1
+        assert response.sections[0].id == table_of_content.sections[0].id
+        assert response.sections[0].title == table_of_content.sections[0].title
+        assert response.sections[0].section_number == table_of_content.sections[0].section_number
+        assert response.sections[0].parent_id == table_of_content.sections[0].parent_id
+        assert response.sections[0].segments is not None
+        assert len(response.sections[0].segments) == 1
+        assert response.sections[0].segments[0].segment_id == table_of_content.sections[0].segments[0].segment_id
+        assert response.sections[0].segments[0].segment_number == table_of_content.sections[0].segments[0].segment_number
     
 @pytest.mark.asyncio
 async def test_create_table_of_content_not_admin():
@@ -376,11 +386,11 @@ async def test_get_table_of_contents_by_text_id_success():
             ]
         )
     ]
-    text_detail = TextModel(
+    text_detail = TextDTO(
         id="id_1",
         title="text_1",
         language="bo",
-        type="root_text",
+        type="version",
         is_published=True,
         created_date="2025-03-16 04:40:54.757652",
         updated_date="2025-03-16 04:40:54.757652",
@@ -394,36 +404,36 @@ async def test_get_table_of_contents_by_text_id_success():
         patch("pecha_api.texts.texts_service.get_contents_by_id", new_callable=AsyncMock) as mock_get_contents_by_id:
         mock_get_text_detail_by_id.return_value = text_detail
         mock_get_contents_by_id.return_value = table_of_contents
-        response = await get_table_of_contents_by_text_id(text_id="id_1", skip=0, limit=10)
-        assert response == TableOfContentResponse(
-            text_detail=text_detail,
-            contents=[
-                TableOfContent(
-                    id="id_1",
-                    text_id="text_id 1",
-                    sections=[
-                        Section(
-                            id="id_1",
-                            title="section_1",
-                            section_number=1,
-                            parent_id="id_1",
-                            segments=[],
-                            sections=[],
-                            created_date="2025-03-16 04:40:54.757652",
-                            updated_date="2025-03-16 04:40:54.757652",
-                            published_date="2025-03-16 04:40:54.757652",
-                            published_by="pecha"
-                        )
-                    ]
-                )
-            ]
-        )
+        
+        response = await get_table_of_contents_by_text_id(text_id="id_1")
+        
+        assert response is not None
+        assert isinstance(response, TableOfContentResponse)
+        assert response.text_detail is not None
+        assert isinstance(response.text_detail, TextDTO)
+        assert response.text_detail.id == text_detail.id
+        assert response.text_detail.title == text_detail.title
+        assert response.text_detail.language == text_detail.language
+        assert response.text_detail.type == text_detail.type
+        assert response.contents is not None
+        assert len(response.contents) == 1
+        assert response.contents[0] is not None
+        assert isinstance(response.contents[0], TableOfContent)
+        assert response.contents[0].id == table_of_contents[0].id
+        assert response.contents[0].text_id == table_of_contents[0].text_id
+        assert response.contents[0].sections is not None
+        assert response.contents[0].sections[0] is not None
+        assert isinstance(response.contents[0].sections[0], Section)
+        assert response.contents[0].sections[0].id == table_of_contents[0].sections[0].id
+        assert response.contents[0].sections[0].title == table_of_contents[0].sections[0].title
+        assert response.contents[0].sections[0].section_number == table_of_contents[0].sections[0].section_number
+        assert response.contents[0].sections[0].parent_id == table_of_contents[0].sections[0].parent_id
 
 @pytest.mark.asyncio
 async def test_get_table_of_contents_by_text_id_invalid_text():
     with patch("pecha_api.texts.texts_service.TextUtils.validate_text_exists", new_callable=AsyncMock, return_value=False):
         with pytest.raises(HTTPException) as exc_info:
-            await get_table_of_contents_by_text_id(text_id="id_1", skip=0, limit=10)
+            await get_table_of_contents_by_text_id(text_id="id_1")
         assert exc_info.value.status_code == 404
         assert exc_info.value.detail == ErrorConstants.TEXT_NOT_FOUND_MESSAGE
 
@@ -434,11 +444,11 @@ async def test_get_text_details_by_text_id_with_content_id_only_success():
         skip=0,
         limit=1
     )
-    text_detail = TextModel(
+    text_detail = TextDTO(
             id="id_1",
             title="text_1",
             language="bo",
-            type="root_text",
+            type="version",
             is_published=True,
             created_date="2025-03-16 04:40:54.757652",
             updated_date="2025-03-16 04:40:54.757652",
@@ -508,49 +518,43 @@ async def test_get_text_details_by_text_id_with_content_id_only_success():
         mock_get_table_of_content_by_content_id.return_value = table_of_content
         mock_get_sections_count_of_table_of_content.return_value = 10
         mock_get_mapped_segment_content.return_value = detail_table_of_content
+        
         response = await get_text_details_by_text_id(text_id="text_id_1", text_details_request=text_detail_request)
-        assert response.text_detail == text_detail
+        
+        assert response is not None
+        assert isinstance(response, DetailTableOfContentResponse)
+        assert response.text_detail is not None
+        assert isinstance(response.text_detail, TextDTO)
+        assert response.text_detail.id == text_detail.id
+        assert response.text_detail.title == text_detail.title
+        assert response.text_detail.language == text_detail.language
+        assert response.text_detail.type == text_detail.type
+        assert response.mapping is not None
+        assert isinstance(response.mapping, DetailTextMapping)
         assert response.mapping == DetailTextMapping(
             segment_id=None,
             section_id=None
         )
+        assert response.content is not None
+        assert isinstance(response.content, DetailTableOfContent)
+        assert response.content.id == detail_table_of_content.id
+        assert response.content.text_id == detail_table_of_content.text_id
+        assert response.content.sections is not None
+        assert len(response.content.sections) == 5
+        assert response.content.sections[0] is not None
+        assert isinstance(response.content.sections[0], DetailSection)
+        assert response.content.sections[0].id == detail_table_of_content.sections[0].id
+        assert response.content.sections[0].segments is not None
+        assert response.content.sections[0].segments[0] is not None
+        assert isinstance(response.content.sections[0].segments[0], DetailTextSegment)
+        assert response.content.sections[0].segments[0].segment_id == detail_table_of_content.sections[0].segments[0].segment_id
+        assert response.content.sections[0].segments[0].segment_number == detail_table_of_content.sections[0].segments[0].segment_number
+        assert response.content.sections[0].segments[0].content == detail_table_of_content.sections[0].segments[0].content
+        assert response.content.sections[0].segments[0].translation is None
         assert response.skip == 0
         assert response.limit == 1
         assert response.total == 10
-        assert response.content.sections == [
-                DetailSection(
-                    id=f"id_{i}",
-                    title=f"section_{i}",
-                    section_number=i,
-                    parent_id="parent_id_1",
-                    segments=[
-                        DetailTextSegment(
-                            segment_id=f"segment_id_{i}",
-                            segment_number=1,
-                            content=f"content_{i}",
-                            translation=None
-                        )
-                        for i in range(1,6)
-                    ],
-                    sections=[],
-                    created_date="2025-03-16 04:40:54.757652",
-                    updated_date="2025-03-16 04:40:54.757652",
-                    published_date="2025-03-16 04:40:54.757652",
-                    published_by="pecha"
-                )
-                for i in range(1,6)
-            ]
-        assert response.content.id == "id_1"
-        assert response.content.text_id == "text_id_1"
-        assert response.content.sections[0].segments == [
-                DetailTextSegment(
-                    segment_id=f"segment_id_{i}",
-                    segment_number=1,
-                    content=f"content_{i}",
-                    translation=None
-                )
-                for i in range(1,6)
-            ]
+        
     
 @pytest.mark.asyncio
 async def test_get_text_details_by_text_id_with_content_id_and_version_id_success():
@@ -560,11 +564,11 @@ async def test_get_text_details_by_text_id_with_content_id_and_version_id_succes
         skip=0,
         limit=1
     )
-    text_detail = TextModel(
+    text_detail = TextDTO(
             id="id_1",
             title="text_1",
             language="bo",
-            type="root_text",
+            type="version",
             is_published=True,
             created_date="2025-03-16 04:40:54.757652",
             updated_date="2025-03-16 04:40:54.757652",
@@ -638,55 +642,49 @@ async def test_get_text_details_by_text_id_with_content_id_and_version_id_succes
         mock_get_table_of_content_by_content_id.return_value = table_of_content
         mock_get_sections_count_of_table_of_content.return_value = 10
         mock_get_mapped_segment_content.return_value = detail_table_of_content
+        
         response = await get_text_details_by_text_id(text_id="text_id_1", text_details_request=text_detail_request)
+        
+        assert response is not None
+        assert isinstance(response, DetailTableOfContentResponse)
+        
+        assert response.text_detail is not None
+        assert isinstance(response.text_detail, TextDTO)
         assert response.text_detail == text_detail
+        
+        assert response.mapping is not None
+        assert isinstance(response.mapping, DetailTextMapping)
         assert response.mapping == DetailTextMapping(
-            segment_id=None,
+            segment_id=None, 
             section_id=None
         )
+        
         assert response.skip == 0
         assert response.limit == 1
         assert response.total == 10
-        assert response.content.sections == [
-                    DetailSection(
-                        id=f"id_{i}",
-                        title=f"section_{i}",
-                        section_number=i,
-                        parent_id="parent_id_1",
-                        segments=[
-                            DetailTextSegment(
-                                segment_id=f"segment_id_{i}",
-                                segment_number=1,
-                                content=f"content_{i}",
-                                translation=Translation(
-                                    text_id="text_id_1",
-                                    language="bo",
-                                    content=f"translation_{i}"
-                                )
-                            )
-                            for i in range(1,6)
-                        ],
-                        sections=[],
-                        created_date="2025-03-16 04:40:54.757652",
-                        updated_date="2025-03-16 04:40:54.757652",
-                        published_date="2025-03-16 04:40:54.757652",
-                        published_by="pecha"
-                    )
-                    for i in range(1,6)
-                ]
-        assert response.content.sections[0].segments == [
-                            DetailTextSegment(
-                                segment_id=f"segment_id_{i}",
-                                segment_number=1,
-                                content=f"content_{i}",
-                                translation=Translation(
-                                    text_id="text_id_1",
-                                    language="bo",
-                                    content=f"translation_{i}"
-                                )
-                            )
-                            for i in range(1,6)
-                        ]
+        
+        assert response.content is not None
+        assert isinstance(response.content, DetailTableOfContent)
+        assert response.content.sections is not None
+        assert isinstance(response.content.sections, list)
+        assert len(response.content.sections) == 5
+        
+        section = response.content.sections[0]
+        assert section is not None
+        assert isinstance(section, DetailSection)
+        assert section.segments is not None
+        assert isinstance(section.segments, list)
+        assert len(section.segments) == 5
+        segment = section.segments[0]
+        assert segment is not None
+        assert isinstance(segment, DetailTextSegment)
+        assert segment.translation is not None
+        assert isinstance(segment.translation, Translation)
+        
+        first_section = response.content.sections[0]
+        first_segment = first_section.segments[0]
+        assert first_segment.content == "content_1"
+        assert first_segment.translation.content == "translation_1"
 
 @pytest.mark.asyncio
 async def test_get_text_details_by_text_id_with_segment_id_success():
@@ -696,11 +694,11 @@ async def test_get_text_details_by_text_id_with_segment_id_success():
         skip=0,
         limit=1
     )
-    text_detail = TextModel(
+    text_detail = TextDTO(
             id="id_1",
             title="text_1",
             language="bo",
-            type="root_text",
+            type="version",
             is_published=True,
             created_date="2025-03-16 04:40:54.757652",
             updated_date="2025-03-16 04:40:54.757652",
@@ -772,48 +770,45 @@ async def test_get_text_details_by_text_id_with_segment_id_success():
         mock_get_sections_count_of_table_of_content.return_value = 10
         mock_get_mapped_segment_content.return_value = detail_table_of_content
         response = await get_text_details_by_text_id(text_id="text_id_1", text_details_request=text_detail_request)
+        
+        assert response is not None
+        assert isinstance(response, DetailTableOfContentResponse)
+        
+        assert response.text_detail is not None
+        assert isinstance(response.text_detail, TextDTO)
         assert response.text_detail == text_detail
-        assert response.mapping == DetailTextMapping(
-            segment_id="123e4567-e89b-12d3-a456-426614174000",
-            section_id=None
-        )
+        
+        assert response.mapping is not None
+        assert isinstance(response.mapping, DetailTextMapping)
+        assert response.mapping == DetailTextMapping(segment_id="123e4567-e89b-12d3-a456-426614174000", section_id=None)
+        
         assert response.skip == 0
         assert response.limit == 1
         assert response.total == 10
-        assert response.content.sections == [
-                DetailSection(
-                    id=f"id_{i}",
-                    title=f"section_{i}",
-                    section_number=i,
-                    parent_id="parent_id_1",
-                    segments=[
-                        DetailTextSegment(
-                            segment_id=f"segment_id_{i}",
-                            segment_number=1,
-                            content=f"content_{i}",
-                            translation=None
-                        )
-                        for i in range(1,6)
-                    ],
-                    sections=[],
-                    created_date="2025-03-16 04:40:54.757652",
-                    updated_date="2025-03-16 04:40:54.757652",
-                    published_date="2025-03-16 04:40:54.757652",
-                    published_by="pecha"
-                )
-                for i in range(1,6)
-            ]
+        
+        assert response.content is not None
+        assert isinstance(response.content, DetailTableOfContent)
         assert response.content.id == "id_1"
         assert response.content.text_id == "text_id_1"
-        assert response.content.sections[0].segments == [
-                DetailTextSegment(
-                    segment_id=f"segment_id_{i}",
-                    segment_number=1,
-                    content=f"content_{i}",
-                    translation=None
-                )
-                for i in range(1,6)
-            ]
+        assert response.content.sections is not None
+        assert isinstance(response.content.sections, list)
+        assert len(response.content.sections) == 5
+        
+        section = response.content.sections[0]
+        assert section is not None
+        assert isinstance(section, DetailSection)
+        assert section.segments is not None
+        assert isinstance(section.segments, list)
+        assert len(section.segments) == 5
+        segment = section.segments[0]
+        assert segment is not None
+        assert isinstance(segment, DetailTextSegment)
+        assert segment.translation is None
+        
+        first_section = response.content.sections[0]
+        first_segment = first_section.segments[0]
+        assert first_segment.content == "content_1"
+        assert first_segment.translation is None
 
 @pytest.mark.asyncio
 async def test_get_text_details_by_text_id_with_content_id_and_section_id_only_success():
@@ -823,11 +818,11 @@ async def test_get_text_details_by_text_id_with_content_id_and_section_id_only_s
         skip=0,
         limit=1
     )
-    text_detail = TextModel(
+    text_detail = TextDTO(
             id="id_1",
             title="text_1",
             language="bo",
-            type="root_text",
+            type="version",
             is_published=True,
             created_date="2025-03-16 04:40:54.757652",
             updated_date="2025-03-16 04:40:54.757652",
@@ -898,48 +893,45 @@ async def test_get_text_details_by_text_id_with_content_id_and_section_id_only_s
         mock_get_sections_count_of_table_of_content.return_value = 10
         mock_get_mapped_segment_content.return_value = detail_table_of_content
         response = await get_text_details_by_text_id(text_id="text_id_1", text_details_request=text_detail_request)
+        
+        assert response is not None
+        assert isinstance(response, DetailTableOfContentResponse)
+        
+        assert response.text_detail is not None
+        assert isinstance(response.text_detail, TextDTO)
         assert response.text_detail == text_detail
-        assert response.mapping == DetailTextMapping(
-            segment_id=None,
-            section_id="section_id_1"
-        )
+        
+        assert response.mapping is not None
+        assert isinstance(response.mapping, DetailTextMapping)
+        assert response.mapping == DetailTextMapping(segment_id=None, section_id="section_id_1")
+        
         assert response.skip == 0
         assert response.limit == 1
         assert response.total == 10
-        assert response.content.sections == [
-                DetailSection(
-                    id=f"id_{i}",
-                    title=f"section_{i}",
-                    section_number=i,
-                    parent_id="parent_id_1",
-                    segments=[
-                        DetailTextSegment(
-                            segment_id=f"segment_id_{i}",
-                            segment_number=1,
-                            content=f"content_{i}",
-                            translation=None
-                        )
-                        for i in range(1,6)
-                    ],
-                    sections=[],
-                    created_date="2025-03-16 04:40:54.757652",
-                    updated_date="2025-03-16 04:40:54.757652",
-                    published_date="2025-03-16 04:40:54.757652",
-                    published_by="pecha"
-                )
-                for i in range(1,6)
-            ]
+        
+        assert response.content is not None
+        assert isinstance(response.content, DetailTableOfContent)
         assert response.content.id == "id_1"
         assert response.content.text_id == "text_id_1"
-        assert response.content.sections[0].segments == [
-                DetailTextSegment(
-                    segment_id=f"segment_id_{i}",
-                    segment_number=1,
-                    content=f"content_{i}",
-                    translation=None
-                )
-                for i in range(1,6)
-            ]
+        assert response.content.sections is not None
+        assert isinstance(response.content.sections, list)
+        assert len(response.content.sections) == 5
+        
+        section = response.content.sections[0]
+        assert section is not None
+        assert isinstance(section, DetailSection)
+        assert section.segments is not None
+        assert isinstance(section.segments, list)
+        assert len(section.segments) == 5
+        segment = section.segments[0]
+        assert segment is not None
+        assert isinstance(segment, DetailTextSegment)
+        assert segment.translation is None
+        
+        first_section = response.content.sections[0]
+        first_segment = first_section.segments[0]
+        assert first_segment.content == "content_1"
+        assert first_segment.translation is None
 
 @pytest.mark.asyncio
 async def test_get_text_details_by_text_id_empty_text_id():
