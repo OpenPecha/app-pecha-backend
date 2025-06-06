@@ -3,6 +3,7 @@ from .search_enums import SearchType
 from starlette import status
 
 from .search_enums import SearchType
+
 from .search_service import (
     get_search_results
 )

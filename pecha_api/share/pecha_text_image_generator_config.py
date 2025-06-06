@@ -29,6 +29,7 @@ CONFIG = {
         "DEFAULT": "#ac1c22",
         "black": "#000000"
     },
+    "MAX_TEXT_LENGTH": 100,
     # String Literals
     "HTML_PARSER": "html.parser",
     "HTML_TAG_BR": "br",
