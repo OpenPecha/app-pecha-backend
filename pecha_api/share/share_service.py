@@ -24,6 +24,7 @@ from pecha_api.error_contants import ErrorConstants
 LOGO_PATH = "pecha_api/share/static/img/pecha-logo.png"
 IMAGE_PATH = "pecha_api/share/static/img/output.png"
 MEDIA_TYPE = "image/png"
+DEFAULT_OG_TITLE = "PECHA"
 DEFAULT_OG_DESCRIPTION = "PECHA"
 
 async def get_generated_image(segment_id: str):
@@ -42,7 +43,7 @@ async def get_generated_image(segment_id: str):
 
 async def generate_short_url(share_request: ShareRequest) -> ShortUrlResponse:
 
-    og_description = ""
+    og_description = DEFAULT_OG_DESCRIPTION
     if share_request.logo:
         _generate_logo_image_(share_request=share_request)
 
@@ -77,7 +78,7 @@ async def _generate_segment_content_image_(share_request: ShareRequest):
     text_id = segment.text_id
     text_detail = await TextUtils.get_text_detail_by_id(text_id=text_id)
 
-    og_description = text_detail.title
+    DEFAULT_OG_DESCRIPTION = text_detail.title
 
     segment_text = segment.content
     reference_text = text_detail.title
