@@ -6,6 +6,7 @@ from .share_enums import (
 )
 
 class ShareRequest(BaseModel):
+    logo: bool = False
     segment_id: Optional[str] = None
     language: Optional[str] = None
     url: str

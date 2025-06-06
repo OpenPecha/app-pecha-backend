@@ -23,7 +23,27 @@ async def get_search_results(query: str, type: SearchType) -> SearchResponse:
 
 
 async def _source_search_(query: str) -> SearchResponse:
-    sources = [
+    sources = await _mock_source_data_()
+    return SearchResponse(
+        search=Search(text=query, type="source"),
+        sources=sources,
+        skip=0,
+        limit=10,
+        total=2
+    )
+
+async def _sheet_search_(query: str) -> SearchResponse:
+    sheets = await _mock_sheet_data_()
+    return SearchResponse(
+        search=Search(text=query, type="sheet"),
+        sheets=sheets,
+        skip=0,
+        limit=10,
+        total=20
+    )
+
+async def _mock_source_data_():
+    return [
             Source(
                 text=Text(
                     text_id="59769286-2787-4181-953d-9149cdeef959",
@@ -57,16 +77,9 @@ async def _source_search_(query: str) -> SearchResponse:
                 ]
             )
         ]
-    return SearchResponse(
-        search=Search(text=query, type="source"),
-        sources=sources,
-        skip=0,
-        limit=10,
-        total=2
-    )
 
-async def _sheet_search_(query: str) -> SearchResponse:
-    sheets = [
+async def _mock_sheet_data_():
+    return [
             Sheet(
                 sheet_title="བཟོད་པའི་མཐུ་སྟོབས།",
                 sheet_summary="བཟོད་པའི་ཕན་ཡོན་དང་ཁོང་ཁྲོའི་ཉེས་དམིགས་ཀྱི་གཏམ་རྒྱུད་འདི། ད་ལྟའང་བོད་ཀྱི་གྲོང་གསེབ་དེར་གླེང་སྒྲོས་སུ་གྱུར་ཡོད་དོ།། །། Buddhist Path",
@@ -90,10 +103,3 @@ async def _sheet_search_(query: str) -> SearchResponse:
                 publisher_organization=""
             )
         ]
-    return SearchResponse(
-        search=Search(text=query, type="sheet"),
-        sheets=sheets,
-        skip=0,
-        limit=10,
-        total=20
-    )
