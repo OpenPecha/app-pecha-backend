@@ -19,6 +19,7 @@ from .texts_response_models import (
 from .groups.groups_service import (
     get_groups_by_list_of_ids
 )
+from .groups.groups_response_models import GroupDTO
 from .texts_repository import get_contents_by_id, get_texts_by_id
 
 class TextUtils:
@@ -254,11 +255,7 @@ class TextUtils:
         return None  # Return None if segment not found in any section
 
     @staticmethod
-    async def filter_text_on_root_and_version(texts: List[TextDTO], language: str) -> Dict[str, Union[TextDTO, List[TextDTO]]]:
-        '''
-            This method filters the root text and versions base on the selected language from the frontend.
-            If selected language is en then root text will be text which is the language of en other all will be considered as current text version.
-        '''
+    def filter_text_on_root_and_version(texts: List[TextDTO], language: str) -> Dict[str, Union[TextDTO, List[TextDTO]]]:
         filtered_text = {
             "root_text": None,
             "versions": []
@@ -274,18 +271,13 @@ class TextUtils:
     
     @staticmethod
     async def filter_text_base_on_group_id_type(texts: List[TextDTO], language: str) -> Dict[str, Union[TextDTO, List[TextDTO]]]:
-        '''
-            This method filters the texts base on the group_id type.
-            If the group_id type is root_text then the text with respective group_id will be consider as root_text
-            If the group_id type is commentary then the text with respective group_id will be consider as commentary
-        '''
         filtere_text = {
             "root_text": None,
             "commentary": []
         }
         if texts:
             group_ids = [text.group_id for text in texts]
-            group_ids_type_dict = await get_groups_by_list_of_ids(group_ids=group_ids)
+            group_ids_type_dict: Dict[str, GroupDTO] = await get_groups_by_list_of_ids(group_ids=group_ids)
 
             commentary = []
             for text in texts:

@@ -11,3 +11,5 @@ class ErrorConstants:
     GROUP_NOT_FOUND_MESSAGE="Group not found"
     VERSION_NOT_FOUND_MESSAGE="Version not found"
     SHORT_URL_GENERATION_FAILED_MESSAGE="Short URL generation failed"
+    INVALID_GROUP_ID_MESSAGE="Invalid group ID"
+    INVALID_UUID_MESSAGE="Invalid UUID"
