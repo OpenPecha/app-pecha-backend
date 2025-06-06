@@ -1,11 +1,17 @@
-from typing import Optional, List
+from typing import Optional
 from pydantic import BaseModel
+from .share_enums import (
+    TextColor,
+    BgColor
+)
 
 class ShareRequest(BaseModel):
     segment_id: Optional[str] = None
     language: Optional[str] = None
     url: str
-    tags: Optional[List[str]] = None
+    text_color: Optional[TextColor] = TextColor.DEFAULT
+    bg_color: Optional[BgColor] = BgColor.DEFAULT
+    tags: Optional[str] = None
 
 class ShortUrlResponse(BaseModel):
     shortUrl: str

@@ -15,11 +15,10 @@ from .texts_response_models import (
     TableOfContent,
     DetailTableOfContentResponse,
     TableOfContentResponse,
-    TextModel,
+    TextDTO,
     TextVersionResponse,
     TextVersion,
     TextsCategoryResponse,
-    Text,
     CreateTextRequest,
     TextDetailsRequest,
     DetailTextMapping
@@ -37,7 +36,7 @@ from ..users.users_service import verify_admin_access
 from ..terms.terms_service import get_term
 from .segments.segments_utils import SegmentUtils
 
-from typing import List
+from typing import List, Dict
 from pecha_api.config import get
 
 
@@ -147,32 +146,10 @@ async def get_text_versions_by_group_id(text_id: str, language: str, skip: int, 
     root_text = filtered_text_on_root_and_version["root_text"]
     versions = filtered_text_on_root_and_version["versions"]
 
-    # Storing all the table of contents of each version text in a dict
-    versions_table_of_content_id_dict = {}
-    for version in versions:
-        list_of_table_of_contents = await get_contents_by_id(text_id=str(version.id))
-        list_of_table_of_contents_ids = []
-        for table_of_content in list_of_table_of_contents:
-            list_of_table_of_contents_ids.append(str(table_of_content.id))
-        versions_table_of_content_id_dict[str(version.id)] = list_of_table_of_contents_ids
+    versions_table_of_content_id_dict: Dict[str, List[str]] = await _get_table_of_content_by_version_text_id(versions=versions)
 
-    list_of_version = [
-        TextVersion(
-            id=str(version.id),
-            title=version.title,
-            parent_id=version.parent_id,
-            language=version.language,
-            type=version.type,
-            group_id=version.group_id,
-            table_of_contents=versions_table_of_content_id_dict.get(str(version.id), []),
-            is_published=version.is_published,
-            created_date=version.created_date,
-            updated_date=version.updated_date,
-            published_date=version.published_date,
-            published_by=version.published_by
-        )
-        for version in versions
-    ]
+    list_of_version = _get_list_of_text_version_response_model(versions=versions, versions_table_of_content_id_dict=versions_table_of_content_id_dict)
+
     return TextVersionResponse(
         text=root_text,
         versions=list_of_version
@@ -182,14 +159,14 @@ async def get_text_versions_by_group_id(text_id: str, language: str, skip: int, 
 async def create_new_text(
         create_text_request: CreateTextRequest,
         token: str
-) -> TextModel:
+) -> TextDTO:
     is_admin = verify_admin_access(token=token)
     if is_admin:
         valid_group = await validate_group_exists(group_id=create_text_request.group_id)
         if not valid_group:
             raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=ErrorConstants.GROUP_NOT_FOUND_MESSAGE)
         new_text = await create_text(create_text_request=create_text_request)
-        return TextModel(
+        return TextDTO(
             id=str(new_text.id),
             title=new_text.title,
             language=new_text.language,
@@ -312,7 +289,7 @@ async def _get_texts_by_term_id(term_id: str, language: str, skip: int, limit: i
     root_text = filter_text_base_on_group_id_type["root_text"]
     commentary = filter_text_base_on_group_id_type["commentary"]
     text_list = [
-        Text(
+        TextDTO(
             id=str(text.id),
             title=text.title,
             language=text.language,
@@ -322,13 +299,15 @@ async def _get_texts_by_term_id(term_id: str, language: str, skip: int, limit: i
             created_date=text.created_date,
             updated_date=text.updated_date,
             published_date=text.published_date,
-            published_by=text.published_by
+            published_by=text.published_by,
+            categories=text.categories,
+            parent_id=text.parent_id
         )
         for text in commentary
     ]
     if root_text is not None:
         text_list.append(
-            Text(
+            TextDTO(
                 id=str(root_text.id),
                 title=root_text.title,
                 language=root_text.language,
@@ -338,7 +317,39 @@ async def _get_texts_by_term_id(term_id: str, language: str, skip: int, limit: i
                 created_date=root_text.created_date,
                 updated_date=root_text.updated_date,
                 published_date=root_text.published_date,
-                published_by=root_text.published_by
+                published_by=root_text.published_by,
+                categories=root_text.categories,
+                parent_id=root_text.parent_id
             )
         )
     return text_list
+
+async def _get_table_of_content_by_version_text_id(versions: List[TextDTO]) -> Dict[str, List[str]]:
+    versions_table_of_content_id_dict = {}
+    for version in versions:
+        list_of_table_of_contents = await get_contents_by_id(text_id=str(version.id))
+        list_of_table_of_contents_ids = []
+        for table_of_content in list_of_table_of_contents:
+            list_of_table_of_contents_ids.append(str(table_of_content.id))
+        versions_table_of_content_id_dict[str(version.id)] = list_of_table_of_contents_ids
+    return versions_table_of_content_id_dict
+
+def _get_list_of_text_version_response_model(versions: List[TextDTO], versions_table_of_content_id_dict: Dict[str, List[str]]) -> List[TextVersion]:
+    list_of_version = [
+        TextVersion(
+            id=str(version.id),
+            title=version.title,
+            parent_id=version.parent_id,
+            language=version.language,
+            type=version.type,
+            group_id=version.group_id,
+            table_of_contents=versions_table_of_content_id_dict.get(str(version.id), []),
+            is_published=version.is_published,
+            created_date=version.created_date,
+            updated_date=version.updated_date,
+            published_date=version.published_date,
+            published_by=version.published_by
+        )
+        for version in versions
+    ]
+    return list_of_version

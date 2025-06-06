@@ -5,13 +5,24 @@ from fastapi import HTTPException
 from starlette import status
 
 from pecha_api.error_contants import ErrorConstants
-from .mappings_repository import update_mappings, get_segments_by_ids
-from .mappings_response_models import TextMappingRequest, MappingsModel, TextMapping
+from .mappings_repository import (
+    update_mappings, 
+    get_segments_by_ids
+)
+from .mappings_response_models import (
+    TextMappingRequest, 
+    MappingsModel, 
+    TextMapping
+)
 from ..segments.segments_models import Segment, Mapping
-from ..segments.segments_response_models import SegmentResponse, SegmentDTO, MappingResponse
+from ..segments.segments_response_models import (
+    SegmentResponse, 
+    SegmentDTO, 
+    MappingResponse
+)
 from ..segments.segments_utils import SegmentUtils
 from ..texts_utils import TextUtils
-from pecha_api.users.users_service import verify_admin_access
+from ...users.users_service import verify_admin_access
 
 
 # Mappings Service

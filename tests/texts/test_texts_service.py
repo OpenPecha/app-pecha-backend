@@ -13,7 +13,7 @@ from pecha_api.texts.texts_service import (
 )
 from pecha_api.texts.texts_response_models import (
     CreateTextRequest,
-    TextModel,
+    TextDTO,
     Text,
     TextVersion,
     TextVersionResponse,
@@ -109,7 +109,7 @@ async def test_get_text_by_term_id():
 
 @pytest.mark.asyncio
 async def test_get_versions_by_group_id():
-    text_detail = TextModel(
+    text_detail = TextDTO(
         id="id_1",
         title="བྱང་ཆུབ་སེམས་དཔའི་སྤྱོད་པ་ལ་འཇུག་པ།",
         language="bo",
@@ -176,7 +176,7 @@ async def test_get_versions_by_group_id():
         mock_filter_text_on_root_and_version.return_value = {"root_text": text_detail, "versions": texts_by_group_id}
         mock_get_contents_by_id.return_value = [mock_table_of_content]
         response = await get_text_versions_by_group_id(text_id="id_1",language="en", skip=0, limit=10)
-        assert response.text == TextModel(
+        assert response.text == TextDTO(
             id="id_1",
             title="བྱང་ཆུབ་སེམས་དཔའི་སྤྱོད་པ་ལ་འཇུག་པ།",
             language="bo",
@@ -243,7 +243,7 @@ async def test_create_new_root_text():
             ),
             token="admin"
         )
-        assert response == TextModel(
+        assert response == TextDTO(
             id="efb26a06-f373-450b-ba57-e7a8d4dd5b64",
             title="བྱང་ཆུབ་སེམས་དཔའི་སྤྱོད་པ་ལ་འཇུག་པ།",
             language="bo",
@@ -376,7 +376,7 @@ async def test_get_table_of_contents_by_text_id_success():
             ]
         )
     ]
-    text_detail = TextModel(
+    text_detail = TextDTO(
         id="id_1",
         title="text_1",
         language="bo",
@@ -434,7 +434,7 @@ async def test_get_text_details_by_text_id_with_content_id_only_success():
         skip=0,
         limit=1
     )
-    text_detail = TextModel(
+    text_detail = TextDTO(
             id="id_1",
             title="text_1",
             language="bo",
@@ -560,7 +560,7 @@ async def test_get_text_details_by_text_id_with_content_id_and_version_id_succes
         skip=0,
         limit=1
     )
-    text_detail = TextModel(
+    text_detail = TextDTO(
             id="id_1",
             title="text_1",
             language="bo",
@@ -696,7 +696,7 @@ async def test_get_text_details_by_text_id_with_segment_id_success():
         skip=0,
         limit=1
     )
-    text_detail = TextModel(
+    text_detail = TextDTO(
             id="id_1",
             title="text_1",
             language="bo",
@@ -823,7 +823,7 @@ async def test_get_text_details_by_text_id_with_content_id_and_section_id_only_s
         skip=0,
         limit=1
     )
-    text_detail = TextModel(
+    text_detail = TextDTO(
             id="id_1",
             title="text_1",
             language="bo",

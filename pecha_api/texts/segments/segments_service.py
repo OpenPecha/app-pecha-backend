@@ -1,7 +1,20 @@
 from pecha_api.error_contants import ErrorConstants
-from .segments_repository import create_segment, get_segment_by_id, get_related_mapped_segments
-from .segments_response_models import CreateSegmentRequest, SegmentResponse, MappingResponse, SegmentDTO, \
-    SegmentInfosResponse, SegmentRootMappingResponse
+
+from .segments_repository import (
+    create_segment,
+    get_segment_by_id, 
+    get_related_mapped_segments
+)
+
+from .segments_response_models import (
+    CreateSegmentRequest, 
+    SegmentResponse, 
+    MappingResponse, 
+    SegmentDTO, 
+    SegmentInfosResponse, 
+    SegmentRootMappingResponse
+)
+
 from fastapi import HTTPException
 from starlette import status
 
@@ -10,8 +23,16 @@ from ..texts_utils import TextUtils
 
 from typing import List
 
-from .segments_response_models import SegmentTranslationsResponse, ParentSegment, SegmentCommentariesResponse, \
-    RelatedText, Resources, SegmentInfos, SegmentRootMappingResponse
+from .segments_response_models import (
+    SegmentTranslationsResponse, 
+    ParentSegment, 
+    SegmentCommentariesResponse,
+    RelatedText, 
+    Resources, 
+    SegmentInfos, 
+    SegmentRootMappingResponse
+)
+
 from ...users.users_service import verify_admin_access
 
 
