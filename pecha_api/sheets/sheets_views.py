@@ -45,6 +45,6 @@ async def create_sheet(
     )
 
 @sheets_router.post("/upload", status_code=status.HTTP_201_CREATED)
-def upload_sheet_image(id: str, file: UploadFile = File(...)):
-    return upload_sheet_image_request(id=id, file=file)
+def upload_sheet_image(sheet_id: Optional[str] = None, file: UploadFile = File(...)):
+    return upload_sheet_image_request(sheet_id=sheet_id, file=file)
 
