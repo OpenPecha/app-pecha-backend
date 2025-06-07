@@ -50,7 +50,7 @@ services:
       - pecha-network
 
   elasticsearch:
-    image: docker.elastic.co/elasticsearch/elasticsearch:8.12.0
+    image: docker.elastic.co/elasticsearch/elasticsearch:9.0.2
     container_name: pecha-elasticsearch
     environment:
       - discovery.type=single-node

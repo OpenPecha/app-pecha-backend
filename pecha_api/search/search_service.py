@@ -6,7 +6,8 @@ from .search_response_models import (
     TextIndex,
     SegmentMatch,
     SourceResultItem,
-    Search
+    Search,
+    SheetResultItem
 )
 from .search_client import search_client
 from pecha_api.config import get
@@ -14,28 +15,29 @@ from pecha_api.config import get
 
 async def get_search_results(query: str, search_type: SearchType, skip: int = 0, limit: int = 10) -> SearchResponse:
     if SearchType.SOURCE == search_type:
-        search_response: SearchResponse = await _text_search(
+        source_search_response: SourceResultItem = await _source_search(
             query=query,
             skip=skip,
             limit=limit
         )
-        return search_response
     elif SearchType.SHEET == search_type:
-        sheet_search_response: SearchResponse = await _sheet_search(
+        sheet_search_response: SheetResultItem = await _sheet_search(
             query=query,
             skip=skip,
             limit=limit
         )
         return sheet_search_response
     return SearchResponse(
-        search=Search(text=query, type="sheet"),
+        search=Search(text=query, type=search_type),
+        sources=source_search_response,
+        sheets=sheet_search_response,
         skip=skip,
         limit=limit,
         total=0
     )
 
 
-async def _text_search(query: str, skip: int, limit: int) -> SearchResponse:
+async def _source_search(query: str, skip: int, limit: int) -> SearchResponse:
     client = await search_client()
     search_query = _generate_search_query(
         query=query,
@@ -43,14 +45,14 @@ async def _text_search(query: str, skip: int, limit: int) -> SearchResponse:
         size=limit
     )
     query_response: ObjectApiResponse = await client.search(
-        index=get("ELASTICSEARCH_CONTENT_INDEX"),
+        index=get("ELASTICSEARCH_SEGMENT_INDEX"),
         **search_query
     )
-    search_response = process_search_response(query, query_response)
+    search_response = _process_source_search_response(query, query_response)
     return search_response
 
 
-def process_search_response(query: str, search_response: ObjectApiResponse) -> SearchResponse:
+def _process_source_search_response(query: str, search_response: ObjectApiResponse) -> SourceResultItem:
     hits = search_response["hits"]["hits"]
     total = search_response["hits"]["total"]["value"] if "total" in search_response["hits"] else 0
     text_segments = {}
@@ -59,44 +61,33 @@ def process_search_response(query: str, search_response: ObjectApiResponse) -> S
         text_id = source["text_id"]
         if text_id not in text_segments:
             text_segments[text_id] = {
-                "text": TextIndex(
-                    text_id=text_id,
-                    language=source["language"],
-                    title=source["title"],
-                    published_date=source["published_date"]
-                ),
-                "segments": []
+                "segments": [
+                    SegmentMatch(
+                        segment_id=source["id"],
+                        content=source["content"]
+                    )
+                ]
             }
-        if text_id in text_segments:
+        else:
             text_segments[text_id]["segments"].append(
                 SegmentMatch(
                     segment_id=source["id"],
                     content=source["content"]
                 )
             )
-    sources = [
+    sources: SourceResultItem = [
         SourceResultItem(
-            text=data["text"],
+            text=TextIndex(
+                text_id="static",
+                language="static",
+                title="static",
+                published_date="static"
+            ),
             segment_match=data["segments"]
         )
         for data in text_segments.values()
     ]
-    if not sources:
-        return SearchResponse(
-            search=Search(text=query, type="source"),
-            sources=[],
-            skip=0,
-            limit=10,
-            total=0
-        )
-
-    return SearchResponse(
-        search=Search(text=query, type="source"),
-        sources=sources,
-        skip=0,
-        limit=len(sources),
-        total=total
-    )
+    return sources
 
 
 def _generate_search_query(query: str, page: int, size: int):
@@ -122,8 +113,8 @@ async def _sheet_search(query: str, skip: int, limit: int) -> SearchResponse:
         size=limit
     )
     query_response: ObjectApiResponse = await client.search(
-        index=get("ELASTICSEARCH_SEGMENT_INDEX"),
+        index=get("ELASTICSEARCH_SHEET_INDEX"),
         **search_query
     )
-    search_response = process_search_response(query, query_response)
-    return search_response
+    # search_response = _process_sheet_search_response(query, query_response)
+    return []

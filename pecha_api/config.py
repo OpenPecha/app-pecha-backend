@@ -42,7 +42,8 @@ DEFAULTS = dict(
     ELASTICSEARCH_URL= "http://localhost:9200",
     ELASTICSEARCH_API="",
     ELASTICSEARCH_CONTENT_INDEX = "pecha-texts",
-    ELASTICSEARCH_SEGMENT_INDEX = "pecha-segments"
+    ELASTICSEARCH_SEGMENT_INDEX = "pecha-segments",
+    ELASTICSEARCH_SHEET_INDEX = "pecha-sheets"
 )
 
 
