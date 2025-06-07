@@ -51,3 +51,9 @@ class SheetModel(BaseModel):
 
 class SheetsResponse(BaseModel):
     sheets: List[SheetModel]
+
+class SheetIdRequest(BaseModel):
+    id: str
+
+class SheetImageResponse(BaseModel):
+    url: str

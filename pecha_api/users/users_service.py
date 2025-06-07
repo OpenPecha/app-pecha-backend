@@ -21,6 +21,7 @@ from ..config import get, get_int
 from PIL import Image
 
 from pecha_api.utils import Utils
+from pecha_api.image_utils import ImageUtils
 
 
 def get_user_info(token: str):
@@ -105,7 +106,7 @@ def upload_user_image(token: str, file: UploadFile):
     current_user = validate_and_extract_user_details(token=token)
     # Validate and compress the uploaded image
     if current_user:
-        compressed_image = Utils.validate_and_compress_image(file=file, content_type=file.content_type)
+        compressed_image = ImageUtils.validate_and_compress_image(file=file, content_type=file.content_type)
         file_path = f'images/profile_images/{current_user.id}.jpg'
         delete_file(file_path=file_path)
         upload_key = upload_bytes(
