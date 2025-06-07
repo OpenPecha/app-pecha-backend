@@ -1,8 +1,8 @@
 from pecha_api.error_contants import ErrorConstants
-from fastapi import HTTPException, UploadFile
+from fastapi import HTTPException, UploadFile, status
 from PIL import Image
 import io
-from .config import get_int
+from pecha_api.config import get_int
 
 class ImageUtils:
     @staticmethod

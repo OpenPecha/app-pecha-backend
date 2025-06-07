@@ -3,9 +3,10 @@ import pytest
 from jose.exceptions import JWTClaimsError
 from jwt import ExpiredSignatureError
 from starlette import status
-
-from pecha_api.users.users_service import get_user_info, update_user_info, validate_and_compress_image, \
-    validate_and_extract_user_details, verify_admin_access, get_social_profile, extract_s3_key, update_social_profiles
+from pecha_api.image_utils import ImageUtils
+from pecha_api.utils import Utils
+from pecha_api.users.users_service import get_user_info, update_user_info, \
+    validate_and_extract_user_details, verify_admin_access, get_social_profile, update_social_profiles
 from pecha_api.users.user_response_models import UserInfoRequest, SocialMediaProfile
 from pecha_api.users.users_models import Users, SocialMediaAccount
 from pecha_api.users.users_enums import SocialProfile
@@ -13,6 +14,7 @@ from unittest.mock import patch, MagicMock
 from fastapi import HTTPException, UploadFile
 from pecha_api.users.users_service import upload_user_image
 import io
+import PIL.Image
 
 
 def test_get_user_info_success():
@@ -177,7 +179,7 @@ def test_upload_user_image_success():
     file = UploadFile(filename="test.jpg", file=file_content)
 
     with patch("pecha_api.users.users_service.validate_and_extract_user_details", return_value=MagicMock(id="user_id")), \
-            patch("pecha_api.users.users_service.validate_and_compress_image", return_value=file_content), \
+            patch("pecha_api.image_utils.ImageUtils.validate_and_compress_image", return_value=file_content), \
             patch("pecha_api.users.users_service.delete_file") as mock_delete_file, \
             patch("pecha_api.users.users_service.update_user") as mock_update_user, \
             patch("pecha_api.users.users_service.upload_bytes", return_value="s3_key"), \
@@ -207,13 +209,14 @@ def test_validate_and_compress_image_success():
     file_content = io.BytesIO(b"fake_image_data")
     file = UploadFile(filename="test.jpg", file=file_content)
 
-    with patch("pecha_api.users.users_service.get_int", side_effect=[5, 75]), \
-            patch("pecha_api.users.users_service.Image.open") as mock_open:
+    with patch("pecha_api.image_utils.get_int", side_effect=[5, 75]), \
+            patch("PIL.Image.open") as mock_open:
         mock_image = MagicMock()
+        mock_image.mode = 'RGB'  # Set the mode to RGB
         mock_open.return_value = mock_image
         mock_image.save = MagicMock()
 
-        compressed_image = validate_and_compress_image(file=file, content_type="image/jpeg")
+        compressed_image = ImageUtils.validate_and_compress_image(file=file, content_type="image/jpeg")
         assert isinstance(compressed_image, io.BytesIO)
         mock_image.save.assert_called_once_with(compressed_image, format="JPEG", quality=75)
 
@@ -222,10 +225,10 @@ def test_validate_and_compress_image_invalid_file_type():
     file_content = io.BytesIO(b"fake_image_data")
     file = UploadFile(filename="test.txt", file=file_content)
     try:
-        validate_and_compress_image(file=file, content_type="text/plain")
+        ImageUtils.validate_and_compress_image(file=file, content_type="text/plain")
     except HTTPException as e:
         assert e.status_code == status.HTTP_400_BAD_REQUEST
-        assert e.detail == 'Only image files are allowed.'
+        assert e.detail == 'Only image files are allowed'
 
 
 def test_validate_and_compress_image_file_too_large():
@@ -234,9 +237,9 @@ def test_validate_and_compress_image_file_too_large():
 
     with patch("pecha_api.users.users_service.get_int", return_value=5), \
             pytest.raises(HTTPException) as exc_info:
-        validate_and_compress_image(file=file, content_type="image/jpeg")
+        ImageUtils.validate_and_compress_image(file=file, content_type="image/jpeg")
     assert exc_info.value.status_code == 413
-    assert exc_info.value.detail == "File size exceeds 5 MB limit."
+    assert exc_info.value.detail == "File size exceeds 5MB limit"
 
 
 def test_validate_and_compress_image_processing_failure():
@@ -246,9 +249,9 @@ def test_validate_and_compress_image_processing_failure():
     with patch("pecha_api.users.users_service.get_int", side_effect=[5, 75]), \
             patch("pecha_api.users.users_service.Image.open", side_effect=Exception("Processing error")), \
             pytest.raises(HTTPException) as exc_info:
-        validate_and_compress_image(file=file, content_type="image/jpeg")
+        ImageUtils.validate_and_compress_image(file=file, content_type="image/jpeg")
     assert exc_info.value.status_code == 400
-    assert exc_info.value.detail == "Failed to process the image: Processing error"
+    assert exc_info.value.detail == "Failed to process the image"
 
 
 def test_validate_and_extract_user_details_invalid_token():
@@ -377,16 +380,16 @@ def test_get_social_profile_invalid():
 
 def test_extract_s3_key_valid_url():
     presigned_url = "https://example-bucket.s3.amazonaws.com/images/profile_images/user_id.jpg"
-    assert extract_s3_key(presigned_url) == "images/profile_images/user_id.jpg"
+    assert Utils.extract_s3_key(presigned_url) == "images/profile_images/user_id.jpg"
 
 
 def test_extract_s3_key_empty_url():
-    assert extract_s3_key("") == ""
+    assert Utils.extract_s3_key("") == ""
 
 
 def test_extract_s3_key_invalid_url():
     presigned_url = "https://example-bucket.s3.amazonaws.com/"
-    assert extract_s3_key(presigned_url) == ""
+    assert Utils.extract_s3_key(presigned_url) == ""
 
 
 def test_update_social_profiles():
