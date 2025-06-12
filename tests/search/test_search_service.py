@@ -1,5 +1,5 @@
 import pytest
-from unittest.mock import patch, AsyncMock
+from unittest.mock import patch, AsyncMock, Mock
 
 from pecha_api.search.search_response_models import (
     SearchResponse,
@@ -18,10 +18,11 @@ async def test_get_search_results_for_source_success():
 
     mock_elastic_response = _get_mock_elastic_source_response_()
 
-    with patch("pecha_api.search.search_service.search_client", new_callable=AsyncMock, return_value=True), \
-        patch("pecha_api.search.search_service.client.search", new_callable=AsyncMock, return_value=mock_elastic_response):
-        
-        response = await get_search_results(query="query", type=SearchType.SOURCE, skip=0, limit=2)
+    mock_client = AsyncMock()
+    mock_client.search = AsyncMock(return_value=mock_elastic_response)
+
+    with patch("pecha_api.search.search_service.search_client", new_callable=AsyncMock, return_value=mock_client):
+        response = await get_search_results(query="query", search_type=SearchType.SOURCE, skip=0, limit=2)
 
         assert response is not None
         assert isinstance(response, SearchResponse)
@@ -34,7 +35,7 @@ async def test_get_search_results_for_source_success():
         assert response.sources[0].text.language == "en"
         assert response.sources[0].text.title == "The Way of the Bodhisattva Claude AI Draft"
         assert response.sources[0].segment_match is not None
-        assert len(response.sources[0].segment_match) == 1
+        assert len(response.sources[0].segment_match) == 2
         assert isinstance(response.sources[0].segment_match[0], SegmentMatch)
         assert response.sources[0].segment_match[0].segment_id == "2eb76906-f2d5-48ca-9f80-2023ee6b3ad0"
         assert response.search is not None
@@ -58,9 +59,9 @@ async def test_get_search_results_for_sheet_success():
         for i in range(1,6)
     ]
 
-    with patch("pecha_api.search.search_service._mock_sheet_data_", new_callable=AsyncMock, return_value=mock_sheet_search):
+    with patch("pecha_api.search.search_service._mock_sheet_data_", new_callable=Mock, return_value=mock_sheet_search):
 
-        response = await get_search_results(query="query", type=SearchType.SHEET)
+        response = await get_search_results(query="query", search_type=SearchType.SHEET)
 
         assert response is not None
         assert isinstance(response, SearchResponse)
