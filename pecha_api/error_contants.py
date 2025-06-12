@@ -14,3 +14,4 @@ class ErrorConstants:
     INVALID_GROUP_ID_MESSAGE="Invalid group ID"
     INVALID_UUID_MESSAGE="Invalid UUID"
     IMAGE_NOT_FOUND_MESSAGE="Image not found"
+    ELASTICSEARCH_CONNECTION_ERROR_MESSAGE="Elasticsearch connection error"

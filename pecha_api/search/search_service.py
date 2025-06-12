@@ -11,31 +11,27 @@ from .search_response_models import (
 )
 from .search_client import search_client
 from pecha_api.config import get
+
+from typing import List
    
+MAX_SEARCH_LIMIT = 30
 
 async def get_search_results(query: str, search_type: SearchType, skip: int = 0, limit: int = 10) -> SearchResponse:
     if SearchType.SOURCE == search_type:
-        source_search_response: SourceResultItem = await _source_search(
+        source_search_response: SearchResponse = await _source_search(
             query=query,
             skip=skip,
             limit=limit
         )
+        return source_search_response
+
     elif SearchType.SHEET == search_type:
-        sheet_search_response: SheetResultItem = await _sheet_search(
+        sheet_search_response: SearchResponse = await _sheet_search(
             query=query,
             skip=skip,
             limit=limit
         )
         return sheet_search_response
-    return SearchResponse(
-        search=Search(text=query, type=search_type),
-        sources=source_search_response,
-        sheets=sheet_search_response,
-        skip=skip,
-        limit=limit,
-        total=0
-    )
-
 
 async def _source_search(query: str, skip: int, limit: int) -> SearchResponse:
     client = await search_client()
@@ -48,47 +44,75 @@ async def _source_search(query: str, skip: int, limit: int) -> SearchResponse:
         index=get("ELASTICSEARCH_SEGMENT_INDEX"),
         **search_query
     )
-    search_response = _process_source_search_response(query, query_response)
+    print(query_response)
+    search_response: SearchResponse = _process_source_search_response(
+        query, 
+        query_response, 
+        skip, 
+        limit)
     return search_response
 
 
-def _process_source_search_response(query: str, search_response: ObjectApiResponse) -> SourceResultItem:
+def _process_source_search_response(query: str, search_response: ObjectApiResponse, skip: int, limit: int) -> SearchResponse:
     hits = search_response["hits"]["hits"]
     total = search_response["hits"]["total"]["value"] if "total" in search_response["hits"] else 0
-    text_segments = {}
-    for result in hits:
-        source = result["_source"]
-        text_id = source["text_id"]
-        if text_id not in text_segments:
-            text_segments[text_id] = {
-                "segments": [
-                    SegmentMatch(
-                        segment_id=source["id"],
-                        content=source["content"]
-                    )
-                ]
-            }
-        else:
-            text_segments[text_id]["segments"].append(
+    source_dict, text_dict = _group_sources_by_text_id(hits=hits)
+    sources: List[SourceResultItem] = _get_source_result_items_(text_dict=text_dict, source_dict=source_dict)
+    return SearchResponse(
+        search=Search(
+            text=query,
+            type=SearchType.SOURCE
+        ),
+        sources=sources,
+        skip=skip,
+        limit=limit,
+        total=min(MAX_SEARCH_LIMIT, total)
+    )
+
+def _get_source_result_items_(text_dict: dict, source_dict: dict) -> List[SourceResultItem]:
+    sources: List[SourceResultItem] = []
+    for source_key in source_dict.keys():
+        text = TextIndex(
+            text_id=text_dict[source_key].text_id,
+            language=text_dict[source_key].language,
+            title=text_dict[source_key].title,
+            published_date=text_dict[source_key].published_date
+        )
+        segment_matches: List[SegmentMatch] = []
+        for data in source_dict[source_key]:
+            segment_matches.append(
                 SegmentMatch(
-                    segment_id=source["id"],
-                    content=source["content"]
+                    segment_id=data["id"],
+                    content=data["content"]
                 )
             )
-    sources: SourceResultItem = [
-        SourceResultItem(
-            text=TextIndex(
-                text_id="static",
-                language="static",
-                title="static",
-                published_date="static"
-            ),
-            segment_match=data["segments"]
+        sources.append(
+            SourceResultItem(
+                text=text,
+                segment_match=segment_matches
+            )
         )
-        for data in text_segments.values()
-    ]
     return sources
 
+def _group_sources_by_text_id(hits: list) -> tuple[dict, dict]:
+    source_dict = {}
+    text_dict = {}
+    for result in hits:
+        source = result["_source"]
+        text = source["text"]
+        text_id = source["text_id"]
+        text_index = TextIndex(
+            text_id=text_id,
+            language=text["language"],
+            title=text["title"],
+            published_date=text["published_date"]
+        )
+        if text_id not in source_dict:
+            source_dict[text_id] = [source]
+            text_dict[text_id] = text_index
+        else:
+            source_dict[text_id].append(source)
+    return source_dict, text_dict
 
 def _generate_search_query(query: str, page: int, size: int):
     return {
@@ -100,21 +124,58 @@ def _generate_search_query(query: str, page: int, size: int):
                 }
             }
         },
-        "from": (page - 1) * size,
+        "from": max(0, (page - 1)) * size,
         "size": size
     }
 
 
 async def _sheet_search(query: str, skip: int, limit: int) -> SearchResponse:
-    client = await search_client()
-    search_query = _generate_search_query(
-        query=query,
-        page=skip,
-        size=limit
+    mock_sheet_data: List[SheetResultItem] = _mock_sheet_data_()
+    return SearchResponse(
+        search=Search(
+            text=query,
+            type=SearchType.SHEET
+        ),
+        sheets=mock_sheet_data,
+        skip=skip,
+        limit=limit,
+        total=len(mock_sheet_data)
     )
-    query_response: ObjectApiResponse = await client.search(
-        index=get("ELASTICSEARCH_SHEET_INDEX"),
-        **search_query
-    )
-    # search_response = _process_sheet_search_response(query, query_response)
-    return []
+    # client = await search_client()
+    # search_query = _generate_search_query(
+    #     query=query,
+    #     page=skip,
+    #     size=limit
+    # )
+    # query_response: ObjectApiResponse = await client.search(
+    #     index=get("ELASTICSEARCH_SHEET_INDEX"),
+    #     **search_query
+    # )
+    # # search_response = _process_sheet_search_response(query, query_response)
+    # return []
+
+def _mock_sheet_data_():
+    return [
+            SheetResultItem(
+                sheet_title="བཟོད་པའི་མཐུ་སྟོབས།",
+                sheet_summary="བཟོད་པའི་ཕན་ཡོན་དང་ཁོང་ཁྲོའི་ཉེས་དམིགས་ཀྱི་གཏམ་རྒྱུད་འདི། ད་ལྟའང་བོད་ཀྱི་གྲོང་གསེབ་དེར་གླེང་སྒྲོས་སུ་གྱུར་ཡོད་དོ།། །། Buddhist Path",
+                publisher_id=48,
+                sheet_id=114,
+                publisher_name="Yeshi Lhundup",
+                publisher_url="/profile/yeshi-lhundup",
+                publisher_image="https://storage.googleapis.com/pecha-profile-img/yeshi-lhundup-1742619970-small.png",
+                publisher_position="LCM",
+                publisher_organization="pecha.org"
+            ),
+            SheetResultItem(
+                sheet_title="Teaching 1st Jan 2025",
+                sheet_summary="sadf asdfas dfas Buddhist Path",
+                publisher_id=61,
+                sheet_id=170,
+                publisher_name="Yeshi Lhundup",
+                publisher_url="/profile/yeshi-lhundup2",
+                publisher_image="",
+                publisher_position="",
+                publisher_organization=""
+            )
+        ]
