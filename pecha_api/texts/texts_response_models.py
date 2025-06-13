@@ -14,7 +14,7 @@ class CreateTextRequest(BaseModel):
     type: str
     categories: List[str]
 
-class TextModel(BaseModel):
+class TextDTO(BaseModel):
     id: str
     title: str
     language: str
@@ -27,7 +27,6 @@ class TextModel(BaseModel):
     published_by: str
     categories: List[str]
     parent_id: Optional[str] = None
-
 
 # Text TOC Response Models
 class Translation(BaseModel):
@@ -62,7 +61,7 @@ class DetailTextMapping(BaseModel):
     section_id: Optional[str] = None
 
 class DetailTableOfContentResponse(BaseModel):
-    text_detail: TextModel
+    text_detail: TextDTO
     mapping: DetailTextMapping
     content: DetailTableOfContent
     skip: int
@@ -91,7 +90,7 @@ class TableOfContent(BaseModel):
     sections: List[Section]
 
 class TableOfContentResponse(BaseModel):
-    text_detail: TextModel
+    text_detail: TextDTO
     contents: List[TableOfContent]
 
 class TextDetailsRequest(BaseModel):
@@ -120,25 +119,15 @@ class TextVersion(BaseModel):
     published_by: str
 
 class TextVersionResponse(BaseModel):
-    text: Optional[TextModel] = None
+    text: Optional[TextDTO] = None
     versions: Optional[List[TextVersion]] = None
 
 # Texts Category Response Models
-class Text(BaseModel):
-    id : str
-    title: str
-    language : str
-    type : str
-    group_id: Optional[str] = None
-    is_published : bool
-    created_date: str
-    updated_date: str
-    published_date: str
-    published_by: str
+
 
 class TextsCategoryResponse(BaseModel):
     term: TermsModel
-    texts : List[Text]
+    texts : List[TextDTO]
     total: int
     skip: int
     limit: int

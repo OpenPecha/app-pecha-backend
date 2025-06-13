@@ -5,18 +5,22 @@ from fastapi import HTTPException
 from pecha_api.texts.texts_utils import TextUtils
 from pecha_api.error_contants import ErrorConstants
 
+from typing import List, Dict, Union
+
 from pecha_api.texts.texts_response_models import (
-    TextModel,
+    TextDTO,
     TableOfContent,
     Section,
     TextSegment
 )
 
+from pecha_api.texts.groups.groups_response_models import GroupDTO
+
 
 @pytest.mark.asyncio
 async def test_get_text_details_by_ids_success():
     text_details_dict = {
-        "efb26a06-f373-450b-ba57-e7a8d4dd5b64": TextModel(
+        "efb26a06-f373-450b-ba57-e7a8d4dd5b64": TextDTO(
             id="efb26a06-f373-450b-ba57-e7a8d4dd5b64",
             title="title",
             language="language",
@@ -36,7 +40,7 @@ async def test_get_text_details_by_ids_success():
 
 @pytest.mark.asyncio
 async def test_get_text_details_by_id_success():
-    text_details = TextModel(
+    text_details = TextDTO(
         id="efb26a06-f373-450b-ba57-e7a8d4dd5b64",
         title="title",
         language="language",
@@ -94,7 +98,7 @@ async def test_validate_texts_exist_invalid_text_id():
 @pytest.mark.asyncio
 async def test_get_text_detail_by_id_success():
     text_id = "efb26a06-f373-450b-ba57-e7a8d4dd5b64"
-    text = TextModel(
+    text = TextDTO(
         id=text_id,
         title="title",
         language="language",
@@ -206,5 +210,116 @@ async def test_get_table_of_content_id_and_respective_section_by_segment_id_wher
         assert response is None
         
 
+@pytest.mark.asyncio
+async def test_filter_text_on_root_and_version():
+    mock_texts: List[TextDTO] = [
+        TextDTO(
+            id=f"efb26a06-f373-450b-ba57-e7a8d4dd5b6{i}",
+            title=f"en_{i}",
+            language="en",
+            type="version",
+            is_published=True,
+            created_date="created_date",
+            updated_date="updated_date",
+            published_date="published_date",
+            published_by="published_by",
+            categories=["categories"],
+            parent_id="parent_id"
+        )
+        for i in range(1,3)
+    ]
+    mock_texts.append(
+        TextDTO(
+            id="efb26a06-f373-450b-ba57-e7a8d4dd5b64",
+            title="bo_1",
+            language="bo",
+            type="version",
+            is_published=True,
+            created_date="created_date",
+            updated_date="updated_date",
+            published_date="published_date",
+            published_by="published_by",
+            categories=["categories"],
+            parent_id="parent_id"
+        )
+    )
+    response: Dict[str, Union[TextDTO, List[TextDTO]]] = await TextUtils.filter_text_on_root_and_version(texts=mock_texts, language="en")
+    assert response is not None
+    assert response["root_text"] is not None
+    assert isinstance(response["root_text"], TextDTO)
+    assert response["root_text"].language == "en"
+    assert response["root_text"].id == "efb26a06-f373-450b-ba57-e7a8d4dd5b61"
+    assert response["root_text"].title == "en_1"
+    assert response["versions"] is not None
+    assert len(response["versions"]) == 2
+    index = 0
+    assert response["versions"][index] is not None
+    assert response["versions"][index].language == "en"
+    assert response["versions"][index].id == "efb26a06-f373-450b-ba57-e7a8d4dd5b62"
+    assert response["versions"][index].title == "en_2"
+    
+@pytest.mark.asyncio
+async def test_filter_text_base_on_group_id_type():
+    mock_texts = _generate_mock_texts_version_and_commentary()
+    mock_groups = _generate_mock_groups_version_and_commentary(mock_texts=mock_texts)
+    with patch("pecha_api.texts.texts_utils.get_groups_by_list_of_ids", new_callable=AsyncMock, return_value=mock_groups):
+        response = await TextUtils.filter_text_base_on_group_id_type(texts=mock_texts, language="en")
+        response is not None
+        assert response["root_text"] is not None
+        assert response["root_text"].id == "ce14bedb-a4ca-402f-b7a0-cbb33efe5181"
+        assert response["root_text"].language == "en"
+        assert response["root_text"].type == "version"
         
+        assert response["commentary"] is not None
+        assert len(response["commentary"]) == 5
+        for text_commentary in response["commentary"]:
+            assert text_commentary.type == "commentary"
+    
+
+
+def _generate_mock_texts_version_and_commentary() -> List[TextDTO]:
+    mock_commentary_texts: List[TextDTO] = [
+        TextDTO(
+            id=f"05c36f8b-95cd-4698-bc97-ba4958b2d55{i}",
+            group_id=f"05c36f8b-95cd-4698-bc97-ba4958b2d55{i}",
+            title=f"bo_{i}",
+            language="bo",
+            type="commentary",
+            is_published=True,
+            created_date="created_date",
+            updated_date="updated_date",
+            published_date="published_date",
+            published_by="published_by",
+            categories=["categories"],
+            parent_id="parent_id"
+        )
+        for i in range(1, 6)
+    ]
+    mock_version_texts: List[TextDTO] = [
+        TextDTO(
+            id=f"ce14bedb-a4ca-402f-b7a0-cbb33efe518{i}",
+            group_id=f"ce14bedb-a4ca-402f-b7a0-cbb33efe518{i}",
+            title=f"en_{i}",
+            language="en",
+            type="version",
+            is_published=True,
+            created_date="created_date",
+            updated_date="updated_date",
+            published_date="published_date",
+            published_by="published_by",
+            categories=["categories"],
+            parent_id="parent_id"
+        )
+        for i in range(1, 3)
+    ]
+    return mock_commentary_texts + mock_version_texts
+
+def _generate_mock_groups_version_and_commentary(mock_texts: List[TextDTO]) -> Dict[str, GroupDTO]:
+    mock_groups: Dict[str, GroupDTO] = {}
+    for text in mock_texts:
+        mock_groups[text.id] = GroupDTO(
+            id=text.group_id,
+            type="TEXT" if text.type == "version" else "COMMENTARY"
+        )
+    return mock_groups
     
