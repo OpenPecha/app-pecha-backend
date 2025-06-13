@@ -6,7 +6,11 @@ from uuid import UUID
 
 from beanie.exceptions import CollectionWasNotInitialized
 from pecha_api.constants import Constants
-from .texts_response_models import CreateTextRequest, TableOfContent, TextModel
+from .texts_response_models import (
+    CreateTextRequest, 
+    TableOfContent, 
+    TextDTO
+)
 from .texts_models import Text, TableOfContent
 from datetime import datetime, timezone
 
@@ -21,10 +25,10 @@ async def get_texts_by_id(text_id: str) -> Text | None:
         logging.debug(e)
         return None
 
-async def get_texts_by_ids(text_ids: List[str]) -> Dict[str, TextModel]:
+async def get_texts_by_ids(text_ids: List[str]) -> Dict[str, TextDTO]:
     list_of_texts_detail = await Text.get_texts_by_ids(text_ids=text_ids)
     return {
-        str(text.id): TextModel(
+        str(text.id): TextDTO(
             id=str(text.id),
             title=text.title,
             language=text.language,
@@ -61,10 +65,10 @@ async def check_all_text_exists(text_ids: List[UUID]) -> bool:
 async def get_texts_by_term(term_id: str, language: str, skip: int, limit: int) -> List[Text]:
     return await Text.get_texts_by_term_id(term_id=term_id, language=language, skip=skip, limit=limit)
 
-async def get_texts_by_group_id(group_id: str, skip: int, limit: int) -> List[TextModel]:
+async def get_texts_by_group_id(group_id: str, skip: int, limit: int) -> List[TextDTO]:
     texts = await Text.get_texts_by_group_id(group_id=group_id, skip=skip, limit=limit)
     return [
-        TextModel(
+        TextDTO(
             id=str(text.id),
             title=text.title,
             language=text.language,

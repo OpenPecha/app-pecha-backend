@@ -8,8 +8,8 @@ from .share_response_models import (
 )
 
 from .share_service import (
-    generate_image,
-    get_short_url
+    get_generated_image,
+    generate_short_url
 )
 
 share_router = APIRouter(
@@ -18,12 +18,11 @@ share_router = APIRouter(
 )
 
 @share_router.get("/image", status_code=status.HTTP_200_OK)
-async def image_generation(
-    segment_id: Optional[str] = Query(default=None),
-    language: Optional[str] = Query(default="en")
+async def get_image(
+    segment_id: Optional[str] = Query(default=None)
 ):
-    return await generate_image(segment_id=segment_id, language=language)
+    return await get_generated_image(segment_id=segment_id)
 
-@share_router.post("", status_code=status.HTTP_200_OK)
-async def share(share_request: ShareRequest) -> ShortUrlResponse:
-    return await get_short_url(share_request=share_request)
+@share_router.post("", status_code=status.HTTP_201_CREATED)
+async def get_short_url(share_request: ShareRequest) -> ShortUrlResponse:
+    return await generate_short_url(share_request=share_request)

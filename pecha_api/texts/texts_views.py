@@ -17,7 +17,7 @@ from .texts_response_models import (
     TableOfContentResponse,
     TextDetailsRequest,
     TableOfContent,
-    TextModel,
+    TextDTO,
     TextVersionResponse,
     DetailTableOfContentResponse
 )
@@ -50,7 +50,7 @@ async def get_text(
 async def create_text(
     create_text_request: CreateTextRequest,
     authentication_credential: Annotated[HTTPAuthorizationCredentials, Depends(oauth2_scheme)],
-) -> TextModel:
+) -> TextDTO:
     return await create_new_text(
         create_text_request=create_text_request,
         token=authentication_credential.credentials

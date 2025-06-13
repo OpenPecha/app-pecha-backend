@@ -16,3 +16,8 @@ class ErrorConstants:
     IMAGE_ERROR_MESSAGE = "Only image files are allowed"
     IMAGE_SIZE_ERROR_MESSAGE = "File size exceeds 5MB limit"
     IMAGE_PROCESSING_ERROR_MESSAGE = "Failed to process the image"
+
+    INVALID_GROUP_ID_MESSAGE="Invalid group ID"
+    INVALID_UUID_MESSAGE="Invalid UUID"
+    IMAGE_NOT_FOUND_MESSAGE="Image not found"
+
