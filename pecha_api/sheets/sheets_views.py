@@ -1,12 +1,14 @@
 from __future__ import annotations
-from fastapi import APIRouter, Query
+from fastapi import APIRouter, Query, Form
 from fastapi.security import HTTPBearer
 from starlette import status
 
 from typing import Optional
+from fastapi import APIRouter, Depends, UploadFile, File
 
-from .sheets_service import get_sheets, get_sheets_by_userID, create_new_sheet
-from .sheets_response_models import CreateSheetRequest
+
+from .sheets_service import get_sheets, get_sheets_by_userID, create_new_sheet, upload_sheet_image_request
+from .sheets_response_models import CreateSheetRequest, SheetIdRequest
 
 oauth2_scheme = HTTPBearer()
 sheets_router = APIRouter(
@@ -41,3 +43,8 @@ async def create_sheet(
     return await create_new_sheet(
         create_sheet_request=create_sheet_request
     )
+
+@sheets_router.post("/upload", status_code=status.HTTP_201_CREATED)
+def upload_sheet_image(sheet_id: Optional[str] = None, file: UploadFile = File(...)):
+    return upload_sheet_image_request(sheet_id=sheet_id, file=file)
+

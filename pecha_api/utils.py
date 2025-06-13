@@ -1,10 +1,15 @@
 from typing import Optional
+import io
 import logging
+from PIL import Image
 from beanie import PydanticObjectId
-from fastapi import HTTPException
+from fastapi import HTTPException, UploadFile
 from bson.errors import InvalidId
 from starlette import status
 from datetime import datetime, timezone, timedelta
+from urllib.parse import urlparse
+from .config import get_int
+from pecha_api.error_contants import ErrorConstants
 
 from .constants import Constants
 
@@ -61,5 +66,12 @@ class Utils:
             [Constants.LANGUAGE_NUMBER[language][char] if "0" <= char <= "9" else char for char in str(value)])
 
     @staticmethod
-    def get_word_by_language(word: str, language: str):
-        return Utils.get_value_from_dict(Constants.TIME_PASSED_NOW[word], language)
+    def extract_s3_key(presigned_url: str) -> str:
+        if not presigned_url:
+            return ""
+        parsed_url = urlparse(presigned_url)
+        # Extract the path and remove the leading '/'
+        s3_key = parsed_url.path.lstrip('/')
+        if not s3_key:
+            return ""
+        return s3_key
