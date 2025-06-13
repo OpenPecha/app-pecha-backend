@@ -1,5 +1,4 @@
-from typing import List, Optional, Dict, Union
-from uuid import UUID
+from typing import List, Optional
 
 from pecha_api.terms.terms_response_models import TermsModel
 

@@ -93,7 +93,7 @@ class SyntheticImageGenerator:
         """
         font_file_name = CONFIG["FONT_PATHS"].get(self.font_type, CONFIG["FONT_PATHS"]["FALL_BACK"])
         # Define fonts and text color
-        if len(text) < 100:
+        if len(text) < CONFIG["MAX_TEXT_LENGTH"]:
             main_font_size = int(self.font_size * 1.5)
         else:
             main_font_size = self.font_size

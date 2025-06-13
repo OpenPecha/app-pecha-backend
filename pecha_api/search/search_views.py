@@ -2,6 +2,8 @@ from fastapi import APIRouter, Query
 from .search_enums import SearchType
 from starlette import status
 
+from .search_enums import SearchType
+
 from .search_service import (
     get_search_results
 )
@@ -18,8 +20,13 @@ search_router = APIRouter(
 @search_router.get("", status_code=status.HTTP_200_OK)
 async def search(
     query: str = Query(default=None, description="Search query"),
-    type: SearchType = Query(default=None, description="Search type: source or sheet"),
+    search_type: SearchType = Query(default=None, description="Search type (SOURCE / SHEET)"),
     skip: int = Query(default=0),
     limit: int = Query(default=10)
 ) -> SearchResponse:
-    return await get_search_results(query=query, type=type)
+    return await get_search_results(
+        query=query,
+        search_type=search_type,
+        skip=skip,
+        limit=limit
+    )
