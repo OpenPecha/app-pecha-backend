@@ -44,7 +44,6 @@ async def _source_search(query: str, skip: int, limit: int) -> SearchResponse:
         index=get("ELASTICSEARCH_SEGMENT_INDEX"),
         **search_query
     )
-    print(query_response)
     search_response: SearchResponse = _process_source_search_response(
         query, 
         query_response, 
