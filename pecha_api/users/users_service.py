@@ -1,6 +1,6 @@
 import io
 import logging
-from typing import List
+from typing import List, Optional, Dict, Any
 from urllib.parse import urlparse
 
 import jose
@@ -24,13 +24,13 @@ from pecha_api.utils import Utils
 from pecha_api.image_utils import ImageUtils
 
 
-def get_user_info(token: str):
+def get_user_info(token: str) -> UserInfoResponse:
     current_user = validate_and_extract_user_details(token=token)
     user_info_response = generate_user_info_response(user=current_user)
     return user_info_response
 
 
-def generate_user_info_response(user: Users):
+def generate_user_info_response(user: Users) -> Optional[UserInfoResponse]:
     if user:
         social_media_profiles = []
         with SessionLocal() as db_session:
@@ -58,9 +58,10 @@ def generate_user_info_response(user: Users):
                 social_profiles=social_media_profiles
             )
             return user_info_response
+    return None
 
 
-def update_user_info(token: str, user_info_request: UserInfoRequest):
+def update_user_info(token: str, user_info_request: UserInfoRequest) -> Users:
     current_user = validate_and_extract_user_details(token=token)
     if current_user:
         current_user.firstname = user_info_request.firstname
@@ -83,7 +84,7 @@ def update_user_info(token: str, user_info_request: UserInfoRequest):
                 raise HTTPException(status_code=500, detail="Internal Server Error")
 
 
-def update_social_profiles(user: Users, social_profiles: List[SocialMediaProfile]):
+def update_social_profiles(user: Users, social_profiles: List[SocialMediaProfile]) -> None:
     existing_profiles = {profile.platform_name: profile for profile in user.social_media_accounts}
 
     for profile_data in social_profiles or []:
@@ -102,11 +103,12 @@ def update_social_profiles(user: Users, social_profiles: List[SocialMediaProfile
             ))
 
 
-def upload_user_image(token: str, file: UploadFile):
+def upload_user_image(token: str, file: UploadFile) -> str:
     current_user = validate_and_extract_user_details(token=token)
     # Validate and compress the uploaded image
     if current_user:
-        compressed_image = ImageUtils.validate_and_compress_image(file=file, content_type=file.content_type)
+        image_utils = ImageUtils()
+        compressed_image = image_utils.validate_and_compress_image(file=file, content_type=file.content_type)
         file_path = f'images/profile_images/{current_user.id}.jpg'
         delete_file(file_path=file_path)
         upload_key = upload_bytes(
@@ -164,7 +166,7 @@ def get_social_profile(value: str) -> SocialProfile:
     except ValueError:
         raise ValueError(f"'{value}' is not a valid SocialProfile")
 
-def validate_token(token: str):
+def validate_token(token: str) -> Dict[str, Any]:
     if get("DOMAIN_NAME") in jwt.get_unverified_claims(token=token)["iss"]:
         return verify_auth0_token(token)
     else:

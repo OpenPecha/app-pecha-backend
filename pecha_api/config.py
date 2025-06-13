@@ -3,8 +3,8 @@ import os
 DEFAULTS = dict(
     ACCESS_TOKEN_EXPIRE_MINUTES=30,
     APP_NAME="Pecha Backend",
-    AWS_ACCESS_KEY="",
-    AWS_SECRET_KEY="",
+    AWS_ACCESS_KEY="AKIA5FCD6NLK3T7GINFJ",
+    AWS_SECRET_KEY="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",
     AWS_REGION="eu-central-1",
     AWS_BUCKET_NAME="app-pecha-backend",
     BASE_URL="https://pech.org",

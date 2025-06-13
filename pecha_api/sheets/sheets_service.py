@@ -81,18 +81,18 @@ async def create_new_sheet(create_sheet_request: CreateSheetRequest):
 
 def upload_sheet_image_request(sheet_id: Optional[str], file: UploadFile):
     # Validate and compress the uploaded image
-    compressed_image = ImageUtils.validate_and_compress_image(file=file, content_type=file.content_type)
+    image_utils = ImageUtils()
+    compressed_image = image_utils.validate_and_compress_image(file=file, content_type=file.content_type)
     file_name, ext = os.path.splitext(file.filename)
     unique_id = str(uuid.uuid4())
     
     # If no id is provided, use a random UUID as the folder name
-    folder_id = f"{sheet_id}/" if sheet_id is not None else ""
-    sheet_image_name = f"{folder_id}{unique_id}/{file_name}{ext}"
-    print("sheet_id_uuid>>>>>>>>>>>>>", sheet_image_name)
-    file_path = f'images/sheet_images/{sheet_image_name}'
+    path = f"images/sheet_images"
+    image_path_full = f"{path}/{sheet_id}/{unique_id}" if sheet_id is not None else f"{path}/{unique_id}"
+    sheet_image_name = f"{image_path_full}/{file_name}{ext}"
     upload_key = upload_bytes(
         bucket_name=get("AWS_BUCKET_NAME"),
-        s3_key=file_path,
+        s3_key=sheet_image_name,
         file=compressed_image,
         content_type=file.content_type
     )
