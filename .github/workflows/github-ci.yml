@@ -40,17 +40,17 @@ jobs:
           username: ${{ github.repository_owner }}
           password: ${{ secrets.PECHA_REPO }}
       - name: Set short git commit SHA
-        id: vars
+        id: set-tag
         run: |
           if [[ -n "${{ github.ref }}" && "${{ github.ref }}" =~ ^refs/tags/ ]]; then
             tagNumber=$(echo "${{ github.ref }}" | sed 's#refs/tags/##')
             echo "IMAGE_TAG=$tagNumber" >> $GITHUB_ENV
-            echo "::set-output name=image_tag::$tagNumber"
+            echo "image_tag=$tagNumber" >> $GITHUB_OUTPUT
           else
             calculatedSha=$(git rev-parse --short ${{ github.sha }})
             tagNumber=${{ github.run_id }}-$calculatedSha
             echo "IMAGE_TAG=$tagNumber" >> $GITHUB_ENV
-            echo "::set-output name=image_tag::$tagNumber"
+            echo "image_tag=$tagNumber" >> $GITHUB_OUTPUT
           fi
       - name: Confirm git commit SHA output
         run: echo ${{ env.IMAGE_TAG }}
