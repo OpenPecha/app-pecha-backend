@@ -1,6 +1,6 @@
 import io
 import logging
-from typing import List
+from typing import List, Optional, Dict, Any
 from urllib.parse import urlparse
 
 import jose
@@ -20,14 +20,17 @@ from ..db.database import SessionLocal
 from ..config import get, get_int
 from PIL import Image
 
+from pecha_api.utils import Utils
+from pecha_api.image_utils import ImageUtils
 
-def get_user_info(token: str):
+
+def get_user_info(token: str) -> UserInfoResponse:
     current_user = validate_and_extract_user_details(token=token)
     user_info_response = generate_user_info_response(user=current_user)
     return user_info_response
 
 
-def generate_user_info_response(user: Users):
+def generate_user_info_response(user: Users) -> Optional[UserInfoResponse]:
     if user:
         social_media_profiles = []
         with SessionLocal() as db_session:
@@ -55,9 +58,10 @@ def generate_user_info_response(user: Users):
                 social_profiles=social_media_profiles
             )
             return user_info_response
+    return None
 
 
-def update_user_info(token: str, user_info_request: UserInfoRequest):
+def update_user_info(token: str, user_info_request: UserInfoRequest) -> Users:
     current_user = validate_and_extract_user_details(token=token)
     if current_user:
         current_user.firstname = user_info_request.firstname
@@ -66,7 +70,7 @@ def update_user_info(token: str, user_info_request: UserInfoRequest):
         current_user.organization = user_info_request.organization
         current_user.location = user_info_request.location
         current_user.education = ','.join(user_info_request.educations)
-        current_user.avatar_url = extract_s3_key(presigned_url=user_info_request.avatar_url)
+        current_user.avatar_url = Utils.extract_s3_key(presigned_url=user_info_request.avatar_url)
         current_user.about_me = user_info_request.about_me
         with SessionLocal() as db_session:
             try:
@@ -80,7 +84,7 @@ def update_user_info(token: str, user_info_request: UserInfoRequest):
                 raise HTTPException(status_code=500, detail="Internal Server Error")
 
 
-def update_social_profiles(user: Users, social_profiles: List[SocialMediaProfile]):
+def update_social_profiles(user: Users, social_profiles: List[SocialMediaProfile]) -> None:
     existing_profiles = {profile.platform_name: profile for profile in user.social_media_accounts}
 
     for profile_data in social_profiles or []:
@@ -99,11 +103,12 @@ def update_social_profiles(user: Users, social_profiles: List[SocialMediaProfile
             ))
 
 
-def upload_user_image(token: str, file: UploadFile):
+def upload_user_image(token: str, file: UploadFile) -> str:
     current_user = validate_and_extract_user_details(token=token)
     # Validate and compress the uploaded image
     if current_user:
-        compressed_image = validate_and_compress_image(file=file, content_type=file.content_type)
+        image_utils = ImageUtils()
+        compressed_image = image_utils.validate_and_compress_image(file=file, content_type=file.content_type)
         file_path = f'images/profile_images/{current_user.id}.jpg'
         delete_file(file_path=file_path)
         upload_key = upload_bytes(
@@ -116,7 +121,7 @@ def upload_user_image(token: str, file: UploadFile):
             bucket_name=get("AWS_BUCKET_NAME"),
             s3_key=upload_key
         )
-        current_user.avatar_url = extract_s3_key(presigned_url=presigned_url)
+        current_user.avatar_url = Utils.extract_s3_key(presigned_url=presigned_url)
         with SessionLocal() as db_session:
             update_user(db=db_session, user=current_user)
             return presigned_url
@@ -161,49 +166,7 @@ def get_social_profile(value: str) -> SocialProfile:
     except ValueError:
         raise ValueError(f"'{value}' is not a valid SocialProfile")
 
-
-def extract_s3_key(presigned_url: str) -> str:
-    if not presigned_url:
-        return ""
-    parsed_url = urlparse(presigned_url)
-    # Extract the path and remove the leading '/'
-    s3_key = parsed_url.path.lstrip('/')
-    if not s3_key:
-        return ""
-    return s3_key
-
-
-def validate_and_compress_image(file: UploadFile, content_type: str) -> io.BytesIO:
-    max_file_size = get_int("MAX_FILE_SIZE_MB")
-    MAX_FILE_SIZE_BYTES = max_file_size * 1024 * 1024
-    if not content_type.startswith("image/"):
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Only image files are allowed."
-        )
-    file.file.seek(0, 2)  # Move to the end of the file to get its size
-    file_size = file.file.tell()
-    if file_size > MAX_FILE_SIZE_BYTES:
-        raise HTTPException(
-            status_code=status.HTTP_413_REQUEST_ENTITY_TOO_LARGE,
-            detail=f"File size exceeds {max_file_size} MB limit."
-        )
-    file.file.seek(0)  # Reset file pointer
-    # Read and compress the image
-    try:
-        image = Image.open(file.file)
-        compressed_image_io = io.BytesIO()
-        image.save(compressed_image_io, format="JPEG", quality=get_int("COMPRESSED_QUALITY"))
-        compressed_image_io.seek(0)
-        return compressed_image_io
-    except Exception as e:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail=f"Failed to process the image: {str(e)}"
-        )
-
-
-def validate_token(token: str):
+def validate_token(token: str) -> Dict[str, Any]:
     if get("DOMAIN_NAME") in jwt.get_unverified_claims(token=token)["iss"]:
         return verify_auth0_token(token)
     else:

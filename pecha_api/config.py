@@ -28,7 +28,16 @@ DEFAULTS = dict(
     REFRESH_TOKEN_EXPIRE_DAYS=30,
     SENDGRID_API_KEY="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",
     SENDGRID_SENDER_EMAIL="samten@esukhia.org",
-    VERSION="0.0.1"
+    VERSION="0.0.1",
+    # Cache Configuration
+    CACHE_HOST="localhost",
+    CACHE_PORT=6379,
+    CACHE_DB=0,
+    CACHE_PREFIX="pecha:",
+    CACHE_DEFAULT_TIMEOUT=14400, # 4 hours in seconds
+
+    SHORT_URL_GENERATION_ENDPOINT="https://url-shortening-14682653622-b69c6fd.onrender.com/api/v1",
+    PECHA_BACKEND_ENDPOINT="https://pecha-backend-12341825340-1fb0112.onrender.com/api/v1"
 )
 
 

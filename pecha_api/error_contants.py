@@ -8,3 +8,16 @@ class ErrorConstants:
     SAME_TEXT_MAPPING_ERROR_MESSAGE = "Mapping within same text not allowed"
     TABLE_OF_CONTENT_NOT_FOUND_MESSAGE = "Table of content not found"
     CONTENT_ID_NOT_FOUND_MESSAGE="Content ID is required"
+    GROUP_NOT_FOUND_MESSAGE="Group not found"
+    VERSION_NOT_FOUND_MESSAGE="Version not found"
+    SHORT_URL_GENERATION_FAILED_MESSAGE="Short URL generation failed"
+
+    # Image Error Messages
+    IMAGE_ERROR_MESSAGE = "Only image files are allowed"
+    IMAGE_SIZE_ERROR_MESSAGE = "File size exceeds 5MB limit"
+    IMAGE_PROCESSING_ERROR_MESSAGE = "Failed to process the image"
+
+    INVALID_GROUP_ID_MESSAGE="Invalid group ID"
+    INVALID_UUID_MESSAGE="Invalid UUID"
+    IMAGE_NOT_FOUND_MESSAGE="Image not found"
+

@@ -6,7 +6,7 @@ from typing import Optional, Annotated
 
 from .texts_service import (
     get_table_of_contents_by_text_id,
-    get_text_list_by_group_id,
+    get_text_versions_by_group_id,
     create_new_text,
     get_text_by_text_id_or_term,
     get_text_details_by_text_id,
@@ -17,7 +17,7 @@ from .texts_response_models import (
     TableOfContentResponse,
     TextDetailsRequest,
     TableOfContent,
-    TextModel,
+    TextDTO,
     TextVersionResponse,
     DetailTableOfContentResponse
 )
@@ -37,14 +37,20 @@ async def get_text(
     skip: int = Query(default=0),
     limit: int = Query(default=10)
 ):
-    return await get_text_by_text_id_or_term(text_id=text_id, term_id=term_id, language=language, skip=skip, limit=limit)
+    return await get_text_by_text_id_or_term(
+        text_id=text_id,
+        term_id=term_id,
+        language=language,
+        skip=skip,
+        limit=limit
+    )
 
 
 @text_router.post("", status_code=status.HTTP_201_CREATED)
 async def create_text(
     create_text_request: CreateTextRequest,
     authentication_credential: Annotated[HTTPAuthorizationCredentials, Depends(oauth2_scheme)],
-) -> TextModel:
+) -> TextDTO:
     return await create_new_text(
         create_text_request=create_text_request,
         token=authentication_credential.credentials
@@ -53,21 +59,21 @@ async def create_text(
 
 @text_router.get("/{text_id}/versions", status_code=status.HTTP_200_OK)
 async def get_versions(
-        group_id: str,
+        text_id: str,
         language: str = Query(default=None),
         skip: int = Query(default=0),
         limit: int = Query(default=10)
 ) -> TextVersionResponse:
-    return await get_text_list_by_group_id(group_id=group_id, language=language, skip=skip, limit=limit)
+    return await get_text_versions_by_group_id(
+        text_id=text_id,
+        language=language, skip=skip, limit=limit)
 
 
 @text_router.get("/{text_id}/contents", status_code=status.HTTP_200_OK)
 async def get_contents(
-        text_id: str,
-        skip: int = Query(default=0),
-        limit: int = Query(default=5)
+        text_id: str
 ) -> TableOfContentResponse:
-    return await get_table_of_contents_by_text_id(text_id=text_id, skip=skip, limit=limit)
+    return await get_table_of_contents_by_text_id(text_id=text_id)
 
 
 @text_router.post("/{text_id}/details", status_code=status.HTTP_200_OK)

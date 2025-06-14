@@ -15,7 +15,7 @@ from pecha_api.texts.segments.segments_response_models import (
     SegmentRootMapping
 )
 from pecha_api.texts.texts_response_models import (
-    TextModel,
+    TextDTO,
     DetailSection,
     DetailTableOfContent,
     DetailTextSegment,
@@ -27,7 +27,7 @@ from pecha_api.texts.texts_response_models import (
 @pytest.mark.asyncio
 async def test_get_count_of_each_commentary_and_version_success():
     text_details = {
-        "efb26a06-f373-450b-ba57-e7a8d4dd5b64": TextModel(
+        "efb26a06-f373-450b-ba57-e7a8d4dd5b64": TextDTO(
             id="efb26a06-f373-450b-ba57-e7a8d4dd5b64",
             title="title",
             language="language",
@@ -40,7 +40,7 @@ async def test_get_count_of_each_commentary_and_version_success():
             categories=["categories"],
             parent_id="parent_id"
         ),
-        "efb26a06-f373-450b-ba57-e7a8d4dd5b65": TextModel(
+        "efb26a06-f373-450b-ba57-e7a8d4dd5b65": TextDTO(
             id="efb26a06-f373-450b-ba57-e7a8d4dd5b65",
             title="title",
             language="language",
@@ -53,7 +53,7 @@ async def test_get_count_of_each_commentary_and_version_success():
             categories=["categories"],
             parent_id="parent_id"
         ),
-        "efb26a06-f373-450b-ba57-e7a8d4dd5b66": TextModel(
+        "efb26a06-f373-450b-ba57-e7a8d4dd5b66": TextDTO(
             id="efb26a06-f373-450b-ba57-e7a8d4dd5b66",
             title="title",
             language="language",
@@ -95,7 +95,7 @@ async def test_get_count_of_each_commentary_and_version_success():
 @pytest.mark.asyncio
 async def test_filter_segment_mapping_by_type_success():
     text_details = {
-        "efb26a06-f373-450b-ba57-e7a8d4dd5b64": TextModel(
+        "efb26a06-f373-450b-ba57-e7a8d4dd5b64": TextDTO(
             id="efb26a06-f373-450b-ba57-e7a8d4dd5b64",
             title="title",
             language="language",
@@ -108,7 +108,7 @@ async def test_filter_segment_mapping_by_type_success():
             categories=["categories"],
             parent_id="parent_id"
         ),
-        "efb26a06-f373-450b-ba57-e7a8d4dd5b65": TextModel(
+        "efb26a06-f373-450b-ba57-e7a8d4dd5b65": TextDTO(
             id="efb26a06-f373-450b-ba57-e7a8d4dd5b65",
             title="title",
             language="language",
@@ -121,7 +121,7 @@ async def test_filter_segment_mapping_by_type_success():
             categories=["categories"],
             parent_id="parent_id"
         ),
-        "efb26a06-f373-450b-ba57-e7a8d4dd5b66": TextModel(
+        "efb26a06-f373-450b-ba57-e7a8d4dd5b66": TextDTO(
             id="efb26a06-f373-450b-ba57-e7a8d4dd5b66",
             title="title",
             language="language",
@@ -200,7 +200,7 @@ async def test_get_segment_root_mapping_details_success():
         ]
     )  
     text_details = {
-        "text_id_1": TextModel(
+        "text_id_1": TextDTO(
             id="text_id_1",
             title="title",
             language="language",

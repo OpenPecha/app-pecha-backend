@@ -21,6 +21,20 @@ class CreateSheetRequest(BaseModel):
     topic_id: List[str]
     sheetLanguage: str
 
+class CreateSheetResponse(BaseModel):
+    _id: str
+    titles: str
+    summaries: str
+    source: List[Union[Source, Text, Media]]
+    publisher_id: str
+    creation_date: str
+    modified_date: str
+    published_date: int
+    views: int
+    likes: List[str]
+    collection: List[str]
+    topic_id: List[str]
+    sheetLanguage: str
 
 class SheetModel(BaseModel):
     id: str
@@ -51,3 +65,9 @@ class SheetModel(BaseModel):
 
 class SheetsResponse(BaseModel):
     sheets: List[SheetModel]
+
+class SheetIdRequest(BaseModel):
+    id: str
+
+class SheetImageResponse(BaseModel):
+    url: str
