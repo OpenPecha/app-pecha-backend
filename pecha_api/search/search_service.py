@@ -1,86 +1,160 @@
+from elastic_transport import ObjectApiResponse
 
-from typing import Union
-
+from .search_enums import SearchType
 from .search_response_models import (
     SearchResponse,
-    Text,
+    TextIndex,
     SegmentMatch,
-    Source,
-    Sheet,
-    Search
+    SourceResultItem,
+    Search,
+    SheetResultItem
 )
-from .search_enums import SearchType
+from .search_client import search_client
+from pecha_api.config import get
 
-async def get_search_results(query: str, type: SearchType) -> SearchResponse:
-    if type.value == "source":
-        hits: SearchResponse = await _source_search_(query)
-        return hits
-        
-    elif type.value == "sheet":
-        hits: SearchResponse = await _sheet_search_(query)
-        return hits
-    
+from typing import List
+   
+MAX_SEARCH_LIMIT = 30
+
+async def get_search_results(query: str, search_type: SearchType, skip: int = 0, limit: int = 10) -> SearchResponse:
+    if SearchType.SOURCE == search_type:
+        source_search_response: SearchResponse = await _source_search(
+            query=query,
+            skip=skip,
+            limit=limit
+        )
+        return source_search_response
+
+    elif SearchType.SHEET == search_type:
+        sheet_search_response: SearchResponse = await _sheet_search(
+            query=query,
+            skip=skip,
+            limit=limit
+        )
+        return sheet_search_response
+
+async def _source_search(query: str, skip: int, limit: int) -> SearchResponse:
+    client = await search_client()
+    search_query = _generate_search_query(
+        query=query,
+        page=skip,
+        size=limit
+    )
+    query_response: ObjectApiResponse = await client.search(
+        index=get("ELASTICSEARCH_SEGMENT_INDEX"),
+        **search_query
+    )
+    search_response: SearchResponse = _process_source_search_response(
+        query, 
+        query_response, 
+        skip, 
+        limit)
+    return search_response
 
 
-async def _source_search_(query: str) -> SearchResponse:
-    sources = await _mock_source_data_()
+def _process_source_search_response(query: str, search_response: ObjectApiResponse, skip: int, limit: int) -> SearchResponse:
+    hits = search_response["hits"]["hits"]
+    total = search_response["hits"]["total"]["value"] if "total" in search_response["hits"] else 0
+    source_dict, text_dict = _group_sources_by_text_id(hits=hits)
+    sources: List[SourceResultItem] = _get_source_result_items_(text_dict=text_dict, source_dict=source_dict)
     return SearchResponse(
-        search=Search(text=query, type="source"),
+        search=Search(
+            text=query,
+            type=SearchType.SOURCE
+        ),
         sources=sources,
-        skip=0,
-        limit=10,
-        total=2
+        skip=skip,
+        limit=limit,
+        total=min(MAX_SEARCH_LIMIT, total)
     )
 
-async def _sheet_search_(query: str) -> SearchResponse:
-    sheets = await _mock_sheet_data_()
-    return SearchResponse(
-        search=Search(text=query, type="sheet"),
-        sheets=sheets,
-        skip=0,
-        limit=10,
-        total=20
-    )
-
-async def _mock_source_data_():
-    return [
-            Source(
-                text=Text(
-                    text_id="59769286-2787-4181-953d-9149cdeef959",
-                    language="en",
-                    title="The Way of the Bodhisattva",
-                    published_date="12-02-2025"
-                ),
-                segment_match=[
-                    SegmentMatch(
-                        segment_id="6376cd2b-127f-4230-ab1b-e132bfae493f",
-                        content="From the moment one properly takes up<br>That resolve with an irreversible mind<br>For the purpose of liberating<br>The limitless realm of beings..."
-                    ),
-                    SegmentMatch(
-                        segment_id="6a59a87c-9f79-4e0d-9094-72623cf31ec2",
-                        content="From this time forth, even while sleeping<br>Or being heedless, the force of merit<br>Flows forth continuously in numerous streams<br>Equal to the expanse of space."
-                    )
-                ]
-            ),
-            Source(
-                text=Text(
-                    text_id="e6370d09-aa0c-4a41-96ef-deffb89c7810",
-                    language="en",
-                    title="The Way of the Bodhisattva Claude AI Draft",
-                    published_date="12-02-2025"
-                ),
-                segment_match=[
-                    SegmentMatch(
-                        segment_id="6dd83d79-8300-49fa-84b8-74933b17b2dd",
-                        content="From the mind of aspiration for enlightenment,<br>Great results arise while in samsara.<br>However, unlike the mind of actual engagement,<br>It does not produce a continuous stream of merit."
-                    )
-                ]
+def _get_source_result_items_(text_dict: dict, source_dict: dict) -> List[SourceResultItem]:
+    sources: List[SourceResultItem] = []
+    for source_key in source_dict.keys():
+        text = TextIndex(
+            text_id=text_dict[source_key].text_id,
+            language=text_dict[source_key].language,
+            title=text_dict[source_key].title,
+            published_date=text_dict[source_key].published_date
+        )
+        segment_matches: List[SegmentMatch] = []
+        for data in source_dict[source_key]:
+            segment_matches.append(
+                SegmentMatch(
+                    segment_id=data["id"],
+                    content=data["content"]
+                )
             )
-        ]
+        sources.append(
+            SourceResultItem(
+                text=text,
+                segment_match=segment_matches
+            )
+        )
+    return sources
 
-async def _mock_sheet_data_():
+def _group_sources_by_text_id(hits: list) -> tuple[dict, dict]:
+    source_dict = {}
+    text_dict = {}
+    for result in hits:
+        source = result["_source"]
+        text = source["text"]
+        text_id = source["text_id"]
+        text_index = TextIndex(
+            text_id=text_id,
+            language=text["language"],
+            title=text["title"],
+            published_date=text["published_date"]
+        )
+        if text_id not in source_dict:
+            source_dict[text_id] = [source]
+            text_dict[text_id] = text_index
+        else:
+            source_dict[text_id].append(source)
+    return source_dict, text_dict
+
+def _generate_search_query(query: str, page: int, size: int):
+    return {
+        "query": {
+            "match": {
+                "content": {
+                    "query": query
+                }
+            }
+        },
+        "from": max(0, (page - 1)) * size,
+        "size": size
+    }
+
+
+async def _sheet_search(query: str, skip: int, limit: int) -> SearchResponse:
+    mock_sheet_data: List[SheetResultItem] = _mock_sheet_data_()
+    return SearchResponse(
+        search=Search(
+            text=query,
+            type=SearchType.SHEET
+        ),
+        sheets=mock_sheet_data,
+        skip=skip,
+        limit=limit,
+        total=len(mock_sheet_data)
+    )
+    # client = await search_client()
+    # search_query = _generate_search_query(
+    #     query=query,
+    #     page=skip,
+    #     size=limit
+    # )
+    # query_response: ObjectApiResponse = await client.search(
+    #     index=get("ELASTICSEARCH_SHEET_INDEX"),
+    #     **search_query
+    # )
+    # # search_response = _process_sheet_search_response(query, query_response)
+    # return []
+
+def _mock_sheet_data_():
     return [
-            Sheet(
+            SheetResultItem(
                 sheet_title="བཟོད་པའི་མཐུ་སྟོབས།",
                 sheet_summary="བཟོད་པའི་ཕན་ཡོན་དང་ཁོང་ཁྲོའི་ཉེས་དམིགས་ཀྱི་གཏམ་རྒྱུད་འདི། ད་ལྟའང་བོད་ཀྱི་གྲོང་གསེབ་དེར་གླེང་སྒྲོས་སུ་གྱུར་ཡོད་དོ།། །། Buddhist Path",
                 publisher_id=48,
@@ -91,7 +165,7 @@ async def _mock_sheet_data_():
                 publisher_position="LCM",
                 publisher_organization="pecha.org"
             ),
-            Sheet(
+            SheetResultItem(
                 sheet_title="Teaching 1st Jan 2025",
                 sheet_summary="sadf asdfas dfas Buddhist Path",
                 publisher_id=61,
