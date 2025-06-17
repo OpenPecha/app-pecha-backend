@@ -23,6 +23,7 @@ from pecha_api.texts.texts_response_models import (
     TextSegment,
     TableOfContent
 )
+from pecha_api.texts.groups.groups_response_models import GroupDTO
 
 @pytest.mark.asyncio
 async def test_get_count_of_each_commentary_and_version_success():
@@ -166,9 +167,11 @@ async def test_filter_segment_mapping_by_type_success():
 @pytest.mark.asyncio
 async def test_get_root_mapping_count_success():
     segment_id = "efb26a06-f373-450b-ba57-e7a8d4dd5b64"
+    text_id = "efb26a06-f373-450b-ba57-e7a8d4dd5b64"
+    group_id = "efb26a06-f373-450b-ba57-e7a8d4dd5b65"
     segment = SegmentDTO(
         id=segment_id,
-        text_id="efb26a06-f373-450b-ba57-e7a8d4dd5b64",
+        text_id=text_id,
         content="content",
         mapping=[
             MappingResponse(
@@ -180,7 +183,27 @@ async def test_get_root_mapping_count_success():
             for i in range(1,6)
         ]
     )
-    with patch("pecha_api.texts.segments.segments_utils.get_segment_by_id", new_callable=AsyncMock, return_value=segment):
+    text_details = TextDTO(
+        id=text_id,
+        title="title",
+        language="language",
+        type="commentary",
+        group_id=group_id,
+        is_published=True,
+        created_date="created_date",
+        updated_date="updated_date",
+        published_date="published_date",
+        published_by="published_by",
+        categories=["categories"],
+        parent_id="parent_id"
+    )
+    mock_group_details = GroupDTO(
+        id=group_id,
+        type="COMMENTARY"
+    )
+    with patch("pecha_api.texts.segments.segments_utils.get_segment_by_id", new_callable=AsyncMock, return_value=segment), \
+        patch("pecha_api.texts.segments.segments_utils.TextUtils.get_text_details_by_id", new_callable=AsyncMock, return_value=text_details), \
+        patch("pecha_api.texts.segments.segments_utils.get_group_details", new_callable=AsyncMock, return_value=mock_group_details):
         response = await SegmentUtils.get_root_mapping_count(segment_id=segment_id)
         assert response == 5
     
