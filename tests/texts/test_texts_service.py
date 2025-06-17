@@ -331,14 +331,13 @@ async def test_create_table_of_content_not_admin():
 
 @pytest.mark.asyncio
 async def test_create_table_of_content_invalid_text():
-    table_of_content = type('TableOfContent', () , {
-        'id': "id_1",
-        'text_id': "text_id 1"
-        }
+    table_of_content = TableOfContent(
+        id="id_1",
+        text_id="efb26a06-f373-450b-ba57-e7a8d4dd5b64",
+        sections=[]
     )
-    with patch("pecha_api.texts.texts_service.TextUtils.validate_text_exists", new_callable=AsyncMock) as mock_validate_text_exists, \
-        patch("pecha_api.texts.texts_service.verify_admin_access", return_value=True):
-        mock_validate_text_exists.return_value = False
+    with patch("pecha_api.texts.texts_service.verify_admin_access", return_value=True), \
+        patch("pecha_api.texts.texts_utils.check_text_exists", new_callable=AsyncMock, return_value=False):
         with pytest.raises(HTTPException) as exc_info:
             await create_table_of_content(table_of_content_request=table_of_content, token="admin")
         assert exc_info.value.status_code == 404
@@ -346,10 +345,10 @@ async def test_create_table_of_content_invalid_text():
 
 @pytest.mark.asyncio
 async def test_create_table_of_content_invalid_segment():
-    table_of_content = type('TableOfContent', () , {
-        'id': "id_1",
-        'text_id': "text_id 1"
-        }
+    table_of_content = TableOfContent(
+        id="id_1",
+        text_id="efb26a06-f373-450b-ba57-e7a8d4dd5b64",
+        sections=[]
     )
     segment_ids = [
         "efb26a06-f373-450b-ba57-e7a8d4dd5b64",
@@ -358,7 +357,7 @@ async def test_create_table_of_content_invalid_segment():
     with patch("pecha_api.texts.texts_service.verify_admin_access", return_value=True), \
         patch("pecha_api.texts.texts_service.TextUtils.get_all_segment_ids", return_value=segment_ids), \
         patch("pecha_api.texts.texts_service.TextUtils.validate_text_exists", new_callable=AsyncMock, return_value=True), \
-        patch("pecha_api.texts.texts_service.SegmentUtils.validate_segments_exists", new_callable=AsyncMock, return_value=False):
+        patch("pecha_api.texts.segments.segments_utils.check_all_segment_exists", new_callable=AsyncMock, return_value=False):
         with pytest.raises(HTTPException) as exc_info:
             await create_table_of_content(table_of_content_request=table_of_content, token="admin")
         assert exc_info.value.status_code == 404
