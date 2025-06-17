@@ -118,8 +118,7 @@ def _generate_search_query(query: str, page: int, size: int):
         "query": {
             "match": {
                 "content": {
-                    "query": query,
-                    "fuzziness": "AUTO"
+                    "query": query
                 }
             }
         },
