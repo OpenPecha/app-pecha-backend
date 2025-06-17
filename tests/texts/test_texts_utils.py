@@ -243,7 +243,7 @@ async def test_filter_text_on_root_and_version():
             parent_id="parent_id"
         )
     )
-    response: Dict[str, Union[TextDTO, List[TextDTO]]] = await TextUtils.filter_text_on_root_and_version(texts=mock_texts, language="en")
+    response: Dict[str, Union[TextDTO, List[TextDTO]]] = TextUtils.filter_text_on_root_and_version(texts=mock_texts, language="en")
     assert response is not None
     assert response["root_text"] is not None
     assert isinstance(response["root_text"], TextDTO)
