@@ -50,9 +50,9 @@ async def test_update_segment_mapping_success():
     mock_segment.mapping = []
 
     with patch('pecha_api.texts.mappings.mappings_service.verify_admin_access', return_value=True), \
-            patch('pecha_api.texts.mappings.mappings_service.validate_mapping_request',new_callable=AsyncMock, return_value=True), \
-            patch('pecha_api.texts.mappings.mappings_service.get_segments_by_ids',new_callable=AsyncMock) as mock_get_segments_by_ids, \
-            patch('pecha_api.texts.mappings.mappings_service.update_mappings',new_callable=AsyncMock) as mock_update_mappings:
+            patch('pecha_api.texts.mappings.mappings_service._validate_mapping_request', new_callable=AsyncMock, return_value=True), \
+            patch('pecha_api.texts.mappings.mappings_service.get_segments_by_ids', new_callable=AsyncMock) as mock_get_segments_by_ids, \
+            patch('pecha_api.texts.mappings.mappings_service.update_mappings', new_callable=AsyncMock) as mock_update_mappings:
         # Set up mock returns
         mock_get_segments_by_ids.return_value = [mock_segment]
         mock_update_mappings.return_value = [mock_updated_segment]
@@ -112,7 +112,7 @@ async def test_update_segment_mapping_invalid_text():
     )
 
     with patch('pecha_api.texts.mappings.mappings_service.verify_admin_access', return_value=True), \
-            patch('pecha_api.texts.mappings.mappings_service.validate_mapping_request',
+            patch('pecha_api.texts.mappings.mappings_service._validate_mapping_request',
                   side_effect=HTTPException(status_code=404, detail="Text not found")) as mock_validate:
         # Act & Assert
         with pytest.raises(HTTPException) as exc_info:
@@ -140,7 +140,7 @@ async def test_update_segment_mapping_invalid_segment():
     )
 
     with patch('pecha_api.texts.mappings.mappings_service.verify_admin_access', return_value=True), \
-            patch('pecha_api.texts.mappings.mappings_service.validate_mapping_request',
+            patch('pecha_api.texts.mappings.mappings_service._validate_mapping_request',
                   side_effect=HTTPException(status_code=404, detail="Segment not found")) as mock_validate:
         # Act & Assert
         with pytest.raises(HTTPException) as exc_info:
@@ -168,7 +168,7 @@ async def test_update_segment_mapping_text_and_parent_text_same_error():
     )
 
     with patch('pecha_api.texts.mappings.mappings_service.verify_admin_access', return_value=True), \
-            patch('pecha_api.texts.mappings.mappings_service.validate_mapping_request',
+            patch('pecha_api.texts.mappings.mappings_service._validate_mapping_request',
                   side_effect=HTTPException(status_code=400,
                                             detail="Mapping within same text not allowed")) as mock_validate:
         # Act & Assert
@@ -197,7 +197,7 @@ async def test_update_segment_mapping_invalid_parent_text():
     )
 
     with patch('pecha_api.texts.mappings.mappings_service.verify_admin_access', return_value=True), \
-            patch('pecha_api.texts.mappings.mappings_service.validate_mapping_request',
+            patch('pecha_api.texts.mappings.mappings_service._validate_mapping_request',
                   side_effect=HTTPException(status_code=404, detail="Parent text not found")) as mock_validate:
         # Act & Assert
         with pytest.raises(HTTPException) as exc_info:
@@ -224,7 +224,7 @@ async def test_update_segment_mapping_invalid_parent_segment():
     )
 
     with patch('pecha_api.texts.mappings.mappings_service.verify_admin_access', return_value=True), \
-            patch('pecha_api.texts.mappings.mappings_service.validate_mapping_request',
+            patch('pecha_api.texts.mappings.mappings_service._validate_mapping_request',
                   side_effect=HTTPException(status_code=404, detail="Parent segment not found")) as mock_validate:
         # Act & Assert
         with pytest.raises(HTTPException) as exc_info:
@@ -264,7 +264,7 @@ async def test_update_segment_mapping_error_400():
     mock_segment.mapping = []
 
     with patch('pecha_api.texts.mappings.mappings_service.verify_admin_access', return_value=True), \
-            patch('pecha_api.texts.mappings.mappings_service.validate_mapping_request',new_callable=AsyncMock, return_value=True) as mock_validate, \
+            patch('pecha_api.texts.mappings.mappings_service._validate_mapping_request', new_callable=AsyncMock, return_value=True) as mock_validate, \
             patch('pecha_api.texts.mappings.mappings_service.get_segments_by_ids', new_callable=AsyncMock) as mock_get_segments_by_ids, \
             patch('pecha_api.texts.mappings.mappings_service.update_mappings',
                   new_callable=AsyncMock) as mock_update_mappings:
