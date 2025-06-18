@@ -139,18 +139,6 @@ def _sheet_search(query: str, skip: int, limit: int) -> SearchResponse:
         limit=limit,
         total=len(mock_sheet_data)
     )
-    # client = await search_client()
-    # search_query = _generate_search_query(
-    #     query=query,
-    #     page=skip,
-    #     size=limit
-    # )
-    # query_response: ObjectApiResponse = await client.search(
-    #     index=get("ELASTICSEARCH_SHEET_INDEX"),
-    #     **search_query
-    # )
-    # # search_response = _process_sheet_search_response(query, query_response)
-    # return []
 
 def _mock_sheet_data_():
     return [
