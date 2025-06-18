@@ -1,10 +1,6 @@
 import pytest
 from unittest.mock import patch, MagicMock, AsyncMock
-from elastic_transport import ConnectionError
-from fastapi import HTTPException
-from pecha_api.search import search_client as search_client_module
 from pecha_api.search.search_client import search_client, close_search_client
-import elastic_transport
 from pecha_api.config import get
 
 @pytest.mark.asyncio
