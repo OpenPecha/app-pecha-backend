@@ -25,7 +25,7 @@ async def close_search_client():
         if _search_client is not None:
             try:
                 await _search_client.close()
-            except Exception as e:
+            except ConnectionError as e:
                 print(f"Error closing Elastic search client: {e}")
             finally:
                 _search_client = None
