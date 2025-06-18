@@ -2,8 +2,11 @@ from typing import List, Optional
 import uuid
 from pydantic import BaseModel, Field
 from beanie import Document
+from enum import Enum
 
-
+class SegmentType(Enum):
+    TEXT = "text"
+    SHEET = "sheet"
 
 class Mapping(BaseModel):
     text_id: str
@@ -15,7 +18,7 @@ class Segment(Document):
     text_id: Optional[str] = None
     content: str
     mapping: Optional[List[Mapping]] = None
-    type: str
+    type: SegmentType
 
     class Settings:
         collection = "segments"
