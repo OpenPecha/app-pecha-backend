@@ -5,7 +5,7 @@ from fastapi import HTTPException
 
 _search_client = None
 
-async def search_client() -> AsyncElasticsearch:
+def search_client() -> AsyncElasticsearch:
     try:
         global _search_client
         if _search_client is None:
