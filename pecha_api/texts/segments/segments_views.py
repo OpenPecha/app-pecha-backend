@@ -22,9 +22,10 @@ segment_router = APIRouter(
 
 @segment_router.get("", status_code=status.HTTP_200_OK)
 async def get_segment(
-    segment_id: str
+    segment_id: str,
+    text_details: bool = False
 ):
-    return await get_segment_details_by_id(segment_id=segment_id)
+    return await get_segment_details_by_id(segment_id=segment_id, text_details=text_details)
 
 @segment_router.post("", status_code=status.HTTP_201_CREATED)
 async def create_segment(

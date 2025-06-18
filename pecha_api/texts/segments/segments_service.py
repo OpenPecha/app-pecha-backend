@@ -33,21 +33,28 @@ from .segments_response_models import (
     SegmentRootMappingResponse
 )
 
+from pecha_api.texts.texts_response_models import TextDTO
+from pecha_api.texts.texts_utils import TextUtils
+
 from ...users.users_service import verify_admin_access
 
 
-async def get_segment_details_by_id(segment_id: str) -> SegmentDTO:
+async def get_segment_details_by_id(segment_id: str, text_details: bool = False) -> SegmentDTO:
     segment = await get_segment_by_id(segment_id=segment_id)
     if not segment:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=ErrorConstants.SEGMENT_NOT_FOUND_MESSAGE)
     mapping_responses: List[MappingResponse] = [
         MappingResponse(**mapping.model_dump()) for mapping in segment.mapping
     ]
+    text = None
+    if text_details: 
+        text: TextDTO = await TextUtils.get_text_details_by_id(text_id=segment.text_id)
     return SegmentDTO(
         id=str(segment.id),
         text_id=segment.text_id,
         content=segment.content,
-        mapping=mapping_responses
+        mapping=mapping_responses,
+        text=text
     )
 
 async def create_new_segment(create_segment_request: CreateSegmentRequest, token: str) -> SegmentResponse:
