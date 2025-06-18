@@ -9,8 +9,9 @@ from pecha_api.config import get
 
 @pytest.mark.asyncio
 async def test_search_client_success():
-    mock_es = MagicMock()
-    with patch('pecha_api.search.search_client.AsyncElasticsearch', return_value=mock_es) as mock_es_class:
+    mock_es = AsyncMock()
+    mock_es_class = AsyncMock(return_value=mock_es)
+    with patch('pecha_api.search.search_client.AsyncElasticsearch', mock_es_class):
         with patch('pecha_api.search.search_client.get', side_effect=lambda key: {
             'ELASTICSEARCH_URL': 'test_elasticsearch_url',
             'ELASTICSEARCH_API': 'test_api_key'
