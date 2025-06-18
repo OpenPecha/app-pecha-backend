@@ -1,24 +1,23 @@
 import uuid
-from typing import Dict, List, Union
+from typing import Dict, List, Union, Optional
 
 from beanie import PydanticObjectId, Document
 from pydantic import BaseModel, Field
 
+
 class Source(BaseModel):
     position: int
-    type: str
-    text_ref: str
-    text: Dict[str, str]
+    source_segment_id: str
+    translation_segment_id: Optional[str] = None
 
 class Text(BaseModel):
     position: int
-    text: str
+    segment_id: str
 
 class Media(BaseModel):
     position: int
-    type : str
     media_type: str
-    media: str
+    media_url: str
 
 class Like(BaseModel):
     username: str
@@ -27,17 +26,15 @@ class Like(BaseModel):
 class Sheet(Document):
     id: PydanticObjectId = Field(default_factory=PydanticObjectId, alias="_id")
     titles: str 
-    summaries: str
-    source: List[Union[Source, Text, Media]] = Field(default_factory=list)
+    sources: List[Union[Source, Text, Media]] = Field(default_factory=list)
     publisher_id: str
+    isPublic: bool = False
     creation_date: str #UTC date with date and time
     modified_date: str #UTC date with date and time
     published_date: int #epoch time
     views: int
     likes: List[Like] = Field(default_factory=list)
     collection: List[str] = Field(default_factory=list)
-    topic_id: List[str] = Field(default_factory=list)
-    sheetLanguage: str
     
 
     class Settings:
