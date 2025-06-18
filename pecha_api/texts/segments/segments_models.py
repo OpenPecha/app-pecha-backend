@@ -12,9 +12,10 @@ class Mapping(BaseModel):
 
 class Segment(Document):
     id: uuid.UUID = Field(default_factory=uuid.uuid4)
-    text_id: str
+    text_id: Optional[str] = None
     content: str
-    mapping: List[Mapping]
+    mapping: Optional[List[Mapping]] = None
+    type: str
 
     class Settings:
         collection = "segments"
