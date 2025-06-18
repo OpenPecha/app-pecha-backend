@@ -26,7 +26,7 @@ async def get_search_results(query: str, search_type: SearchType, skip: int = 0,
         return source_search_response
 
     elif SearchType.SHEET == search_type:
-        sheet_search_response: SearchResponse = await _sheet_search(
+        sheet_search_response: SearchResponse = _sheet_search(
             query=query,
             skip=skip,
             limit=limit
@@ -127,7 +127,7 @@ def _generate_search_query(query: str, page: int, size: int):
     }
 
 
-async def _sheet_search(query: str, skip: int, limit: int) -> SearchResponse:
+def _sheet_search(query: str, skip: int, limit: int) -> SearchResponse:
     mock_sheet_data: List[SheetResultItem] = _mock_sheet_data_()
     return SearchResponse(
         search=Search(
