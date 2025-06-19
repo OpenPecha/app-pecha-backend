@@ -4,6 +4,8 @@ from starlette import status
 
 from .search_enums import SearchType
 
+from typing import Optional
+
 from .search_service import (
     get_search_results
 )
@@ -21,7 +23,7 @@ search_router = APIRouter(
 async def search(
     query: str = Query(default=None, description="Search query"),
     search_type: SearchType = Query(default=None, description="Search type (SOURCE / SHEET)"),
-    text_id: str = Query(default=None, description="Text ID where the search is to be performed"),
+    text_id: Optional[str] = Query(default=None, description="Text ID where the search is to be performed"),
     skip: int = Query(default=0),
     limit: int = Query(default=10)
 ) -> SearchResponse:
