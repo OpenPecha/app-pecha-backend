@@ -16,10 +16,11 @@ from typing import List
    
 MAX_SEARCH_LIMIT = 30
 
-async def get_search_results(query: str, search_type: SearchType, skip: int = 0, limit: int = 10) -> SearchResponse:
+async def get_search_results(query: str, search_type: SearchType, text_id: str, skip: int = 0, limit: int = 10) -> SearchResponse:
     if SearchType.SOURCE == search_type:
         source_search_response: SearchResponse = await _source_search(
             query=query,
+            text_id=text_id,
             skip=skip,
             limit=limit
         )
@@ -33,10 +34,16 @@ async def get_search_results(query: str, search_type: SearchType, skip: int = 0,
         )
         return sheet_search_response
 
-async def _source_search(query: str, skip: int, limit: int) -> SearchResponse:
+async def _source_search(
+        query: str, 
+        text_id: str, 
+        skip: int, 
+        limit: int
+) -> SearchResponse:
     client = await search_client()
     search_query = _generate_search_query(
         query=query,
+        text_id=text_id,
         page=skip,
         size=limit
     )
@@ -113,8 +120,13 @@ def _group_sources_by_text_id(hits: list) -> tuple[dict, dict]:
             source_dict[text_id].append(source)
     return source_dict, text_dict
 
-def _generate_search_query(query: str, page: int, size: int):
-    return {
+def _generate_search_query(
+        query: str, 
+        text_id: str, 
+        page: int, 
+        size: int
+):
+    search_query = {
         "query": {
             "match": {
                 "content": {
@@ -125,7 +137,11 @@ def _generate_search_query(query: str, page: int, size: int):
         "from": max(0, (page - 1)) * size,
         "size": size
     }
-
+    if text_id:
+        search_query["query"]["term"] = {
+            "text_id": text_id
+        }
+    return search_query
 
 def _sheet_search(query: str, skip: int, limit: int) -> SearchResponse:
     mock_sheet_data: List[SheetResultItem] = _mock_sheet_data_()

@@ -21,12 +21,14 @@ search_router = APIRouter(
 async def search(
     query: str = Query(default=None, description="Search query"),
     search_type: SearchType = Query(default=None, description="Search type (SOURCE / SHEET)"),
+    text_id: str = Query(default=None, description="Text ID where the search is to be performed"),
     skip: int = Query(default=0),
     limit: int = Query(default=10)
 ) -> SearchResponse:
     return await get_search_results(
         query=query,
         search_type=search_type,
+        text_id=text_id,
         skip=skip,
         limit=limit
     )

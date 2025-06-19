@@ -272,7 +272,7 @@ async def test_get_commentaries_by_segment_id_success():
             content=f"content_{i}",
             mapping=[
                 MappingResponse(
-                    text_id=f"parent_text_id",
+                    text_id="parent_text_id",
                     segments=[
                         parent_segment_id
                     ]
