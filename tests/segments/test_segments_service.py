@@ -1,9 +1,8 @@
 import uuid
 from unittest.mock import AsyncMock, patch
 from fastapi import HTTPException
-from pecha_api.texts.segments.segments_models import Segment
+import uuid
 import pytest
-from typing import List
 from pecha_api.texts.segments.segments_service import (
     create_new_segment,
     get_translations_by_segment_id,
@@ -24,13 +23,16 @@ from pecha_api.texts.segments.segments_response_models import (
     MappingResponse,
     SegmentCommentariesResponse,
     SegmentCommentry,
-    SegmentInfosResponse,
-    SegmentInfos,
+    SegmentInfoResponse,
+    SegmentInfo,
     RelatedText,
     Resources,
     SegmentRootMappingResponse,
     SegmentRootMapping
 )
+
+from pecha_api.texts.texts_response_models import TextDTO
+
 from pecha_api.error_contants import ErrorConstants
 
 @pytest.mark.asyncio
@@ -186,7 +188,7 @@ async def test_validate_segments_exists_not_found():
         assert exc_info.value.detail == ErrorConstants.SEGMENT_NOT_FOUND_MESSAGE
 
 @pytest.mark.asyncio
-async def test_get_segment_details_by_id_success():
+async def test_get_segment_details_by_id_without_text_details_success():
     segment_id = "efb26a06-f373-450b-ba57-e7a8d4dd5b64"
     mock_segment = type('Segment', (), {
         'id': segment_id,
@@ -221,6 +223,42 @@ async def test_get_segment_details_by_id_not_found():
         assert exc_info.value.detail == ErrorConstants.SEGMENT_NOT_FOUND_MESSAGE
 
 @pytest.mark.asyncio
+async def test_get_segment_details_by_id_with_text_details_success():
+    segment_id = str(uuid.uuid4())
+    text_id = str(uuid.uuid4())
+    group_id = str(uuid.uuid4())
+    mock_text_details = TextDTO(
+        id=text_id,
+        title="title",
+        language="en",
+        type="text",
+        group_id=group_id,
+        is_published=True,
+        created_date="2021-01-01",
+        updated_date="2021-01-01",
+        published_date="2021-01-01",
+        published_by="admin",
+        categories=["category1", "category2"],
+        parent_id=None
+    )
+    mock_segment = SegmentDTO(
+        id=segment_id,
+        text_id=text_id,
+        content="test content",
+        mapping=[],
+    )
+    with patch("pecha_api.texts.segments.segments_service.get_segment_by_id", new_callable=AsyncMock, return_value=mock_segment), \
+        patch("pecha_api.texts.segments.segments_service.TextUtils.get_text_details_by_id", new_callable=AsyncMock, return_value=mock_text_details):
+
+        response = await get_segment_details_by_id(segment_id=segment_id, text_details=True)
+    
+        assert response is not None
+        assert response.text is not None
+        assert response.text_id == text_id
+        assert response.id == segment_id
+
+
+@pytest.mark.asyncio
 async def test_get_commentaries_by_segment_id_success():
     parent_segment_id = "efb26a06-f373-450b-ba57-e7a8d4dd5b64"
     parent_segment = ParentSegment(
@@ -234,7 +272,7 @@ async def test_get_commentaries_by_segment_id_success():
             content=f"content_{i}",
             mapping=[
                 MappingResponse(
-                    text_id=f"parent_text_id",
+                    text_id="parent_text_id",
                     segments=[
                         parent_segment_id
                     ]
@@ -297,14 +335,14 @@ async def test_get_infos_by_segment_id_success():
         patch("pecha_api.texts.segments.segments_service.SegmentUtils.get_root_mapping_count", new_callable=AsyncMock, return_value=3):
         mock_get_related_mapped_segment.return_value = related_mapped_segments
         response = await get_infos_by_segment_id(segment_id=segment_id)
-        assert isinstance(response, SegmentInfosResponse)
-        assert isinstance(response.segment_infos, SegmentInfos)
-        assert isinstance(response.segment_infos.related_text, RelatedText)
-        assert isinstance(response.segment_infos.resources, Resources)
-        assert response.segment_infos.segment_id == segment_id
-        assert response.segment_infos.translations == 1
-        assert response.segment_infos.related_text.commentaries == 2
-        assert response.segment_infos.related_text.root_text == 3
+        assert isinstance(response, SegmentInfoResponse)
+        assert isinstance(response.segment_info, SegmentInfo)
+        assert isinstance(response.segment_info.related_text, RelatedText)
+        assert isinstance(response.segment_info.resources, Resources)
+        assert response.segment_info.segment_id == segment_id
+        assert response.segment_info.translations == 1
+        assert response.segment_info.related_text.commentaries == 2
+        assert response.segment_info.related_text.root_text == 3
 
 @pytest.mark.asyncio
 async def test_get_infos_by_segment_id_invalid_segment_id():

@@ -1,8 +1,4 @@
-import logging
-import httpx
-from fastapi import HTTPException, Response
-from starlette import status
-from http import HTTPStatus
+from fastapi import HTTPException
 import io
 from pecha_api.error_contants import ErrorConstants
 from pecha_api.texts.segments.segments_utils import SegmentUtils
@@ -11,6 +7,7 @@ from pecha_api.texts.texts_utils import TextUtils
 from .pecha_text_image_generator import generate_segment_image
 from pecha_api.texts.segments.segments_service import get_segment_details_by_id
 from pecha_api.config import get
+import anyio
 
 from pecha_api.share.share_response_models import (
     ShareRequest,
@@ -27,11 +24,11 @@ MEDIA_TYPE = "image/png"
 DEFAULT_OG_TITLE = "PECHA"
 DEFAULT_OG_DESCRIPTION = "PECHA"
 
-async def get_generated_image(segment_id: str):
+async def get_generated_image():
     try:    
         image_path = IMAGE_PATH
-        with open(image_path, "rb") as image_file:
-            image_bytes = image_file.read()
+        async with await anyio.open_file(image_path, "rb") as file:
+            image_bytes = await file.read()
 
         return StreamingResponse(io.BytesIO(image_bytes), media_type=MEDIA_TYPE)
     
@@ -59,11 +56,7 @@ async def generate_short_url(share_request: ShareRequest) -> ShortUrlResponse:
 
 
 def _generate_logo_image_(share_request: ShareRequest):
-    og_description = DEFAULT_OG_DESCRIPTION
     generate_segment_image(
-        text=None, 
-        ref_str=None, 
-        lang=None, 
         text_color=share_request.text_color, 
         bg_color=share_request.bg_color, 
         logo_path=LOGO_PATH
@@ -77,8 +70,6 @@ async def _generate_segment_content_image_(share_request: ShareRequest):
 
     text_id = segment.text_id
     text_detail = await TextUtils.get_text_detail_by_id(text_id=text_id)
-
-    DEFAULT_OG_DESCRIPTION = text_detail.title
 
     segment_text = segment.content
     reference_text = text_detail.title

@@ -1,5 +1,5 @@
 from uuid import UUID
-from typing import List, Dict, Union
+from typing import List, Dict, Union, Optional
 from fastapi import HTTPException
 from starlette import status
 
@@ -22,6 +22,10 @@ from .groups.groups_service import (
 from .groups.groups_response_models import GroupDTO
 from .texts_repository import get_contents_by_id, get_texts_by_id
 
+
+
+
+
 class TextUtils:
     """
     Utility class for text-related operations.
@@ -33,6 +37,7 @@ class TextUtils:
         texts_detail = await get_texts_by_ids(text_ids=text_ids)
         return texts_detail
     
+    @staticmethod
     async def get_text_details_by_id(text_id: str) -> TextDTO:
         text_detail = await get_texts_by_id(text_id=text_id)
         return TextDTO(
@@ -210,7 +215,7 @@ class TextUtils:
         return process_table_of_content(table_of_content)
 
     @staticmethod
-    async def get_table_of_content_id_and_respective_section_by_segment_id(text_id: str, segment_id: str) -> TableOfContent:
+    async def get_table_of_content_id_and_respective_section_by_segment_id(text_id: str, segment_id: str) -> Optional[TableOfContent]:
         """
         Searches for a segment_id within all sections of table of contents for the given text_id.
         Returns a TableOfContent object with only the section containing the segment_id.
@@ -224,25 +229,10 @@ class TextUtils:
                            or None if the segment is not found
         """
         table_of_contents = await get_contents_by_id(text_id=text_id)
-        # Recursive function to search for segment_id in sections
-        def find_section_with_segment(sections):
-            for section in sections:
-                # Check if segment_id exists in this section's segments
-                for segment in getattr(section, "segments", []):
-                    if getattr(segment, "segment_id", None) == segment_id:
-                        return section
-                        
-                # Check subsections recursively
-                if getattr(section, "sections", None):
-                    found_section = find_section_with_segment(section.sections)
-                    if found_section:
-                        # we need to return the outermost section and not the inner most section
-                        return section
-            return None
-        
+
         # Search through all table of contents
         for content in table_of_contents:
-            found_section = find_section_with_segment(getattr(content, "sections", []))
+            found_section = _find_section_with_segment(getattr(content, "sections", []), segment_id)
             if found_section:
                 # Create a new TableOfContent with only the found section
                 filtered_content = TableOfContent(
@@ -287,3 +277,29 @@ class TextUtils:
                     commentary.append(text)
             filtere_text["commentary"] = commentary
         return filtere_text
+    
+
+def _find_section_with_segment(sections, segment_id: str):
+    """
+    Recursive function to search for segment_id in sections.
+    
+    Args:
+        sections: List of sections to search through
+        segment_id: The ID of the segment to search for
+        
+    Returns:
+        Section: The section containing the segment_id, or None if not found
+    """
+    for section in sections:
+        # Check if segment_id exists in this section's segments
+        for segment in getattr(section, "segments", []):
+            if getattr(segment, "segment_id", None) == segment_id:
+                return section
+                
+        # Check subsections recursively
+        if getattr(section, "sections", None):
+            found_section = _find_section_with_segment(section.sections, segment_id)
+            if found_section:
+                # we need to return the outermost section and not the inner most section
+                return section
+    return None

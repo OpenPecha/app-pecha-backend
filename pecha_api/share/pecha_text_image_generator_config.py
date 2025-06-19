@@ -2,14 +2,19 @@
 Configuration constants for pecha_text_image_generator.py
 """
 
+FONTS_WUJIN_GANGBI = "pecha_api/share/static/fonts/wujin+gangbi.ttf"
+FONTS_NOTO_EN = "pecha_api/share/static/fonts/Noto-font/NotoFont-en.ttf"
+IMG_OUTPUT_PATH = "pecha_api/share/static/img/output.png"
+IMG_LOGO_PATH = "pecha_api/share/static/img/pecha-logo.png"
+
 CONFIG = {
     # Font Paths and Sizes
-    "FONTS_WUJIN_GANGBI": "pecha_api/share/static/fonts/wujin+gangbi.ttf",
-    "FONTS_NOTO_EN": "pecha_api/share/static/fonts/Noto-font/NotoFont-en.ttf",
+    "FONTS_WUJIN_GANGBI": FONTS_WUJIN_GANGBI,
+    "FONTS_NOTO_EN": FONTS_NOTO_EN,
     "FONT_PATHS": {
-        "bo": "pecha_api/share/static/fonts/wujin+gangbi.ttf",
-        "en": "pecha_api/share/static/fonts/Noto-font/NotoFont-en.ttf",
-        "FALL_BACK": "pecha_api/share/static/fonts/Noto-font/NotoFont-en.ttf"
+        "bo": FONTS_WUJIN_GANGBI,
+        "en": FONTS_NOTO_EN,
+        "FALL_BACK": FONTS_NOTO_EN
     },
     "FONT_SIZE": {
         "bo": 25,
@@ -39,8 +44,8 @@ CONFIG = {
     "ALIGN_CENTER": "center",
     "RGBA_MODE": "RGBA",
     # File Paths
-    "IMG_OUTPUT_PATH": "pecha_api/share/static/img/output.png",
-    "IMG_LOGO_PATH": "pecha_api/share/static/img/pecha-logo.png",
+    "IMG_OUTPUT_PATH": IMG_OUTPUT_PATH,
+    "IMG_LOGO_PATH": IMG_LOGO_PATH,
     # Layout
     "IMAGE_WIDTH": 700,
     "IMAGE_HEIGHT": 400,
