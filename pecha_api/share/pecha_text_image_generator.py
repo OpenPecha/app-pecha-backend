@@ -24,7 +24,7 @@ class SyntheticImageGenerator:
         hex_color = hex_color.lstrip('#')
         return tuple(int(hex_color[i:i+2], 16) for i in CONFIG["HEX_COLOR_INDICES"])
 
-    def calc_letters_per_line(self, text: str, font: ImageFont.FreeTypeFont, max_width: int) -> int:
+    def calc_letters_per_line(self, font: ImageFont.FreeTypeFont, max_width: int) -> int:
         """Calculate approximately how many characters can fit in the given width."""
         avg_char_width = font.getlength(CONFIG["TYPICAL_CHAR"])
         return int(max_width / avg_char_width)
@@ -83,7 +83,6 @@ class SyntheticImageGenerator:
         self,
         text: str,
         ref_str: str,
-        lang: str,
         img_file_name: str = None,
         text_color: str = None,
         logo_path: str = None
@@ -103,7 +102,7 @@ class SyntheticImageGenerator:
         # Calculate padding and max width
         max_width = self.image_width - (CONFIG["PADDING_X"] * 2)
         # Wrap text using textwrap
-        chars_per_line = self.calc_letters_per_line(text, main_font, max_width)
+        chars_per_line = self.calc_letters_per_line(main_font, max_width)
         wrapped_text = textwrap.fill(text=text, width=chars_per_line)
         # Draw main text
         img = Image.new(CONFIG["RGBA_MODE"], (self.image_width, self.image_height), color=self.bg_color + (255,))
@@ -146,7 +145,7 @@ def create_synthetic_data(
         font_type=font_type_lang,
         bg_color=CONFIG["BG_COLOR"].get(bg_color, CONFIG["BG_COLOR"]["DEFAULT"])
     )
-    generator.save_image(cleaned_text, ref_str, lang, img_file_name=output_path or CONFIG["IMG_OUTPUT_PATH"], text_color=text_color, logo_path=logo_path)
+    generator.save_image(cleaned_text, ref_str, img_file_name=output_path or CONFIG["IMG_OUTPUT_PATH"], text_color=text_color, logo_path=logo_path)
 
 def generate_segment_image(
     text: str = None,
