@@ -23,8 +23,8 @@ from pecha_api.texts.segments.segments_response_models import (
     MappingResponse,
     SegmentCommentariesResponse,
     SegmentCommentry,
-    SegmentInfosResponse,
-    SegmentInfos,
+    SegmentInfoResponse,
+    SegmentInfo,
     RelatedText,
     Resources,
     SegmentRootMappingResponse,
@@ -272,7 +272,7 @@ async def test_get_commentaries_by_segment_id_success():
             content=f"content_{i}",
             mapping=[
                 MappingResponse(
-                    text_id=f"parent_text_id",
+                    text_id="parent_text_id",
                     segments=[
                         parent_segment_id
                     ]
@@ -335,14 +335,14 @@ async def test_get_infos_by_segment_id_success():
         patch("pecha_api.texts.segments.segments_service.SegmentUtils.get_root_mapping_count", new_callable=AsyncMock, return_value=3):
         mock_get_related_mapped_segment.return_value = related_mapped_segments
         response = await get_infos_by_segment_id(segment_id=segment_id)
-        assert isinstance(response, SegmentInfosResponse)
-        assert isinstance(response.segment_infos, SegmentInfos)
-        assert isinstance(response.segment_infos.related_text, RelatedText)
-        assert isinstance(response.segment_infos.resources, Resources)
-        assert response.segment_infos.segment_id == segment_id
-        assert response.segment_infos.translations == 1
-        assert response.segment_infos.related_text.commentaries == 2
-        assert response.segment_infos.related_text.root_text == 3
+        assert isinstance(response, SegmentInfoResponse)
+        assert isinstance(response.segment_info, SegmentInfo)
+        assert isinstance(response.segment_info.related_text, RelatedText)
+        assert isinstance(response.segment_info.resources, Resources)
+        assert response.segment_info.segment_id == segment_id
+        assert response.segment_info.translations == 1
+        assert response.segment_info.related_text.commentaries == 2
+        assert response.segment_info.related_text.root_text == 3
 
 @pytest.mark.asyncio
 async def test_get_infos_by_segment_id_invalid_segment_id():

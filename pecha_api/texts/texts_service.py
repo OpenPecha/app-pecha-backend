@@ -36,7 +36,7 @@ from pecha_api.users.users_service import verify_admin_access
 from pecha_api.terms.terms_service import get_term
 from .segments.segments_utils import SegmentUtils
 
-from typing import List, Dict
+from typing import List, Dict, Optional
 from pecha_api.config import get
 
 
@@ -219,7 +219,7 @@ async def _mapping_table_of_content(text: TextDTO, table_of_content: TableOfCont
     return detail_table_of_content
 
 async def _receive_table_of_content(text_id: str, text_details_request: TextDetailsRequest):
-    table_of_content: TableOfContent = None
+    table_of_content: Optional[TableOfContent] = None
     if text_details_request.content_id is not None:
         table_of_content = await get_table_of_content_by_content_id(
             content_id=text_details_request.content_id,

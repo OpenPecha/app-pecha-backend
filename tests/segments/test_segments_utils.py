@@ -16,9 +16,7 @@ from pecha_api.texts.segments.segments_response_models import (
 )
 from pecha_api.texts.texts_response_models import (
     TextDTO,
-    DetailSection,
     DetailTableOfContent,
-    DetailTextSegment,
     Section,
     TextSegment,
     TableOfContent
