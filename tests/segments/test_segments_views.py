@@ -4,12 +4,72 @@ from fastapi import status, HTTPException
 from uuid import uuid4
 from pecha_api.app import api
 
-from pecha_api.texts.segments.segments_response_models import CreateSegmentRequest, CreateSegment, \
-    SegmentTranslationsResponse, SegmentTranslation
+from pecha_api.texts.segments.segments_response_models import (
+    CreateSegmentRequest, 
+    CreateSegment,
+    SegmentTranslationsResponse, 
+    SegmentTranslation,
+    SegmentDTO
+)
+from pecha_api.texts.texts_response_models import TextDTO
+
 from pecha_api.error_contants import ErrorConstants
 from pecha_api.texts.segments.segments_response_models import ParentSegment
 
 client = TestClient(api)
+
+@patch("pecha_api.texts.segments.segments_views.get_segment_details_by_id")
+def test_get_segment_without_text_details_success(mock_get_segment_details_by_id):
+    segment_id = str(uuid4())
+    mock_response = SegmentDTO(
+        id=segment_id,
+        text_id="text_id",
+        content="content",
+        mapping=[]
+    )
+    mock_get_segment_details_by_id.return_value = mock_response
+    response = client.get(f"/api/v1/segments/{segment_id}")
+    assert response.status_code == status.HTTP_200_OK
+    data = response.json()
+    assert data["id"] == segment_id
+    assert data["text_id"] == "text_id"
+    assert data["content"] == "content"
+    assert data["text"] is None
+
+@patch("pecha_api.texts.segments.segments_views.get_segment_details_by_id")
+def test_get_segment_with_text_details_success(mock_get_segment_details_by_id):
+    segment_id = str(uuid4())
+    text_id = str(uuid4())
+    mock_response = SegmentDTO(
+        id=segment_id,
+        text_id="text_id",
+        content="content",
+        mapping=[],
+        text=TextDTO(
+            id=text_id,
+            title="title",
+            language="language",
+            type="type",
+            group_id="group_id",
+            is_published=True,
+            created_date="2021-01-01",
+            updated_date="2021-01-01",
+            published_date="2021-01-01",
+            published_by="admin",
+            categories=["category1", "category2"],
+            parent_id=None
+        )
+    )
+    mock_get_segment_details_by_id.return_value = mock_response
+    response = client.get(f"/api/v1/segments/{segment_id}?text_details=True")
+
+    assert response.status_code == status.HTTP_200_OK
+    data = response.json()
+    assert data["id"] == segment_id
+    assert data["text"] is not None
+    assert data["text"]["id"] == text_id
+    assert data["text"]["title"] == "title"
+
 
 @patch("pecha_api.texts.segments.segments_views.get_translations_by_segment_id")
 def test_get_translations_success(mock_get_translations):
