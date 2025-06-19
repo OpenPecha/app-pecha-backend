@@ -27,12 +27,8 @@ segment_router = APIRouter(
     tags=["Segments"]
 )
 
-@segment_router.get("", status_code=status.HTTP_200_OK)
-async def get_segment(
-    segment_id: str,
-    text_details: bool = False
-) -> SegmentDTO:
-    return await get_segment_details_by_id(segment_id=segment_id, text_details=text_details)
+from fastapi import Query
+
 
 @segment_router.post("", status_code=status.HTTP_201_CREATED)
 async def create_segment(
@@ -40,6 +36,13 @@ async def create_segment(
     authentication_credential: Annotated[HTTPAuthorizationCredentials, Depends(oauth2_scheme)],
 ) -> SegmentResponse:
     return await create_new_segment(create_segment_request=create_segment_request, token=authentication_credential.credentials)
+
+@segment_router.get("/{segment_id}", status_code=status.HTTP_200_OK)
+async def get_segment(
+    segment_id: str,
+    text_details: bool = Query(default=False)
+) -> SegmentDTO:
+    return await get_segment_details_by_id(segment_id=segment_id, text_details=text_details)
 
 @segment_router.get("/{segment_id}/infos", status_code=status.HTTP_200_OK)
 async def get_infos_for_segment(
