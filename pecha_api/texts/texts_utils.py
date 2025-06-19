@@ -1,5 +1,5 @@
 from uuid import UUID
-from typing import List, Dict, Union
+from typing import List, Dict, Union, Optional
 from fastapi import HTTPException
 from starlette import status
 
@@ -33,6 +33,7 @@ class TextUtils:
         texts_detail = await get_texts_by_ids(text_ids=text_ids)
         return texts_detail
     
+    @staticmethod
     async def get_text_details_by_id(text_id: str) -> TextDTO:
         text_detail = await get_texts_by_id(text_id=text_id)
         return TextDTO(
@@ -210,7 +211,7 @@ class TextUtils:
         return process_table_of_content(table_of_content)
 
     @staticmethod
-    async def get_table_of_content_id_and_respective_section_by_segment_id(text_id: str, segment_id: str) -> TableOfContent:
+    async def get_table_of_content_id_and_respective_section_by_segment_id(text_id: str, segment_id: str) -> Optional[TableOfContent]:
         """
         Searches for a segment_id within all sections of table of contents for the given text_id.
         Returns a TableOfContent object with only the section containing the segment_id.
