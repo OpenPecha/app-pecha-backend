@@ -16,7 +16,7 @@ from .segments_response_models import (
     CreateSegmentRequest,
     SegmentDTO,
     SegmentResponse,
-    SegmentInfosResponse,
+    SegmentInfoResponse,
     SegmentTranslationsResponse,
     SegmentCommentariesResponse
 )
@@ -47,7 +47,7 @@ async def get_segment(
 @segment_router.get("/{segment_id}/infos", status_code=status.HTTP_200_OK)
 async def get_infos_for_segment(
     segment_id: str
-) -> SegmentInfosResponse:
+) -> SegmentInfoResponse:
     return await get_infos_by_segment_id(segment_id=segment_id)
 
 @segment_router.get("/{segment_id}/root_text", status_code=status.HTTP_200_OK)
