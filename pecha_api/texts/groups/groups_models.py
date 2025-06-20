@@ -7,10 +7,11 @@ from pydantic import Field
 from .groups_response_models import (
     GroupDTO
 )
+from .groups_enums import GroupType
 
 class Group(Document):
     id: uuid.UUID = Field(default_factory=uuid.uuid4)
-    type: str
+    type: GroupType
 
     class Settings:
         collection = "groups"
