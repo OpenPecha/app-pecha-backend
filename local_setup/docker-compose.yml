@@ -67,11 +67,11 @@ services:
           soft: -1
           hard: -1
 
-  volumes:
-    dbdata6:
-    dragonflydata:
-    elasticsearch-data:
+volumes:
+  dbdata6:
+  dragonflydata:
+  elasticsearch-data:
 
-  networks:
-    pecha-network:
-      driver: bridge
+networks:
+  pecha-network:
+    driver: bridge
