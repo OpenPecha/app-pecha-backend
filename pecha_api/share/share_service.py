@@ -113,4 +113,4 @@ def _generate_url_(
         text_id: str,
         content_index: int
 ) -> str:
-    return f"{PECHA_FRONTEND_ENDPOINT}?segment_id={segment_id}&content_id={content_id}&text_id={text_id}&content_index={content_index}"
+    return f"{PECHA_FRONTEND_ENDPOINT}?segment_id={segment_id}&contentId={content_id}&text_id={text_id}&contentIndex={content_index}"
