@@ -57,9 +57,9 @@ async def create_new_group(
     create_group_request: CreateGroupRequest,
     token: str
 ) -> GroupDTO:
-    is_admin = verify_admin_access(token=token)
-    if not is_admin:
-        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail=ErrorConstants.ADMIN_ERROR_MESSAGE)
+    # is_admin = verify_admin_access(token=token)
+    # if not is_admin:
+    #     raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail=ErrorConstants.ADMIN_ERROR_MESSAGE)
     return await create_group(
         create_group_request=create_group_request
     )

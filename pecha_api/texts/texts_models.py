@@ -1,11 +1,17 @@
 import uuid
 from uuid import UUID
 from typing import List, Optional
+from enum import Enum
 
 from .texts_response_models import Section
 
 from pydantic import Field
 from beanie import Document
+
+class TextType(str, Enum):
+    COMMENTARY = "commentary"
+    VERSION = "version"
+    SHEET = "sheet"
 
 class TableOfContent(Document):
     id: uuid.UUID = Field(default_factory=uuid.uuid4)
@@ -41,15 +47,15 @@ class Text(Document):
     id: uuid.UUID = Field(default_factory=uuid.uuid4)
     title: str
     language: str
-    parent_id: Optional[str] = None
     group_id: str
     is_published: bool
     created_date: str
     updated_date: str
     published_date: str
     published_by: str
-    type: str
-    categories: List[str]
+    type: TextType
+    categories: Optional[List[str]] = None
+    views: Optional[int] = 0
 
     class Settings:
         collection = "texts"
