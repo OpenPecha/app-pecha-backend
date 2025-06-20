@@ -34,7 +34,7 @@ async def get_search_results(query: str, search_type: SearchType, skip: int = 0,
         return sheet_search_response
 
 async def _source_search(query: str, skip: int, limit: int) -> SearchResponse:
-    client = await search_client()
+    client = search_client()
     search_query = _generate_search_query(
         query=query,
         page=skip,

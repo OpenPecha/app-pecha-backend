@@ -22,7 +22,7 @@ DEFAULTS = dict(
     JWT_SECRET_KEY="",
     MAX_FILE_SIZE_MB=1,
 
-    MONGO_CONNECTION_STRING="",
+    MONGO_CONNECTION_STRING="mongodb://admin:pechaAdmin@localhost:27017/pecha?authSource=admin",
 
     MONGO_DATABASE_NAME="pecha",
     REFRESH_TOKEN_EXPIRE_DAYS=30,
@@ -40,8 +40,8 @@ DEFAULTS = dict(
     PECHA_BACKEND_ENDPOINT="https://pecha-backend-12341825340-1fb0112.onrender.com/api/v1",
 
     # Search configuration
-    ELASTICSEARCH_URL= "http://localhost:9200",
-    ELASTICSEARCH_API="",
+    ELASTICSEARCH_URL= "https://my-elasticsearch-project-f0c060.es.ap-southeast-1.aws.elastic.cloud:443",
+    ELASTICSEARCH_API="RHNaa1o1Y0Izc1ZjOWZWWm41NHU6N1M0VDl2UmNGWmRVR3dMMmJfWERzUQ==",
     ELASTICSEARCH_CONTENT_INDEX = "pecha-texts",
     ELASTICSEARCH_SEGMENT_INDEX = "pecha-segments",
     ELASTICSEARCH_SHEET_INDEX = "pecha-sheets"
