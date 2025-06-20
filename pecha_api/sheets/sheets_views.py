@@ -39,9 +39,11 @@ async def get_sheets_by_user_id(
 @sheets_router.post("", status_code=status.HTTP_201_CREATED)
 async def create_sheet(
     create_sheet_request: CreateSheetRequest,
-        ):
+    authentication_credential: Annotated[HTTPAuthorizationCredentials, Depends(oauth2_scheme)],
+):
     return await create_new_sheet(
-        create_sheet_request=create_sheet_request
+        create_sheet_request=create_sheet_request,
+        token=authentication_credential.credentials
     )
 
 @sheets_router.post("/upload", status_code=status.HTTP_201_CREATED)

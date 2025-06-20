@@ -5,8 +5,11 @@ from beanie import Document
 from enum import Enum
 
 class SegmentType(Enum):
-    TEXT = "text"
-    SHEET = "sheet"
+    SOURCE = "text"
+    CONTENT = "content"
+    AUDIO = "audio"
+    IMAGE = "image"
+    VIDEO = "video"
 
 class Mapping(BaseModel):
     text_id: str

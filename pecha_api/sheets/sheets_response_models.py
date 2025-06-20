@@ -1,11 +1,33 @@
 from __future__ import annotations
 
-from typing import List, Union
+from typing import List, Union, Optional
 
 from pydantic import BaseModel, model_validator
 
 from pecha_api.utils import Utils
 from .sheets_models import Source, Text, Media
+
+from pecha_api.texts.segments.segments_models import SegmentType
+
+class Source(BaseModel):
+    position: int
+    type: SegmentType = SegmentType.SOURCE
+    source_segment_id: str
+    translation_segment_id: Optional[str] = None
+
+class Text(BaseModel):
+    position: int
+    type: SegmentType = SegmentType.CONTENT
+    segment_id: str
+
+class Media(BaseModel):
+    position: int
+    media_type: SegmentType
+    media_url: str
+
+class Like(BaseModel):
+    username: str
+    name: str
 
 class Publisher(BaseModel):
     id: str
@@ -14,7 +36,7 @@ class Publisher(BaseModel):
     image_url: str | None
 
 class CreateSheetRequest(BaseModel):
-    titles: str
+    title: str
     summaries: str
     source: List[Union[Source, Text, Media]]
     publisher_id: str

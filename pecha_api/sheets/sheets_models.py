@@ -5,23 +5,12 @@ from beanie import PydanticObjectId, Document
 from pydantic import BaseModel, Field
 
 
-class Source(BaseModel):
-    position: int
-    source_segment_id: str
-    translation_segment_id: Optional[str] = None
-
-class Text(BaseModel):
-    position: int
-    segment_id: str
-
-class Media(BaseModel):
-    position: int
-    media_type: str
-    media_url: str
-
-class Like(BaseModel):
-    username: str
-    name: str
+from .sheets_response_models import (
+    Source,
+    Text,
+    Media,
+    Like
+)
 
 class Sheet(Document):
     id: PydanticObjectId = Field(default_factory=PydanticObjectId, alias="_id")

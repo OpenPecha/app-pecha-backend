@@ -15,6 +15,22 @@ from ..topics.topics_repository import get_topic_by_id
 from pecha_api.utils import Utils
 from pecha_api.image_utils import ImageUtils
 
+from pecha_api.texts.groups.groups_response_models import (
+    CreateGroupRequest,
+    GroupDTO
+)
+from pecha_api.texts.groups.groups_enums import GroupType
+from pecha_api.texts.groups.groups_service import create_new_group
+
+from pecha_api.texts.texts_response_models import (
+    CreateTextRequest
+)
+from pecha_api.texts.texts_service import create_new_text
+
+from pecha_api.users.users_service import (
+    validate_and_extract_user_details
+)
+
 async def get_sheets(topic_id: str,language: str) -> SheetsResponse:
     sheets = get_sheets_by_topic(topic_id=topic_id)
     publisher = Publisher(
@@ -74,10 +90,26 @@ async def get_sheets_by_userID(user_id: str, language: str, skip: int, limit: in
     sheet_response = SheetsResponse(sheets=sheets_list)
     return sheet_response
     
-async def create_new_sheet(create_sheet_request: CreateSheetRequest) -> CreateSheetResponse:
+async def create_new_sheet(create_sheet_request: CreateSheetRequest, token: str) -> CreateSheetResponse:
     new_sheet = await create_sheet(create_sheet_request=create_sheet_request)
-    return new_sheet
+    group_id =  await _create_group_(token=token)
+    text_id = await _create_text_(title=create_sheet_request.title, token=token)
     
+async def _create_text_(title: str, token: str) -> str:
+    user_details = validate_and_extract_user_details(token=token)
+    create_text_request = CreateTextRequest(
+        title=title,
+        language=get("DEFAULT_LANGUAGE"),
+    )
+
+
+async def _create_group_(token: str) -> str:
+    create_group_request = CreateGroupRequest(
+        type=GroupType.SHEET
+    )
+    new_group: GroupDTO = await create_new_group(create_group_request=create_group_request, token=token)
+    return new_group.id
+
 
 def upload_sheet_image_request(sheet_id: Optional[str], file: UploadFile) -> SheetImageResponse:
     # Validate and compress the uploaded image
