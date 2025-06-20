@@ -5,14 +5,16 @@ from pecha_api.terms.terms_response_models import TermsModel
 
 from pydantic import BaseModel
 
+from .texts_enums import TextType
+
 class CreateTextRequest(BaseModel):
     title: str
     language: str
     parent_id: Optional[str] = None
     group_id: str
     published_by: str
-    type: str
-    categories: List[str]
+    type: TextType
+    categories: Optional[List[str]] = None
 
 class TextDTO(BaseModel):
     id: str

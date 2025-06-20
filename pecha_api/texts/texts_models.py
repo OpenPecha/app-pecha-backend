@@ -1,17 +1,13 @@
 import uuid
 from uuid import UUID
 from typing import List, Optional
-from enum import Enum
 
 from .texts_response_models import Section
 
 from pydantic import Field
 from beanie import Document
 
-class TextType(str, Enum):
-    COMMENTARY = "commentary"
-    VERSION = "version"
-    SHEET = "sheet"
+from .texts_enums import TextType
 
 class TableOfContent(Document):
     id: uuid.UUID = Field(default_factory=uuid.uuid4)
