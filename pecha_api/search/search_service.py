@@ -16,7 +16,7 @@ from typing import List
    
 MAX_SEARCH_LIMIT = 30
 
-async def get_search_results(query: str, search_type: SearchType, text_id: str, skip: int = 0, limit: int = 10) -> SearchResponse:
+async def get_search_results(query: str, search_type: SearchType, text_id: str = None, skip: int = 0, limit: int = 10) -> SearchResponse:
     if SearchType.SOURCE == search_type:
         source_search_response: SearchResponse = await _source_search(
             query=query,
@@ -40,7 +40,7 @@ async def _source_search(
         skip: int, 
         limit: int
 ) -> SearchResponse:
-    client = await search_client()
+    client = search_client()
     search_query = _generate_search_query(
         query=query,
         text_id=text_id,
@@ -128,19 +128,28 @@ def _generate_search_query(
 ):
     search_query = {
         "query": {
-            "match": {
-                "content": {
-                    "query": query
-                }
+            "bool": {
+                "must": [],
+                "should": [
+                    {
+                        "match": {
+                            "content": {
+                                "query": query
+                            }
+                        }
+                    }
+                ]
             }
         },
         "from": max(0, (page - 1)) * size,
         "size": size
     }
     if text_id:
-        search_query["query"]["term"] = {
-            "text_id": text_id
-        }
+        search_query["query"]["bool"]["must"].append({
+            "term": {
+                "text_id.keyword": text_id
+            }
+        })
     return search_query
 
 def _sheet_search(query: str, skip: int, limit: int) -> SearchResponse:
