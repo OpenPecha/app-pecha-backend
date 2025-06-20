@@ -5,7 +5,6 @@ from typing import List, Union, Optional
 from pydantic import BaseModel, model_validator
 
 from pecha_api.utils import Utils
-from .sheets_models import Source, Text, Media
 
 from pecha_api.texts.segments.segments_models import SegmentType
 
@@ -13,12 +12,11 @@ class Source(BaseModel):
     position: int
     type: SegmentType = SegmentType.SOURCE
     source_segment_id: str
-    translation_segment_id: Optional[str] = None
 
-class Text(BaseModel):
+class Content(BaseModel):
     position: int
     type: SegmentType = SegmentType.CONTENT
-    segment_id: str
+    content: str
 
 class Media(BaseModel):
     position: int
@@ -37,17 +35,13 @@ class Publisher(BaseModel):
 
 class CreateSheetRequest(BaseModel):
     title: str
-    summaries: str
-    source: List[Union[Source, Text, Media]]
-    publisher_id: str
-    topic_id: List[str]
-    sheetLanguage: str
+    source: List[Union[Source, Content, Media]]
 
 class CreateSheetResponse(BaseModel):
     _id: str
     titles: str
     summaries: str
-    source: List[Union[Source, Text, Media]]
+    source: List[Union[Source, Content, Media]]
     publisher_id: str
     creation_date: str
     modified_date: str

@@ -7,7 +7,7 @@ from pydantic import BaseModel, Field
 
 from .sheets_response_models import (
     Source,
-    Text,
+    Content,
     Media,
     Like
 )
@@ -15,7 +15,7 @@ from .sheets_response_models import (
 class Sheet(Document):
     id: PydanticObjectId = Field(default_factory=PydanticObjectId, alias="_id")
     titles: str 
-    sources: List[Union[Source, Text, Media]] = Field(default_factory=list)
+    sources: List[Union[Source, Content, Media]] = Field(default_factory=list)
     publisher_id: str
     isPublic: bool = False
     creation_date: str #UTC date with date and time

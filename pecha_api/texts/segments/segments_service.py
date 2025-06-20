@@ -60,7 +60,8 @@ async def create_new_segment(create_segment_request: CreateSegmentRequest, token
                 id=str(segment.id),
                 text_id=segment.text_id,
                 content=segment.content,
-                mapping= [MappingResponse(**mapping.model_dump()) for mapping in segment.mapping]
+                mapping= [MappingResponse(**mapping.model_dump()) for mapping in segment.mapping],
+                type=segment.type
             )
             for segment in new_segment
         ]

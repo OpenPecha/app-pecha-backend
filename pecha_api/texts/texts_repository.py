@@ -90,7 +90,7 @@ async def create_text(create_text_request: CreateTextRequest) -> Text:
     new_text = Text(
         title=create_text_request.title,
         language=create_text_request.language,
-        parent_id=create_text_request.parent_id,
+        group_id=create_text_request.group_id,
         is_published=True,
         created_date=str(datetime.now(timezone.utc)),
         updated_date=str(datetime.now(timezone.utc)),

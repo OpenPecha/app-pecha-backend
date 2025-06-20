@@ -27,7 +27,7 @@ class TextDTO(BaseModel):
     updated_date: str
     published_date: str
     published_by: str
-    categories: List[str]
+    categories: Optional[List[str]] = None
     parent_id: Optional[str] = None
 
 # Text TOC Response Models
@@ -77,14 +77,14 @@ class TextSegment(BaseModel):
 
 class Section(BaseModel):
     id: str
-    title: str
+    title: Optional[str] = None
     section_number: int
     parent_id: Optional[str] = None
     segments: List[TextSegment] = []
     sections: Optional[List["Section"]] = None
-    created_date: str 
-    updated_date: str
-    published_date: str 
+    created_date: Optional[str] = None
+    updated_date: Optional[str] = None
+    published_date: Optional[str] = None
 
 class TableOfContent(BaseModel):
     id: Optional[str] = None

@@ -60,7 +60,8 @@ async def create_segment(create_segment_request: CreateSegmentRequest) -> List[S
         Segment(
             text_id=create_segment_request.text_id,
             content=segment.content,
-            mapping=segment.mapping
+            mapping=segment.mapping,
+            type=segment.type
         )
         for segment in create_segment_request.segments
     ]

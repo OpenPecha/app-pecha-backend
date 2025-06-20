@@ -2,8 +2,9 @@ import os
 import uuid
 from typing import Optional, Dict
 import hashlib
-
+import datetime
 from fastapi import APIRouter, Depends, UploadFile, File
+
 
 from pecha_api.config import get
 from .sheets_repository import get_sheets_by_topic, get_users_sheets, create_sheet
@@ -26,7 +27,10 @@ from pecha_api.texts.groups.groups_service import create_new_group
 from pecha_api.texts.texts_response_models import (
     CreateTextRequest
 )
-from pecha_api.texts.texts_service import create_new_text
+from pecha_api.texts.texts_service import (
+    create_new_text,
+    create_table_of_content
+)
 
 from pecha_api.users.users_service import (
     validate_and_extract_user_details
@@ -70,7 +74,7 @@ async def get_sheets(topic_id: str,language: str) -> SheetsResponse:
     return sheet_response
 
 # new service for get_sheet_by_id
-async def get_sheets_by_userID(user_id: str, language: str, skip: int, limit: int) -> SheetsResponse:
+async def get_sheets_by_user_id(user_id: str, language: str, skip: int, limit: int) -> SheetsResponse:
     if language is None:
         language = get("DEFAULT_LANGUAGE")
     publisher = None
@@ -106,9 +110,9 @@ async def get_sheets_by_userID(user_id: str, language: str, skip: int, limit: in
     sheet_response = SheetsResponse(sheets=sheets_list)
     return sheet_response
     
-async def create_new_sheet(create_sheet_request: CreateSheetRequest, token: str) -> CreateSheetResponse:
-    group_id =  await _create_group_(token=token)
-    text_id = await _create_text_(
+async def create_new_sheet(create_sheet_request: CreateSheetRequest, token: str) -> TableOfContent:
+    group_id =  await _create_sheet_group_(token=token)
+    text_id = await _create_sheet_text_(
         title=create_sheet_request.title, 
         token=token, 
         group_id=group_id
@@ -118,7 +122,30 @@ async def create_new_sheet(create_sheet_request: CreateSheetRequest, token: str)
         text_id=text_id,
         token=token
     )
+    sheet_table_of_content: TableOfContent = await _generate_and_upload_sheet_table_of_content(
+        create_sheet_request=create_sheet_request,
+        text_id=text_id,
+        segment_dict=sheet_segments,
+        token=token
+    )
+    return sheet_table_of_content
 
+async def _generate_and_upload_sheet_table_of_content(
+        create_sheet_request: CreateSheetRequest,
+        text_id: str,
+        segment_dict: Dict[str, str],
+        token: str
+) -> TableOfContent:
+    sheet_table_of_content = _generate_sheet_table_of_content_(
+        create_sheet_request=create_sheet_request, 
+        text_id=text_id,
+        segment_dict=segment_dict
+    )
+    new_sheet_table_of_content: TableOfContent = await create_table_of_content(
+        table_of_content_request=sheet_table_of_content,
+        token=token
+    )
+    return new_sheet_table_of_content
 
 async def _process_and_upload_sheet_segments(
         create_sheet_request: CreateSheetRequest,
@@ -134,10 +161,42 @@ async def _process_and_upload_sheet_segments(
         token=token
     )
     segment_dict = _generate_segment_dictionary_(new_segments=new_segments)
-    table_of_content = _generate_table_of_content_(create_sheet_request=create_sheet_request, text_id=text_id)
+    
+    return segment_dict
 
-def _generate_table_of_content_(create_sheet_request: CreateSheetRequest, text_id: str):
-    table_of_content
+def _generate_sheet_table_of_content_(create_sheet_request: CreateSheetRequest, text_id: str, segment_dict: Dict[str, str]) -> TableOfContent:
+    section = Section(
+        id=str(uuid.uuid4()),
+        section_number=1,
+        segments=[]
+    )
+    for source in create_sheet_request.source:
+        if hasattr(source, 'type') and source.type == SegmentType.SOURCE:
+            segment = TextSegment(
+                segment_number = source.position,
+                segment_id = source.source_segment_id
+            )
+        elif hasattr(source, 'type') and source.type == SegmentType.CONTENT:
+            content_hash_value = hashlib.sha256(source.content.encode()).hexdigest()
+            segment = TextSegment(
+                segment_number = source.position,
+                segment_id = segment_dict[content_hash_value]
+            )
+        elif hasattr(source, 'media_type'):
+            content_hash_value = hashlib.sha256(source.media_url.encode()).hexdigest()
+            segment = TextSegment(
+                segment_number = source.position,
+                segment_id = segment_dict[content_hash_value]
+            )
+        section.segments.append(segment)
+
+    table_of_content = TableOfContent(
+        text_id=text_id,
+        sections=[section]
+    )
+    
+    return table_of_content
+
 
 def _generate_segment_dictionary_(new_segments: SegmentResponse) -> Dict[str, str]:
     segment_dict = {}
@@ -153,7 +212,7 @@ def _generate_segment_creation_request_payload_(create_sheet_request: CreateShee
         segments=[]
     )
     for source in create_sheet_request.source:
-        if source.type == SegmentType.SOURCE:
+        if hasattr(source, 'type') and source.type != SegmentType.SOURCE:
             create_segment_request.segments.append(
                 CreateSegment(
                     content=source.content,
@@ -161,9 +220,17 @@ def _generate_segment_creation_request_payload_(create_sheet_request: CreateShee
                     mapping=[]
                 )
             )
+        elif hasattr(source, 'media_type'):
+            create_segment_request.segments.append(
+                CreateSegment(
+                    content=source.media_url,
+                    type=source.media_type,
+                    mapping=[]
+                )
+            )
     return create_segment_request
 
-async def _create_text_(title: str, token: str, group_id: str) -> str:
+async def _create_sheet_text_(title: str, token: str, group_id: str) -> str:
     user_details = validate_and_extract_user_details(token=token)
     create_text_request = CreateTextRequest(
         title=title,
@@ -176,7 +243,7 @@ async def _create_text_(title: str, token: str, group_id: str) -> str:
     return new_text.id
 
 
-async def _create_group_(token: str) -> str:
+async def _create_sheet_group_(token: str) -> str:
     create_group_request = CreateGroupRequest(
         type=GroupType.SHEET
     )

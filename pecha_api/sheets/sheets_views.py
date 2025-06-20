@@ -5,9 +5,13 @@ from starlette import status
 
 from typing import Optional
 from fastapi import APIRouter, Depends, UploadFile, File
+from fastapi.security import HTTPAuthorizationCredentials
+from typing import Annotated
 
 
-from .sheets_service import get_sheets, get_sheets_by_userID, create_new_sheet, upload_sheet_image_request
+
+
+from .sheets_service import get_sheets, get_sheets_by_user_id, create_new_sheet, upload_sheet_image_request
 from .sheets_response_models import CreateSheetRequest, SheetIdRequest
 
 oauth2_scheme = HTTPBearer()
@@ -29,7 +33,7 @@ async def get_sheets_by_user_id(
     skip: int = Query(default=0, ge=0, description="Number of records to skip"),
     limit: int = Query(default=10, ge=1, le=100, description="Number of records to return")
 ):
-    return await get_sheets_by_userID(
+    return await get_sheets_by_user_id(
         user_id=user_id,
         language=language,
         skip=skip,

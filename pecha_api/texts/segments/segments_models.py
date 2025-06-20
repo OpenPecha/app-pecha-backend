@@ -21,7 +21,7 @@ class Segment(Document):
     text_id: Optional[str] = None
     content: str
     mapping: Optional[List[Mapping]] = None
-    type: SegmentType
+    type: Optional[SegmentType] = None
 
     class Settings:
         collection = "segments"

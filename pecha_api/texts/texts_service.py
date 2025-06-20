@@ -175,7 +175,7 @@ async def create_new_text(
             published_date=new_text.published_date,
             published_by=new_text.published_by,
             categories=new_text.categories,
-            parent_id=new_text.parent_id
+            group_id=new_text.group_id
         )
     else:
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail=ErrorConstants.TOKEN_ERROR_MESSAGE)
