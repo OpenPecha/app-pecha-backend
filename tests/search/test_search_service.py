@@ -18,10 +18,10 @@ async def test_get_search_results_for_source_success():
 
     mock_elastic_response = _get_mock_elastic_source_response_()
 
-    mock_client = AsyncMock()
+    mock_client = Mock()
     mock_client.search = AsyncMock(return_value=mock_elastic_response)
 
-    with patch("pecha_api.search.search_service.search_client", new_callable=AsyncMock, return_value=mock_client):
+    with patch("pecha_api.search.search_service.search_client", new_callable=Mock, return_value=mock_client):
         response = await get_search_results(query="query", search_type=SearchType.SOURCE, skip=0, limit=2)
 
         assert response is not None
