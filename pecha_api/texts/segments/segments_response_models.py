@@ -71,14 +71,14 @@ class RelatedText(BaseModel):
 class Resources(BaseModel):
     sheets: int
 
-class SegmentInfos(BaseModel):
+class SegmentInfo(BaseModel):
     segment_id: str
     translations: Optional[int] = 0
     related_text: RelatedText
     resources: Resources
 
-class SegmentInfosResponse(BaseModel):
-    segment_infos: SegmentInfos
+class SegmentInfoResponse(BaseModel):
+    segment_info: SegmentInfo
 
 # segment's root mapping models
 

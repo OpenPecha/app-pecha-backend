@@ -11,7 +11,7 @@ from .segments_response_models import (
     SegmentResponse, 
     MappingResponse, 
     SegmentDTO, 
-    SegmentInfosResponse, 
+    SegmentInfoResponse, 
     SegmentRootMappingResponse
 )
 
@@ -29,7 +29,7 @@ from .segments_response_models import (
     SegmentCommentariesResponse,
     RelatedText, 
     Resources, 
-    SegmentInfos, 
+    SegmentInfo, 
     SegmentRootMappingResponse
 )
 
@@ -113,15 +113,15 @@ async def get_commentaries_by_segment_id(
         commentaries=commentaries
     )
 
-async def get_infos_by_segment_id(segment_id: str) -> SegmentInfosResponse:
+async def get_infos_by_segment_id(segment_id: str) -> SegmentInfoResponse:
     is_valid_segment = await SegmentUtils.validate_segment_exists(segment_id=segment_id)
     if not is_valid_segment:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=ErrorConstants.SEGMENT_NOT_FOUND_MESSAGE)
     mapped_segments = await get_related_mapped_segments(parent_segment_id=segment_id)
     counts = await SegmentUtils.get_count_of_each_commentary_and_version(mapped_segments)
     segment_root_mapping_count = await SegmentUtils.get_root_mapping_count(segment_id=segment_id)
-    return SegmentInfosResponse(
-        segment_infos= SegmentInfos(
+    return SegmentInfoResponse(
+        segment_info= SegmentInfo(
             segment_id=segment_id,
             translations=counts["version"],
             related_text=RelatedText(

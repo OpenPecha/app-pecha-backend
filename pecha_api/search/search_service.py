@@ -34,6 +34,7 @@ async def get_search_results(query: str, search_type: SearchType, text_id: str =
         )
         return sheet_search_response
 
+
 async def _source_search(
         query: str, 
         text_id: str, 
