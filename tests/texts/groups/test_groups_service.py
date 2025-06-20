@@ -17,6 +17,8 @@ from pecha_api.texts.groups.groups_response_models import (
     CreateGroupRequest
 )
 
+from pecha_api.texts.groups.groups_enums import GroupType
+
 @pytest.mark.asyncio
 async def test_validate_group_exists_success():
     group_id = "4d2f3498-3cc6-4bc6-9beb-37d2f7dc0163"
@@ -109,7 +111,7 @@ async def test_get_group_details_invalid_uuid():
 @pytest.mark.asyncio
 async def test_create_new_group_success():
     group_id = "4d2f3498-3cc6-4bc6-9beb-37d2f7dc0163"
-    type = "version"
+    type = GroupType.VERSION
     create_group_request = CreateGroupRequest(
         type=type
     )
@@ -117,22 +119,22 @@ async def test_create_new_group_success():
         id=group_id,
         type=type
     )
-    with patch("pecha_api.texts.groups.groups_service.verify_admin_access", return_value=True), \
+    with patch("pecha_api.texts.groups.groups_service.validate_user_exists", return_value=True), \
         patch("pecha_api.texts.groups.groups_service.create_group", new_callable=AsyncMock) as mock_create_group:
         mock_create_group.return_value = group_details
-        response = await create_new_group(create_group_request=create_group_request, token="admin_token")
+        response = await create_new_group(create_group_request=create_group_request, token="valid_token")
         assert response is not None
         assert isinstance(response, GroupDTO)
         assert response.id == group_id
-        assert response.type == type
+        assert response.type == type.value
 
 @pytest.mark.asyncio
 async def test_create_new_group_not_admin():
     create_group_request = CreateGroupRequest(
-        type="version"
+        type=GroupType.VERSION
     )
-    with patch("pecha_api.texts.groups.groups_service.verify_admin_access", return_value=False):
+    with patch("pecha_api.texts.groups.groups_service.validate_user_exists", return_value=False):
         with pytest.raises(HTTPException) as exc_info:
-            await create_new_group(create_group_request=create_group_request, token="admin_token")
-            assert exc_info.value.status_code == status.HTTP_403_FORBIDDEN
-            assert exc_info.value.detail == ErrorConstants.ADMIN_ERROR_MESSAGE
+            await create_new_group(create_group_request=create_group_request, token="valid_token")
+            assert exc_info.value.status_code == status.HTTP_401_UNAUTHORIZED
+            assert exc_info.value.detail == ErrorConstants.TOKEN_ERROR_MESSAGE

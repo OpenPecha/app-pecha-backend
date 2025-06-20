@@ -210,7 +210,7 @@ async def test_create_new_root_text():
     published_by = "pecha"
     type_ = "version"
     categories = []
-    with patch('pecha_api.texts.texts_service.verify_admin_access', return_value=True), \
+    with patch('pecha_api.texts.texts_service.validate_user_exists', return_value=True), \
             patch('pecha_api.texts.texts_service.create_text', new_callable=AsyncMock) as mock_create_text,\
             patch('pecha_api.texts.texts_service.validate_group_exists', new_callable=AsyncMock) as mock_validate_group_exists:
         mock_create_text.return_value = AsyncMock(
@@ -255,8 +255,8 @@ async def test_create_new_root_text():
         assert response.parent_id == parent_id
     
 @pytest.mark.asyncio
-async def test_create_new_root_text_not_admin():
-    with patch("pecha_api.texts.texts_service.verify_admin_access", return_value=False):
+async def test_create_new_root_text_invalid_user():
+    with patch("pecha_api.texts.texts_service.validate_user_exists", return_value=False):
         with pytest.raises(HTTPException) as exc_info:
             await create_new_text(
                 create_text_request=CreateTextRequest(
@@ -270,8 +270,8 @@ async def test_create_new_root_text_not_admin():
                 ),
                 token="user"
             )
-        assert exc_info.value.status_code == 403
-        assert exc_info.value.detail == ErrorConstants.ADMIN_ERROR_MESSAGE
+        assert exc_info.value.status_code == 401
+        assert exc_info.value.detail == ErrorConstants.TOKEN_ERROR_MESSAGE
 
 @pytest.mark.asyncio
 async def test_create_table_of_content_success():
@@ -298,7 +298,7 @@ async def test_create_table_of_content_success():
         ]
     )
 
-    with patch("pecha_api.texts.texts_service.verify_admin_access", return_value=True), \
+    with patch("pecha_api.texts.texts_service.validate_user_exists", return_value=True), \
             patch("pecha_api.texts.texts_service.TextUtils.validate_text_exists", new_callable=AsyncMock) as mock_validate_text_exists, \
             patch("pecha_api.texts.texts_service.SegmentUtils.validate_segments_exists", new_callable=AsyncMock) as mock_validate_segments_exists, \
             patch("pecha_api.texts.texts_service.create_table_of_content_detail", new_callable=AsyncMock) as mock_create_table_of_content_detail:
@@ -322,12 +322,12 @@ async def test_create_table_of_content_success():
         assert response.sections[0].segments[0].segment_number == table_of_content.sections[0].segments[0].segment_number
     
 @pytest.mark.asyncio
-async def test_create_table_of_content_not_admin():
-    with patch("pecha_api.texts.texts_service.verify_admin_access", return_value=False):
+async def test_create_table_of_content_invalid_user():
+    with patch("pecha_api.texts.texts_service.validate_user_exists", return_value=False):
         with pytest.raises(HTTPException) as exc_info:
             await create_table_of_content(table_of_content_request={}, token="user")
-        assert exc_info.value.status_code == 403
-        assert exc_info.value.detail == ErrorConstants.ADMIN_ERROR_MESSAGE
+        assert exc_info.value.status_code == 401
+        assert exc_info.value.detail == ErrorConstants.TOKEN_ERROR_MESSAGE
 
 @pytest.mark.asyncio
 async def test_create_table_of_content_invalid_text():
@@ -336,7 +336,7 @@ async def test_create_table_of_content_invalid_text():
         text_id="efb26a06-f373-450b-ba57-e7a8d4dd5b64",
         sections=[]
     )
-    with patch("pecha_api.texts.texts_service.verify_admin_access", return_value=True), \
+    with patch("pecha_api.texts.texts_service.validate_user_exists", return_value=True), \
         patch("pecha_api.texts.texts_utils.check_text_exists", new_callable=AsyncMock, return_value=False):
         with pytest.raises(HTTPException) as exc_info:
             await create_table_of_content(table_of_content_request=table_of_content, token="admin")
@@ -354,7 +354,7 @@ async def test_create_table_of_content_invalid_segment():
         "efb26a06-f373-450b-ba57-e7a8d4dd5b64",
         "efb26a06-f373-450b-ba57-e7a8d4dd5b65"
     ]
-    with patch("pecha_api.texts.texts_service.verify_admin_access", return_value=True), \
+    with patch("pecha_api.texts.texts_service.validate_user_exists", return_value=True), \
         patch("pecha_api.texts.texts_service.TextUtils.get_all_segment_ids", return_value=segment_ids), \
         patch("pecha_api.texts.texts_service.TextUtils.validate_text_exists", new_callable=AsyncMock, return_value=True), \
         patch("pecha_api.texts.segments.segments_utils.check_all_segment_exists", new_callable=AsyncMock, return_value=False):

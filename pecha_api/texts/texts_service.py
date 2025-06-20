@@ -32,7 +32,7 @@ from pecha_api.cache.cache_service import (
 )
 
 from .texts_utils import TextUtils
-from pecha_api.users.users_service import verify_admin_access
+from pecha_api.users.users_service import validate_user_exists
 from pecha_api.terms.terms_service import get_term
 from .segments.segments_utils import SegmentUtils
 
@@ -158,8 +158,8 @@ async def create_new_text(
         create_text_request: CreateTextRequest,
         token: str
 ) -> TextDTO:
-    is_admin = verify_admin_access(token=token)
-    if is_admin:
+    is_valid_user = validate_user_exists(token=token)
+    if is_valid_user:
         valid_group = await validate_group_exists(group_id=create_text_request.group_id)
         if not valid_group:
             raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=ErrorConstants.GROUP_NOT_FOUND_MESSAGE)
@@ -178,19 +178,19 @@ async def create_new_text(
             parent_id=new_text.parent_id
         )
     else:
-        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail=ErrorConstants.ADMIN_ERROR_MESSAGE)
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail=ErrorConstants.TOKEN_ERROR_MESSAGE)
 
 
 async def create_table_of_content(table_of_content_request: TableOfContent, token: str) -> TableOfContent:
-    is_admin = verify_admin_access(token=token)
-    if is_admin:
+    is_valid_user = validate_user_exists(token=token)
+    if is_valid_user:
         await TextUtils.validate_text_exists(text_id=table_of_content_request.text_id)
         segment_ids = TextUtils.get_all_segment_ids(table_of_content=table_of_content_request)
         await SegmentUtils.validate_segments_exists(segment_ids=segment_ids)
         table_of_content = await create_table_of_content_detail(table_of_content_request=table_of_content_request)
         return table_of_content
     else:
-        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail=ErrorConstants.ADMIN_ERROR_MESSAGE)
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail=ErrorConstants.TOKEN_ERROR_MESSAGE)
 
 
 # PRIVATE FUNCTIONS
