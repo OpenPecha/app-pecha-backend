@@ -32,7 +32,12 @@ from pecha_api.users.users_service import (
     validate_and_extract_user_details
 )
 from pecha_api.texts.texts_enums import TextType
-from pecha_api.texts.texts_response_models import TextDTO
+from pecha_api.texts.texts_response_models import (
+    TextDTO,
+    TableOfContent,
+    Section,
+    TextSegment
+)
 
 from pecha_api.texts.segments.segments_models import SegmentType
 from pecha_api.texts.segments.segments_response_models import (
@@ -129,7 +134,10 @@ async def _process_and_upload_sheet_segments(
         token=token
     )
     segment_dict = _generate_segment_dictionary_(new_segments=new_segments)
-    table_of_content = _generate_table_of_content_(create_sheet_request=create_sheet_request)
+    table_of_content = _generate_table_of_content_(create_sheet_request=create_sheet_request, text_id=text_id)
+
+def _generate_table_of_content_(create_sheet_request: CreateSheetRequest, text_id: str):
+    table_of_content
 
 def _generate_segment_dictionary_(new_segments: SegmentResponse) -> Dict[str, str]:
     segment_dict = {}
