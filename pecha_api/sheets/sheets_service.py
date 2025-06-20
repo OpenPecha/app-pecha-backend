@@ -2,19 +2,12 @@ import os
 import uuid
 from typing import Optional, Dict
 import hashlib
-import datetime
-from fastapi import APIRouter, Depends, UploadFile, File
+from fastapi import UploadFile
 
 
 from pecha_api.config import get
-from .sheets_repository import get_sheets_by_topic, get_users_sheets, create_sheet
-from .sheets_response_models import SheetModel, Publisher, SheetsResponse, CreateSheetRequest, SheetImageResponse, SheetIdRequest, CreateSheetResponse
-from ..users.users_repository import get_user_by_username
-from ..db.database import SessionLocal
+from .sheets_response_models import CreateSheetRequest, SheetImageResponse
 from ..uploads.S3_utils import upload_bytes, generate_presigned_upload_url
-from ..topics.topics_repository import get_topic_by_id
-
-from pecha_api.utils import Utils
 from pecha_api.image_utils import ImageUtils
 
 from pecha_api.texts.groups.groups_response_models import (
