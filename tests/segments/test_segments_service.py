@@ -93,7 +93,7 @@ async def test_create_new_segment():
         ]
     )
 
-    with patch('pecha_api.texts.segments.segments_service.verify_admin_access', return_value=True), \
+    with patch('pecha_api.texts.segments.segments_service.validate_user_exists', return_value=True), \
         patch('pecha_api.texts.segments.segments_service.TextUtils.validate_text_exists', new_callable=AsyncMock, return_value=True), \
         patch('pecha_api.texts.segments.segments_service.create_segment', new_callable=AsyncMock) as mock_create_segment:
         mock_segment = type('Segment', (), {
@@ -129,7 +129,7 @@ async def test_create_new_segment():
 
 
 @pytest.mark.asyncio
-async def test_create_new_segment_error_admin():
+async def test_create_new_segment_invalid_user():
     """
     Test case for the create_new_segment function fails due to admin
     """
@@ -140,14 +140,14 @@ async def test_create_new_segment_error_admin():
         ]
     )
 
-    with patch('pecha_api.texts.segments.segments_service.verify_admin_access', return_value=False):
+    with patch('pecha_api.texts.segments.segments_service.validate_user_exists', return_value=False):
         with pytest.raises(HTTPException) as exc_info:
             await create_new_segment(
                 create_segment_request=create_segment_request,
                 token="no_admin"
             )
-        assert exc_info.value.status_code == 403
-        assert exc_info.value.detail == ErrorConstants.ADMIN_ERROR_MESSAGE
+        assert exc_info.value.status_code == 401
+        assert exc_info.value.detail == ErrorConstants.TOKEN_ERROR_MESSAGE
 
 @pytest.mark.asyncio
 async def test_validate_segment_exists_success():

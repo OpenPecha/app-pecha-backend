@@ -33,7 +33,7 @@ from .segments_response_models import (
     SegmentRootMappingResponse
 )
 
-from ...users.users_service import verify_admin_access
+from ...users.users_service import validate_user_exists
 
 
 async def get_segment_details_by_id(segment_id: str) -> SegmentDTO:
@@ -51,8 +51,8 @@ async def get_segment_details_by_id(segment_id: str) -> SegmentDTO:
     )
 
 async def create_new_segment(create_segment_request: CreateSegmentRequest, token: str) -> SegmentResponse:
-    is_admin = verify_admin_access(token=token)
-    if is_admin:
+    is_valid_user = validate_user_exists(token=token)
+    if is_valid_user:
         await TextUtils.validate_text_exists(text_id=create_segment_request.text_id)
         new_segment = await create_segment(create_segment_request=create_segment_request)
         segments =  [
@@ -66,7 +66,7 @@ async def create_new_segment(create_segment_request: CreateSegmentRequest, token
         ]
         return SegmentResponse(segments=segments)
     else:
-        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail=ErrorConstants.ADMIN_ERROR_MESSAGE)
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail=ErrorConstants.TOKEN_ERROR_MESSAGE)
 
 async def get_translations_by_segment_id(segment_id: str) -> SegmentTranslationsResponse:
     """
