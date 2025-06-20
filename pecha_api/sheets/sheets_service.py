@@ -1,6 +1,7 @@
 import os
 import uuid
-from typing import Optional
+from typing import Optional, Dict
+import hashlib
 
 from fastapi import APIRouter, Depends, UploadFile, File
 
@@ -32,6 +33,14 @@ from pecha_api.users.users_service import (
 )
 from pecha_api.texts.texts_enums import TextType
 from pecha_api.texts.texts_response_models import TextDTO
+
+from pecha_api.texts.segments.segments_models import SegmentType
+from pecha_api.texts.segments.segments_response_models import (
+    CreateSegment,
+    CreateSegmentRequest,
+    SegmentResponse
+)
+from pecha_api.texts.segments.segments_service import create_new_segment
 
 async def get_sheets(topic_id: str,language: str) -> SheetsResponse:
     sheets = get_sheets_by_topic(topic_id=topic_id)
@@ -99,14 +108,53 @@ async def create_new_sheet(create_sheet_request: CreateSheetRequest, token: str)
         token=token, 
         group_id=group_id
     )
-    sheet_segments = await _process_and_upload_sheet_segments(
+    sheet_segments: Dict[str, str] = await _process_and_upload_sheet_segments(
         create_sheet_request=create_sheet_request,
         text_id=text_id,
         token=token
     )
 
 
-    
+async def _process_and_upload_sheet_segments(
+        create_sheet_request: CreateSheetRequest,
+        text_id: str,
+        token: str
+) -> Dict[str, str]:
+    create_segment_request_payload = _generate_segment_creation_request_payload_(
+        create_sheet_request=create_sheet_request,
+        text_id=text_id
+    )
+    new_segments: SegmentResponse = await create_new_segment(
+        create_segment_request=create_segment_request_payload,
+        token=token
+    )
+    segment_dict = _generate_segment_dictionary_(new_segments=new_segments)
+    table_of_content = _generate_table_of_content_(create_sheet_request=create_sheet_request)
+
+def _generate_segment_dictionary_(new_segments: SegmentResponse) -> Dict[str, str]:
+    segment_dict = {}
+    for segment in new_segments.segments:
+        if segment.type != SegmentType.SOURCE:
+            content_hash_value = hashlib.sha256(segment.content.encode()).hexdigest()
+            segment_dict[content_hash_value] = segment.id
+    return segment_dict
+
+def _generate_segment_creation_request_payload_(create_sheet_request: CreateSheetRequest, text_id: str) -> CreateSegmentRequest:
+    create_segment_request = CreateSegmentRequest(
+        text_id=text_id,
+        segments=[]
+    )
+    for source in create_sheet_request.source:
+        if source.type == SegmentType.SOURCE:
+            create_segment_request.segments.append(
+                CreateSegment(
+                    content=source.content,
+                    type=source.type,
+                    mapping=[]
+                )
+            )
+    return create_segment_request
+
 async def _create_text_(title: str, token: str, group_id: str) -> str:
     user_details = validate_and_extract_user_details(token=token)
     create_text_request = CreateTextRequest(
