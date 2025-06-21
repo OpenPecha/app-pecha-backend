@@ -123,3 +123,16 @@ class Text(Document):
         )
         return texts
 
+    @classmethod
+    async def get_texts_by_type(cls, text_type: TextType, skip: int, limit: int) -> List["Text"]:
+        query = {
+            "type": text_type
+        }
+        texts = (
+            await cls.find(query)
+            .skip(skip)
+            .limit(limit)
+            .to_list()
+        )
+        return texts
+

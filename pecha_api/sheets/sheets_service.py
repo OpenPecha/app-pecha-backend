@@ -1,6 +1,6 @@
 import os
 import uuid
-from typing import Optional, Dict
+from typing import Optional, Dict, List
 import hashlib
 from fastapi import UploadFile
 
@@ -22,7 +22,8 @@ from pecha_api.texts.texts_response_models import (
 )
 from pecha_api.texts.texts_service import (
     create_new_text,
-    create_table_of_content
+    create_table_of_content,
+    get_texts_by_text_type
 )
 
 from pecha_api.users.users_service import (
@@ -210,3 +211,6 @@ async def _create_sheet_group_(token: str) -> str:
     )
     new_group: GroupDTO = await create_new_group(create_group_request=create_group_request, token=token)
     return new_group.id
+
+async def get_sheets(skip: int = 0, limit: int = 10) -> List[TextDTO]:
+    return await get_texts_by_text_type(text_type=TextType.SHEET.value, skip=skip, limit=limit)
