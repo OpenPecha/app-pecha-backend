@@ -32,7 +32,6 @@ async def get_texts_by_ids(text_ids: List[str]) -> Dict[str, TextDTO]:
             id=str(text.id),
             title=text.title,
             language=text.language,
-            parent_id=text.parent_id,
             type=text.type,
             group_id=text.group_id,
             is_published=text.is_published,
@@ -40,7 +39,8 @@ async def get_texts_by_ids(text_ids: List[str]) -> Dict[str, TextDTO]:
             updated_date=text.updated_date,
             published_date=text.published_date,
             published_by=text.published_by,
-            categories=text.categories
+            categories=text.categories,
+            views=text.views
         )
         for text in list_of_texts_detail
     }
@@ -72,15 +72,15 @@ async def get_texts_by_group_id(group_id: str, skip: int, limit: int) -> List[Te
             id=str(text.id),
             title=text.title,
             language=text.language,
-            parent_id=text.parent_id,
-            type=text.type,
             group_id=text.group_id,
+            type=text.type,
             is_published=text.is_published,
             created_date=text.created_date,
             updated_date=text.updated_date,
             published_date=text.published_date,
             published_by=text.published_by,
-            categories=text.categories
+            categories=text.categories,
+            views=text.views
         )
         for text in texts
     ]
@@ -91,13 +91,14 @@ async def create_text(create_text_request: CreateTextRequest) -> Text:
         title=create_text_request.title,
         language=create_text_request.language,
         group_id=create_text_request.group_id,
-        is_published=True,
+        is_published=create_text_request.isPublished,
         created_date=str(datetime.now(timezone.utc)),
         updated_date=str(datetime.now(timezone.utc)),
         published_date=str(datetime.now(timezone.utc)),
         published_by=create_text_request.published_by,
         type=create_text_request.type,
-        categories=create_text_request.categories
+        categories=create_text_request.categories,
+        views=create_text_request.views
     )
     saved_text = await new_text.insert()
     return saved_text

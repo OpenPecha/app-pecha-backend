@@ -10,25 +10,27 @@ from .texts_enums import TextType
 class CreateTextRequest(BaseModel):
     title: str
     language: str
+    isPublished: bool = False
     parent_id: Optional[str] = None
     group_id: str
     published_by: str
     type: TextType
     categories: Optional[List[str]] = None
+    views: Optional[int] = 0
 
 class TextDTO(BaseModel):
     id: str
     title: str
     language: str
+    group_id: str
     type: str
-    group_id: Optional[str] = None
     is_published: bool
     created_date: str
     updated_date: str
     published_date: str
     published_by: str
     categories: Optional[List[str]] = None
-    parent_id: Optional[str] = None
+    views: Optional[int] = None
 
 # Text TOC Response Models
 class Translation(BaseModel):

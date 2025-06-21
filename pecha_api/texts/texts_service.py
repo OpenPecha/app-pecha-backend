@@ -168,6 +168,7 @@ async def create_new_text(
             id=str(new_text.id),
             title=new_text.title,
             language=new_text.language,
+            group_id=new_text.group_id,
             type=new_text.type,
             is_published=new_text.is_published,
             created_date=new_text.created_date,
@@ -175,7 +176,7 @@ async def create_new_text(
             published_date=new_text.published_date,
             published_by=new_text.published_by,
             categories=new_text.categories,
-            group_id=new_text.group_id
+            views=new_text.views
         )
     else:
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail=ErrorConstants.TOKEN_ERROR_MESSAGE)
@@ -219,7 +220,7 @@ async def _mapping_table_of_content(text: TextDTO, table_of_content: TableOfCont
     return detail_table_of_content
 
 async def _receive_table_of_content(text_id: str, text_details_request: TextDetailsRequest):
-    table_of_content: TableOfContent = None
+    table_of_content = None
     if text_details_request.content_id is not None:
         table_of_content = await get_table_of_content_by_content_id(
             content_id=text_details_request.content_id,
@@ -275,15 +276,14 @@ async def _get_texts_by_term_id(term_id: str, language: str, skip: int, limit: i
             id=str(text.id),
             title=text.title,
             language=text.language,
-            type="commentary",
             group_id=text.group_id,
+            type="commentary",
             is_published=text.is_published,
             created_date=text.created_date,
             updated_date=text.updated_date,
             published_date=text.published_date,
             published_by=text.published_by,
-            categories=text.categories,
-            parent_id=text.parent_id
+            categories=text.categories
         )
         for text in commentary
     ]
@@ -293,15 +293,14 @@ async def _get_texts_by_term_id(term_id: str, language: str, skip: int, limit: i
                 id=str(root_text.id),
                 title=root_text.title,
                 language=root_text.language,
-                type="root_text",
                 group_id=root_text.group_id,
+                type="root_text",
                 is_published=root_text.is_published,
                 created_date=root_text.created_date,
                 updated_date=root_text.updated_date,
                 published_date=root_text.published_date,
                 published_by=root_text.published_by,
-                categories=root_text.categories,
-                parent_id=root_text.parent_id
+                categories=root_text.categories
             )
         )
     return text_list
@@ -321,7 +320,6 @@ def _get_list_of_text_version_response_model(versions: List[TextDTO], versions_t
         TextVersion(
             id=str(version.id),
             title=version.title,
-            parent_id=version.parent_id,
             language=version.language,
             type=version.type,
             group_id=version.group_id,

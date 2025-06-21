@@ -25,6 +25,7 @@ MOCK_TEXT_DTO = TextDTO(
     id="123e4567-e89b-12d3-a456-426614174000",
     title="Test Text",
     language="bo",
+    group_id="123e4567-e89b-12d3-a456-426614174000",
     type="root_text",
     is_published=True,
     created_date="2025-01-01T00:00:00",
@@ -32,7 +33,7 @@ MOCK_TEXT_DTO = TextDTO(
     published_date="2025-01-01T00:00:00",
     published_by="test_user",
     categories=[],
-    parent_id=None
+    views=0
 )
 
 # Create a simple section for the table of contents
@@ -45,8 +46,7 @@ mock_section = Section(
     sections=[],
     created_date="2025-01-01T00:00:00",
     updated_date="2025-01-01T00:00:00",
-    published_date="2025-01-01T00:00:00",
-    published_by="test_user"
+    published_date="2025-01-01T00:00:00"
 )
 
 # Create a table of content with the section
