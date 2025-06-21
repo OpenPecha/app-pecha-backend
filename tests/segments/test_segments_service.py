@@ -31,6 +31,7 @@ from pecha_api.texts.segments.segments_response_models import (
     SegmentRootMappingResponse,
     SegmentRootMapping
 )
+from pecha_api.texts.segments.segments_enum import SegmentType
 from pecha_api.error_contants import ErrorConstants
 
 @pytest.mark.asyncio
@@ -40,7 +41,8 @@ async def test_get_translations_by_segment_id_success():
         id=segment_id,
         text_id="efb26a06-f373-450b-ba57-e7a8d4dd5b64",
         content="To the buddhas: Vipaśyin,<br> Śikhin, Viśvabhū,<br>   Krakucchanda, Kanakamuni,<br> and Kāśyapa,<br>   And Śākyamuni—Gautama,<br> deity of all deities,   <br>To the seven warrior-like buddhas, I pay homage!",
-        mapping=[]
+        mapping=[],
+        type=SegmentType.SOURCE
     )
     translations = [
         SegmentTranslation(
@@ -89,7 +91,11 @@ async def test_create_new_segment():
     create_segment_request = CreateSegmentRequest(
         text_id="efb26a06-f373-450b-ba57-e7a8d4dd5b64",
         segments=[
-            CreateSegment(content="content", mapping=[])
+            CreateSegment(
+                content="content", 
+                mapping=[],
+                type=SegmentType.SOURCE
+            )
         ]
     )
 
@@ -101,11 +107,13 @@ async def test_create_new_segment():
             'text_id': "efb26a06-f373-450b-ba57-e7a8d4dd5b64",
             'content': "content",
             'mapping': [],
+            'type': SegmentType.SOURCE,
             'model_dump': lambda self: {
                 'id': self.id,
                 'text_id': self.text_id,
                 'content': self.content,
-                'mapping': self.mapping
+                'mapping': self.mapping,
+                'type': self.type
             }
         })()
         mock_create_segment.return_value = [mock_segment]
@@ -121,7 +129,8 @@ async def test_create_new_segment():
                     id="efb26a06-f373-450b-ba57-e7a8d4dd5b64",
                     text_id="efb26a06-f373-450b-ba57-e7a8d4dd5b64",
                     content="content",
-                    mapping=[]
+                    mapping=[],
+                    type=SegmentType.SOURCE
                 )
             ]
         )
@@ -136,7 +145,11 @@ async def test_create_new_segment_invalid_user():
     create_segment_request = CreateSegmentRequest(
         text_id="efb26a06-f373-450b-ba57-e7a8d4dd5b64",
         segments=[
-            CreateSegment(content="content", mapping=[])
+            CreateSegment(
+                content="content", 
+                mapping=[],
+                type=SegmentType.SOURCE
+            )
         ]
     )
 
@@ -193,11 +206,13 @@ async def test_get_segment_details_by_id_success():
         'text_id': "text123",
         'content': "test content",
         'mapping': [],
+        'type': SegmentType.SOURCE,
         'model_dump': lambda self: {
             'id': self.id,
             'text_id': self.text_id,
             'content': self.content,
-            'mapping': self.mapping
+            'mapping': self.mapping,
+            'type': self.type
         }
     })()
     
@@ -209,6 +224,7 @@ async def test_get_segment_details_by_id_success():
         assert response.text_id == "text123"
         assert response.content == "test content"
         assert response.mapping == []
+        assert response.type == SegmentType.SOURCE
 
 @pytest.mark.asyncio
 async def test_get_segment_details_by_id_not_found():
@@ -234,12 +250,13 @@ async def test_get_commentaries_by_segment_id_success():
             content=f"content_{i}",
             mapping=[
                 MappingResponse(
-                    text_id=f"parent_text_id",
+                    text_id="parent_text_id",
                     segments=[
                         parent_segment_id
                     ]
                 )
-            ]
+            ],
+            type=SegmentType.SOURCE
         )
         for i in range(1,6)
     ]
@@ -287,7 +304,8 @@ async def test_get_infos_by_segment_id_success():
             id=f"id_{i}",
             text_id=f"text_id_{i}",
             content=f"content_{i}",
-            mapping=[]
+            mapping=[],
+            type=SegmentType.SOURCE
         )
         for i in range(1,6)
     ]
@@ -305,6 +323,7 @@ async def test_get_infos_by_segment_id_success():
         assert response.segment_infos.translations == 1
         assert response.segment_infos.related_text.commentaries == 2
         assert response.segment_infos.related_text.root_text == 3
+
 
 @pytest.mark.asyncio
 async def test_get_infos_by_segment_id_invalid_segment_id():
@@ -325,7 +344,8 @@ async def test_get_root_text_mapping_by_segment_id_success():
             'id': segment_id,
             'text_id': "efb26a06-f373-450b-ba57-e7a8d4dd5b64",
             'content': "test content",
-            'mapping': []
+            'mapping': [],
+            'type': SegmentType.SOURCE
         })
         mock_get_segment_root_mapping_details.return_value = [
             SegmentRootMapping(

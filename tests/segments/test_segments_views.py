@@ -4,10 +4,15 @@ from fastapi import status, HTTPException
 from uuid import uuid4
 from pecha_api.app import api
 
-from pecha_api.texts.segments.segments_response_models import CreateSegmentRequest, CreateSegment, \
-    SegmentTranslationsResponse, SegmentTranslation
+from pecha_api.texts.segments.segments_response_models import (
+    CreateSegmentRequest, 
+    CreateSegment,
+    SegmentTranslationsResponse, 
+    SegmentTranslation
+)
 from pecha_api.error_contants import ErrorConstants
 from pecha_api.texts.segments.segments_response_models import ParentSegment
+from pecha_api.texts.segments.segments_enum import SegmentType
 
 client = TestClient(api)
 
@@ -113,7 +118,8 @@ def test_create_segment_success(mock_create_segment):
                 content="New segment content",
                 mapping=[]
             )
-        ]
+        ],
+        type=SegmentType.SOURCE
     )
     mock_response = {
         "segments": [
@@ -121,7 +127,8 @@ def test_create_segment_success(mock_create_segment):
             "id": segment_id,
             "text_id": segment_request.text_id,
             "content": segment_request.segments[0].content,
-            "mapping": segment_request.segments[0].mapping
+            "mapping": segment_request.segments[0].mapping,
+            "type": segment_request.segments[0].type
             }
         ]
 
@@ -152,7 +159,8 @@ def test_create_segment_unauthorized():
                 content="New segment content",
                 mapping=[]
             )
-        ]
+        ],
+        type=SegmentType.SOURCE
     )
     
     # Make request without auth token

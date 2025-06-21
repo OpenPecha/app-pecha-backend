@@ -4,7 +4,6 @@ from starlette import status
 
 from pecha_api.utils import Utils
 from pecha_api.config import get
-from pecha_api.sheets.sheets_service import get_sheets
 from ..users.users_service import verify_admin_access
 from .topics_response_models import TopicsResponse, TopicModel, CreateTopicRequest
 from .topics_repository import get_topics_by_parent, create_topic, get_child_count, get_term_by_id, get_topic_by_id
@@ -59,12 +58,3 @@ async def get_topic(topic_id: str, language: str) -> Optional[TopicModel]:
             has_child=selected_topic.has_sub_child
         )
     return None
-
-
-def get_sheets_by_topic(topic_id: str, language: str):
-    selected_term = get_term_by_id(topic_id=topic_id)
-    if selected_term:
-        sheet_response = get_sheets(topic_id=selected_term.id, language=language)
-        return sheet_response
-    else:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Topic not found")

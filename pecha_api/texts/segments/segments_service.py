@@ -47,7 +47,8 @@ async def get_segment_details_by_id(segment_id: str) -> SegmentDTO:
         id=str(segment.id),
         text_id=segment.text_id,
         content=segment.content,
-        mapping=mapping_responses
+        mapping=mapping_responses,
+        type=segment.type
     )
 
 async def create_new_segment(create_segment_request: CreateSegmentRequest, token: str) -> SegmentResponse:

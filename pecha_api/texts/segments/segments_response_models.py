@@ -2,7 +2,7 @@ from pydantic import BaseModel
 from typing import List, Optional
 from .segments_models import Mapping
 
-from .segments_models import SegmentType
+from .segments_enum import SegmentType
 
 
 class CreateSegment(BaseModel):

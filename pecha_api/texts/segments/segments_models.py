@@ -2,14 +2,8 @@ from typing import List, Optional
 import uuid
 from pydantic import BaseModel, Field
 from beanie import Document
-from enum import Enum
 
-class SegmentType(Enum):
-    SOURCE = "text"
-    CONTENT = "content"
-    AUDIO = "audio"
-    IMAGE = "image"
-    VIDEO = "video"
+from .segments_enum import SegmentType
 
 class Mapping(BaseModel):
     text_id: str
@@ -18,10 +12,10 @@ class Mapping(BaseModel):
 
 class Segment(Document):
     id: uuid.UUID = Field(default_factory=uuid.uuid4)
-    text_id: Optional[str] = None
+    text_id: str
     content: str
     mapping: Optional[List[Mapping]] = None
-    type: Optional[SegmentType] = None
+    type: SegmentType
 
     class Settings:
         collection = "segments"
