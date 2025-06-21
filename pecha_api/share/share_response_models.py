@@ -8,8 +8,11 @@ from .share_enums import (
 class ShareRequest(BaseModel):
     logo: bool = False
     segment_id: Optional[str] = None
+    content_id: Optional[str] = None
+    text_id: Optional[str] = None
+    content_index: Optional[int] = None
     language: Optional[str] = None
-    url: str
+    url: Optional[str] = None
     text_color: Optional[TextColor] = TextColor.DEFAULT
     bg_color: Optional[BgColor] = BgColor.DEFAULT
     tags: Optional[str] = None

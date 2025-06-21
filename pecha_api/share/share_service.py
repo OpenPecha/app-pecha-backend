@@ -23,6 +23,7 @@ IMAGE_PATH = "pecha_api/share/static/img/output.png"
 MEDIA_TYPE = "image/png"
 DEFAULT_OG_TITLE = "PECHA"
 DEFAULT_OG_DESCRIPTION = "PECHA"
+PECHA_FRONTEND_ENDPOINT = "https://pecha-frontend-12552055234-4f99e0e.onrender.com/texts/text-details"
 
 async def get_generated_image():
     try:    
@@ -87,6 +88,14 @@ async def _generate_segment_content_image_(share_request: ShareRequest):
 
 def _generate_short_url_payload_(share_request: ShareRequest, og_description: str) -> dict:
 
+    if share_request.url is None:
+        share_request.url = _generate_url_(
+            segment_id=share_request.segment_id,
+            content_id=share_request.content_id,
+            text_id=share_request.text_id,
+            content_index=share_request.content_index,
+        )
+
     pecha_backend_endpoint = get("PECHA_BACKEND_ENDPOINT")
     image_url = f"{pecha_backend_endpoint}/share/image?segment_id={share_request.segment_id}&language={share_request.language}&logo={share_request.logo}"
     payload = {
@@ -98,4 +107,10 @@ def _generate_short_url_payload_(share_request: ShareRequest, og_description: st
     }
     return payload
 
-
+def _generate_url_(
+        segment_id: str,
+        content_id: str,
+        text_id: str,
+        content_index: int
+) -> str:
+    return f"{PECHA_FRONTEND_ENDPOINT}?segment_id={segment_id}&contentId={content_id}&text_id={text_id}&contentIndex={content_index}"
