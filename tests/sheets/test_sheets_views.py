@@ -7,11 +7,7 @@ from pecha_api.sheets.sheets_views import (
 )
 from pecha_api.sheets.sheets_response_models import (
     CreateSheetRequest,
-    Source,
-    Content,
-    Media
 )
-from pecha_api.texts.segments.segments_enum import SegmentType
 
 from pecha_api.texts.texts_response_models import TableOfContent, Section, TextSegment
 
