@@ -67,6 +67,7 @@ async def update_segment_mapping(text_mapping_request: TextMappingRequest, token
                 id=str(segment.id),
                 text_id=segment.text_id,
                 content=segment.content,
+                type=segment.type,
                 mapping=[MappingResponse(**mapping.model_dump()) for mapping in segment.mapping]
             ) for segment in updated_segments
         ]
@@ -113,6 +114,7 @@ async def delete_segment_mapping(text_mapping_request: TextMappingRequest,token:
                 id=str(segment.id),
                 text_id=segment.text_id,
                 content=segment.content,
+                type=segment.type,
                 mapping=[MappingResponse(**mapping.model_dump()) for mapping in segment.mapping]
             ) for segment in deleted_segments
         ]
