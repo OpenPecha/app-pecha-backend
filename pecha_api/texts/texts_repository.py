@@ -116,3 +116,7 @@ async def get_contents_by_id(text_id: str) -> List[TableOfContent]:
     
 async def get_table_of_content_by_content_id(content_id: str, skip: int, limit: int) -> Optional[TableOfContent]:
     return await TableOfContent.get_table_of_content_by_content_id(content_id=content_id, skip=skip, limit=limit)
+
+
+async def delete_table_of_content_by_text_id(text_id: str):
+    return await TableOfContent.delete_table_of_content_by_text_id(text_id=text_id)

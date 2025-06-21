@@ -70,3 +70,7 @@ class Segment(Document):
             }
         }
         return await cls.find(query).to_list()
+    
+    @classmethod
+    async def delete_segment_by_text_id(cls, text_id: str):
+        return await cls.delete_many(cls.text_id == text_id)

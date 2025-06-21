@@ -85,3 +85,10 @@ async def get_related_mapped_segments(parent_segment_id: str) -> List[SegmentDTO
     except CollectionWasNotInitialized as e:
         logging.debug(e)
         return []
+
+async def delete_segments_by_text_id(text_id: str):
+    try:
+        await Segment.delete_segment_by_text_id(text_id=text_id)
+    except CollectionWasNotInitialized as e:
+        logging.debug(e)
+        return False

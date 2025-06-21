@@ -29,6 +29,16 @@ async def create_sheet(
         token=authentication_credential.credentials
     )
 
+@sheets_router.put("/{sheet_id}", status_code=status.HTTP_200_OK)
+async def update_sheet(
+    sheet_id: str,
+    authentication_credential: Annotated[HTTPAuthorizationCredentials, Depends(oauth2_scheme)],
+):
+    return await update_sheet_by_id(
+        sheet_id=sheet_id,
+        token=authentication_credential.credentials
+    )
+
 @sheets_router.post("/upload", status_code=status.HTTP_201_CREATED)
 def upload_sheet_image(sheet_id: Optional[str] = None, file: UploadFile = File(...)):
     return upload_sheet_image_request(sheet_id=sheet_id, file=file)

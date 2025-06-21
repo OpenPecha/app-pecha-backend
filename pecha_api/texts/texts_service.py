@@ -9,7 +9,8 @@ from .texts_repository import (
     create_table_of_content_detail,
     get_contents_by_id,
     get_table_of_content_by_content_id,
-    get_sections_count_of_table_of_content
+    get_sections_count_of_table_of_content,
+    delete_table_of_content_by_text_id
 )
 from .texts_response_models import (
     TableOfContent,
@@ -84,6 +85,8 @@ async def get_table_of_contents_by_text_id(text_id: str) -> TableOfContentRespon
         ]
     )
 
+async def remove_table_of_content_by_text_id(text_id: str):
+    return await delete_table_of_content_by_text_id(text_id=text_id)
 
 async def get_text_details_by_text_id(
         text_id: str,

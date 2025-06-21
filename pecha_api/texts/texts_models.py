@@ -20,6 +20,10 @@ class TableOfContent(Document):
     @classmethod
     async def get_table_of_contents_by_text_id(cls, text_id: str) -> List["TableOfContent"]: # this methods is getting all the available table of content for a text
         return await cls.find(cls.text_id == text_id).to_list()
+
+    @classmethod
+    async def delete_table_of_content_by_text_id(cls, text_id: str):
+        return await cls.delete_many(cls.text_id == text_id)
     
     @classmethod
     async def get_sections_count(cls, content_id: str) -> int:

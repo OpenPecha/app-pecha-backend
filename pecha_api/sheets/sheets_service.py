@@ -2,13 +2,16 @@ import os
 import uuid
 from typing import Optional, Dict
 import hashlib
-from fastapi import UploadFile
+from fastapi import UploadFile, HTTPException, status
 
 
+from pecha_api.error_contants import ErrorConstants
 from pecha_api.config import get
 from .sheets_response_models import CreateSheetRequest, SheetImageResponse
 from ..uploads.S3_utils import upload_bytes, generate_presigned_upload_url
 from pecha_api.image_utils import ImageUtils
+
+from pecha_api.users.users_service import validate_user_exists
 
 from pecha_api.texts.groups.groups_response_models import (
     CreateGroupRequest,
@@ -22,7 +25,8 @@ from pecha_api.texts.texts_response_models import (
 )
 from pecha_api.texts.texts_service import (
     create_new_text,
-    create_table_of_content
+    create_table_of_content,
+    remove_table_of_content_by_text_id
 )
 
 from pecha_api.users.users_service import (
@@ -42,7 +46,10 @@ from pecha_api.texts.segments.segments_response_models import (
     CreateSegmentRequest,
     SegmentResponse
 )
-from pecha_api.texts.segments.segments_service import create_new_segment
+from pecha_api.texts.segments.segments_service import (
+    create_new_segment,
+    remove_segments_by_text_id
+)
 
     
 async def create_new_sheet(create_sheet_request: CreateSheetRequest, token: str):
@@ -67,7 +74,18 @@ async def create_new_sheet(create_sheet_request: CreateSheetRequest, token: str)
         "sheet_id": text_id,
     }
 
+async def update_sheet_by_id(sheet_id: str, token: str):
+    is_valid_user = validate_user_exists(token=token)
+    if not is_valid_user:
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail=ErrorConstants.TOKEN_ERROR_MESSAGE)
 
+    await remove_segments_by_text_id(text_id=sheet_id)
+    await remove_table_of_content_by_text_id(text_id=sheet_id)
+
+    await _update_text_details_(sheet_id=sheet_id)
+
+async def _update_text_details_(sheet_id: str):
+    pass
 
 def upload_sheet_image_request(sheet_id: Optional[str], file: UploadFile) -> SheetImageResponse:
     # Validate and compress the uploaded image
