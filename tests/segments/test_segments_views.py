@@ -74,7 +74,6 @@ def test_get_translations_with_pagination(mock_get_translations):
     mock_response = SegmentTranslationsResponse(
         parent_segment=ParentSegment(
             segment_id=segment_id,
-            segment_number=1,
             content="Test segment content"
         ),
         translations=[
@@ -116,10 +115,10 @@ def test_create_segment_success(mock_create_segment):
         segments=[
             CreateSegment(
                 content="New segment content",
-                mapping=[]
+                mapping=[],
+                type=SegmentType.SOURCE
             )
-        ],
-        type=SegmentType.SOURCE
+        ]
     )
     mock_response = {
         "segments": [
@@ -138,7 +137,7 @@ def test_create_segment_success(mock_create_segment):
     # Make request with auth token
     response = client.post(
         "/api/v1/segments",
-        json=segment_request.model_dump(),
+        json=segment_request.model_dump(mode="json"),
         headers={"Authorization": "Bearer test_token"}
     )
     
@@ -157,16 +156,16 @@ def test_create_segment_unauthorized():
         segments=[
             CreateSegment(
                 content="New segment content",
-                mapping=[]
+                mapping=[],
+                type=SegmentType.SOURCE
             )
-        ],
-        type=SegmentType.SOURCE
+        ]
     )
     
     # Make request without auth token
     response = client.post(
         "/api/v1/segments",
-        json=segment_request.model_dump()
+        json=segment_request.model_dump(mode="json")
     )
     
     assert response.status_code == status.HTTP_403_FORBIDDEN
