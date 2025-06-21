@@ -26,6 +26,10 @@ class Media(BaseModel):
 class Like(BaseModel):
     username: str
     name: str
+    
+class CreateSheetRequest(BaseModel):
+    title: str
+    source: List[Union[Source, Content, Media]]
 
 class Publisher(BaseModel):
     id: str
@@ -33,9 +37,6 @@ class Publisher(BaseModel):
     profile_url: str | None
     image_url: str | None
 
-class CreateSheetRequest(BaseModel):
-    title: str
-    source: List[Union[Source, Content, Media]]
 
 class CreateSheetResponse(BaseModel):
     _id: str
