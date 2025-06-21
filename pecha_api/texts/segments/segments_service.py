@@ -3,7 +3,8 @@ from pecha_api.error_contants import ErrorConstants
 from .segments_repository import (
     create_segment,
     get_segment_by_id, 
-    get_related_mapped_segments
+    get_related_mapped_segments,
+    get_segments_by_text_id
 )
 
 from .segments_response_models import (
@@ -143,3 +144,6 @@ async def get_root_text_mapping_by_segment_id(segment_id: str) -> SegmentRootMap
         segment_root_mapping=segment_root_mapping
     )
     
+async def fetch_segments_by_text_id(text_id: str) -> List[SegmentDTO]:
+    segments = await get_segments_by_text_id(text_id=text_id)
+    return segments

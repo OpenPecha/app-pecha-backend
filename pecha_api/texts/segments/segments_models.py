@@ -32,6 +32,10 @@ class Segment(Document):
         return await cls.find_one(cls.id == segment_id, cls.text_id == text_id)
 
     @classmethod
+    async def get_segments_by_text_id(cls, text_id: str) -> List["Segment"]:
+        return await cls.find(cls.text_id == text_id).to_list()
+
+    @classmethod
     async def check_exists(cls, segment_id: uuid.UUID) -> bool:
         segment = await cls.find_one(cls.id == segment_id)
         return segment is not None
