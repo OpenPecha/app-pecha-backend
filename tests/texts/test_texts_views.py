@@ -26,7 +26,7 @@ MOCK_TEXT_DTO = TextDTO(
     title="Test Text",
     language="bo",
     group_id="123e4567-e89b-12d3-a456-426614174000",
-    type="root_text",
+    type="version",
     is_published=True,
     created_date="2025-01-01T00:00:00",
     updated_date="2025-01-01T00:00:00",
@@ -185,14 +185,11 @@ async def test_create_text_success(mocker):
     create_data = {
         "title": "Test Text",  # Match the mock data
         "language": "bo",
-        "type": "root_text",
+        "isPublished": True,
         "group_id": "123e4567-e89b-12d3-a456-426614174000",
+        "type": "version",
         "published_by": "test_user",
-        "is_published": True,
-        "metadata": {},
-        "categories": [],
-        "parent_id": None,
-        "id": "123e4567-e89b-12d3-a456-426614174000" 
+        "categories": []
     }
     
     # Make the request
@@ -209,7 +206,7 @@ async def test_create_text_success(mocker):
     assert response_data["title"] == create_data["title"]
     assert response_data["language"] == create_data["language"]
     assert response_data["type"] == create_data["type"]
-    assert response_data["is_published"] == create_data["is_published"]
+    assert response_data["is_published"] == create_data["isPublished"]
     mock_create_text.assert_called_once()
     call_args = mock_create_text.call_args[1]
     assert call_args["token"] == VALID_TOKEN

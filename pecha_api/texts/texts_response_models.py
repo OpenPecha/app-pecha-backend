@@ -11,7 +11,6 @@ class CreateTextRequest(BaseModel):
     title: str
     language: str
     isPublished: bool = False
-    parent_id: Optional[str] = None
     group_id: str
     published_by: str
     type: TextType
