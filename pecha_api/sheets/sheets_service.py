@@ -75,7 +75,7 @@ def upload_sheet_image_request(sheet_id: Optional[str], file: UploadFile) -> She
     unique_id = str(uuid.uuid4())
     
     # If no id is provided, use a random UUID as the folder name
-    path = f"images/sheet_images"
+    path = "images/sheet_images"
     image_path_full = f"{path}/{sheet_id}/{unique_id}" if sheet_id is not None else f"{path}/{unique_id}"
     sheet_image_name = f"{image_path_full}/{file_name}{ext}"
     upload_key = upload_bytes(
