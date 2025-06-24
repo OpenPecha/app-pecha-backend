@@ -157,6 +157,7 @@ async def _generate_and_upload_sheet_table_of_content(
         table_of_content_request=sheet_table_of_content,
         token=token
     )
+    return sheet_table_of_content
 
 async def _process_and_upload_sheet_segments(
         create_sheet_request: CreateSheetRequest,
