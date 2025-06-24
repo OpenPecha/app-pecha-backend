@@ -8,7 +8,7 @@ DEFAULTS = dict(
     AWS_REGION="eu-central-1",
     AWS_BUCKET_NAME="app-pecha-backend",
     BASE_URL="https://pech.org",
-    CLIENT_ID="7SPZ8BDNHuAzdqy1YPdkHh2sxdZNRLXy",
+    CLIENT_ID="",
     COMPRESSED_QUALITY=80,
     DATABASE_URL="postgresql://admin:pechaAdmin@localhost:5434/pecha",
     DEFAULT_LANGUAGE="en",
@@ -19,15 +19,15 @@ DEFAULTS = dict(
     JWT_ALGORITHM="HS256",
     JWT_AUD="https://pecha.org",
     JWT_ISSUER="https://pecha.org",
-    JWT_SECRET_KEY="oJvUxI5jY7nXaD4sC_kFGoM0_qAuewVxg3p6F8CH-tI",
+    JWT_SECRET_KEY="",
     MAX_FILE_SIZE_MB=1,
 
-    MONGO_CONNECTION_STRING="mongodb://admin:pechaAdmin@localhost:27017/",
+    MONGO_CONNECTION_STRING="mongodb://admin:pechaAdmin@localhost:27017/pecha?authSource=admin",
 
     MONGO_DATABASE_NAME="pecha",
     REFRESH_TOKEN_EXPIRE_DAYS=30,
-    SENDGRID_API_KEY="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",
-    SENDGRID_SENDER_EMAIL="samten@esukhia.org",
+    SENDGRID_API_KEY="",
+    SENDGRID_SENDER_EMAIL="",
     VERSION="0.0.1",
     # Cache Configuration
     CACHE_HOST="localhost",
@@ -37,7 +37,14 @@ DEFAULTS = dict(
     CACHE_DEFAULT_TIMEOUT=14400, # 4 hours in seconds
 
     SHORT_URL_GENERATION_ENDPOINT="https://url-shortening-14682653622-b69c6fd.onrender.com/api/v1",
-    PECHA_BACKEND_ENDPOINT="https://pecha-backend-12341825340-1fb0112.onrender.com/api/v1"
+    PECHA_BACKEND_ENDPOINT="https://pecha-backend-12341825340-1fb0112.onrender.com/api/v1",
+
+    # Search configuration
+    ELASTICSEARCH_URL= "https://my-elasticsearch-project-f0c060.es.ap-southeast-1.aws.elastic.cloud:443",
+    ELASTICSEARCH_API="RHNaa1o1Y0Izc1ZjOWZWWm41NHU6N1M0VDl2UmNGWmRVR3dMMmJfWERzUQ==",
+    ELASTICSEARCH_CONTENT_INDEX = "pecha-texts",
+    ELASTICSEARCH_SEGMENT_INDEX = "pecha-segments",
+    ELASTICSEARCH_SHEET_INDEX = "pecha-sheets"
 )
 
 

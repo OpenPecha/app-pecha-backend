@@ -3,6 +3,7 @@ from typing import List, Optional
 from .segments_models import Mapping
 
 from .segments_enum import SegmentType
+from pecha_api.texts.texts_response_models import TextDTO
 
 
 class CreateSegment(BaseModel):
@@ -26,6 +27,7 @@ class SegmentDTO(BaseModel):
     content: str
     type: SegmentType
     mapping: Optional[List[MappingResponse]] = None
+    text: Optional[TextDTO] = None
 
 class SegmentResponse(BaseModel):
     segments: List[SegmentDTO]
@@ -72,14 +74,14 @@ class RelatedText(BaseModel):
 class Resources(BaseModel):
     sheets: int
 
-class SegmentInfos(BaseModel):
+class SegmentInfo(BaseModel):
     segment_id: str
     translations: Optional[int] = 0
     related_text: RelatedText
     resources: Resources
 
-class SegmentInfosResponse(BaseModel):
-    segment_infos: SegmentInfos
+class SegmentInfoResponse(BaseModel):
+    segment_info: SegmentInfo
 
 # segment's root mapping models
 

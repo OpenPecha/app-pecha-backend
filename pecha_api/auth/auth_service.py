@@ -103,7 +103,7 @@ def authenticate_user(email: str, password: str):
 def refresh_access_token(refresh_token: str):
     try:
         payload = validate_token(refresh_token)
-        email = payload.get("sub")
+        email = payload.get("email")
         if email is None:
             raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid refresh token")
         with SessionLocal() as db_session:
