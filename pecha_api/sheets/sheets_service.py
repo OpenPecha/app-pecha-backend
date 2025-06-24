@@ -9,6 +9,7 @@ from pecha_api.config import get
 from .sheets_response_models import CreateSheetRequest, SheetImageResponse
 from ..uploads.S3_utils import upload_bytes, generate_presigned_upload_url
 from pecha_api.image_utils import ImageUtils
+from pecha_api.utils import Utils
 
 from pecha_api.texts.groups.groups_response_models import (
     CreateGroupRequest,
@@ -130,22 +131,18 @@ def _generate_sheet_table_of_content_(create_sheet_request: CreateSheetRequest, 
     section = Section(
         id=str(uuid.uuid4()),
         section_number=1,
-        segments=[]
+        segments=[],
+        created_date=Utils.get_utc_date_time(),
+        updated_date=Utils.get_utc_date_time()
     )
     for source in create_sheet_request.source:
-        if hasattr(source, 'type') and source.type == SegmentType.SOURCE:
+        if source.type == SegmentType.SOURCE:
             segment = TextSegment(
                 segment_number = source.position,
                 segment_id = source.source_segment_id
             )
-        elif hasattr(source, 'type') and source.type == SegmentType.CONTENT:
+        else:
             content_hash_value = hashlib.sha256(source.content.encode()).hexdigest()
-            segment = TextSegment(
-                segment_number = source.position,
-                segment_id = segment_dict[content_hash_value]
-            )
-        elif hasattr(source, 'media_type'):
-            content_hash_value = hashlib.sha256(source.media_url.encode()).hexdigest()
             segment = TextSegment(
                 segment_number = source.position,
                 segment_id = segment_dict[content_hash_value]
@@ -174,30 +171,20 @@ def _generate_segment_creation_request_payload_(create_sheet_request: CreateShee
         segments=[]
     )
     for source in create_sheet_request.source:
-        if hasattr(source, 'type') and source.type != SegmentType.SOURCE:
-            create_segment_request.segments.append(
-                CreateSegment(
-                    content=source.content,
-                    type=source.type,
-                    mapping=[]
-                )
+        create_segment_request.segments.append(
+            CreateSegment(
+                content=source.content,
+                type=source.type
             )
-        elif hasattr(source, 'media_type'):
-            create_segment_request.segments.append(
-                CreateSegment(
-                    content=source.media_url,
-                    type=source.media_type,
-                    mapping=[]
-                )
-            )
+        )
     return create_segment_request
 
 async def _create_sheet_text_(title: str, token: str, group_id: str) -> str:
     user_details = validate_and_extract_user_details(token=token)
     create_text_request = CreateTextRequest(
         title=title,
-        language=get("DEFAULT_LANGUAGE"),
         group_id=group_id,
+        language=None,
         published_by=user_details.username,
         type=TextType.SHEET
     )

@@ -42,7 +42,7 @@ class TableOfContent(Document):
 class Text(Document):
     id: uuid.UUID = Field(default_factory=uuid.uuid4)
     title: str
-    language: str
+    language: Optional[str] = None
     group_id: str
     is_published: bool
     created_date: str
