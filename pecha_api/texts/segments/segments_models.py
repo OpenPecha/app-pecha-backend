@@ -73,4 +73,4 @@ class Segment(Document):
     
     @classmethod
     async def delete_segment_by_text_id(cls, text_id: str):
-        return await cls.delete_many(cls.text_id == text_id)
+        return await cls.find(cls.text_id == text_id).delete()

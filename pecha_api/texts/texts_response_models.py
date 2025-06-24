@@ -9,7 +9,7 @@ from .texts_enums import TextType
 
 class CreateTextRequest(BaseModel):
     title: str
-    language: str
+    language: Optional[str] = None
     isPublished: bool = False
     group_id: str
     published_by: str

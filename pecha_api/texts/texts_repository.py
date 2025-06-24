@@ -9,10 +9,12 @@ from pecha_api.constants import Constants
 from .texts_response_models import (
     CreateTextRequest, 
     TableOfContent, 
-    TextDTO
+    TextDTO,
+    UpdateTextRequest
 )
 from .texts_models import Text, TableOfContent
 from datetime import datetime, timezone
+from pecha_api.utils import Utils
 
 async def get_sections_count_of_table_of_content(content_id: str) -> int:
     return await TableOfContent.get_sections_count(content_id=content_id)
@@ -141,5 +143,11 @@ async def get_table_of_content_by_content_id(content_id: str, skip: int, limit: 
 async def delete_table_of_content_by_text_id(text_id: str):
     return await TableOfContent.delete_table_of_content_by_text_id(text_id=text_id)
 
-async def update_text_details_by_id(text_id: str, text_details: TextDTO):
-    return await Text.update_text_details_by_id(text_id=text_id, text_details=text_details)
+async def update_text_details_by_id(text_id: str, update_text_request: UpdateTextRequest) -> TextDTO:
+    text_details = await Text.get_text(text_id=text_id)
+    text_details.title = update_text_request.title
+    text_details.is_published = update_text_request.is_published
+    text_details.updated_date = Utils.get_utc_date_time()
+    await text_details.save()
+    return text_details
+

@@ -24,7 +24,7 @@ class TableOfContent(Document):
 
     @classmethod
     async def delete_table_of_content_by_text_id(cls, text_id: str):
-        return await cls.delete_many(cls.text_id == text_id)
+        return await cls.find(cls.text_id == text_id).delete()
     
     @classmethod
     async def get_sections_count(cls, content_id: str) -> int:
@@ -129,8 +129,8 @@ class Text(Document):
         return texts
     
     @classmethod
-    async def update_text_details_by_id(cls, text_id: str, text_details: TextDTO):
-        return await cls.update_one(cls.id == UUID(text_id), {"$set": text_details.model_dump()})
+    async def update_text_details_by_id(cls, text_id: UUID, text_details: TextDTO):
+        return await cls.update_all(cls.id == text_id, {"$set": text_details.model_dump()})
 
     @classmethod
     async def get_texts_by_type(cls, text_type: TextType, skip: int, limit: int) -> List["Text"]:

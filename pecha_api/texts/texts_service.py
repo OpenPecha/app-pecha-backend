@@ -359,9 +359,9 @@ async def get_texts_by_text_type(
     """
     return await get_texts_by_type(text_type=text_type, skip=skip, limit=limit)
 
-async def update_text_details(text_id: str, text_details: UpdateTextRequest):
+async def update_text_details(text_id: str, update_text_request: UpdateTextRequest):
     text_details = await TextUtils.get_text_detail_by_id(text_id=text_id)
     text_details.updated_date = Utils.get_utc_date_time()
-    text_details.title = text_details.title
-    text_details.is_published = text_details.is_published
-    await update_text_details_by_id(text_id=text_id, text_details=text_details)
+    text_details.title = update_text_request.title
+    text_details.is_published = update_text_request.is_published
+    await update_text_details_by_id(text_id=text_id, update_text_request=update_text_request)

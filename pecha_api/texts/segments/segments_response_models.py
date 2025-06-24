@@ -8,7 +8,7 @@ from .segments_enum import SegmentType
 class CreateSegment(BaseModel):
     content: str
     type: SegmentType
-    mapping: List[Mapping]
+    mapping: Optional[List[Mapping]] = []
 
 
 class CreateSegmentRequest(BaseModel):

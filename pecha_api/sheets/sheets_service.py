@@ -116,7 +116,7 @@ async def _update_text_details_(sheet_id: str, update_sheet_request: CreateSheet
         title=update_sheet_request.title,
         is_published=update_sheet_request.is_published
     )
-    await update_text_details(text_id=sheet_id, text_details=update_text_request)
+    await update_text_details(text_id=sheet_id, update_text_request=update_text_request)
 
 def upload_sheet_image_request(sheet_id: Optional[str], file: UploadFile) -> SheetImageResponse:
     # Validate and compress the uploaded image
@@ -188,7 +188,7 @@ def _generate_sheet_table_of_content_(create_sheet_request: CreateSheetRequest, 
         if source.type == SegmentType.SOURCE:
             segment = TextSegment(
                 segment_number = source.position,
-                segment_id = source.source_segment_id
+                segment_id = source.content
             )
         else:
             content_hash_value = hashlib.sha256(source.content.encode()).hexdigest()
