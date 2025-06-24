@@ -13,7 +13,7 @@ from .segments_response_models import (
     SegmentResponse, 
     MappingResponse, 
     SegmentDTO, 
-    SegmentInfoResponse, 
+    SegmentInfoResponse,
     SegmentRootMappingResponse
 )
 
@@ -36,10 +36,6 @@ from .segments_response_models import (
 )
 
 from ...users.users_service import validate_user_exists
-from pecha_api.texts.texts_response_models import TextDTO
-from pecha_api.texts.texts_utils import TextUtils
-
-from ...users.users_service import verify_admin_access
 
 
 async def get_segment_details_by_id(segment_id: str, text_details: bool = False) -> SegmentDTO:
@@ -50,14 +46,14 @@ async def get_segment_details_by_id(segment_id: str, text_details: bool = False)
         MappingResponse(**mapping.model_dump()) for mapping in segment.mapping
     ]
     text = None
-    if text_details: 
-        text: TextDTO = await TextUtils.get_text_details_by_id(text_id=segment.text_id)
+    if text_details:
+        text = await TextUtils.get_text_details_by_id(text_id=segment.text_id)
     return SegmentDTO(
         id=str(segment.id),
         text_id=segment.text_id,
         content=segment.content,
         mapping=mapping_responses,
-        type=segment.type
+        type=segment.type,
         text=text
     )
 

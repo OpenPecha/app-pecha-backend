@@ -27,7 +27,8 @@ def test_get_segment_without_text_details_success(mock_get_segment_details_by_id
         id=segment_id,
         text_id="text_id",
         content="content",
-        mapping=[]
+        mapping=[],
+        type=SegmentType.SOURCE
     )
     mock_get_segment_details_by_id.return_value = mock_response
     response = client.get(f"/api/v1/segments/{segment_id}")
@@ -47,6 +48,7 @@ def test_get_segment_with_text_details_success(mock_get_segment_details_by_id):
         text_id="text_id",
         content="content",
         mapping=[],
+        type=SegmentType.SOURCE,
         text=TextDTO(
             id=text_id,
             title="title",
