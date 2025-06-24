@@ -29,7 +29,7 @@ async def get_sheets(
     skip: int = Query(default=0),
     limit: int = Query(default=10)
 ):
-    return await get_sheets(skip=skip, limit=limit)
+    return await get_sheets(skip=skip, limit=limit) 
 
 @sheets_router.post("", status_code=status.HTTP_201_CREATED)
 async def create_sheet(
