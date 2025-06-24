@@ -9,7 +9,13 @@ from fastapi.security import HTTPAuthorizationCredentials
 from typing import Annotated
 
 
-from .sheets_service import create_new_sheet, upload_sheet_image_request, get_sheets
+from .sheets_service import (
+    create_new_sheet, 
+    upload_sheet_image_request, 
+    get_sheets,
+    update_sheet_by_id
+)
+
 from .sheets_response_models import CreateSheetRequest
 
 oauth2_scheme = HTTPBearer()
@@ -38,10 +44,12 @@ async def create_sheet(
 @sheets_router.put("/{sheet_id}", status_code=status.HTTP_200_OK)
 async def update_sheet(
     sheet_id: str,
+    update_sheet_request: CreateSheetRequest,
     authentication_credential: Annotated[HTTPAuthorizationCredentials, Depends(oauth2_scheme)],
 ):
     return await update_sheet_by_id(
         sheet_id=sheet_id,
+        update_sheet_request=update_sheet_request,
         token=authentication_credential.credentials
     )
 

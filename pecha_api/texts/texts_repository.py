@@ -140,3 +140,6 @@ async def get_table_of_content_by_content_id(content_id: str, skip: int, limit: 
 
 async def delete_table_of_content_by_text_id(text_id: str):
     return await TableOfContent.delete_table_of_content_by_text_id(text_id=text_id)
+
+async def update_text_details_by_id(text_id: str, text_details: TextDTO):
+    return await Text.update_text_details_by_id(text_id=text_id, text_details=text_details)

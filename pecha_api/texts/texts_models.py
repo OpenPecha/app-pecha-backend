@@ -8,6 +8,7 @@ from pydantic import Field
 from beanie import Document
 
 from .texts_enums import TextType
+from .texts_response_models import TextDTO
 
 class TableOfContent(Document):
     id: uuid.UUID = Field(default_factory=uuid.uuid4)
@@ -126,6 +127,10 @@ class Text(Document):
             .to_list()
         )
         return texts
+    
+    @classmethod
+    async def update_text_details_by_id(cls, text_id: str, text_details: TextDTO):
+        return await cls.update_one(cls.id == UUID(text_id), {"$set": text_details.model_dump()})
 
     @classmethod
     async def get_texts_by_type(cls, text_type: TextType, skip: int, limit: int) -> List["Text"]:

@@ -149,5 +149,5 @@ async def fetch_segments_by_text_id(text_id: str) -> List[SegmentDTO]:
     segments = await get_segments_by_text_id(text_id=text_id)
     return segments
 
-async def delete_segments_by_text_id(text_id: str):
+async def remove_segments_by_text_id(text_id: str):
     return await delete_segments_by_text_id(text_id=text_id)

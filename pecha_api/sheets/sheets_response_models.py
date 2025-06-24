@@ -30,6 +30,7 @@ class Like(BaseModel):
 class CreateSheetRequest(BaseModel):
     title: str
     source: List[Union[Source, Content, Media]]
+    is_published: bool = False
 
 class SheetSegment(BaseModel):
     segment_id: str

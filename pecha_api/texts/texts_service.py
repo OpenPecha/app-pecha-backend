@@ -11,7 +11,8 @@ from .texts_repository import (
     get_contents_by_id,
     get_table_of_content_by_content_id,
     get_sections_count_of_table_of_content,
-    delete_table_of_content_by_text_id
+    delete_table_of_content_by_text_id,
+    update_text_details_by_id
 )
 from .texts_response_models import (
     TableOfContent,
@@ -23,7 +24,8 @@ from .texts_response_models import (
     TextsCategoryResponse,
     CreateTextRequest,
     TextDetailsRequest,
-    DetailTextMapping
+    DetailTextMapping,
+    UpdateTextRequest
 )
 from .groups.groups_service import (
     validate_group_exists
@@ -40,6 +42,7 @@ from .segments.segments_utils import SegmentUtils
 
 from typing import List, Dict
 from pecha_api.config import get
+from pecha_api.utils import Utils
 
 
 async def get_text_by_text_id_or_term(
@@ -355,3 +358,10 @@ async def get_texts_by_text_type(
         List[TextDTO]: List of texts matching the specified type
     """
     return await get_texts_by_type(text_type=text_type, skip=skip, limit=limit)
+
+async def update_text_details(text_id: str, text_details: UpdateTextRequest):
+    text_details = await TextUtils.get_text_detail_by_id(text_id=text_id)
+    text_details.updated_date = Utils.get_utc_date_time()
+    text_details.title = text_details.title
+    text_details.is_published = text_details.is_published
+    await update_text_details_by_id(text_id=text_id, text_details=text_details)

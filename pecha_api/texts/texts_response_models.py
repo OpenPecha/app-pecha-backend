@@ -17,10 +17,14 @@ class CreateTextRequest(BaseModel):
     categories: Optional[List[str]] = None
     views: Optional[int] = 0
 
+class UpdateTextRequest(BaseModel):
+    title: str
+    is_published: Optional[bool] = False
+
 class TextDTO(BaseModel):
     id: str
     title: str
-    language: str
+    language: Optional[str] = None
     group_id: str
     type: str
     is_published: bool

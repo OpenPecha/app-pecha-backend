@@ -11,6 +11,8 @@ from .sheets_response_models import CreateSheetRequest, SheetImageResponse
 from ..uploads.S3_utils import upload_bytes, generate_presigned_upload_url
 from pecha_api.image_utils import ImageUtils
 from pecha_api.utils import Utils
+from pecha_api.texts.texts_utils import TextUtils
+
 
 from pecha_api.users.users_service import validate_user_exists
 
@@ -22,13 +24,15 @@ from pecha_api.texts.groups.groups_enums import GroupType
 from pecha_api.texts.groups.groups_service import create_new_group
 
 from pecha_api.texts.texts_response_models import (
-    CreateTextRequest
+    CreateTextRequest,
+    UpdateTextRequest
 )
 from pecha_api.texts.texts_service import (
     create_new_text,
     create_table_of_content,
     get_texts_by_text_type,
-    remove_table_of_content_by_text_id
+    remove_table_of_content_by_text_id,
+    update_text_details
 )
 
 from pecha_api.users.users_service import (
@@ -76,18 +80,43 @@ async def create_new_sheet(create_sheet_request: CreateSheetRequest, token: str)
         "sheet_id": text_id,
     }
 
-async def update_sheet_by_id(sheet_id: str, token: str):
+async def update_sheet_by_id(
+        sheet_id: str, 
+        update_sheet_request: CreateSheetRequest, 
+        token: str
+    ):
     is_valid_user = validate_user_exists(token=token)
     if not is_valid_user:
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail=ErrorConstants.TOKEN_ERROR_MESSAGE)
 
     await remove_segments_by_text_id(text_id=sheet_id)
+
     await remove_table_of_content_by_text_id(text_id=sheet_id)
 
-    await _update_text_details_(sheet_id=sheet_id)
+    await _update_text_details_(sheet_id=sheet_id, update_sheet_request=update_sheet_request)
 
-async def _update_text_details_(sheet_id: str):
-    pass
+    sheet_segments: Dict[str, str] = await _process_and_upload_sheet_segments(
+        create_sheet_request=update_sheet_request,
+        text_id=sheet_id,
+        token=token
+    )
+    await _generate_and_upload_sheet_table_of_content(
+        create_sheet_request=update_sheet_request,
+        text_id=sheet_id,
+        segment_dict=sheet_segments,
+        token=token
+    )
+    return {
+        "sheet_id": sheet_id,
+    }
+
+
+async def _update_text_details_(sheet_id: str, update_sheet_request: CreateSheetRequest):
+    update_text_request = UpdateTextRequest(
+        title=update_sheet_request.title,
+        is_published=update_sheet_request.is_published
+    )
+    await update_text_details(text_id=sheet_id, text_details=update_text_request)
 
 def upload_sheet_image_request(sheet_id: Optional[str], file: UploadFile) -> SheetImageResponse:
     # Validate and compress the uploaded image
