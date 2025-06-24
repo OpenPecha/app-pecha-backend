@@ -110,14 +110,6 @@ async def update_sheet_by_id(
         "sheet_id": sheet_id,
     }
 
-
-async def _update_text_details_(sheet_id: str, update_sheet_request: CreateSheetRequest):
-    update_text_request = UpdateTextRequest(
-        title=update_sheet_request.title,
-        is_published=update_sheet_request.is_published
-    )
-    await update_text_details(text_id=sheet_id, update_text_request=update_text_request)
-
 def upload_sheet_image_request(sheet_id: Optional[str], file: UploadFile) -> SheetImageResponse:
     # Validate and compress the uploaded image
     image_utils = ImageUtils()
@@ -141,6 +133,14 @@ def upload_sheet_image_request(sheet_id: Optional[str], file: UploadFile) -> She
     )
     
     return SheetImageResponse(url=presigned_url)
+
+async def _update_text_details_(sheet_id: str, update_sheet_request: CreateSheetRequest):
+    update_text_request = UpdateTextRequest(
+        title=update_sheet_request.title,
+        is_published=update_sheet_request.is_published
+    )
+    await update_text_details(text_id=sheet_id, update_text_request=update_text_request)
+
 
 async def _generate_and_upload_sheet_table_of_content(
         create_sheet_request: CreateSheetRequest,
