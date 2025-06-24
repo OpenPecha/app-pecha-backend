@@ -45,8 +45,8 @@ async def _source_search(
     search_query = _generate_search_query(
         query=query,
         text_id=text_id,
-        page=skip,
-        size=limit
+        skip=skip,
+        limit=limit
     )
     query_response: ObjectApiResponse = await client.search(
         index=get("ELASTICSEARCH_SEGMENT_INDEX"),
@@ -124,14 +124,13 @@ def _group_sources_by_text_id(hits: list) -> tuple[dict, dict]:
 def _generate_search_query(
         query: str, 
         text_id: str, 
-        page: int, 
-        size: int
+        skip: int, 
+        limit: int
 ):
     search_query = {
         "query": {
             "bool": {
-                "must": [],
-                "should": [
+                "must": [
                     {
                         "match": {
                             "content": {
@@ -142,8 +141,8 @@ def _generate_search_query(
                 ]
             }
         },
-        "from": max(0, (page - 1)) * size,
-        "size": size
+        "from": skip,
+        "size": limit
     }
     if text_id:
         search_query["query"]["bool"]["must"].append({
