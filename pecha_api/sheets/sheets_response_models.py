@@ -10,18 +10,18 @@ from pecha_api.texts.segments.segments_models import SegmentType
 
 class Source(BaseModel):
     position: int
-    type: SegmentType = SegmentType.SOURCE
-    source_segment_id: str
+    type: SegmentType
+    content: str
 
 class Content(BaseModel):
     position: int
-    type: SegmentType = SegmentType.CONTENT
+    type: SegmentType
     content: str
 
 class Media(BaseModel):
     position: int
-    media_type: SegmentType
-    media_url: str
+    type: SegmentType
+    content: str
 
 class Like(BaseModel):
     username: str
