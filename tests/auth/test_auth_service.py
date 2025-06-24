@@ -1,6 +1,6 @@
 import uuid
 import jwt
-from unittest.mock import patch, MagicMock, ANY, mock_open
+from unittest.mock import patch, MagicMock, ANY
 from datetime import datetime, timedelta, timezone
 from starlette import status
 
@@ -24,7 +24,6 @@ from pecha_api.auth.auth_service import (
 from pecha_api.auth.auth_models import CreateUserRequest
 from pecha_api.auth.auth_enums import RegistrationSource
 from fastapi import HTTPException
-import json
 
 
 def test_register_user_with_email_success():
@@ -229,9 +228,9 @@ def test_refresh_access_token_success():
             patch('pecha_api.auth.auth_service.get_user_by_email') as mock_get_user_by_email, \
             patch('pecha_api.auth.auth_service.generate_token_data') as mock_generate_token_data, \
             patch('pecha_api.auth.auth_service.create_access_token') as mock_create_access_token:
-        mock_validate_token.return_value = {"sub": user.email}
+        mock_validate_token.return_value = {"email": user.email}
         mock_get_user_by_email.return_value = user
-        mock_generate_token_data.return_value = {"sub": user.email}
+        mock_generate_token_data.return_value = {"email": user.email}
         mock_create_access_token.return_value = "new_access_token"
 
         response = refresh_access_token(refresh_token)
@@ -294,7 +293,7 @@ def test_refresh_access_token_user_not_found():
 
     with patch('pecha_api.auth.auth_service.validate_token') as mock_validate_token, \
             patch('pecha_api.auth.auth_service.get_user_by_email') as mock_get_user_by_email:
-        mock_validate_token.return_value = {"sub": "test@example.com"}
+        mock_validate_token.return_value = {"email": "test@example.com"}
         mock_get_user_by_email.side_effect = HTTPException(status_code=status.HTTP_404_NOT_FOUND,
                                                            detail="User not found")
 

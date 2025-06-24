@@ -37,7 +37,7 @@ from pecha_api.users.users_service import validate_user_exists
 from pecha_api.terms.terms_service import get_term
 from .segments.segments_utils import SegmentUtils
 
-from typing import List, Dict
+from typing import List, Dict, Optional
 from pecha_api.config import get
 
 
