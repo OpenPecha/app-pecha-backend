@@ -9,7 +9,8 @@ from pecha_api.texts.texts_service import (
     get_text_by_text_id_or_term,
     create_table_of_content,
     get_table_of_contents_by_text_id,
-    get_text_details_by_text_id
+    get_text_details_by_text_id,
+    update_text_details
 )
 from pecha_api.texts.texts_response_models import (
     CreateTextRequest,
@@ -25,7 +26,8 @@ from pecha_api.texts.texts_response_models import (
     DetailSection,
     DetailTextSegment,
     Translation,
-    DetailTextMapping
+    DetailTextMapping,
+    UpdateTextRequest
 )
 
 from pecha_api.texts.texts_enums import TextType
@@ -940,3 +942,37 @@ async def test_get_text_details_by_text_id_invalid_text_id():
         assert exec_info.value.status_code == 404
         assert exec_info.value.detail == ErrorConstants.TEXT_NOT_FOUND_MESSAGE
 
+@pytest.mark.asyncio
+async def test_update_text_details_success():
+    mock_text_details = TextDTO(
+        id="text_id_1",
+        title="text_title",
+        language="bo",
+        group_id="group_id_1",
+        type="version",
+        is_published=False,
+        created_date="created_date",
+        updated_date="updated_date",
+        published_date="published_date",
+        published_by="published_by",
+        categories=[],
+        views=0
+    )
+    with patch("pecha_api.texts.texts_service.TextUtils.validate_text_exists", new_callable=AsyncMock, return_value=True), \
+        patch("pecha_api.texts.texts_service.TextUtils.get_text_detail_by_id", new_callable=AsyncMock) as mock_get_text_detail_by_id, \
+        patch("pecha_api.texts.texts_service.update_text_details_by_id", new_callable=AsyncMock, return_value=mock_text_details):
+        mock_get_text_detail_by_id.return_value = mock_text_details
+        
+        response = await update_text_details(text_id="text_id_1", update_text_request=UpdateTextRequest(title="updated_title", is_published=True))
+        
+        assert response is not None
+        assert response.title == "updated_title"
+        assert response.is_published == True
+
+@pytest.mark.asyncio
+async def test_update_text_details_invalid_text_id():
+    with patch("pecha_api.texts.texts_service.TextUtils.validate_text_exists", new_callable=AsyncMock, return_value=False):
+        with pytest.raises(HTTPException) as exec_info:
+            await update_text_details(text_id="invalid_id", update_text_request=UpdateTextRequest(title="updated_title", is_published=True))
+        assert exec_info.value.status_code == 404
+        assert exec_info.value.detail == ErrorConstants.TEXT_NOT_FOUND_MESSAGE

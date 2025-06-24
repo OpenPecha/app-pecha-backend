@@ -360,8 +360,11 @@ async def get_texts_by_text_type(
     return await get_texts_by_type(text_type=text_type, skip=skip, limit=limit)
 
 async def update_text_details(text_id: str, update_text_request: UpdateTextRequest):
+    is_valid_text = await TextUtils.validate_text_exists(text_id=text_id)
+    if not is_valid_text:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=ErrorConstants.TEXT_NOT_FOUND_MESSAGE)
     text_details = await TextUtils.get_text_detail_by_id(text_id=text_id)
     text_details.updated_date = Utils.get_utc_date_time()
     text_details.title = update_text_request.title
     text_details.is_published = update_text_request.is_published
-    await update_text_details_by_id(text_id=text_id, update_text_request=update_text_request)
+    return await update_text_details_by_id(text_id=text_id, update_text_request=update_text_request)
