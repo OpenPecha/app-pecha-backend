@@ -29,6 +29,7 @@ class SegmentDTO(BaseModel):
     mapping: Optional[List[MappingResponse]] = None
     text: Optional[TextDTO] = None
 
+
 class SegmentResponse(BaseModel):
     segments: List[SegmentDTO]
 

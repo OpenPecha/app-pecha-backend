@@ -7,7 +7,7 @@ from pecha_api.app import api
 from pecha_api.texts.segments.segments_response_models import (
     CreateSegmentRequest, 
     CreateSegment,
-    SegmentTranslationsResponse, 
+    SegmentTranslationsResponse,
     SegmentTranslation,
     SegmentDTO
 )
