@@ -150,4 +150,7 @@ async def fetch_segments_by_text_id(text_id: str) -> List[SegmentDTO]:
     return segments
 
 async def remove_segments_by_text_id(text_id: str):
+    is_valid_text = await TextUtils.validate_text_exists(text_id=text_id)
+    if not is_valid_text:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=ErrorConstants.TEXT_NOT_FOUND_MESSAGE)
     return await delete_segments_by_text_id(text_id=text_id)

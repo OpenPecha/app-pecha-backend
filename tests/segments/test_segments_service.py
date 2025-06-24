@@ -10,7 +10,8 @@ from pecha_api.texts.segments.segments_service import (
     get_segment_details_by_id,
     get_commentaries_by_segment_id,
     get_infos_by_segment_id,
-    get_root_text_mapping_by_segment_id
+    get_root_text_mapping_by_segment_id,
+    remove_segments_by_text_id
 )
 from pecha_api.texts.segments.segments_utils import SegmentUtils
 from pecha_api.texts.segments.segments_response_models import (
@@ -378,3 +379,21 @@ async def test_get_root_text_mapping_by_segment_id_invalid_segment_id():
         assert exc_info.value.status_code == 404
         assert exc_info.value.detail == ErrorConstants.SEGMENT_NOT_FOUND_MESSAGE
         
+@pytest.mark.asyncio
+async def test_remove_segments_by_text_id_success():
+    text_id = "efb26a06-f373-450b-ba57-e7a8d4dd5b64"
+    with patch("pecha_api.texts.segments.segments_service.delete_segments_by_text_id", new_callable=AsyncMock, return_value=True),\
+        patch("pecha_api.texts.segments.segments_service.TextUtils.validate_text_exists", new_callable=AsyncMock, return_value=True):
+        
+        response = await remove_segments_by_text_id(text_id=text_id)
+        
+        assert response is not None
+    
+@pytest.mark.asyncio
+async def test_remove_segments_by_text_id_invalid_text_id():
+    text_id = "efb26a06-f373-450b-ba57-e7a8d4dd5b64"
+    with patch("pecha_api.texts.segments.segments_service.TextUtils.validate_text_exists", new_callable=AsyncMock, return_value=False):
+        with pytest.raises(HTTPException) as exc_info:
+            await remove_segments_by_text_id(text_id=text_id)
+        assert exc_info.value.status_code == 404
+        assert exc_info.value.detail == ErrorConstants.TEXT_NOT_FOUND_MESSAGE
