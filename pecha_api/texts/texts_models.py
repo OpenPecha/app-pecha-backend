@@ -46,7 +46,7 @@ class TableOfContent(Document):
 class Text(Document):
     id: uuid.UUID = Field(default_factory=uuid.uuid4)
     title: str
-    language: str
+    language: Optional[str] = None
     group_id: str
     is_published: bool
     created_date: str
@@ -118,6 +118,19 @@ class Text(Document):
     async def get_texts_by_group_id(cls, group_id: str, skip: int, limit: int) -> List["Text"]:
         query = {
             "group_id": group_id
+        }
+        texts = (
+            await cls.find(query)
+            .skip(skip)
+            .limit(limit)
+            .to_list()
+        )
+        return texts
+
+    @classmethod
+    async def get_texts_by_type(cls, text_type: TextType, skip: int, limit: int) -> List["Text"]:
+        query = {
+            "type": text_type
         }
         texts = (
             await cls.find(query)

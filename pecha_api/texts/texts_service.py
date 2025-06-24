@@ -5,6 +5,7 @@ from pecha_api.error_contants import ErrorConstants
 from .texts_repository import (
     get_texts_by_term,
     get_texts_by_group_id,
+    get_texts_by_type,
     create_text,
     create_table_of_content_detail,
     get_contents_by_id,
@@ -336,3 +337,21 @@ def _get_list_of_text_version_response_model(versions: List[TextDTO], versions_t
         for version in versions
     ]
     return list_of_version
+
+async def get_texts_by_text_type(
+        text_type: str,
+        skip: int = 0,
+        limit: int = 10
+) -> List[TextDTO]:
+    """
+    Get texts by text type (e.g., 'sheet', 'commentary', 'version')
+    
+    Args:
+        text_type: The type of text to filter by
+        skip: Number of records to skip for pagination
+        limit: Maximum number of records to return
+        
+    Returns:
+        List[TextDTO]: List of texts matching the specified type
+    """
+    return await get_texts_by_type(text_type=text_type, skip=skip, limit=limit)

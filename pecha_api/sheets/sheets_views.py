@@ -1,5 +1,5 @@
 from __future__ import annotations
-from fastapi import APIRouter
+from fastapi import APIRouter, Query
 from fastapi.security import HTTPBearer
 from starlette import status
 
@@ -9,7 +9,7 @@ from fastapi.security import HTTPAuthorizationCredentials
 from typing import Annotated
 
 
-from .sheets_service import create_new_sheet, upload_sheet_image_request
+from .sheets_service import create_new_sheet, upload_sheet_image_request, get_sheets
 from .sheets_response_models import CreateSheetRequest
 
 oauth2_scheme = HTTPBearer()
@@ -18,6 +18,12 @@ sheets_router = APIRouter(
     tags=["Sheets"]
 )
 
+@sheets_router.get("", status_code=status.HTTP_200_OK)
+async def get_sheets(
+    skip: int = Query(default=0),
+    limit: int = Query(default=10)
+):
+    return await get_sheets(skip=skip, limit=limit)
 
 @sheets_router.post("", status_code=status.HTTP_201_CREATED)
 async def create_sheet(
