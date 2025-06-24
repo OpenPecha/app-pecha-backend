@@ -47,7 +47,7 @@ from pecha_api.texts.segments.segments_response_models import (
 from pecha_api.texts.segments.segments_service import create_new_segment
 
     
-async def create_new_sheet(create_sheet_request: CreateSheetRequest, token: str) -> TableOfContent:
+async def create_new_sheet(create_sheet_request: CreateSheetRequest, token: str):
     group_id =  await _create_sheet_group_(token=token)
     text_id = await _create_sheet_text_(
         title=create_sheet_request.title, 
@@ -65,7 +65,9 @@ async def create_new_sheet(create_sheet_request: CreateSheetRequest, token: str)
         segment_dict=sheet_segments,
         token=token
     )
-    return sheet_table_of_content
+    return {
+        "sheet_id": text_id,
+    }
 
 
 
