@@ -140,7 +140,7 @@ class SegmentUtils:
         text_detail = await TextUtils.get_text_details_by_id(text_id=text_id)
         group_id = text_detail.group_id
         group_detail = await get_group_details(group_id=group_id)
-        if group_detail.type == "TEXT":
+        if group_detail.type == "source":
             return 0
         root_mapping_count = len(segment.mapping)
         return root_mapping_count

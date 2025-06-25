@@ -1,6 +1,6 @@
 from enum import Enum
 
 class TextType(Enum):
-    COMMENTARY = "COMMENTARY"
-    VERSION = "VERSION"
-    SHEET = "SHEET"
+    COMMENTARY = "commentary"
+    VERSION = "version"
+    SHEET = "sheet"

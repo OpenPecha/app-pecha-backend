@@ -1,8 +1,8 @@
 from enum import Enum
 
 class SegmentType(Enum):
-    SOURCE = "SOURCE"
-    CONTENT = "CONTENT"
-    AUDIO = "AUDIO"
-    IMAGE = "IMAGE"
-    VIDEO = "VIDEO"
+    SOURCE = "source"
+    CONTENT = "content"
+    AUDIO = "audio"
+    IMAGE = "image"
+    VIDEO = "video"
