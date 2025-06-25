@@ -90,6 +90,9 @@ async def get_table_of_contents_by_text_id(text_id: str) -> TableOfContentRespon
     )
 
 async def remove_table_of_content_by_text_id(text_id: str):
+    is_valid_text = await TextUtils.validate_text_exists(text_id=text_id)
+    if not is_valid_text:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=ErrorConstants.TEXT_NOT_FOUND_MESSAGE)
     return await delete_table_of_content_by_text_id(text_id=text_id)
 
 async def get_text_details_by_text_id(
