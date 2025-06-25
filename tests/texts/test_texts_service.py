@@ -36,6 +36,32 @@ from pecha_api.error_contants import ErrorConstants
 from typing import List
 
 @pytest.mark.asyncio
+async def test_get_text_by_text_id_or_term_without_term_id_success():
+    text_id = "efb26a06-f373-450b-ba57-e7a8d4dd5b64"
+    term_id = None
+    with patch("pecha_api.texts.texts_service.TextUtils.get_text_detail_by_id", new_callable=AsyncMock) as mock_get_text_detail_by_id:
+        mock_get_text_detail_by_id.return_value = TextDTO(
+            id=text_id,
+            title="བྱང་ཆུབ་སེམས་དཔའི་སྤྱོད་པ་ལ་འཇུག་པ།",
+            language="bo",
+            group_id="group_id_1",
+            type="commentary",
+            is_published=True,
+            created_date="2025-03-21 09:40:34.025024",
+            updated_date="2025-03-21 09:40:34.025035",
+            published_date="2025-03-21 09:40:34.025038",
+            published_by="pecha",
+            categories=[],
+            views=0
+        )
+
+        response = await get_text_by_text_id_or_term(text_id=text_id, term_id=term_id, language="bo", skip=0, limit=10)
+
+        assert response is not None
+        assert isinstance(response, TextDTO)
+        assert response.id == text_id
+
+@pytest.mark.asyncio
 async def test_get_text_by_term_id():
     mock_term = AsyncMock(id="id_1", titles={"bo": "སྤྱོད་འཇུག"}, descriptions={
         "bo": "དུས་རབས་ ༨ པའི་ནང་སློབ་དཔོན་ཞི་བ་ལྷས་མཛད་པའི་རྩ་བ་དང་དེའི་འགྲེལ་བ་སོགས།"}, slug="bodhicaryavatara",
