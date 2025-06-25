@@ -5,7 +5,6 @@ from pecha_api.error_contants import ErrorConstants
 from .texts_repository import (
     get_texts_by_term,
     get_texts_by_group_id,
-    get_texts_by_type,
     create_text,
     create_table_of_content_detail,
     get_contents_by_id,
@@ -355,17 +354,3 @@ async def update_text_details(text_id: str, update_text_request: UpdateTextReque
     text_details.is_published = update_text_request.is_published
     return await update_text_details_by_id(text_id=text_id, update_text_request=update_text_request)
 
-
-async def get_texts_by_text_type(text_type: str, skip: int = 0, limit: int = 10) -> List[TextDTO]:
-    """
-    Get texts by text type with pagination.
-    
-    Args:
-        text_type: The type of text to filter by
-        skip: Number of records to skip for pagination
-        limit: Maximum number of records to return
-        
-    Returns:
-        List[TextDTO]: List of text DTOs matching the type
-    """
-    return await get_texts_by_type(text_type=text_type, skip=skip, limit=limit)

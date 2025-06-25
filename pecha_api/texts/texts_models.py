@@ -132,16 +132,4 @@ class Text(Document):
     async def update_text_details_by_id(cls, text_id: UUID, text_details: TextDTO):
         return await cls.update_all(cls.id == text_id, {"$set": text_details.model_dump()})
 
-    @classmethod
-    async def get_texts_by_type(cls, text_type: TextType, skip: int, limit: int) -> List["Text"]:
-        query = {
-            "type": text_type
-        }
-        texts = (
-            await cls.find(query)
-            .skip(skip)
-            .limit(limit)
-            .to_list()
-        )
-        return texts
 
