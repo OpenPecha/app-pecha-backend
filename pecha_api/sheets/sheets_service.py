@@ -57,8 +57,10 @@ from pecha_api.texts.segments.segments_service import (
     remove_segments_by_text_id
 )
 
+from pecha_api.sheets.sheets_response_models import SheetResponse
+
     
-async def create_new_sheet(create_sheet_request: CreateSheetRequest, token: str):
+async def create_new_sheet(create_sheet_request: CreateSheetRequest, token: str) -> SheetResponse:
     group_id =  await _create_sheet_group_(token=token)
     text_id = await _create_sheet_text_(
         title=create_sheet_request.title, 
@@ -76,15 +78,14 @@ async def create_new_sheet(create_sheet_request: CreateSheetRequest, token: str)
         segment_dict=sheet_segments,
         token=token
     )
-    return {
-        "sheet_id": text_id,
-    }
+    return SheetResponse(sheet_id=text_id)
 
 async def update_sheet_by_id(
         sheet_id: str, 
         update_sheet_request: CreateSheetRequest, 
         token: str
-    ):
+    ) -> SheetResponse:
+
     is_valid_user = validate_user_exists(token=token)
     if not is_valid_user:
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail=ErrorConstants.TOKEN_ERROR_MESSAGE)
@@ -106,9 +107,7 @@ async def update_sheet_by_id(
         segment_dict=sheet_segments,
         token=token
     )
-    return {
-        "sheet_id": sheet_id,
-    }
+    return SheetResponse(sheet_id=sheet_id)
 
 def upload_sheet_image_request(sheet_id: Optional[str], file: UploadFile) -> SheetImageResponse:
     # Validate and compress the uploaded image
@@ -164,7 +163,7 @@ async def _process_and_upload_sheet_segments(
         text_id: str,
         token: str
 ) -> Dict[str, str]:
-    create_segment_request_payload = _generate_segment_creation_request_payload_(
+    create_segment_request_payload: CreateSegmentRequest = _generate_segment_creation_request_payload_(
         create_sheet_request=create_sheet_request,
         text_id=text_id
     )
@@ -172,7 +171,8 @@ async def _process_and_upload_sheet_segments(
         create_segment_request=create_segment_request_payload,
         token=token
     )
-    segment_dict = _generate_segment_dictionary_(new_segments=new_segments)
+
+    segment_dict: Dict[str, str] = _generate_segment_dictionary_(new_segments=new_segments)
     
     return segment_dict
 
@@ -234,7 +234,7 @@ async def _create_sheet_text_(title: str, token: str, group_id: str) -> str:
         title=title,
         group_id=group_id,
         language=None,
-        published_by=user_details.username,
+        published_by=user_details.username, # EMAIL ID
         type=TextType.SHEET
     )
     new_text: TextDTO = await create_new_text(create_text_request=create_text_request, token=token)
