@@ -12,7 +12,6 @@ from typing import Annotated
 from .sheets_service import (
     create_new_sheet, 
     upload_sheet_image_request, 
-    get_sheets,
     update_sheet_by_id
 )
 
@@ -26,12 +25,6 @@ sheets_router = APIRouter(
     tags=["Sheets"]
 )
 
-@sheets_router.get("", status_code=status.HTTP_200_OK)
-async def get_sheets(
-    skip: int = Query(default=0),
-    limit: int = Query(default=10)
-):
-    return await get_sheets(skip=skip, limit=limit)
 
 @sheets_router.post("", status_code=status.HTTP_201_CREATED)
 async def create_sheet(

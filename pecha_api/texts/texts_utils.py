@@ -271,7 +271,7 @@ class TextUtils:
 
             commentary = []
             for text in texts:
-                if (group_ids_type_dict.get(text.group_id).type == "source") and (text.language == language) and filtere_text["root_text"] is None:
+                if (group_ids_type_dict.get(text.group_id).type == "text") and (text.language == language) and filtere_text["root_text"] is None:
                     filtere_text["root_text"] = text
                 elif (group_ids_type_dict.get(text.group_id).type == "commentary"):
                     commentary.append(text)

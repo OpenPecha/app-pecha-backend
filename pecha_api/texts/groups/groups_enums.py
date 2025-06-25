@@ -1,6 +1,6 @@
 from enum import Enum
 
 class GroupType(Enum):
-    SOURCE = "source"
+    TEXT = "text"
     COMMENTARY = "commentary"
     SHEET = "sheet"
