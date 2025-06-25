@@ -1,13 +1,34 @@
 import io
 import pytest
-from unittest.mock import patch, MagicMock
+from unittest.mock import patch, MagicMock, AsyncMock
 from fastapi import UploadFile, HTTPException, status
-from pecha_api.sheets.sheets_service import upload_sheet_image_request
 from pecha_api.config import get
 from pecha_api.error_contants import ErrorConstants
 from pecha_api.sheets.sheets_response_models import SheetIdRequest
 from pecha_api.image_utils import ImageUtils
 
+from pecha_api.sheets.sheets_response_models import (
+    CreateSheetRequest,
+    Source,
+    Content,
+    Media
+)
+from pecha_api.texts.segments.segments_enum import SegmentType
+from pecha_api.texts.texts_response_models import (
+    TableOfContent,
+    Section,
+    TextSegment,
+    UpdateTextRequest
+)
+from pecha_api.sheets.sheets_service import (
+    create_new_sheet,
+    update_sheet_by_id
+)
+from pecha_api.users.users_models import Users
+from pecha_api.texts.segments.segments_response_models import (
+    SegmentDTO, 
+    SegmentResponse
+)
 
 
 def test_validate_and_compress_image_success():
@@ -61,3 +82,185 @@ def test_validate_and_compress_image_processing_failure():
         image_utils.validate_and_compress_image(file=file, content_type="image/jpeg")
     assert exc_info.value.status_code == 400
     assert exc_info.value.detail == "Failed to process the image"
+
+
+@pytest.mark.asyncio
+async def test_create_new_sheet_success():
+    mock_source = [
+        Source(
+            position=1,
+            type=SegmentType.SOURCE,
+            content="source_segment_id"
+        ),
+        Content(
+            position=2,
+            type=SegmentType.CONTENT,
+            content="content"
+        ),
+        Media(
+            position=3,
+            type=SegmentType.IMAGE,
+            content="media_url"
+        )
+    ]
+    mock_create_sheet_request = CreateSheetRequest(
+        title="sheet_title",
+        source=mock_source
+    )
+    mock_token = "valid_token"
+    mock_user_details = type("User",(), {
+        "username": "test_user",
+    })
+    mock_group_response = type("GroupDTO", (), {
+        "id": "group_id",
+        "type": "sheet"
+    })
+    mock_text_response = type("TextDTO", (), {
+        "id": "text_id",
+        "title": "sheet_title",
+        "group_id": "group_id",
+        "type": "sheet",
+        "is_published": True,
+        "created_date": "2021-01-01",
+        "updated_date": "2021-01-01",
+        "published_date": "2021-01-01",
+        "published_by": "test_user"
+    })
+    mock_segment_response = SegmentResponse(
+        segments=[
+            SegmentDTO(
+                id="segment_id_2",
+                text_id="text_id",
+                content="content",
+                type=SegmentType.CONTENT
+            ),
+            SegmentDTO(
+                id="segment_id_3",
+                text_id="text_id",
+                content="media_url",
+                type=SegmentType.IMAGE
+            )
+        ]
+    )
+    mock_table_of_content_response = TableOfContent(
+        id="table_of_content_id",
+        text_id="text_id",
+        sections=[
+            Section(
+                id="section_id",
+                section_number=1,
+                segments=[
+                    TextSegment(
+                        segment_id="segment_id_1",
+                        segment_number=1
+                    ),
+                    TextSegment(
+                        segment_id="segment_id_2",
+                        segment_number=2
+                    ),
+                    TextSegment(
+                        segment_id="segment_id_3",
+                        segment_number=3
+                    )
+                ]
+            )
+        ]
+    )
+    with patch("pecha_api.sheets.sheets_service.create_new_group", new_callable=AsyncMock, return_value=mock_group_response), \
+        patch("pecha_api.sheets.sheets_service.create_new_text", new_callable=AsyncMock, return_value=mock_text_response), \
+        patch("pecha_api.sheets.sheets_service.validate_and_extract_user_details", return_value=mock_user_details), \
+        patch("pecha_api.sheets.sheets_service.create_new_segment", new_callable=AsyncMock, return_value=mock_segment_response), \
+        patch("pecha_api.sheets.sheets_service.create_table_of_content", new_callable=AsyncMock, return_value=mock_table_of_content_response):
+
+        response = await create_new_sheet(
+            create_sheet_request=mock_create_sheet_request,
+            token=mock_token
+        )
+
+        assert response is not None
+        assert response["sheet_id"] == "text_id"
+
+@pytest.mark.asyncio
+async def test_create_sheet_invalid_token():
+    mock_create_sheet_request = CreateSheetRequest(
+        title="sheet_title",
+        source=[]
+    )
+    with pytest.raises(HTTPException) as exc_info:
+        await create_new_sheet(
+            create_sheet_request=mock_create_sheet_request,
+            token="invalid_token"
+        )
+    assert exc_info.value.status_code == status.HTTP_401_UNAUTHORIZED
+    assert exc_info.value.detail == ErrorConstants.TOKEN_ERROR_MESSAGE
+
+@pytest.mark.asyncio
+async def test_update_sheet_success():
+    mock_source = [
+        Source(
+            position=1,
+            type=SegmentType.SOURCE,
+            content="source_segment_id"
+        ),
+        Content(
+            position=2,
+            type=SegmentType.CONTENT,
+            content="content"
+        ),
+        Media(
+            position=3,
+            type=SegmentType.IMAGE,
+            content="media_url"
+        )
+    ]
+    mock_segment_response = SegmentResponse(
+        segments=[
+            SegmentDTO(
+                id="segment_id_2",
+                text_id="text_id",
+                content="content",
+                type=SegmentType.CONTENT
+            ),
+            SegmentDTO(
+                id="segment_id_3",
+                text_id="text_id",
+                content="media_url",
+                type=SegmentType.IMAGE
+            )
+        ]
+    )
+    mock_update_sheet_request = CreateSheetRequest(
+        title="updated_sheet_title",
+        source=mock_source,
+        is_published=True
+    )
+    with patch("pecha_api.sheets.sheets_service.remove_segments_by_text_id", new_callable=AsyncMock), \
+        patch("pecha_api.sheets.sheets_service.validate_user_exists", return_value=True), \
+        patch("pecha_api.sheets.sheets_service.remove_table_of_content_by_text_id", new_callable=AsyncMock), \
+        patch("pecha_api.sheets.sheets_service.update_text_details", new_callable=AsyncMock), \
+        patch("pecha_api.sheets.sheets_service.create_new_segment", new_callable=AsyncMock, return_value=mock_segment_response), \
+        patch("pecha_api.sheets.sheets_service.create_table_of_content", new_callable=AsyncMock):
+
+        response = await update_sheet_by_id(
+            sheet_id="text_id",
+            update_sheet_request=mock_update_sheet_request,
+            token="valid_token"
+        )
+
+        assert response is not None
+        assert response["sheet_id"] == "text_id"
+
+@pytest.mark.asyncio
+async def test_update_sheet_invalid_token():
+    mock_update_sheet_request = CreateSheetRequest(
+        title="updated_sheet_title",
+        source=[]
+    )
+    with pytest.raises(HTTPException) as exc_info:
+        await update_sheet_by_id(
+            sheet_id="text_id",
+            update_sheet_request=mock_update_sheet_request,
+            token="invalid_token"
+        )
+    assert exc_info.value.status_code == status.HTTP_401_UNAUTHORIZED
+    assert exc_info.value.detail == ErrorConstants.TOKEN_ERROR_MESSAGE

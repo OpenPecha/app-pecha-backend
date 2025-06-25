@@ -5,11 +5,14 @@ from pecha_api.error_contants import ErrorConstants
 from .texts_repository import (
     get_texts_by_term,
     get_texts_by_group_id,
+    get_texts_by_type,
     create_text,
     create_table_of_content_detail,
     get_contents_by_id,
     get_table_of_content_by_content_id,
-    get_sections_count_of_table_of_content
+    get_sections_count_of_table_of_content,
+    delete_table_of_content_by_text_id,
+    update_text_details_by_id
 )
 from .texts_response_models import (
     TableOfContent,
@@ -21,7 +24,8 @@ from .texts_response_models import (
     TextsCategoryResponse,
     CreateTextRequest,
     TextDetailsRequest,
-    DetailTextMapping
+    DetailTextMapping,
+    UpdateTextRequest
 )
 from .groups.groups_service import (
     validate_group_exists
@@ -32,12 +36,13 @@ from pecha_api.cache.cache_service import (
 )
 
 from .texts_utils import TextUtils
-from pecha_api.users.users_service import verify_admin_access
+from pecha_api.users.users_service import validate_user_exists
 from pecha_api.terms.terms_service import get_term
 from .segments.segments_utils import SegmentUtils
 
 from typing import List, Dict, Optional
 from pecha_api.config import get
+from pecha_api.utils import Utils
 
 
 async def get_text_by_text_id_or_term(
@@ -84,6 +89,8 @@ async def get_table_of_contents_by_text_id(text_id: str) -> TableOfContentRespon
         ]
     )
 
+async def remove_table_of_content_by_text_id(text_id: str):
+    return await delete_table_of_content_by_text_id(text_id=text_id)
 
 async def get_text_details_by_text_id(
         text_id: str,
@@ -158,8 +165,8 @@ async def create_new_text(
         create_text_request: CreateTextRequest,
         token: str
 ) -> TextDTO:
-    is_admin = verify_admin_access(token=token)
-    if is_admin:
+    is_valid_user = validate_user_exists(token=token)
+    if is_valid_user:
         valid_group = await validate_group_exists(group_id=create_text_request.group_id)
         if not valid_group:
             raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=ErrorConstants.GROUP_NOT_FOUND_MESSAGE)
@@ -168,6 +175,7 @@ async def create_new_text(
             id=str(new_text.id),
             title=new_text.title,
             language=new_text.language,
+            group_id=new_text.group_id,
             type=new_text.type,
             is_published=new_text.is_published,
             created_date=new_text.created_date,
@@ -175,22 +183,22 @@ async def create_new_text(
             published_date=new_text.published_date,
             published_by=new_text.published_by,
             categories=new_text.categories,
-            parent_id=new_text.parent_id
+            views=new_text.views
         )
     else:
-        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail=ErrorConstants.ADMIN_ERROR_MESSAGE)
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail=ErrorConstants.TOKEN_ERROR_MESSAGE)
 
 
 async def create_table_of_content(table_of_content_request: TableOfContent, token: str) -> TableOfContent:
-    is_admin = verify_admin_access(token=token)
-    if is_admin:
+    is_valid_user = validate_user_exists(token=token)
+    if is_valid_user:
         await TextUtils.validate_text_exists(text_id=table_of_content_request.text_id)
         segment_ids = TextUtils.get_all_segment_ids(table_of_content=table_of_content_request)
         await SegmentUtils.validate_segments_exists(segment_ids=segment_ids)
         table_of_content = await create_table_of_content_detail(table_of_content_request=table_of_content_request)
         return table_of_content
     else:
-        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail=ErrorConstants.ADMIN_ERROR_MESSAGE)
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail=ErrorConstants.TOKEN_ERROR_MESSAGE)
 
 
 # PRIVATE FUNCTIONS
@@ -219,7 +227,7 @@ async def _mapping_table_of_content(text: TextDTO, table_of_content: TableOfCont
     return detail_table_of_content
 
 async def _receive_table_of_content(text_id: str, text_details_request: TextDetailsRequest):
-    table_of_content: Optional[TableOfContent] = None
+    table_of_content = None
     if text_details_request.content_id is not None:
         table_of_content = await get_table_of_content_by_content_id(
             content_id=text_details_request.content_id,
@@ -275,15 +283,14 @@ async def _get_texts_by_term_id(term_id: str, language: str, skip: int, limit: i
             id=str(text.id),
             title=text.title,
             language=text.language,
-            type="commentary",
             group_id=text.group_id,
+            type="commentary",
             is_published=text.is_published,
             created_date=text.created_date,
             updated_date=text.updated_date,
             published_date=text.published_date,
             published_by=text.published_by,
-            categories=text.categories,
-            parent_id=text.parent_id
+            categories=text.categories
         )
         for text in commentary
     ]
@@ -293,15 +300,14 @@ async def _get_texts_by_term_id(term_id: str, language: str, skip: int, limit: i
                 id=str(root_text.id),
                 title=root_text.title,
                 language=root_text.language,
-                type="root_text",
                 group_id=root_text.group_id,
+                type="root_text",
                 is_published=root_text.is_published,
                 created_date=root_text.created_date,
                 updated_date=root_text.updated_date,
                 published_date=root_text.published_date,
                 published_by=root_text.published_by,
-                categories=root_text.categories,
-                parent_id=root_text.parent_id
+                categories=root_text.categories
             )
         )
     return text_list
@@ -321,7 +327,6 @@ def _get_list_of_text_version_response_model(versions: List[TextDTO], versions_t
         TextVersion(
             id=str(version.id),
             title=version.title,
-            parent_id=version.parent_id,
             language=version.language,
             type=version.type,
             group_id=version.group_id,
@@ -335,3 +340,31 @@ def _get_list_of_text_version_response_model(versions: List[TextDTO], versions_t
         for version in versions
     ]
     return list_of_version
+
+async def get_texts_by_text_type(
+        text_type: str,
+        skip: int = 0,
+        limit: int = 10
+) -> List[TextDTO]:
+    """
+    Get texts by text type (e.g., 'sheet', 'commentary', 'version')
+    
+    Args:
+        text_type: The type of text to filter by
+        skip: Number of records to skip for pagination
+        limit: Maximum number of records to return
+        
+    Returns:
+        List[TextDTO]: List of texts matching the specified type
+    """
+    return await get_texts_by_type(text_type=text_type, skip=skip, limit=limit)
+
+async def update_text_details(text_id: str, update_text_request: UpdateTextRequest):
+    is_valid_text = await TextUtils.validate_text_exists(text_id=text_id)
+    if not is_valid_text:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=ErrorConstants.TEXT_NOT_FOUND_MESSAGE)
+    text_details = await TextUtils.get_text_detail_by_id(text_id=text_id)
+    text_details.updated_date = Utils.get_utc_date_time()
+    text_details.title = update_text_request.title
+    text_details.is_published = update_text_request.is_published
+    return await update_text_details_by_id(text_id=text_id, update_text_request=update_text_request)

@@ -7,7 +7,7 @@ from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from starlette import status
 
 from .topics_response_models import CreateTopicRequest
-from .topics_service import get_topics, get_sheets_by_topic, create_new_topic
+from .topics_service import get_topics, create_new_topic
 from typing import Annotated
 
 oauth2_scheme = HTTPBearer()
@@ -45,10 +45,3 @@ async def create_topic(create_topic_request: CreateTopicRequest,
         token=authentication_credential.credentials,
         language=language)
 
-
-@topics_router.get("/{topic_id}/sheets", status_code=status.HTTP_200_OK)
-async def get_sheets_for_topic(topic_id: str, language: Optional[str] = None):
-    return await get_sheets_by_topic(
-        topic_id=topic_id,
-        language=language
-    )

@@ -17,6 +17,10 @@ from .constants import Constants
 class Utils:
 
     @staticmethod
+    def get_utc_date_time() -> str:
+        return datetime.now(timezone.utc).strftime('%Y-%m-%d %H:%M:%S')
+
+    @staticmethod
     def get_date_time_from_epoch(epoch: int) -> str:
         return datetime.fromtimestamp(epoch // 1000, timezone.utc)
 

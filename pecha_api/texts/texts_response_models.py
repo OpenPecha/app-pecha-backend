@@ -5,28 +5,35 @@ from pecha_api.terms.terms_response_models import TermsModel
 
 from pydantic import BaseModel
 
+from .texts_enums import TextType
+
 class CreateTextRequest(BaseModel):
     title: str
-    language: str
-    parent_id: Optional[str] = None
+    language: Optional[str] = None
+    isPublished: bool = False
     group_id: str
     published_by: str
-    type: str
-    categories: List[str]
+    type: TextType
+    categories: Optional[List[str]] = None
+    views: Optional[int] = 0
+
+class UpdateTextRequest(BaseModel):
+    title: str
+    is_published: Optional[bool] = False
 
 class TextDTO(BaseModel):
     id: str
     title: str
-    language: str
+    language: Optional[str] = None
+    group_id: str
     type: str
-    group_id: Optional[str] = None
     is_published: bool
     created_date: str
     updated_date: str
     published_date: str
     published_by: str
-    categories: List[str]
-    parent_id: Optional[str] = None
+    categories: Optional[List[str]] = None
+    views: Optional[int] = None
 
 # Text TOC Response Models
 class Translation(BaseModel):
@@ -75,14 +82,14 @@ class TextSegment(BaseModel):
 
 class Section(BaseModel):
     id: str
-    title: str
+    title: Optional[str] = None
     section_number: int
     parent_id: Optional[str] = None
     segments: List[TextSegment] = []
     sections: Optional[List["Section"]] = None
-    created_date: str 
-    updated_date: str
-    published_date: str 
+    created_date: Optional[str] = None
+    updated_date: Optional[str] = None
+    published_date: Optional[str] = None
 
 class TableOfContent(BaseModel):
     id: Optional[str] = None

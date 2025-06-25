@@ -12,6 +12,7 @@ from pecha_api.share.share_response_models import (
 )
 from pecha_api.texts.segments.segments_service import SegmentDTO
 from pecha_api.texts.texts_response_models import TextDTO
+from pecha_api.texts.segments.segments_enum import SegmentType
 
 @pytest.mark.asyncio
 async def test_generate_short_url_with_logo():
@@ -45,7 +46,8 @@ async def test_generate_short_url_for_segment_content_success():
         id="id_1",
         text_id="text_1",
         content="content_1",
-        mapping=[]
+        mapping=[],
+        type=SegmentType.SOURCE
     )
     mock_text_detail = TextDTO(
         id="text_1",
@@ -59,7 +61,7 @@ async def test_generate_short_url_for_segment_content_success():
         published_date="2021-01-01",
         published_by="user_1",
         categories=[],
-        parent_id="parent_1",
+        views=0
     )
     with patch("pecha_api.share.share_service.get_short_url", new_callable=AsyncMock, return_value=mock_short_url_response),\
         patch("pecha_api.share.share_service.SegmentUtils.validate_segment_exists", new_callable=AsyncMock, return_value=True),\

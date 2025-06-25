@@ -1,4 +1,3 @@
-from ...users.users_service import verify_admin_access
 from ...error_contants import ErrorConstants
 from fastapi import HTTPException
 from starlette import status
@@ -16,6 +15,10 @@ from .groups_repository import (
 from .groups_response_models import (
     CreateGroupRequest,
     GroupDTO
+)
+
+from pecha_api.users.users_service import (
+    validate_user_exists
 )
 
 async def validate_group_exists(group_id: str) -> bool:
@@ -57,9 +60,12 @@ async def create_new_group(
     create_group_request: CreateGroupRequest,
     token: str
 ) -> GroupDTO:
-    is_admin = verify_admin_access(token=token)
-    if not is_admin:
-        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail=ErrorConstants.ADMIN_ERROR_MESSAGE)
+    is_valid_user = validate_user_exists(token=token)
+    if not is_valid_user:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail=ErrorConstants.TOKEN_ERROR_MESSAGE
+        )
     return await create_group(
         create_group_request=create_group_request
     )

@@ -2,12 +2,14 @@ from pydantic import BaseModel
 from typing import List, Optional
 from .segments_models import Mapping
 
+from .segments_enum import SegmentType
 from pecha_api.texts.texts_response_models import TextDTO
 
 
 class CreateSegment(BaseModel):
     content: str
-    mapping: List[Mapping]
+    type: SegmentType
+    mapping: Optional[List[Mapping]] = []
 
 
 class CreateSegmentRequest(BaseModel):
@@ -23,8 +25,10 @@ class SegmentDTO(BaseModel):
     id: str
     text_id: str
     content: str
-    mapping: List[MappingResponse]
+    type: SegmentType
+    mapping: Optional[List[MappingResponse]] = None
     text: Optional[TextDTO] = None
+
 
 class SegmentResponse(BaseModel):
     segments: List[SegmentDTO]

@@ -1,6 +1,6 @@
 from enum import Enum
 
-class GroupType(Enum):
-    VERSION = "version"
+class TextType(Enum):
     COMMENTARY = "commentary"
+    VERSION = "version"
     SHEET = "sheet"

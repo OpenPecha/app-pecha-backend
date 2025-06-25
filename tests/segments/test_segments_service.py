@@ -9,7 +9,8 @@ from pecha_api.texts.segments.segments_service import (
     get_segment_details_by_id,
     get_commentaries_by_segment_id,
     get_infos_by_segment_id,
-    get_root_text_mapping_by_segment_id
+    get_root_text_mapping_by_segment_id,
+    remove_segments_by_text_id
 )
 from pecha_api.texts.segments.segments_utils import SegmentUtils
 from pecha_api.texts.segments.segments_response_models import (
@@ -31,6 +32,9 @@ from pecha_api.texts.segments.segments_response_models import (
     SegmentRootMapping
 )
 
+from pecha_api.texts.segments.segments_enum import SegmentType
+
+
 from pecha_api.texts.texts_response_models import TextDTO
 
 from pecha_api.error_contants import ErrorConstants
@@ -42,7 +46,8 @@ async def test_get_translations_by_segment_id_success():
         id=segment_id,
         text_id="efb26a06-f373-450b-ba57-e7a8d4dd5b64",
         content="To the buddhas: Vipaśyin,<br> Śikhin, Viśvabhū,<br>   Krakucchanda, Kanakamuni,<br> and Kāśyapa,<br>   And Śākyamuni—Gautama,<br> deity of all deities,   <br>To the seven warrior-like buddhas, I pay homage!",
-        mapping=[]
+        mapping=[],
+        type=SegmentType.SOURCE
     )
     translations = [
         SegmentTranslation(
@@ -91,11 +96,15 @@ async def test_create_new_segment():
     create_segment_request = CreateSegmentRequest(
         text_id="efb26a06-f373-450b-ba57-e7a8d4dd5b64",
         segments=[
-            CreateSegment(content="content", mapping=[])
+            CreateSegment(
+                content="content", 
+                mapping=[],
+                type=SegmentType.SOURCE
+            )
         ]
     )
 
-    with patch('pecha_api.texts.segments.segments_service.verify_admin_access', return_value=True), \
+    with patch('pecha_api.texts.segments.segments_service.validate_user_exists', return_value=True), \
         patch('pecha_api.texts.segments.segments_service.TextUtils.validate_text_exists', new_callable=AsyncMock, return_value=True), \
         patch('pecha_api.texts.segments.segments_service.create_segment', new_callable=AsyncMock) as mock_create_segment:
         mock_segment = type('Segment', (), {
@@ -103,11 +112,13 @@ async def test_create_new_segment():
             'text_id': "efb26a06-f373-450b-ba57-e7a8d4dd5b64",
             'content': "content",
             'mapping': [],
+            'type': SegmentType.SOURCE,
             'model_dump': lambda self: {
                 'id': self.id,
                 'text_id': self.text_id,
                 'content': self.content,
-                'mapping': self.mapping
+                'mapping': self.mapping,
+                'type': self.type
             }
         })()
         mock_create_segment.return_value = [mock_segment]
@@ -123,7 +134,8 @@ async def test_create_new_segment():
                     id="efb26a06-f373-450b-ba57-e7a8d4dd5b64",
                     text_id="efb26a06-f373-450b-ba57-e7a8d4dd5b64",
                     content="content",
-                    mapping=[]
+                    mapping=[],
+                    type=SegmentType.SOURCE
                 )
             ]
         )
@@ -131,25 +143,29 @@ async def test_create_new_segment():
 
 
 @pytest.mark.asyncio
-async def test_create_new_segment_error_admin():
+async def test_create_new_segment_invalid_user():
     """
     Test case for the create_new_segment function fails due to admin
     """
     create_segment_request = CreateSegmentRequest(
         text_id="efb26a06-f373-450b-ba57-e7a8d4dd5b64",
         segments=[
-            CreateSegment(content="content", mapping=[])
+            CreateSegment(
+                content="content", 
+                mapping=[],
+                type=SegmentType.SOURCE
+            )
         ]
     )
 
-    with patch('pecha_api.texts.segments.segments_service.verify_admin_access', return_value=False):
+    with patch('pecha_api.texts.segments.segments_service.validate_user_exists', return_value=False):
         with pytest.raises(HTTPException) as exc_info:
             await create_new_segment(
                 create_segment_request=create_segment_request,
                 token="no_admin"
             )
-        assert exc_info.value.status_code == 403
-        assert exc_info.value.detail == ErrorConstants.ADMIN_ERROR_MESSAGE
+        assert exc_info.value.status_code == 401
+        assert exc_info.value.detail == ErrorConstants.TOKEN_ERROR_MESSAGE
 
 @pytest.mark.asyncio
 async def test_validate_segment_exists_success():
@@ -195,11 +211,13 @@ async def test_get_segment_details_by_id_without_text_details_success():
         'text_id': "text123",
         'content': "test content",
         'mapping': [],
+        'type': SegmentType.SOURCE,
         'model_dump': lambda self: {
             'id': self.id,
             'text_id': self.text_id,
             'content': self.content,
-            'mapping': self.mapping
+            'mapping': self.mapping,
+            'type': self.type
         }
     })()
     
@@ -211,6 +229,7 @@ async def test_get_segment_details_by_id_without_text_details_success():
         assert response.text_id == "text123"
         assert response.content == "test content"
         assert response.mapping == []
+        assert response.type == SegmentType.SOURCE
 
 @pytest.mark.asyncio
 async def test_get_segment_details_by_id_not_found():
@@ -239,13 +258,15 @@ async def test_get_segment_details_by_id_with_text_details_success():
         published_date="2021-01-01",
         published_by="admin",
         categories=["category1", "category2"],
-        parent_id=None
+        views=0
     )
     mock_segment = SegmentDTO(
         id=segment_id,
         text_id=text_id,
         content="test content",
         mapping=[],
+        type=SegmentType.SOURCE,
+        text=mock_text_details
     )
     with patch("pecha_api.texts.segments.segments_service.get_segment_by_id", new_callable=AsyncMock, return_value=mock_segment), \
         patch("pecha_api.texts.segments.segments_service.TextUtils.get_text_details_by_id", new_callable=AsyncMock, return_value=mock_text_details):
@@ -253,9 +274,10 @@ async def test_get_segment_details_by_id_with_text_details_success():
         response = await get_segment_details_by_id(segment_id=segment_id, text_details=True)
     
         assert response is not None
-        assert response.text is not None
         assert response.text_id == text_id
         assert response.id == segment_id
+        assert response.text is not None
+        
 
 
 @pytest.mark.asyncio
@@ -277,7 +299,8 @@ async def test_get_commentaries_by_segment_id_success():
                         parent_segment_id
                     ]
                 )
-            ]
+            ],
+            type=SegmentType.SOURCE
         )
         for i in range(1,6)
     ]
@@ -325,7 +348,8 @@ async def test_get_infos_by_segment_id_success():
             id=f"id_{i}",
             text_id=f"text_id_{i}",
             content=f"content_{i}",
-            mapping=[]
+            mapping=[],
+            type=SegmentType.SOURCE
         )
         for i in range(1,6)
     ]
@@ -343,6 +367,7 @@ async def test_get_infos_by_segment_id_success():
         assert response.segment_info.translations == 1
         assert response.segment_info.related_text.commentaries == 2
         assert response.segment_info.related_text.root_text == 3
+
 
 @pytest.mark.asyncio
 async def test_get_infos_by_segment_id_invalid_segment_id():
@@ -363,7 +388,8 @@ async def test_get_root_text_mapping_by_segment_id_success():
             'id': segment_id,
             'text_id': "efb26a06-f373-450b-ba57-e7a8d4dd5b64",
             'content': "test content",
-            'mapping': []
+            'mapping': [],
+            'type': SegmentType.SOURCE
         })
         mock_get_segment_root_mapping_details.return_value = [
             SegmentRootMapping(
@@ -396,3 +422,22 @@ async def test_get_root_text_mapping_by_segment_id_invalid_segment_id():
         assert exc_info.value.status_code == 404
         assert exc_info.value.detail == ErrorConstants.SEGMENT_NOT_FOUND_MESSAGE
         
+
+@pytest.mark.asyncio
+async def test_remove_segments_by_text_id_success():
+    text_id = "efb26a06-f373-450b-ba57-e7a8d4dd5b64"
+    with patch("pecha_api.texts.segments.segments_service.delete_segments_by_text_id", new_callable=AsyncMock, return_value=True),\
+        patch("pecha_api.texts.segments.segments_service.TextUtils.validate_text_exists", new_callable=AsyncMock, return_value=True):
+        
+        response = await remove_segments_by_text_id(text_id=text_id)
+        
+        assert response is not None
+    
+@pytest.mark.asyncio
+async def test_remove_segments_by_text_id_invalid_text_id():
+    text_id = "efb26a06-f373-450b-ba57-e7a8d4dd5b64"
+    with patch("pecha_api.texts.segments.segments_service.TextUtils.validate_text_exists", new_callable=AsyncMock, return_value=False):
+        with pytest.raises(HTTPException) as exc_info:
+            await remove_segments_by_text_id(text_id=text_id)
+        assert exc_info.value.status_code == 404
+        assert exc_info.value.detail == ErrorConstants.TEXT_NOT_FOUND_MESSAGE

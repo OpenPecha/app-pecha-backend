@@ -21,6 +21,8 @@ from pecha_api.texts.texts_response_models import (
     TextSegment,
     TableOfContent
 )
+from pecha_api.texts.segments.segments_enum import SegmentType
+
 from pecha_api.texts.groups.groups_response_models import GroupDTO
 
 @pytest.mark.asyncio
@@ -30,6 +32,7 @@ async def test_get_count_of_each_commentary_and_version_success():
             id="efb26a06-f373-450b-ba57-e7a8d4dd5b64",
             title="title",
             language="language",
+            group_id="group_id",
             type="commentary",
             is_published=True,
             created_date="created_date",
@@ -37,12 +40,13 @@ async def test_get_count_of_each_commentary_and_version_success():
             published_date="published_date",
             published_by="published_by",
             categories=["categories"],
-            parent_id="parent_id"
+            views=0
         ),
         "efb26a06-f373-450b-ba57-e7a8d4dd5b65": TextDTO(
             id="efb26a06-f373-450b-ba57-e7a8d4dd5b65",
             title="title",
             language="language",
+            group_id="group_id",
             type="version",
             is_published=True,
             created_date="created_date",
@@ -50,12 +54,13 @@ async def test_get_count_of_each_commentary_and_version_success():
             published_date="published_date",
             published_by="published_by",
             categories=["categories"],
-            parent_id="parent_id"
+            views=0
         ),
         "efb26a06-f373-450b-ba57-e7a8d4dd5b66": TextDTO(
             id="efb26a06-f373-450b-ba57-e7a8d4dd5b66",
             title="title",
             language="language",
+            group_id="group_id",
             type="commentary",
             is_published=True,
             created_date="created_date",
@@ -63,7 +68,7 @@ async def test_get_count_of_each_commentary_and_version_success():
             published_date="published_date",
             published_by="published_by",
             categories=["categories"],
-            parent_id="parent_id"
+            views=0
         )
     }
     list_of_segment_paramenter = [
@@ -71,19 +76,22 @@ async def test_get_count_of_each_commentary_and_version_success():
             id="efb26a06-f373-450b-ba57-e7a8d4dd5b64",
             text_id="efb26a06-f373-450b-ba57-e7a8d4dd5b64",
             content="content",
-            mapping=[]
+            mapping=[],
+            type=SegmentType.SOURCE
         ),
         SegmentDTO(
             id="efb26a06-f373-450b-ba57-e7a8d4dd5b65",
             text_id="efb26a06-f373-450b-ba57-e7a8d4dd5b65",
             content="content",
-            mapping=[]
+            mapping=[],
+            type=SegmentType.SOURCE
         ),
         SegmentDTO(
             id="efb26a06-f373-450b-ba57-e7a8d4dd5b66",
             text_id="efb26a06-f373-450b-ba57-e7a8d4dd5b66",
             content="content",
-            mapping=[]
+            mapping=[],
+            type=SegmentType.SOURCE
         )
     ]
     with patch("pecha_api.texts.segments.segments_utils.TextUtils.get_text_details_by_ids", new_callable=AsyncMock, return_value=text_details):
@@ -98,6 +106,7 @@ async def test_filter_segment_mapping_by_type_success():
             id="efb26a06-f373-450b-ba57-e7a8d4dd5b64",
             title="title",
             language="language",
+            group_id="group_id",
             type="commentary",
             is_published=True,
             created_date="created_date",
@@ -105,12 +114,13 @@ async def test_filter_segment_mapping_by_type_success():
             published_date="published_date",
             published_by="published_by",
             categories=["categories"],
-            parent_id="parent_id"
+            views=0
         ),
         "efb26a06-f373-450b-ba57-e7a8d4dd5b65": TextDTO(
             id="efb26a06-f373-450b-ba57-e7a8d4dd5b65",
             title="title",
             language="language",
+            group_id="group_id",
             type="version",
             is_published=True,
             created_date="created_date",
@@ -118,12 +128,13 @@ async def test_filter_segment_mapping_by_type_success():
             published_date="published_date",
             published_by="published_by",
             categories=["categories"],
-            parent_id="parent_id"
+            views=0
         ),
         "efb26a06-f373-450b-ba57-e7a8d4dd5b66": TextDTO(
             id="efb26a06-f373-450b-ba57-e7a8d4dd5b66",
             title="title",
             language="language",
+            group_id="group_id",
             type="commentary",
             is_published=True,
             created_date="created_date",
@@ -131,7 +142,7 @@ async def test_filter_segment_mapping_by_type_success():
             published_date="published_date",
             published_by="published_by",
             categories=["categories"],
-            parent_id="parent_id"
+            views=0
         )
     }
     list_of_segment_paramenter = [
@@ -139,19 +150,22 @@ async def test_filter_segment_mapping_by_type_success():
             id="efb26a06-f373-450b-ba57-e7a8d4dd5b64",
             text_id="efb26a06-f373-450b-ba57-e7a8d4dd5b64",
             content="content",
-            mapping=[]
+            mapping=[],
+            type=SegmentType.SOURCE
         ),
         SegmentDTO(
             id="efb26a06-f373-450b-ba57-e7a8d4dd5b65",
             text_id="efb26a06-f373-450b-ba57-e7a8d4dd5b65",
             content="content",
-            mapping=[]
+            mapping=[],
+            type=SegmentType.SOURCE
         ),
         SegmentDTO(
             id="efb26a06-f373-450b-ba57-e7a8d4dd5b66",
             text_id="efb26a06-f373-450b-ba57-e7a8d4dd5b66",
             content="content",
-            mapping=[]
+            mapping=[],
+            type=SegmentType.SOURCE
         )
     ]
     with patch("pecha_api.texts.segments.segments_utils.TextUtils.get_text_details_by_ids", new_callable=AsyncMock, return_value=text_details):
@@ -179,7 +193,8 @@ async def test_get_root_mapping_count_success():
                 ]
             )
             for i in range(1,6)
-        ]
+        ],
+        type=SegmentType.SOURCE
     )
     text_details = TextDTO(
         id=text_id,
@@ -193,7 +208,7 @@ async def test_get_root_mapping_count_success():
         published_date="published_date",
         published_by="published_by",
         categories=["categories"],
-        parent_id="parent_id"
+        views=0
     )
     mock_group_details = GroupDTO(
         id=group_id,
@@ -218,13 +233,15 @@ async def test_get_segment_root_mapping_details_success():
                     "segment_id_1"
                 ]
             )
-        ]
+        ],
+        type=SegmentType.SOURCE
     )  
     text_details = {
         "text_id_1": TextDTO(
             id="text_id_1",
             title="title",
             language="language",
+            group_id="group_id",
             type="commentary",
             is_published=True,
             created_date="created_date",
@@ -232,7 +249,7 @@ async def test_get_segment_root_mapping_details_success():
             published_date="published_date",
             published_by="published_by",
             categories=["categories"],
-            parent_id="parent_id"
+            views=0
         )
     }
     with patch("pecha_api.texts.segments.segments_utils.TextUtils.get_text_details_by_ids", new_callable=AsyncMock, return_value=text_details), \
@@ -273,7 +290,8 @@ async def test_mapped_segment_content_for_table_of_content_without_version_id_su
         id="anju6a06-f373-a50b-ba57-e7a8d4dd5555",
         text_id="4fae1b8e-9f2b-4d3c-8c6e-3a1b9e4d2f7c",
         content="content",
-        mapping=[]
+        mapping=[],
+        type=SegmentType.SOURCE
     )
     related_mapped_segments = [
         SegmentDTO(
@@ -287,7 +305,8 @@ async def test_mapped_segment_content_for_table_of_content_without_version_id_su
                         "anju6a06-f373-a50b-ba57-e7a8d4dd5555"
                     ]
                 )
-            ]
+            ],
+            type=SegmentType.SOURCE
         )
     ]
     with patch("pecha_api.texts.segments.segments_utils.get_segment_by_id", new_callable=AsyncMock, return_value=segment), \

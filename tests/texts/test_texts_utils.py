@@ -24,6 +24,7 @@ async def test_get_text_details_by_ids_success():
             id="efb26a06-f373-450b-ba57-e7a8d4dd5b64",
             title="title",
             language="language",
+            group_id="group_id",
             type="type",
             is_published=True,
             created_date="created_date",
@@ -31,7 +32,7 @@ async def test_get_text_details_by_ids_success():
             published_date="published_date",
             published_by="published_by",
             categories=["categories"],
-            parent_id="parent_id"
+            views=0
         )
     }
     with patch("pecha_api.texts.texts_utils.get_texts_by_ids", new_callable=AsyncMock, return_value=text_details_dict):
@@ -44,6 +45,7 @@ async def test_get_text_details_by_id_success():
         id="efb26a06-f373-450b-ba57-e7a8d4dd5b64",
         title="title",
         language="language",
+        group_id="group_id",
         type="type",
         is_published=True,
         created_date="created_date",
@@ -51,7 +53,7 @@ async def test_get_text_details_by_id_success():
         published_date="published_date",
         published_by="published_by",
         categories=["categories"],
-        parent_id="parent_id"
+        views=0
     )
     with patch("pecha_api.texts.texts_utils.get_texts_by_id", new_callable=AsyncMock, return_value=text_details):
         response = await TextUtils.get_text_details_by_id(text_id="efb26a06-f373-450b-ba57-e7a8d4dd5b64")
@@ -61,7 +63,6 @@ async def test_get_text_details_by_id_success():
         assert response.type == "type"
         assert response.is_published == True
         assert response.categories == ["categories"]
-        assert response.parent_id == "parent_id"
         
 @pytest.mark.asyncio
 async def test_validate_text_exists_success():
@@ -102,21 +103,21 @@ async def test_get_text_detail_by_id_success():
         id=text_id,
         title="title",
         language="language",
-        parent_id="parent_id",
+        group_id="group_id",
         type="type",
         is_published=True,
         created_date="created_date",
         updated_date="updated_date",
         published_date="published_date",
         published_by="published_by",
-        categories=["categories"]
+        categories=["categories"],
+        views=0
     )
     with patch("pecha_api.texts.texts_utils.get_texts_by_id", new_callable=AsyncMock, return_value=text):
         response = await TextUtils.get_text_detail_by_id(text_id=text_id)
         assert response.id == text_id
         assert response.title == "title"
         assert response.language == "language"
-        assert response.parent_id == "parent_id"
         assert response.type == "type"
         assert response.is_published == True
         assert response.created_date == "created_date"
@@ -217,6 +218,7 @@ async def test_filter_text_on_root_and_version():
             id=f"efb26a06-f373-450b-ba57-e7a8d4dd5b6{i}",
             title=f"en_{i}",
             language="en",
+            group_id="group_id",
             type="version",
             is_published=True,
             created_date="created_date",
@@ -224,7 +226,7 @@ async def test_filter_text_on_root_and_version():
             published_date="published_date",
             published_by="published_by",
             categories=["categories"],
-            parent_id="parent_id"
+            views=0
         )
         for i in range(1,3)
     ]
@@ -233,6 +235,7 @@ async def test_filter_text_on_root_and_version():
             id="efb26a06-f373-450b-ba57-e7a8d4dd5b64",
             title="bo_1",
             language="bo",
+            group_id="group_id",
             type="version",
             is_published=True,
             created_date="created_date",
@@ -240,7 +243,7 @@ async def test_filter_text_on_root_and_version():
             published_date="published_date",
             published_by="published_by",
             categories=["categories"],
-            parent_id="parent_id"
+            views=0
         )
     )
     response: Dict[str, Union[TextDTO, List[TextDTO]]] = TextUtils.filter_text_on_root_and_version(texts=mock_texts, language="en")
@@ -281,9 +284,9 @@ def _generate_mock_texts_version_and_commentary() -> List[TextDTO]:
     mock_commentary_texts: List[TextDTO] = [
         TextDTO(
             id=f"05c36f8b-95cd-4698-bc97-ba4958b2d55{i}",
-            group_id=f"05c36f8b-95cd-4698-bc97-ba4958b2d55{i}",
             title=f"bo_{i}",
             language="bo",
+            group_id=f"05c36f8b-95cd-4698-bc97-ba4958b2d55{i}",
             type="commentary",
             is_published=True,
             created_date="created_date",
@@ -291,16 +294,16 @@ def _generate_mock_texts_version_and_commentary() -> List[TextDTO]:
             published_date="published_date",
             published_by="published_by",
             categories=["categories"],
-            parent_id="parent_id"
+            views=0
         )
         for i in range(1, 6)
     ]
     mock_version_texts: List[TextDTO] = [
         TextDTO(
             id=f"ce14bedb-a4ca-402f-b7a0-cbb33efe518{i}",
-            group_id=f"ce14bedb-a4ca-402f-b7a0-cbb33efe518{i}",
             title=f"en_{i}",
             language="en",
+            group_id=f"ce14bedb-a4ca-402f-b7a0-cbb33efe518{i}",
             type="version",
             is_published=True,
             created_date="created_date",
@@ -308,7 +311,7 @@ def _generate_mock_texts_version_and_commentary() -> List[TextDTO]:
             published_date="published_date",
             published_by="published_by",
             categories=["categories"],
-            parent_id="parent_id"
+            views=0
         )
         for i in range(1, 3)
     ]

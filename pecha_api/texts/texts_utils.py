@@ -44,15 +44,15 @@ class TextUtils:
             id=str(text_detail.id),
             title=text_detail.title,
             language=text_detail.language,
-            parent_id=text_detail.parent_id,
-            type=text_detail.type,
             group_id=text_detail.group_id,
+            type=text_detail.type,
             is_published=text_detail.is_published,
             created_date=text_detail.created_date,
             updated_date=text_detail.updated_date,
             published_date=text_detail.published_date,
             published_by=text_detail.published_by,
-            categories=text_detail.categories
+            categories=text_detail.categories,
+            views=text_detail.views
         )
     
     @staticmethod
@@ -143,15 +143,15 @@ class TextUtils:
             id=str(text.id),
             title=text.title,
             language=text.language,
-            parent_id=text.parent_id,
-            type=text.type,
             group_id=text.group_id,
+            type=text.type,
             is_published=text.is_published,
             created_date=text.created_date,
             updated_date=text.updated_date,
             published_date=text.published_date,
             published_by=text.published_by,
-            categories=text.categories
+            categories=text.categories,
+            views=text.views
         )
         
     @staticmethod

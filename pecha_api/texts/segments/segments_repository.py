@@ -18,6 +18,14 @@ async def get_segment_by_id(segment_id: str) -> SegmentDTO | None:
         logging.debug(e)
         return None
 
+async def get_segments_by_text_id(text_id: str) -> List[SegmentDTO]:
+    try:
+        segments = await Segment.get_segments_by_text_id(text_id=text_id)
+        return segments
+    except CollectionWasNotInitialized as e:
+        logging.debug(e)
+        return []
+
 async def get_segment_details_by_id(segment_id: str):
     return await Segment.get_segment_details(segment_id=segment_id)
 
@@ -60,7 +68,8 @@ async def create_segment(create_segment_request: CreateSegmentRequest) -> List[S
         Segment(
             text_id=create_segment_request.text_id,
             content=segment.content,
-            mapping=segment.mapping
+            mapping=segment.mapping,
+            type=segment.type
         )
         for segment in create_segment_request.segments
     ]
@@ -76,3 +85,10 @@ async def get_related_mapped_segments(parent_segment_id: str) -> List[SegmentDTO
     except CollectionWasNotInitialized as e:
         logging.debug(e)
         return []
+
+async def delete_segments_by_text_id(text_id: str):
+    try:
+        await Segment.delete_segment_by_text_id(text_id=text_id)
+    except CollectionWasNotInitialized as e:
+        logging.debug(e)
+        return False

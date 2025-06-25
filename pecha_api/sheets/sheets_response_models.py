@@ -1,40 +1,74 @@
 from __future__ import annotations
 
-from typing import List, Union
+from typing import List, Union, Optional
 
 from pydantic import BaseModel, model_validator
 
 from pecha_api.utils import Utils
-from .sheets_models import Source, Text, Media
+
+from pecha_api.texts.segments.segments_models import SegmentType
+
+class Source(BaseModel):
+    position: int
+    type: SegmentType
+    content: str
+
+class Content(BaseModel):
+    position: int
+    type: SegmentType
+    content: str
+
+class Media(BaseModel):
+    position: int
+    type: SegmentType
+    content: str
+
+class Like(BaseModel):
+    username: str
+    name: str
+    
+class CreateSheetRequest(BaseModel):
+    title: str
+    source: List[Union[Source, Content, Media]]
+    is_published: bool = False
+
+class SheetSegment(BaseModel):
+    segment_id: str
+    segment_number: int
+    content: Optional[str] = None
+    text_title: Optional[str] = None
+    type: str
+    media_url: Optional[str] = None
+
+class SheetSection(BaseModel):
+    id: str
+    title: Optional[str] = None
+    section_number: int
+    parent_id: Optional[str] = None
+    segments: List[SheetSegment]
+    created_date: str
+    updated_date: str
+    published_date: str
+
+class SheetContent(BaseModel):
+    id: str
+    text_id: str
+    sections: List[SheetSection]
+
+class SheetResponse(BaseModel):
+    sheet_title: str
+    content: SheetContent
+    skip: int
+    current_section: int
+    limit: int
+    total: int
 
 class Publisher(BaseModel):
     id: str
     name: str
     profile_url: str | None
     image_url: str | None
-
-class CreateSheetRequest(BaseModel):
-    titles: str
-    summaries: str
-    source: List[Union[Source, Text, Media]]
-    publisher_id: str
-    topic_id: List[str]
-    sheetLanguage: str
-
-class CreateSheetResponse(BaseModel):
-    _id: str
-    titles: str
-    summaries: str
-    source: List[Union[Source, Text, Media]]
-    publisher_id: str
-    creation_date: str
-    modified_date: str
-    published_date: int
-    views: int
-    likes: List[str]
-    collection: List[str]
-    topic_id: List[str]
-    sheetLanguage: str
+    
 
 class SheetModel(BaseModel):
     id: str

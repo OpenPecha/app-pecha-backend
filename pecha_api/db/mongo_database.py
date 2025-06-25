@@ -9,7 +9,6 @@ from ..topics.topics_models import Topic
 from ..terms.terms_models import Term
 from ..texts.texts_models import Text
 from ..texts.segments.segments_models import Segment
-from ..sheets.sheets_models import Sheet
 from ..texts.texts_models import TableOfContent
 from ..texts.groups.groups_models import Group
 from ..config import get
@@ -28,7 +27,7 @@ async def lifespan(api: FastAPI):
 
     # Initialize collections and indexes if necessary
     try:
-        await init_beanie(database=mongodb,document_models=[Term, Topic, Text, Segment, Sheet, TableOfContent, Group])
+        await init_beanie(database=mongodb,document_models=[Term, Topic, Text, Segment, TableOfContent, Group])
         logging.info("Beanie initialized with the 'terms' collection.")
         
     except Exception as e:

@@ -7,14 +7,16 @@ from pecha_api.app import api
 from pecha_api.texts.segments.segments_response_models import (
     CreateSegmentRequest, 
     CreateSegment,
-    SegmentTranslationsResponse, 
+    SegmentTranslationsResponse,
     SegmentTranslation,
     SegmentDTO
 )
 from pecha_api.texts.texts_response_models import TextDTO
 
+
 from pecha_api.error_contants import ErrorConstants
 from pecha_api.texts.segments.segments_response_models import ParentSegment
+from pecha_api.texts.segments.segments_enum import SegmentType
 
 client = TestClient(api)
 
@@ -25,7 +27,8 @@ def test_get_segment_without_text_details_success(mock_get_segment_details_by_id
         id=segment_id,
         text_id="text_id",
         content="content",
-        mapping=[]
+        mapping=[],
+        type=SegmentType.SOURCE
     )
     mock_get_segment_details_by_id.return_value = mock_response
     response = client.get(f"/api/v1/segments/{segment_id}")
@@ -45,6 +48,7 @@ def test_get_segment_with_text_details_success(mock_get_segment_details_by_id):
         text_id="text_id",
         content="content",
         mapping=[],
+        type=SegmentType.SOURCE,
         text=TextDTO(
             id=text_id,
             title="title",
@@ -129,7 +133,6 @@ def test_get_translations_with_pagination(mock_get_translations):
     mock_response = SegmentTranslationsResponse(
         parent_segment=ParentSegment(
             segment_id=segment_id,
-            segment_number=1,
             content="Test segment content"
         ),
         translations=[
@@ -171,7 +174,8 @@ def test_create_segment_success(mock_create_segment):
         segments=[
             CreateSegment(
                 content="New segment content",
-                mapping=[]
+                mapping=[],
+                type=SegmentType.SOURCE
             )
         ]
     )
@@ -181,7 +185,8 @@ def test_create_segment_success(mock_create_segment):
             "id": segment_id,
             "text_id": segment_request.text_id,
             "content": segment_request.segments[0].content,
-            "mapping": segment_request.segments[0].mapping
+            "mapping": segment_request.segments[0].mapping,
+            "type": segment_request.segments[0].type
             }
         ]
 
@@ -191,7 +196,7 @@ def test_create_segment_success(mock_create_segment):
     # Make request with auth token
     response = client.post(
         "/api/v1/segments",
-        json=segment_request.model_dump(),
+        json=segment_request.model_dump(mode="json"),
         headers={"Authorization": "Bearer test_token"}
     )
     
@@ -210,7 +215,8 @@ def test_create_segment_unauthorized():
         segments=[
             CreateSegment(
                 content="New segment content",
-                mapping=[]
+                mapping=[],
+                type=SegmentType.SOURCE
             )
         ]
     )
@@ -218,7 +224,7 @@ def test_create_segment_unauthorized():
     # Make request without auth token
     response = client.post(
         "/api/v1/segments",
-        json=segment_request.model_dump()
+        json=segment_request.model_dump(mode="json")
     )
     
     assert response.status_code == status.HTTP_403_FORBIDDEN

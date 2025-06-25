@@ -10,7 +10,8 @@ from .texts_service import (
     create_new_text,
     get_text_by_text_id_or_term,
     get_text_details_by_text_id,
-    create_table_of_content
+    create_table_of_content,
+    get_texts_by_text_type
 )
 from .texts_response_models import (
     CreateTextRequest,
@@ -89,3 +90,22 @@ async def create_table_of_content_request(
         table_of_content_request: TableOfContent
 ):
     return await create_table_of_content(table_of_content_request=table_of_content_request, token=authentication_credential.credentials)
+
+@text_router.get("/by-type/{text_type}", status_code=status.HTTP_200_OK)
+async def get_texts_by_type(
+    text_type: str,
+    skip: int = Query(default=0),
+    limit: int = Query(default=10)
+):
+    """
+    Get texts by type (e.g., 'sheet', 'commentary', 'version')
+    
+    Args:
+        text_type: The type of text to filter by
+        skip: Number of records to skip for pagination
+        limit: Maximum number of records to return
+        
+    Returns:
+        List of texts matching the specified type
+    """
+    return await get_texts_by_text_type(text_type=text_type, skip=skip, limit=limit)

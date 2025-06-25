@@ -1,14 +1,22 @@
 from __future__ import annotations
-from fastapi import APIRouter, Query, Form
+from fastapi import APIRouter, Query
 from fastapi.security import HTTPBearer
 from starlette import status
 
 from typing import Optional
 from fastapi import APIRouter, Depends, UploadFile, File
+from fastapi.security import HTTPAuthorizationCredentials
+from typing import Annotated
 
 
-from .sheets_service import get_sheets, get_sheets_by_userID, create_new_sheet, upload_sheet_image_request
-from .sheets_response_models import CreateSheetRequest, SheetIdRequest
+from .sheets_service import (
+    create_new_sheet, 
+    upload_sheet_image_request, 
+    get_sheets,
+    update_sheet_by_id
+)
+
+from .sheets_response_models import CreateSheetRequest
 
 oauth2_scheme = HTTPBearer()
 sheets_router = APIRouter(
@@ -16,32 +24,33 @@ sheets_router = APIRouter(
     tags=["Sheets"]
 )
 
-
-@sheets_router.get("/topic", status_code=status.HTTP_200_OK)
-def get_topics(language: str | None):
-    return get_sheets(topic_id='', language=language)
-
-#get sheet with user_id with pagination
 @sheets_router.get("", status_code=status.HTTP_200_OK)
-async def get_sheets_by_user_id(
-    user_id: Optional[str] = None,
-    language: Optional[str] = None,
-    skip: int = Query(default=0, ge=0, description="Number of records to skip"),
-    limit: int = Query(default=10, ge=1, le=100, description="Number of records to return")
+async def get_sheets(
+    skip: int = Query(default=0),
+    limit: int = Query(default=10)
 ):
-    return await get_sheets_by_userID(
-        user_id=user_id,
-        language=language,
-        skip=skip,
-        limit=limit
-    )
+    return await get_sheets(skip=skip, limit=limit) 
 
 @sheets_router.post("", status_code=status.HTTP_201_CREATED)
 async def create_sheet(
     create_sheet_request: CreateSheetRequest,
-        ):
+    authentication_credential: Annotated[HTTPAuthorizationCredentials, Depends(oauth2_scheme)],
+):
     return await create_new_sheet(
-        create_sheet_request=create_sheet_request
+        create_sheet_request=create_sheet_request,
+        token=authentication_credential.credentials
+    )
+
+@sheets_router.put("/{sheet_id}", status_code=status.HTTP_200_OK)
+async def update_sheet(
+    sheet_id: str,
+    update_sheet_request: CreateSheetRequest,
+    authentication_credential: Annotated[HTTPAuthorizationCredentials, Depends(oauth2_scheme)],
+):
+    return await update_sheet_by_id(
+        sheet_id=sheet_id,
+        update_sheet_request=update_sheet_request,
+        token=authentication_credential.credentials
     )
 
 @sheets_router.post("/upload", status_code=status.HTTP_201_CREATED)

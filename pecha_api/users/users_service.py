@@ -159,6 +159,13 @@ def verify_admin_access(token: str) -> bool:
     else:
         return False
 
+def validate_user_exists(token: str) -> bool:
+    current_user = validate_and_extract_user_details(token=token)
+    if current_user:
+        return True
+    else:
+        return False
+
 
 def get_social_profile(value: str) -> SocialProfile:
     try:
