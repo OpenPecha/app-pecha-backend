@@ -26,7 +26,7 @@ MOCK_TEXT_DTO = TextDTO(
     title="Test Text",
     language="bo",
     group_id="123e4567-e89b-12d3-a456-426614174000",
-    type="version",
+    type="VERSION",
     is_published=True,
     created_date="2025-01-01T00:00:00",
     updated_date="2025-01-01T00:00:00",
@@ -87,7 +87,7 @@ MOCK_TEXT_VERSION = TextVersion(
     parent_id=None,
     priority=1,
     language="bo",
-    type="version",
+    type="VERSION",
     group_id="123e4567-e89b-12d3-a456-426614174004",
     table_of_contents=[],
     is_published=True,
@@ -187,7 +187,7 @@ async def test_create_text_success(mocker):
         "language": "bo",
         "isPublished": True,
         "group_id": "123e4567-e89b-12d3-a456-426614174000",
-        "type": "version",
+        "type": "VERSION",
         "published_by": "test_user",
         "categories": []
     }

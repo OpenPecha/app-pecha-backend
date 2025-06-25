@@ -38,8 +38,14 @@ class SegmentUtils:
     
     @staticmethod
     async def validate_segment_exists(segment_id: str) -> bool:
-        """Validate that a segment exists by its ID."""
-        uuid_segment_id = UUID(segment_id)
+        """Validate that a segment exists."""
+        try:
+            uuid_segment_id = UUID(segment_id)
+        except ValueError as e:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail=f"Invalid segment ID format: {str(e)}. Segment ID must be a valid UUID."
+            )
         is_exists = await check_segment_exists(segment_id=uuid_segment_id)
         if not is_exists:
             raise HTTPException(
@@ -51,7 +57,13 @@ class SegmentUtils:
     @staticmethod
     async def validate_segments_exists(segment_ids: List[str]) -> bool:
         """Validate that all segment IDs in the list exist."""
-        uuid_segment_ids = [UUID(segment_id) for segment_id in segment_ids]
+        try:
+            uuid_segment_ids = [UUID(segment_id) for segment_id in segment_ids]
+        except ValueError as e:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail=f"Invalid segment ID format: {str(e)}. All segment IDs must be valid UUIDs."
+            )
         all_exists = await check_all_segment_exists(segment_ids=uuid_segment_ids)
         if not all_exists:
             raise HTTPException(
