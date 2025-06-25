@@ -57,10 +57,10 @@ from pecha_api.texts.segments.segments_service import (
     remove_segments_by_text_id
 )
 
-from pecha_api.sheets.sheets_response_models import SheetResponse
+from pecha_api.sheets.sheets_response_models import SheetIdResponse
 
     
-async def create_new_sheet(create_sheet_request: CreateSheetRequest, token: str) -> SheetResponse:
+async def create_new_sheet(create_sheet_request: CreateSheetRequest, token: str) -> SheetIdResponse:
     group_id =  await _create_sheet_group_(token=token)
     text_id = await _create_sheet_text_(
         title=create_sheet_request.title, 
@@ -78,13 +78,13 @@ async def create_new_sheet(create_sheet_request: CreateSheetRequest, token: str)
         segment_dict=sheet_segments,
         token=token
     )
-    return SheetResponse(sheet_id=text_id)
+    return SheetIdResponse(sheet_id=text_id)
 
 async def update_sheet_by_id(
         sheet_id: str, 
         update_sheet_request: CreateSheetRequest, 
         token: str
-    ) -> SheetResponse:
+    ) -> SheetIdResponse:
 
     is_valid_user = validate_user_exists(token=token)
     if not is_valid_user:
@@ -107,7 +107,7 @@ async def update_sheet_by_id(
         segment_dict=sheet_segments,
         token=token
     )
-    return SheetResponse(sheet_id=sheet_id)
+    return SheetIdResponse(sheet_id=sheet_id)
 
 def upload_sheet_image_request(sheet_id: Optional[str], file: UploadFile) -> SheetImageResponse:
     # Validate and compress the uploaded image
