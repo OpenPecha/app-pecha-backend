@@ -234,7 +234,7 @@ async def _create_sheet_text_(title: str, token: str, group_id: str) -> str:
         title=title,
         group_id=group_id,
         language=None,
-        published_by=user_details.username, # EMAIL ID
+        published_by=user_details.email,
         type=TextType.SHEET
     )
     new_text: TextDTO = await create_new_text(create_text_request=create_text_request, token=token)
