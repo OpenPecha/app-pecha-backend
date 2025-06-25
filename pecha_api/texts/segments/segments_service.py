@@ -39,12 +39,8 @@ from .segments_response_models import (
 from ...users.users_service import validate_user_exists
 
 async def get_segments_details_by_ids(segment_ids: List[str]) -> Dict[str, SegmentDTO]:
-    segments = await get_segments_by_ids(segment_ids=segment_ids)
-    segments_dict = {
-        segment.id: segment
-        for segment in segments
-    }
-    return segments_dict
+    segments: Dict[str, SegmentDTO] = await get_segments_by_ids(segment_ids=segment_ids)
+    return segments
 
 async def get_segment_details_by_id(segment_id: str, text_details: bool = False) -> SegmentDTO:
     segment = await get_segment_by_id(segment_id=segment_id)

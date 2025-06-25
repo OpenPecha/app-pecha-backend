@@ -32,8 +32,8 @@ def get_user_info(token: str) -> UserInfoResponse:
 def fetch_user_by_email(email: str) -> Optional[UserInfoResponse]:
     with SessionLocal() as db_session:
         user = get_user_by_email(db=db_session, email=email)
-        return generate_user_info_response(user=user)
-    return None
+        db_session.close()
+    return generate_user_info_response(user=user)
 
 def generate_user_info_response(user: Users) -> Optional[UserInfoResponse]:
     if user:

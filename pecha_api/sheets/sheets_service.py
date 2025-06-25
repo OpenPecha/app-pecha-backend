@@ -45,6 +45,7 @@ from pecha_api.texts.texts_enums import TextType
 from pecha_api.texts.texts_response_models import (
     TextDTO,
     TableOfContent,
+    TableOfContentResponse,
     Section,
     TextSegment
 )
@@ -75,8 +76,9 @@ async def get_sheet_by_id(sheet_id: str, skip: int, limit: int) -> SheetDTO:
     
     user_details: UserInfoResponse = fetch_user_by_email(email=sheet_details.published_by)
     
-    sheet_table_of_content: TableOfContent = await get_table_of_contents_by_text_id(text_id=sheet_id)
-
+    sheet_table_of_content: TableOfContentResponse = await get_table_of_contents_by_text_id(text_id=sheet_id)
+    
+    sheet_table_of_content = sheet_table_of_content.contents[0]
     sheet_dto: SheetDTO = await _generate_sheet_dto_(
         sheet_details=sheet_details, 
         user_details=user_details, 
@@ -96,27 +98,55 @@ async def _generate_sheet_dto_(sheet_details: TextDTO, user_details: UserInfoRes
     segment_ids = _get_all_segment_ids_in_table_of_content_(
         table_of_content=sheet_table_of_content
     )
+    
     segments_dict: Dict[str, SegmentDTO] = await get_segments_details_by_ids(segment_ids=segment_ids)
-    sheet_content = _generate_sheet_content_(
+    
+    sheet_section: SheetSection = await _generate_sheet_section_(
         sheet_table_of_content=sheet_table_of_content,
         segments_dict=segments_dict
     )
-    sheet_dto = SheetDTO(
+
+    return SheetDTO(
         id=sheet_details.id,
         sheet_title=sheet_details.title,
         created_date=sheet_details.created_date,
         publisher=publisher,
+        content=sheet_section,
         skip=skip,
         limit=limit,
         total=len(sheet_table_of_content.sections),
     )
 
-def _generate_sheet_content_(sheet_table_of_content: TableOfContent, segments_dict: Dict[str, SegmentDTO]) -> SheetSection:
+async def _generate_sheet_section_(sheet_table_of_content: TableOfContent, segments_dict: Dict[str, SegmentDTO]) -> SheetSection:
     sheet_segments = []
-    for segments in sheet_table_of_content.sections.segments:
+    for segments in sheet_table_of_content.sections[0].segments:
         segment_details: SegmentDTO = segments_dict[segments.segment_id]
         if segment_details.type == SegmentType.SOURCE:
-            
+            segment_text_details: TextDTO = await TextUtils.get_text_details_by_id(text_id=segment_details.text_id)
+            sheet_segments.append(
+                SheetSegment(
+                    segment_id=segments.segment_id,
+                    segment_number=segments.segment_number,
+                    content=segment_details.content,
+                    language=segment_text_details.language,
+                    text_title=segment_text_details.title,
+                    type=segment_details.type
+                )
+            )
+        else:
+            sheet_segments.append(
+                SheetSegment(
+                    segment_id=segments.segment_id,
+                    segment_number=segments.segment_number,
+                    content=segment_details.content,
+                    type=segment_details.type
+                )
+            )
+
+    return SheetSection(
+        section_number=1,
+        segments=sheet_segments
+    )
 
 
 def _get_all_segment_ids_in_table_of_content_(table_of_content: TableOfContent) -> List[str]:

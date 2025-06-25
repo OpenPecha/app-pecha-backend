@@ -27,7 +27,6 @@ class SheetSegment(BaseModel):
     type: SegmentType
 
 class SheetSection(BaseModel):
-    id: str
     title: Optional[str] = None
     section_number: int
     parent_id: Optional[str] = None
@@ -47,7 +46,6 @@ class SheetDTO(BaseModel):
     publisher: Publisher
     content: SheetSection
     skip: int
-    current_section: int
     limit: int
     total: int
 
