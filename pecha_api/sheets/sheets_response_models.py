@@ -33,10 +33,6 @@ class SheetSection(BaseModel):
     parent_id: Optional[str] = None
     segments: List[SheetSegment]
 
-class SheetContent(BaseModel):
-    id: str
-    text_id: str
-    sections: List[SheetSection]
 
 class Publisher(BaseModel):
     name: str
@@ -49,7 +45,7 @@ class SheetDTO(BaseModel):
     sheet_title: str
     created_date: str
     publisher: Publisher
-    content: SheetContent
+    content: SheetSection
     skip: int
     current_section: int
     limit: int

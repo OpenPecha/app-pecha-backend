@@ -39,6 +39,9 @@ class TextUtils:
     
     @staticmethod
     async def get_text_details_by_id(text_id: str) -> TextDTO:
+        is_valid_text = await TextUtils.validate_text_exists(text_id=text_id)
+        if not is_valid_text:
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=ErrorConstants.TEXT_NOT_FOUND_MESSAGE)
         text_detail = await get_texts_by_id(text_id=text_id)
         return TextDTO(
             id=str(text_detail.id),

@@ -12,13 +12,16 @@ from typing import Annotated
 from .sheets_service import (
     create_new_sheet, 
     upload_sheet_image_request, 
-    get_sheets,
+    get_sheet_by_id,
     update_sheet_by_id
 )
 
 from pecha_api.sheets.sheets_response_models import SheetIdResponse
 
-from .sheets_response_models import CreateSheetRequest
+from .sheets_response_models import (
+    CreateSheetRequest,
+    SheetDTO
+)
 
 oauth2_scheme = HTTPBearer()
 sheets_router = APIRouter(
@@ -27,11 +30,12 @@ sheets_router = APIRouter(
 )
 
 @sheets_router.get("", status_code=status.HTTP_200_OK)
-async def get_sheets(
+async def get_sheet(
+    sheet_id: str,
     skip: int = Query(default=0),
     limit: int = Query(default=10)
-):
-    return await get_sheets(skip=skip, limit=limit)
+) -> SheetDTO:
+    return await get_sheet_by_id(sheet_id=sheet_id, skip=skip, limit=limit)
 
 @sheets_router.post("", status_code=status.HTTP_201_CREATED)
 async def create_sheet(

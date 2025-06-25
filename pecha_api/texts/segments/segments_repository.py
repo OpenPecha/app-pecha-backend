@@ -18,6 +18,14 @@ async def get_segment_by_id(segment_id: str) -> SegmentDTO | None:
         logging.debug(e)
         return None
 
+async def get_segments_by_ids(segment_ids: List[str]) -> List[SegmentDTO]:
+    try:
+        segments = await Segment.get_segments_by_ids(segment_ids=segment_ids)
+        return segments
+    except CollectionWasNotInitialized as e:
+        logging.debug(e)
+        return []
+
 async def get_segments_by_text_id(text_id: str) -> List[SegmentDTO]:
     try:
         segments = await Segment.get_segments_by_text_id(text_id=text_id)

@@ -3,6 +3,7 @@ from pecha_api.error_contants import ErrorConstants
 from .segments_repository import (
     create_segment,
     get_segment_by_id, 
+    get_segments_by_ids,
     get_related_mapped_segments,
     get_segments_by_text_id,
     delete_segments_by_text_id
@@ -23,7 +24,7 @@ from starlette import status
 from .segments_utils import SegmentUtils
 from ..texts_utils import TextUtils
 
-from typing import List
+from typing import List, Dict
 
 from .segments_response_models import (
     SegmentTranslationsResponse, 
@@ -37,6 +38,13 @@ from .segments_response_models import (
 
 from ...users.users_service import validate_user_exists
 
+async def get_segments_details_by_ids(segment_ids: List[str]) -> Dict[str, SegmentDTO]:
+    segments = await get_segments_by_ids(segment_ids=segment_ids)
+    segments_dict = {
+        segment.id: segment
+        for segment in segments
+    }
+    return segments_dict
 
 async def get_segment_details_by_id(segment_id: str, text_details: bool = False) -> SegmentDTO:
     segment = await get_segment_by_id(segment_id=segment_id)
