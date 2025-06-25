@@ -10,8 +10,7 @@ from pecha_api.image_utils import ImageUtils
 from pecha_api.sheets.sheets_response_models import (
     CreateSheetRequest,
     Source,
-    Content,
-    Media
+    SheetIdResponse
 )
 from pecha_api.texts.segments.segments_enum import SegmentType
 from pecha_api.texts.texts_response_models import (
@@ -92,12 +91,12 @@ async def test_create_new_sheet_success():
             type=SegmentType.SOURCE,
             content="source_segment_id"
         ),
-        Content(
+        Source(
             position=2,
             type=SegmentType.CONTENT,
             content="content"
         ),
-        Media(
+        Source(
             position=3,
             type=SegmentType.IMAGE,
             content="media_url"
@@ -178,7 +177,8 @@ async def test_create_new_sheet_success():
         )
 
         assert response is not None
-        assert response["sheet_id"] == "text_id"
+        assert isinstance(response, SheetIdResponse)
+        assert response.sheet_id == "text_id"
 
 @pytest.mark.asyncio
 async def test_create_sheet_invalid_token():
@@ -202,12 +202,12 @@ async def test_update_sheet_success():
             type=SegmentType.SOURCE,
             content="source_segment_id"
         ),
-        Content(
+        Source(
             position=2,
             type=SegmentType.CONTENT,
             content="content"
         ),
-        Media(
+        Source(
             position=3,
             type=SegmentType.IMAGE,
             content="media_url"
@@ -248,7 +248,8 @@ async def test_update_sheet_success():
         )
 
         assert response is not None
-        assert response["sheet_id"] == "text_id"
+        assert isinstance(response, SheetIdResponse)
+        assert response.sheet_id == "text_id"
 
 @pytest.mark.asyncio
 async def test_update_sheet_invalid_token():
