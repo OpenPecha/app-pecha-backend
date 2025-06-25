@@ -55,7 +55,7 @@ async def test_get_text_by_text_id_or_term_without_term_id_success():
             views=0
         )
 
-        response = await get_text_by_text_id_or_term(text_id=text_id, term_id=term_id, language="bo", skip=0, limit=10)
+        response = await get_text_by_text_id_or_term(text_id=text_id, term_id=term_id, language=None, skip=0, limit=10)
 
         assert response is not None
         assert isinstance(response, TextDTO)
