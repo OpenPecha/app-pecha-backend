@@ -10,7 +10,9 @@ from pecha_api.image_utils import ImageUtils
 from pecha_api.sheets.sheets_response_models import (
     CreateSheetRequest,
     Source,
-    SheetIdResponse
+    SheetIdResponse,
+    SheetDTO,
+    SheetSection
 )
 from pecha_api.texts.segments.segments_enum import SegmentType
 from pecha_api.texts.texts_response_models import (
@@ -343,6 +345,12 @@ async def test_get_sheet_by_id_success():
         response = await get_sheet_by_id(sheet_id=sheet_id, skip=0, limit=10)
 
         assert response is not None
+        assert isinstance(response, SheetDTO)
+        assert response.id == sheet_id
+        assert response.sheet_title == "sheet_title"
+        assert response.publisher is not None
+        assert isinstance(response.content, SheetSection)
+        assert response.content is not None
 
 @pytest.mark.asyncio
 async def test_get_sheet_by_id_invalid_sheet_id():
