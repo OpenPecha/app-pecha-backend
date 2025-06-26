@@ -108,7 +108,7 @@ async def test_create_new_sheet_success():
     )
     mock_token = "valid_token"
     mock_user_details = type("User",(), {
-        "username": "test_user",
+        "email": "test_user@gmail.com",
     })
     mock_group_response = type("GroupDTO", (), {
         "id": "group_id",

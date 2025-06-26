@@ -31,6 +31,7 @@ from pecha_api.texts.segments.segments_response_models import (
     SegmentRootMappingResponse,
     SegmentRootMapping
 )
+
 from pecha_api.texts.segments.segments_enum import SegmentType
 
 

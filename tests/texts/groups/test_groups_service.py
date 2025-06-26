@@ -111,13 +111,13 @@ async def test_get_group_details_invalid_uuid():
 @pytest.mark.asyncio
 async def test_create_new_group_success():
     group_id = "4d2f3498-3cc6-4bc6-9beb-37d2f7dc0163"
-    type = GroupType.VERSION
+    type_ = GroupType.TEXT
     create_group_request = CreateGroupRequest(
-        type=type
+        type=GroupType.TEXT
     )
     group_details: GroupDTO = GroupDTO(
         id=group_id,
-        type=type
+        type=type_
     )
     with patch("pecha_api.texts.groups.groups_service.validate_user_exists", return_value=True), \
         patch("pecha_api.texts.groups.groups_service.create_group", new_callable=AsyncMock) as mock_create_group:
@@ -126,12 +126,12 @@ async def test_create_new_group_success():
         assert response is not None
         assert isinstance(response, GroupDTO)
         assert response.id == group_id
-        assert response.type == type.value
+        assert response.type == type_.value
 
 @pytest.mark.asyncio
 async def test_create_new_group_not_admin():
     create_group_request = CreateGroupRequest(
-        type=GroupType.VERSION
+        type=GroupType.TEXT
     )
     with patch("pecha_api.texts.groups.groups_service.validate_user_exists", return_value=False):
         with pytest.raises(HTTPException) as exc_info:
