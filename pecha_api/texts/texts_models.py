@@ -133,9 +133,10 @@ class Text(Document):
         return await cls.update_all(cls.id == text_id, {"$set": text_details.model_dump()})
 
     @classmethod
-    async def get_texts_by_type(cls, text_type: TextType, skip: int, limit: int) -> List["Text"]:
+    async def get_texts_by_type(cls, text_type: TextType, is_published: Optional[bool] = True, skip: int = 0, limit: int = 10) -> List["Text"]:
         query = {
-            "type": text_type
+            "type": text_type,
+            "is_published": is_published
         }
         texts = (
             await cls.find(query)

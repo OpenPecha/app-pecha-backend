@@ -87,9 +87,9 @@ async def get_texts_by_group_id(group_id: str, skip: int, limit: int) -> List[Te
         for text in texts
     ]
 
-async def get_texts_by_type(text_type: str, is_public: Optional[bool] = None, skip: int = 0, limit: int = 10) -> List[TextDTO]:
+async def get_texts_by_type(text_type: str, is_published: Optional[bool] = None, skip: int = 0, limit: int = 10) -> List[TextDTO]:
     from .texts_enums import TextType
-    texts = await Text.get_texts_by_type(text_type=TextType(text_type), is_public=is_public, skip=skip, limit=limit)
+    texts = await Text.get_texts_by_type(text_type=TextType(text_type), is_published=is_published, skip=skip, limit=limit)
     return [
         TextDTO(
             id=str(text.id),

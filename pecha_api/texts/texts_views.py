@@ -91,9 +91,9 @@ async def create_table_of_content_request(
 ):
     return await create_table_of_content(table_of_content_request=table_of_content_request, token=authentication_credential.credentials)
 
-@text_router.get("/by-type/{text_type}", status_code=status.HTTP_200_OK)
+@text_router.get("/sheets/", status_code=status.HTTP_200_OK)
 async def get_texts_by_type(
-    text_type: str,
+    is_published: Optional[bool] = Query(default=None),
     skip: int = Query(default=0),
     limit: int = Query(default=10)
 ):
@@ -108,4 +108,4 @@ async def get_texts_by_type(
     Returns:
         List of texts matching the specified type
     """
-    return await get_texts_by_text_type(text_type=text_type, skip=skip, limit=limit)
+    return await get_texts_by_text_type(is_published=is_published, skip=skip, limit=limit)

@@ -343,6 +343,7 @@ def _get_list_of_text_version_response_model(versions: List[TextDTO], versions_t
 
 async def get_texts_by_text_type(
         text_type: str,
+        is_published: Optional[bool] = True,
         skip: int = 0,
         limit: int = 10
 ) -> List[TextDTO]:
@@ -357,7 +358,7 @@ async def get_texts_by_text_type(
     Returns:
         List[TextDTO]: List of texts matching the specified type
     """
-    return await get_texts_by_type(text_type=text_type, skip=skip, limit=limit)
+    return await get_texts_by_type(is_published=is_published, text_type=text_type, skip=skip, limit=limit)
 
 async def update_text_details(text_id: str, update_text_request: UpdateTextRequest):
     is_valid_text = await TextUtils.validate_text_exists(text_id=text_id)
