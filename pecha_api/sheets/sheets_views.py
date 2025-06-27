@@ -25,6 +25,14 @@ sheets_router = APIRouter(
     tags=["Sheets"]
 )
 
+@sheets_router.get("", status_code=status.HTTP_200_OK)
+async def list_sheets(
+    is_published: Optional[bool] = Query(default=True),
+    skip: int = Query(default=0),
+    limit: int = Query(default=10)
+):
+    return await get_sheets(is_published=is_published, skip=skip, limit=limit) 
+
 
 @sheets_router.post("", status_code=status.HTTP_201_CREATED)
 async def create_sheet(

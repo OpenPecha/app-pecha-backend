@@ -245,4 +245,9 @@ async def _create_sheet_group_(token: str) -> str:
         type=GroupType.SHEET
     )
     new_group: GroupDTO = await create_new_group(create_group_request=create_group_request, token=token)
+
     return new_group.id
+
+async def get_sheets(is_published: Optional[bool] = True, skip: int = 0, limit: int = 10) -> List[TextDTO]:
+    return await get_texts_by_text_type(is_published=is_published, text_type=TextType.SHEET.value, skip=skip, limit=limit)
+
