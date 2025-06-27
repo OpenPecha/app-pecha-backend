@@ -29,7 +29,7 @@ sheets_router = APIRouter(
     tags=["Sheets"]
 )
 
-@sheets_router.get("", status_code=status.HTTP_200_OK)
+@sheets_router.get("/{sheet_id}", status_code=status.HTTP_200_OK)
 async def get_sheet(
     sheet_id: str,
     skip: int = Query(default=0),
