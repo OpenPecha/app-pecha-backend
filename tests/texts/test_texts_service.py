@@ -10,7 +10,8 @@ from pecha_api.texts.texts_service import (
     create_table_of_content,
     get_table_of_contents_by_text_id,
     get_text_details_by_text_id,
-    update_text_details
+    update_text_details,
+    remove_table_of_content_by_text_id,
 )
 from pecha_api.texts.texts_response_models import (
     CreateTextRequest,
@@ -34,6 +35,32 @@ from pecha_api.texts.texts_enums import TextType
 
 from pecha_api.error_contants import ErrorConstants
 from typing import List
+
+@pytest.mark.asyncio
+async def test_get_text_by_text_id_or_term_without_term_id_success():
+    text_id = "efb26a06-f373-450b-ba57-e7a8d4dd5b64"
+    term_id = None
+    with patch("pecha_api.texts.texts_service.TextUtils.get_text_detail_by_id", new_callable=AsyncMock) as mock_get_text_detail_by_id:
+        mock_get_text_detail_by_id.return_value = TextDTO(
+            id=text_id,
+            title="བྱང་ཆུབ་སེམས་དཔའི་སྤྱོད་པ་ལ་འཇུག་པ།",
+            language="bo",
+            group_id="group_id_1",
+            type="commentary",
+            is_published=True,
+            created_date="2025-03-21 09:40:34.025024",
+            updated_date="2025-03-21 09:40:34.025035",
+            published_date="2025-03-21 09:40:34.025038",
+            published_by="pecha",
+            categories=[],
+            views=0
+        )
+
+        response = await get_text_by_text_id_or_term(text_id=text_id, term_id=term_id, language=None, skip=0, limit=10)
+
+        assert response is not None
+        assert isinstance(response, TextDTO)
+        assert response.id == text_id
 
 @pytest.mark.asyncio
 async def test_get_text_by_term_id():
@@ -974,5 +1001,21 @@ async def test_update_text_details_invalid_text_id():
     with patch("pecha_api.texts.texts_service.TextUtils.validate_text_exists", new_callable=AsyncMock, return_value=False):
         with pytest.raises(HTTPException) as exec_info:
             await update_text_details(text_id="invalid_id", update_text_request=UpdateTextRequest(title="updated_title", is_published=True))
+        assert exec_info.value.status_code == 404
+        assert exec_info.value.detail == ErrorConstants.TEXT_NOT_FOUND_MESSAGE
+    
+@pytest.mark.asyncio
+async def test_delete_table_of_content_success():
+    with patch("pecha_api.texts.texts_service.delete_table_of_content_by_text_id", new_callable=AsyncMock) as mock_delete_table_of_content_by_text_id, \
+        patch("pecha_api.texts.texts_service.TextUtils.validate_text_exists", new_callable=AsyncMock, return_value=True):
+        response = await remove_table_of_content_by_text_id(text_id="text_id_1")
+        assert response is not None
+
+@pytest.mark.asyncio
+async def test_delete_table_of_content_invalid_text_id():
+    with patch("pecha_api.texts.texts_service.delete_table_of_content_by_text_id", new_callable=AsyncMock) as mock_delete_table_of_content_by_text_id, \
+        patch("pecha_api.texts.texts_service.TextUtils.validate_text_exists", new_callable=AsyncMock, return_value=False):
+        with pytest.raises(HTTPException) as exec_info:
+            await remove_table_of_content_by_text_id(text_id="invalid_id")
         assert exec_info.value.status_code == 404
         assert exec_info.value.detail == ErrorConstants.TEXT_NOT_FOUND_MESSAGE

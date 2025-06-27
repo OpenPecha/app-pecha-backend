@@ -1,7 +1,7 @@
 from enum import Enum
 
 class SegmentType(Enum):
-    SOURCE = "text"
+    SOURCE = "source"
     CONTENT = "content"
     AUDIO = "audio"
     IMAGE = "image"

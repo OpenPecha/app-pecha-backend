@@ -12,9 +12,10 @@ from typing import Annotated
 from .sheets_service import (
     create_new_sheet, 
     upload_sheet_image_request, 
-    get_sheets,
     update_sheet_by_id
 )
+
+from pecha_api.sheets.sheets_response_models import SheetIdResponse
 
 from .sheets_response_models import CreateSheetRequest
 
@@ -32,11 +33,12 @@ async def list_sheets(
 ):
     return await get_sheets(is_published=is_published, skip=skip, limit=limit) 
 
+
 @sheets_router.post("", status_code=status.HTTP_201_CREATED)
 async def create_sheet(
     create_sheet_request: CreateSheetRequest,
     authentication_credential: Annotated[HTTPAuthorizationCredentials, Depends(oauth2_scheme)],
-):
+) -> SheetIdResponse:
     return await create_new_sheet(
         create_sheet_request=create_sheet_request,
         token=authentication_credential.credentials
@@ -47,7 +49,7 @@ async def update_sheet(
     sheet_id: str,
     update_sheet_request: CreateSheetRequest,
     authentication_credential: Annotated[HTTPAuthorizationCredentials, Depends(oauth2_scheme)],
-):
+) -> SheetIdResponse:
     return await update_sheet_by_id(
         sheet_id=sheet_id,
         update_sheet_request=update_sheet_request,

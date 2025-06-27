@@ -5,7 +5,6 @@ from pecha_api.error_contants import ErrorConstants
 from .texts_repository import (
     get_texts_by_term,
     get_texts_by_group_id,
-    get_texts_by_type,
     create_text,
     create_table_of_content_detail,
     get_contents_by_id,
@@ -90,6 +89,9 @@ async def get_table_of_contents_by_text_id(text_id: str) -> TableOfContentRespon
     )
 
 async def remove_table_of_content_by_text_id(text_id: str):
+    is_valid_text = await TextUtils.validate_text_exists(text_id=text_id)
+    if not is_valid_text:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=ErrorConstants.TEXT_NOT_FOUND_MESSAGE)
     return await delete_table_of_content_by_text_id(text_id=text_id)
 
 async def get_text_details_by_text_id(
@@ -341,6 +343,7 @@ def _get_list_of_text_version_response_model(versions: List[TextDTO], versions_t
     ]
     return list_of_version
 
+
 async def get_texts_by_text_type(
         text_type: str,
         is_published: Optional[bool] = True,
@@ -360,6 +363,7 @@ async def get_texts_by_text_type(
     """
     return await get_texts_by_type(is_published=is_published, text_type=text_type, skip=skip, limit=limit)
 
+
 async def update_text_details(text_id: str, update_text_request: UpdateTextRequest):
     is_valid_text = await TextUtils.validate_text_exists(text_id=text_id)
     if not is_valid_text:
@@ -369,3 +373,4 @@ async def update_text_details(text_id: str, update_text_request: UpdateTextReque
     text_details.title = update_text_request.title
     text_details.is_published = update_text_request.is_published
     return await update_text_details_by_id(text_id=text_id, update_text_request=update_text_request)
+

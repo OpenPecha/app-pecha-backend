@@ -132,6 +132,7 @@ class Text(Document):
     async def update_text_details_by_id(cls, text_id: UUID, text_details: TextDTO):
         return await cls.update_all(cls.id == text_id, {"$set": text_details.model_dump()})
 
+
     @classmethod
     async def get_texts_by_type(cls, text_type: TextType, is_published: Optional[bool] = True, skip: int = 0, limit: int = 10) -> List["Text"]:
         query = {
@@ -145,4 +146,5 @@ class Text(Document):
             .to_list()
         )
         return texts
+
 

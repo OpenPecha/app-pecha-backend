@@ -28,7 +28,7 @@ async def test_get_group_by_id_success():
 @pytest.mark.asyncio
 async def test_create_group_success():
     create_group_request = {
-        "type": GroupType.VERSION.value
+        "type": GroupType.TEXT.value
     }
     with patch("pecha_api.texts.groups.groups_views.create_new_group", new_callable=AsyncMock) as mock_create_group:
         mock_create_group.return_value = GroupDTO(
