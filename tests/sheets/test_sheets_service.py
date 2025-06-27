@@ -22,13 +22,15 @@ from pecha_api.texts.texts_response_models import (
 )
 from pecha_api.sheets.sheets_service import (
     create_new_sheet,
-    update_sheet_by_id
+    update_sheet_by_id,
+    get_sheets
 )
 from pecha_api.users.users_models import Users
 from pecha_api.texts.segments.segments_response_models import (
     SegmentDTO, 
     SegmentResponse
 )
+from pecha_api.texts.texts_enums import TextType
 
 
 def test_validate_and_compress_image_success():
@@ -264,3 +266,186 @@ async def test_update_sheet_invalid_token():
         )
     assert exc_info.value.status_code == status.HTTP_401_UNAUTHORIZED
     assert exc_info.value.detail == ErrorConstants.TOKEN_ERROR_MESSAGE
+
+@pytest.mark.asyncio
+async def test_get_sheets_with_default_parameters():
+    #Test get_sheets function with default parameters
+    mock_sheets = [
+        type("TextDTO", (), {
+            "id": "sheet_id_1",
+            "title": "Sheet 1",
+            "language": "en",
+            "group_id": "group_id_1",
+            "type": "sheet",
+            "is_published": True,
+            "created_date": "2024-01-01T00:00:00Z",
+            "updated_date": "2024-01-01T00:00:00Z",
+            "published_date": "2024-01-01T00:00:00Z",
+            "published_by": "test_user",
+            "categories": [],
+            "views": 0
+        })(),
+        type("TextDTO", (), {
+            "id": "sheet_id_2",
+            "title": "Sheet 2",
+            "language": "bo",
+            "group_id": "group_id_2",
+            "type": "sheet",
+            "is_published": True,
+            "created_date": "2024-01-02T00:00:00Z",
+            "updated_date": "2024-01-02T00:00:00Z",
+            "published_date": "2024-01-02T00:00:00Z",
+            "published_by": "test_user",
+            "categories": [],
+            "views": 0
+        })()
+    ]
+    
+    with patch("pecha_api.sheets.sheets_service.get_texts_by_text_type", new_callable=AsyncMock, return_value=mock_sheets) as mock_get_texts:
+        result = await get_sheets()
+        
+        # Verify the function was called with correct default parameters
+        mock_get_texts.assert_called_once_with(
+            is_published=True,
+            text_type=TextType.SHEET.value,
+            skip=0,
+            limit=10
+        )
+        
+        # Verify the result
+        assert result == mock_sheets
+        assert len(result) == 2
+        assert result[0].id == "sheet_id_1"
+        assert result[1].id == "sheet_id_2"
+
+@pytest.mark.asyncio
+async def test_get_sheets_with_custom_parameters():
+    #Test get_sheets function with custom parameters
+    mock_sheets = [
+        type("TextDTO", (), {
+            "id": "sheet_id_3",
+            "title": "Unpublished Sheet",
+            "language": "en",
+            "group_id": "group_id_3",
+            "type": "sheet",
+            "is_published": False,
+            "created_date": "2024-01-03T00:00:00Z",
+            "updated_date": "2024-01-03T00:00:00Z",
+            "published_date": "",
+            "published_by": "test_user",
+            "categories": [],
+            "views": 0
+        })()
+    ]
+    
+    with patch("pecha_api.sheets.sheets_service.get_texts_by_text_type", new_callable=AsyncMock, return_value=mock_sheets) as mock_get_texts:
+        result = await get_sheets(is_published=True, skip=5, limit=20)
+        
+        # Verify the function was called with correct custom parameters
+        mock_get_texts.assert_called_once_with(
+            is_published=True,
+            text_type=TextType.SHEET.value,
+            skip=5,
+            limit=20
+        )
+        
+        # Verify the result
+        assert result == mock_sheets
+        assert len(result) == 1
+        assert result[0].is_published == False
+
+@pytest.mark.asyncio
+async def test_get_sheets_with_none_published_parameter():
+    #Test get_sheets function with False as is_published parameter
+    mock_sheets = []
+    
+    with patch("pecha_api.sheets.sheets_service.get_texts_by_text_type", new_callable=AsyncMock, return_value=mock_sheets) as mock_get_texts:
+        result = await get_sheets(is_published=False, skip=0, limit=5)
+        
+        # Verify the function was called with None for is_published
+        mock_get_texts.assert_called_once_with(
+            is_published=False,
+            text_type=TextType.SHEET.value,
+            skip=0,
+            limit=5
+        )
+        
+        # Verify the result
+        assert result == mock_sheets
+        assert len(result) == 0
+
+@pytest.mark.asyncio
+async def test_get_sheets_empty_result():
+    #Test get_sheets function when no sheets are found
+    mock_sheets = []
+    
+    with patch("pecha_api.sheets.sheets_service.get_texts_by_text_type", new_callable=AsyncMock, return_value=mock_sheets) as mock_get_texts:
+        result = await get_sheets()
+        
+        # Verify the function was called with default parameters
+        mock_get_texts.assert_called_once_with(
+            is_published=True,
+            text_type=TextType.SHEET.value,
+            skip=0,
+            limit=10
+        )
+        
+        # Verify the result is empty
+        assert result == []
+        assert len(result) == 0
+
+@pytest.mark.asyncio
+async def test_get_sheets_large_dataset():
+    #Test get_sheets function with a large dataset
+    # Create a list of 15 mock sheets
+    mock_sheets = [
+        type("TextDTO", (), {
+            "id": f"sheet_id_{i}",
+            "title": f"Sheet {i}",
+            "language": "en",
+            "group_id": f"group_id_{i}",
+            "type": "sheet",
+            "is_published": True,
+            "created_date": f"2024-01-{i:02d}T00:00:00Z",
+            "updated_date": f"2024-01-{i:02d}T00:00:00Z",
+            "published_date": f"2024-01-{i:02d}T00:00:00Z",
+            "published_by": "test_user",
+            "categories": [],
+            "views": i
+        })()
+        for i in range(1, 16)
+    ]
+    
+    with patch("pecha_api.sheets.sheets_service.get_texts_by_text_type", new_callable=AsyncMock, return_value=mock_sheets) as mock_get_texts:
+        result = await get_sheets(skip=10, limit=15)
+        
+        # Verify the function was called with pagination parameters
+        mock_get_texts.assert_called_once_with(
+            is_published=True,
+            text_type=TextType.SHEET.value,
+            skip=10,
+            limit=15
+        )
+        
+        # Verify the result
+        assert result == mock_sheets
+        assert len(result) == 15
+        assert result[0].id == "sheet_id_1"
+        assert result[-1].id == "sheet_id_15"
+
+@pytest.mark.asyncio
+async def test_get_sheets_passes_correct_text_type():
+    #Test that get_sheets always passes the correct TextType.SHEET value
+    mock_sheets = []
+    
+    with patch("pecha_api.sheets.sheets_service.get_texts_by_text_type", new_callable=AsyncMock, return_value=mock_sheets) as mock_get_texts:
+        await get_sheets()
+        
+        # Verify that the text_type parameter is always TextType.SHEET.value
+        call_args = mock_get_texts.call_args
+        assert call_args[1]['text_type'] == TextType.SHEET.value
+        
+        # Make sure it's not any other text type
+        assert call_args[1]['text_type'] != TextType.COMMENTARY.value
+        assert call_args[1]['text_type'] != "commentary"
+        assert call_args[1]['text_type'] != "version"
