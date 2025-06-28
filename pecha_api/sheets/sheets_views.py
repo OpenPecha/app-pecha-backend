@@ -21,7 +21,7 @@ from pecha_api.sheets.sheets_response_models import SheetIdResponse
 
 from .sheets_response_models import (
     CreateSheetRequest,
-    SheetDTO
+    SheetDetailDTO
 )
 
 oauth2_scheme = HTTPBearer()
@@ -35,7 +35,7 @@ async def get_sheet(
     sheet_id: str,
     skip: int = Query(default=0),
     limit: int = Query(default=10)
-) -> SheetDTO:
+) -> SheetDetailDTO:
     return await get_sheet_by_id(sheet_id=sheet_id, skip=skip, limit=limit)
 
 @sheets_router.post("", status_code=status.HTTP_201_CREATED)

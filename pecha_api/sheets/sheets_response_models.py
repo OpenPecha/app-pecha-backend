@@ -39,12 +39,12 @@ class Publisher(BaseModel):
     email: str
     avatar_url: Optional[str] = None
 
-class SheetDTO(BaseModel):
+class SheetDetailDTO(BaseModel):
     id: str
     sheet_title: str
     created_date: str
     publisher: Publisher
-    content: SheetSection
+    content: Optional[SheetSection] = None
     skip: int
     limit: int
     total: int
