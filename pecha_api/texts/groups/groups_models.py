@@ -31,5 +31,6 @@ class Group(Document):
         search = await cls.find({"_id": {"$in": group_ids}}).to_list()
         return search
     
+    @classmethod
     async def delete_group_by_id(cls, group_id: UUID):
         return await cls.find_one(cls.id == group_id).delete()
