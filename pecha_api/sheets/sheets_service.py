@@ -99,26 +99,31 @@ async def get_sheet_by_id(sheet_id: str, skip: int, limit: int) -> SheetDetailDT
         limit=limit
     )
     return sheet_dto
-    
-async def _generate_sheet_detail_dto_(sheet_details: TextDTO, user_details: UserInfoResponse, sheet_table_of_content: TableOfContent, skip: int, limit: int) -> SheetDTO:
+
+async def _generate_sheet_detail_dto_(
+    sheet_details: TextDTO,
+    user_details: UserInfoResponse,
+    sheet_sections: List[Section],
+    skip: int,
+    limit: int
+) -> SheetDetailDTO:
     publisher = Publisher(
-        name=user_details.firstname + " " + user_details.lastname,
+        name=f"{user_details.firstname} {user_details.lastname}",
         username=user_details.username,
         email=user_details.email,
         avatar_url=user_details.avatar_url
     )
-    segment_ids = _get_all_segment_ids_in_table_of_content_(
-        table_of_content=sheet_table_of_content
-    )
-    
+    segment_ids = _get_all_segment_ids_in_table_of_content_(sheet_sections=sheet_sections)
     segments_dict: Dict[str, SegmentDTO] = await get_segments_details_by_ids(segment_ids=segment_ids)
-    
-    sheet_section: SheetSection = await _generate_sheet_section_(
-        sheet_table_of_content=sheet_table_of_content,
-        segments_dict=segments_dict
-    )
 
-    return SheetDTO(
+    sheet_section: Optional[SheetSection] = None
+    if sheet_sections:
+        sheet_section = await _generate_sheet_section_(
+            segments=sheet_sections[0].segments,
+            segments_dict=segments_dict
+        )
+
+    return SheetDetailDTO(
         id=sheet_details.id,
         sheet_title=sheet_details.title,
         created_date=sheet_details.created_date,
@@ -126,19 +131,19 @@ async def _generate_sheet_detail_dto_(sheet_details: TextDTO, user_details: User
         content=sheet_section,
         skip=skip,
         limit=limit,
-        total=len(sheet_table_of_content.sections),
+        total=len(sheet_sections),
     )
 
-async def _generate_sheet_section_(sheet_table_of_content: TableOfContent, segments_dict: Dict[str, SegmentDTO]) -> SheetSection:
+async def _generate_sheet_section_(segments: List[TextSegment], segments_dict: Dict[str, SegmentDTO]) -> SheetSection:
     sheet_segments = []
-    for segments in sheet_table_of_content.sections[0].segments:
-        segment_details: SegmentDTO = segments_dict[segments.segment_id]
+    for segment in segments:
+        segment_details: SegmentDTO = segments_dict[segment.segment_id]
         if segment_details.type == SegmentType.SOURCE:
             segment_text_details: TextDTO = await TextUtils.get_text_details_by_id(text_id=segment_details.text_id)
             sheet_segments.append(
                 SheetSegment(
-                    segment_id=segments.segment_id,
-                    segment_number=segments.segment_number,
+                    segment_id=segment.segment_id,
+                    segment_number=segment.segment_number,
                     content=segment_details.content,
                     language=segment_text_details.language,
                     text_title=segment_text_details.title,
@@ -148,22 +153,22 @@ async def _generate_sheet_section_(sheet_table_of_content: TableOfContent, segme
         else:
             sheet_segments.append(
                 SheetSegment(
-                    segment_id=segments.segment_id,
-                    segment_number=segments.segment_number,
+                    segment_id=segment.segment_id,
+                    segment_number=segment.segment_number,
                     content=segment_details.content,
                     type=segment_details.type
                 )
             )
 
     return SheetSection(
-        section_number=1,
+        section_number=DEFAULT_SHEET_SECTION_NUMBER,
         segments=sheet_segments
     )
 
 
-def _get_all_segment_ids_in_table_of_content_(table_of_content: TableOfContent) -> List[str]:
+def _get_all_segment_ids_in_table_of_content_(sheet_sections: Section) -> List[str]:
     segment_ids = []
-    for section in table_of_content.sections:
+    for section in sheet_sections:
         for segment in section.segments:
             segment_ids.append(segment.segment_id)
     return segment_ids
