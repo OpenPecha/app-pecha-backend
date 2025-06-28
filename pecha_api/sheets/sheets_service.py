@@ -14,7 +14,10 @@ from pecha_api.utils import Utils
 from pecha_api.texts.texts_utils import TextUtils
 
 
-from pecha_api.users.users_service import validate_user_exists
+from pecha_api.users.users_service import (
+    validate_user_exists,
+    get_user_info
+)
 from pecha_api.users.user_response_models import UserInfoResponse
 
 from pecha_api.texts.groups.groups_response_models import (
@@ -22,7 +25,10 @@ from pecha_api.texts.groups.groups_response_models import (
     GroupDTO
 )
 from pecha_api.texts.groups.groups_enums import GroupType
-from pecha_api.texts.groups.groups_service import create_new_group
+from pecha_api.texts.groups.groups_service import (
+    create_new_group,
+    delete_group_by_group_id
+)
 
 from pecha_api.texts.texts_response_models import (
     CreateTextRequest,
@@ -33,7 +39,8 @@ from pecha_api.texts.texts_service import (
     create_table_of_content,
     remove_table_of_content_by_text_id,
     update_text_details,
-    get_table_of_contents_by_text_id
+    get_table_of_contents_by_text_id,
+    delete_text_by_text_id
 )
 
 from pecha_api.users.users_service import (
@@ -87,6 +94,101 @@ async def get_sheet_by_id(sheet_id: str, skip: int, limit: int) -> SheetDTO:
     )
     return sheet_dto
     
+
+async def create_new_sheet(create_sheet_request: CreateSheetRequest, token: str) -> SheetIdResponse:
+    group_id =  await _create_sheet_group_(token=token)
+    text_id = await _create_sheet_text_(
+        title=create_sheet_request.title, 
+        token=token, 
+        group_id=group_id
+    )
+    sheet_segments: Dict[str, str] = await _process_and_upload_sheet_segments(
+        create_sheet_request=create_sheet_request,
+        text_id=text_id,
+        token=token
+    )
+    await _generate_and_upload_sheet_table_of_content(
+        create_sheet_request=create_sheet_request,
+        text_id=text_id,
+        segment_dict=sheet_segments,
+        token=token
+    )
+    return SheetIdResponse(sheet_id=text_id)
+
+async def update_sheet_by_id(
+        sheet_id: str, 
+        update_sheet_request: CreateSheetRequest, 
+        token: str
+    ) -> SheetIdResponse:
+
+    is_valid_user = validate_user_exists(token=token)
+    if not is_valid_user:
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail=ErrorConstants.TOKEN_ERROR_MESSAGE)
+
+    await remove_segments_by_text_id(text_id=sheet_id)
+
+    await remove_table_of_content_by_text_id(text_id=sheet_id)
+
+    await _update_text_details_(sheet_id=sheet_id, update_sheet_request=update_sheet_request)
+
+    sheet_segments: Dict[str, str] = await _process_and_upload_sheet_segments(
+        create_sheet_request=update_sheet_request,
+        text_id=sheet_id,
+        token=token
+    )
+    await _generate_and_upload_sheet_table_of_content(
+        create_sheet_request=update_sheet_request,
+        text_id=sheet_id,
+        segment_dict=sheet_segments,
+        token=token
+    )
+    return SheetIdResponse(sheet_id=sheet_id)
+
+async def delete_sheet_by_id(sheet_id: str, token: str):
+    is_valid_user = validate_user_exists(token=token)
+    if not is_valid_user:
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail=ErrorConstants.TOKEN_ERROR_MESSAGE)
+    
+    
+    sheet_details: TextDTO = await TextUtils.get_text_details_by_id(text_id=sheet_id)
+
+    user_details: UserInfoResponse = get_user_info(token=token)
+
+    if user_details.email != sheet_details.published_by:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail=ErrorConstants.FORBIDDEN_ERROR_MESSAGE
+        )
+
+    await delete_group_by_group_id(group_id=sheet_details.group_id)
+    await remove_segments_by_text_id(text_id=sheet_id)
+    await remove_table_of_content_by_text_id(text_id=sheet_id)
+    await delete_text_by_text_id(text_id=sheet_id)
+
+def upload_sheet_image_request(sheet_id: Optional[str], file: UploadFile) -> SheetImageResponse:
+    # Validate and compress the uploaded image
+    image_utils = ImageUtils()
+    compressed_image = image_utils.validate_and_compress_image(file=file, content_type=file.content_type)
+    file_name, ext = os.path.splitext(file.filename)
+    unique_id = str(uuid.uuid4())
+    
+    # If no id is provided, use a random UUID as the folder name
+    path = "images/sheet_images"
+    image_path_full = f"{path}/{sheet_id}/{unique_id}" if sheet_id is not None else f"{path}/{unique_id}"
+    sheet_image_name = f"{image_path_full}/{file_name}{ext}"
+    upload_key = upload_bytes(
+        bucket_name=get("AWS_BUCKET_NAME"),
+        s3_key=sheet_image_name,
+        file=compressed_image,
+        content_type=file.content_type
+    )
+    presigned_url = generate_presigned_upload_url(
+        bucket_name=get("AWS_BUCKET_NAME"),
+        s3_key=upload_key
+    )
+    
+    return SheetImageResponse(url=presigned_url)
+
 async def _generate_sheet_dto_(sheet_details: TextDTO, user_details: UserInfoResponse, sheet_table_of_content: TableOfContent, skip: int, limit: int) -> SheetDTO:
     publisher = Publisher(
         name=user_details.firstname + " " + user_details.lastname,
@@ -154,80 +256,6 @@ def _get_all_segment_ids_in_table_of_content_(table_of_content: TableOfContent) 
         for segment in section.segments:
             segment_ids.append(segment.segment_id)
     return segment_ids
-
-async def create_new_sheet(create_sheet_request: CreateSheetRequest, token: str) -> SheetIdResponse:
-    group_id =  await _create_sheet_group_(token=token)
-    text_id = await _create_sheet_text_(
-        title=create_sheet_request.title, 
-        token=token, 
-        group_id=group_id
-    )
-    sheet_segments: Dict[str, str] = await _process_and_upload_sheet_segments(
-        create_sheet_request=create_sheet_request,
-        text_id=text_id,
-        token=token
-    )
-    await _generate_and_upload_sheet_table_of_content(
-        create_sheet_request=create_sheet_request,
-        text_id=text_id,
-        segment_dict=sheet_segments,
-        token=token
-    )
-    return SheetIdResponse(sheet_id=text_id)
-
-async def update_sheet_by_id(
-        sheet_id: str, 
-        update_sheet_request: CreateSheetRequest, 
-        token: str
-    ) -> SheetIdResponse:
-
-    is_valid_user = validate_user_exists(token=token)
-    if not is_valid_user:
-        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail=ErrorConstants.TOKEN_ERROR_MESSAGE)
-
-    await remove_segments_by_text_id(text_id=sheet_id)
-
-    await remove_table_of_content_by_text_id(text_id=sheet_id)
-
-    await _update_text_details_(sheet_id=sheet_id, update_sheet_request=update_sheet_request)
-
-    sheet_segments: Dict[str, str] = await _process_and_upload_sheet_segments(
-        create_sheet_request=update_sheet_request,
-        text_id=sheet_id,
-        token=token
-    )
-    await _generate_and_upload_sheet_table_of_content(
-        create_sheet_request=update_sheet_request,
-        text_id=sheet_id,
-        segment_dict=sheet_segments,
-        token=token
-    )
-    return SheetIdResponse(sheet_id=sheet_id)
-
-def upload_sheet_image_request(sheet_id: Optional[str], file: UploadFile) -> SheetImageResponse:
-    # Validate and compress the uploaded image
-    image_utils = ImageUtils()
-    compressed_image = image_utils.validate_and_compress_image(file=file, content_type=file.content_type)
-    file_name, ext = os.path.splitext(file.filename)
-    unique_id = str(uuid.uuid4())
-    
-    # If no id is provided, use a random UUID as the folder name
-    path = "images/sheet_images"
-    image_path_full = f"{path}/{sheet_id}/{unique_id}" if sheet_id is not None else f"{path}/{unique_id}"
-    sheet_image_name = f"{image_path_full}/{file_name}{ext}"
-    upload_key = upload_bytes(
-        bucket_name=get("AWS_BUCKET_NAME"),
-        s3_key=sheet_image_name,
-        file=compressed_image,
-        content_type=file.content_type
-    )
-    presigned_url = generate_presigned_upload_url(
-        bucket_name=get("AWS_BUCKET_NAME"),
-        s3_key=upload_key
-    )
-    
-    return SheetImageResponse(url=presigned_url)
-
 async def _update_text_details_(sheet_id: str, update_sheet_request: CreateSheetRequest):
     update_text_request = UpdateTextRequest(
         title=update_sheet_request.title,
@@ -342,3 +370,5 @@ async def _create_sheet_group_(token: str) -> str:
     )
     new_group: GroupDTO = await create_new_group(create_group_request=create_group_request, token=token)
     return new_group.id
+
+

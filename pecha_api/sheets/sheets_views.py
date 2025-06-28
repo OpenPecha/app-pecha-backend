@@ -13,7 +13,8 @@ from .sheets_service import (
     create_new_sheet, 
     upload_sheet_image_request, 
     get_sheet_by_id,
-    update_sheet_by_id
+    update_sheet_by_id,
+    delete_sheet_by_id
 )
 
 from pecha_api.sheets.sheets_response_models import SheetIdResponse
@@ -63,3 +64,12 @@ async def update_sheet(
 def upload_sheet_image(sheet_id: Optional[str] = None, file: UploadFile = File(...)):
     return upload_sheet_image_request(sheet_id=sheet_id, file=file)
 
+@sheets_router.delete("/{sheet_id}", status_code=status.HTTP_200_OK)
+async def delete_sheet(
+    sheet_id: str,
+    authentication_credential: Annotated[HTTPAuthorizationCredentials, Depends(oauth2_scheme)],
+):
+    return await delete_sheet_by_id(
+        sheet_id=sheet_id,
+        token=authentication_credential.credentials
+    )
