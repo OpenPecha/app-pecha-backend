@@ -10,25 +10,31 @@ from pecha_api.image_utils import ImageUtils
 from pecha_api.sheets.sheets_response_models import (
     CreateSheetRequest,
     Source,
-    SheetIdResponse
+    SheetIdResponse,
+    SheetDetailDTO,
+    SheetSection
 )
 from pecha_api.texts.segments.segments_enum import SegmentType
 from pecha_api.texts.texts_response_models import (
     TableOfContent,
     Section,
     TextSegment,
-    UpdateTextRequest
+    TextDTO,
+    TextSegment,
+    TableOfContentResponse
 )
+from pecha_api.texts.texts_enums import TextType
 from pecha_api.sheets.sheets_service import (
     create_new_sheet,
-    update_sheet_by_id
+    update_sheet_by_id,
+    get_sheet_by_id,
 )
 from pecha_api.users.users_models import Users
 from pecha_api.texts.segments.segments_response_models import (
     SegmentDTO, 
     SegmentResponse
 )
-
+from pecha_api.users.user_response_models import UserInfoResponse
 
 def test_validate_and_compress_image_success():
     file_content = io.BytesIO(b"fake_image_data")
@@ -265,3 +271,96 @@ async def test_update_sheet_invalid_token():
         )
     assert exc_info.value.status_code == status.HTTP_401_UNAUTHORIZED
     assert exc_info.value.detail == ErrorConstants.TOKEN_ERROR_MESSAGE
+
+@pytest.mark.asyncio
+async def test_get_sheet_by_id_success():
+    sheet_id = "text_id"
+    mock_sheet_details = TextDTO(
+        id=sheet_id,
+        title="sheet_title",
+        language="language",
+        group_id="group_id",
+        type=TextType.SHEET,
+        is_published=True,
+        created_date="2021-01-01",
+        updated_date="2021-01-01",
+        published_date="2021-01-01",
+        published_by="test_user",
+        categories=[],
+        views=10
+    )
+    mock_user_details = UserInfoResponse(
+        firstname="firstname",
+        lastname="lastname",
+        username="username",
+        email="test_user@gmail.com",
+        educations=[],
+        followers=0,
+        following=0,
+        social_profiles=[]
+    )
+    mock_table_of_content_response = TableOfContentResponse(
+        text_detail=mock_sheet_details,
+        contents=[
+            TableOfContent(
+                text_id=sheet_id,
+                sections=[
+                    Section(
+                        id="section_id",
+                        section_number=1,
+                        segments=[
+                            TextSegment(
+                                segment_id="segment_id_1",
+                                segment_number=1
+                            ),
+                            TextSegment(
+                                segment_id="segment_id_2",
+                                segment_number=2
+                            )
+                        ]
+                    )
+                ]
+            )
+        ]
+    )
+    segment_dict = {
+        "segment_id_1": SegmentDTO(
+            id="segment_id_1",
+            text_id="text_id",
+            content="content",
+            type=SegmentType.CONTENT,
+        ),
+        "segment_id_2": SegmentDTO(
+            id="segment_id_2",
+            text_id="text_id",
+            content="content",
+            type=SegmentType.IMAGE,
+        )
+    }
+    with patch("pecha_api.sheets.sheets_service.TextUtils.get_text_details_by_id", new_callable=AsyncMock, return_value=mock_sheet_details), \
+        patch("pecha_api.sheets.sheets_service.fetch_user_by_email", new_callable=MagicMock, return_value=mock_user_details), \
+        patch("pecha_api.sheets.sheets_service.get_segments_details_by_ids", new_callable=AsyncMock, return_value=segment_dict), \
+        patch("pecha_api.sheets.sheets_service.get_table_of_contents_by_text_id", new_callable=AsyncMock, return_value=mock_table_of_content_response):
+
+        response = await get_sheet_by_id(sheet_id=sheet_id, skip=0, limit=10)
+
+        assert response is not None
+        assert isinstance(response, SheetDetailDTO)
+        assert response.id == sheet_id
+        assert response.sheet_title == "sheet_title"
+        assert response.publisher is not None
+        assert isinstance(response.content, SheetSection)
+        assert response.content is not None
+        
+
+@pytest.mark.asyncio
+async def test_get_sheet_by_id_invalid_sheet_id():
+    sheet_id="invalid_sheet_id"
+    with patch("pecha_api.texts.texts_utils.TextUtils.validate_text_exists", new_callable=AsyncMock, return_value=False):
+        with pytest.raises(HTTPException) as exc_info:
+            await get_sheet_by_id(sheet_id=sheet_id, skip=0, limit=10)
+        assert exc_info.value.status_code == status.HTTP_404_NOT_FOUND
+        assert exc_info.value.detail == ErrorConstants.TEXT_NOT_FOUND_MESSAGE
+
+
+

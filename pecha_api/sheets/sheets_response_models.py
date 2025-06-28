@@ -23,30 +23,29 @@ class SheetSegment(BaseModel):
     segment_number: int
     content: Optional[str] = None
     text_title: Optional[str] = None
-    type: str
-    media_url: Optional[str] = None
+    language: Optional[str] = None
+    type: SegmentType
 
 class SheetSection(BaseModel):
-    id: str
     title: Optional[str] = None
     section_number: int
     parent_id: Optional[str] = None
     segments: List[SheetSegment]
-    created_date: str
-    updated_date: str
-    published_date: str
 
-class SheetContent(BaseModel):
-    id: str
-    text_id: str
-    sections: List[SheetSection]
 
-class SheetDTO(BaseModel):
+class Publisher(BaseModel):
+    name: str
+    username: str
+    email: str
+    avatar_url: Optional[str] = None
+
+class SheetDetailDTO(BaseModel):
     id: str
     sheet_title: str
-    content: SheetContent
+    created_date: str
+    publisher: Publisher
+    content: Optional[SheetSection] = None
     skip: int
-    current_section: int
     limit: int
     total: int
 

@@ -15,6 +15,7 @@ from pecha_api.texts.texts_utils import TextUtils
 
 
 from pecha_api.users.users_service import validate_user_exists
+from pecha_api.users.user_response_models import UserInfoResponse
 
 from pecha_api.texts.groups.groups_response_models import (
     CreateGroupRequest,
@@ -31,16 +32,19 @@ from pecha_api.texts.texts_service import (
     create_new_text,
     create_table_of_content,
     remove_table_of_content_by_text_id,
-    update_text_details
+    update_text_details,
+    get_table_of_contents_by_text_id
 )
 
 from pecha_api.users.users_service import (
-    validate_and_extract_user_details
+    validate_and_extract_user_details,
+    fetch_user_by_email
 )
 from pecha_api.texts.texts_enums import TextType
 from pecha_api.texts.texts_response_models import (
     TextDTO,
     TableOfContent,
+    TableOfContentResponse,
     Section,
     TextSegment
 )
@@ -49,16 +53,119 @@ from pecha_api.texts.segments.segments_models import SegmentType
 from pecha_api.texts.segments.segments_response_models import (
     CreateSegment,
     CreateSegmentRequest,
-    SegmentResponse
+    SegmentResponse,
+    SegmentDTO
 )
 from pecha_api.texts.segments.segments_service import (
     create_new_segment,
-    remove_segments_by_text_id
+    remove_segments_by_text_id,
+    get_segments_details_by_ids
 )
 
-from pecha_api.sheets.sheets_response_models import SheetIdResponse
+from pecha_api.sheets.sheets_response_models import (
+    SheetIdResponse,
+    SheetDetailDTO,
+    Publisher,
+    SheetSection,
+    SheetSegment
+)
 
-    
+DEFAULT_SHEET_SECTION_NUMBER = 1
+
+async def get_sheet_by_id(sheet_id: str, skip: int, limit: int) -> SheetDetailDTO:
+    sheet_details: TextDTO = await TextUtils.get_text_details_by_id(text_id=sheet_id)
+    user_details: UserInfoResponse = fetch_user_by_email(email=sheet_details.published_by)
+    sheet_table_of_content_response: TableOfContentResponse = await get_table_of_contents_by_text_id(text_id=sheet_id)
+
+    sheet_table_of_content: Optional[TableOfContent] = (
+        sheet_table_of_content_response.contents[0]
+        if sheet_table_of_content_response.contents else None
+    )
+
+    sections = sheet_table_of_content.sections if sheet_table_of_content else []
+
+    sheet_dto: SheetDetailDTO = await _generate_sheet_detail_dto_(
+        sheet_details=sheet_details,
+        user_details=user_details,
+        sheet_sections=sections,
+        skip=skip,
+        limit=limit
+    )
+    return sheet_dto
+
+async def _generate_sheet_detail_dto_(
+    sheet_details: TextDTO,
+    user_details: UserInfoResponse,
+    sheet_sections: List[Section],
+    skip: int,
+    limit: int
+) -> SheetDetailDTO:
+    publisher = Publisher(
+        name=f"{user_details.firstname} {user_details.lastname}",
+        username=user_details.username,
+        email=user_details.email,
+        avatar_url=user_details.avatar_url
+    )
+    segment_ids = _get_all_segment_ids_in_table_of_content_(sheet_sections=sheet_sections)
+    segments_dict: Dict[str, SegmentDTO] = await get_segments_details_by_ids(segment_ids=segment_ids)
+
+    sheet_section: Optional[SheetSection] = None
+    if sheet_sections:
+        sheet_section = await _generate_sheet_section_(
+            segments=sheet_sections[0].segments,
+            segments_dict=segments_dict
+        )
+
+    return SheetDetailDTO(
+        id=sheet_details.id,
+        sheet_title=sheet_details.title,
+        created_date=sheet_details.created_date,
+        publisher=publisher,
+        content=sheet_section,
+        skip=skip,
+        limit=limit,
+        total=len(sheet_sections),
+    )
+
+async def _generate_sheet_section_(segments: List[TextSegment], segments_dict: Dict[str, SegmentDTO]) -> SheetSection:
+    sheet_segments = []
+    for segment in segments:
+        segment_details: SegmentDTO = segments_dict[segment.segment_id]
+        if segment_details.type == SegmentType.SOURCE:
+            segment_text_details: TextDTO = await TextUtils.get_text_details_by_id(text_id=segment_details.text_id)
+            sheet_segments.append(
+                SheetSegment(
+                    segment_id=segment.segment_id,
+                    segment_number=segment.segment_number,
+                    content=segment_details.content,
+                    language=segment_text_details.language,
+                    text_title=segment_text_details.title,
+                    type=segment_details.type
+                )
+            )
+        else:
+            sheet_segments.append(
+                SheetSegment(
+                    segment_id=segment.segment_id,
+                    segment_number=segment.segment_number,
+                    content=segment_details.content,
+                    type=segment_details.type
+                )
+            )
+
+    return SheetSection(
+        section_number=DEFAULT_SHEET_SECTION_NUMBER,
+        segments=sheet_segments
+    )
+
+
+def _get_all_segment_ids_in_table_of_content_(sheet_sections: Section) -> List[str]:
+    segment_ids = []
+    for section in sheet_sections:
+        for segment in section.segments:
+            segment_ids.append(segment.segment_id)
+    return segment_ids
+
 async def create_new_sheet(create_sheet_request: CreateSheetRequest, token: str) -> SheetIdResponse:
     group_id =  await _create_sheet_group_(token=token)
     text_id = await _create_sheet_text_(
