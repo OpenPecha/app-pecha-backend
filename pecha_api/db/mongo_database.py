@@ -43,7 +43,7 @@ async def lifespan(api: FastAPI):
 
 def with_transaction(func):
     async def wrapper(*args, **kwargs):
-        client = AsyncIOMotorClient(get("MONGO_CONNECTION_STRING"))
+        client = mongodb_client
         try:
             async with await client.start_session() as session:
                 async with session.start_transaction():

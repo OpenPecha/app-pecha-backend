@@ -13,8 +13,6 @@ from pecha_api.image_utils import ImageUtils
 from pecha_api.utils import Utils
 from pecha_api.texts.texts_utils import TextUtils
 
-from pecha_api.db.mongo_database import with_transaction
-
 
 from pecha_api.users.users_service import (
     validate_user_exists,
@@ -137,7 +135,6 @@ async def _generate_sheet_detail_dto_(
     )
 
 
-@with_transaction
 async def create_new_sheet(create_sheet_request: CreateSheetRequest, token: str) -> SheetIdResponse:
     group_id =  await _create_sheet_group_(token=token)
     text_id = await _create_sheet_text_(
@@ -158,7 +155,6 @@ async def create_new_sheet(create_sheet_request: CreateSheetRequest, token: str)
     )
     return SheetIdResponse(sheet_id=text_id)
 
-@with_transaction
 async def update_sheet_by_id(
         sheet_id: str, 
         update_sheet_request: CreateSheetRequest, 
@@ -188,7 +184,6 @@ async def update_sheet_by_id(
     )
     return SheetIdResponse(sheet_id=sheet_id)
 
-@with_transaction
 async def delete_sheet_by_id(sheet_id: str, token: str):
     is_valid_user = validate_user_exists(token=token)
     if not is_valid_user:
