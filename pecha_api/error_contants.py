@@ -21,3 +21,5 @@ class ErrorConstants:
     INVALID_UUID_MESSAGE="Invalid UUID"
     IMAGE_NOT_FOUND_MESSAGE="Image not found"
 
+    FORBIDDEN_ERROR_MESSAGE="Forbidden action"
+

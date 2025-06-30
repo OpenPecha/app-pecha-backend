@@ -14,7 +14,10 @@ from pecha_api.utils import Utils
 from pecha_api.texts.texts_utils import TextUtils
 
 
-from pecha_api.users.users_service import validate_user_exists
+from pecha_api.users.users_service import (
+    validate_user_exists,
+    get_user_info
+)
 from pecha_api.users.user_response_models import UserInfoResponse
 
 from pecha_api.texts.groups.groups_response_models import (
@@ -22,7 +25,10 @@ from pecha_api.texts.groups.groups_response_models import (
     GroupDTO
 )
 from pecha_api.texts.groups.groups_enums import GroupType
-from pecha_api.texts.groups.groups_service import create_new_group
+from pecha_api.texts.groups.groups_service import (
+    create_new_group,
+    delete_group_by_group_id
+)
 
 from pecha_api.texts.texts_response_models import (
     CreateTextRequest,
@@ -33,7 +39,8 @@ from pecha_api.texts.texts_service import (
     create_table_of_content,
     remove_table_of_content_by_text_id,
     update_text_details,
-    get_table_of_contents_by_text_id
+    get_table_of_contents_by_text_id,
+    delete_text_by_text_id
 )
 
 from pecha_api.users.users_service import (
@@ -127,44 +134,6 @@ async def _generate_sheet_detail_dto_(
         total=len(sheet_sections),
     )
 
-async def _generate_sheet_section_(segments: List[TextSegment], segments_dict: Dict[str, SegmentDTO]) -> SheetSection:
-    sheet_segments = []
-    for segment in segments:
-        segment_details: SegmentDTO = segments_dict[segment.segment_id]
-        if segment_details.type == SegmentType.SOURCE:
-            segment_text_details: TextDTO = await TextUtils.get_text_details_by_id(text_id=segment_details.text_id)
-            sheet_segments.append(
-                SheetSegment(
-                    segment_id=segment.segment_id,
-                    segment_number=segment.segment_number,
-                    content=segment_details.content,
-                    language=segment_text_details.language,
-                    text_title=segment_text_details.title,
-                    type=segment_details.type
-                )
-            )
-        else:
-            sheet_segments.append(
-                SheetSegment(
-                    segment_id=segment.segment_id,
-                    segment_number=segment.segment_number,
-                    content=segment_details.content,
-                    type=segment_details.type
-                )
-            )
-
-    return SheetSection(
-        section_number=DEFAULT_SHEET_SECTION_NUMBER,
-        segments=sheet_segments
-    )
-
-
-def _get_all_segment_ids_in_table_of_content_(sheet_sections: Section) -> List[str]:
-    segment_ids = []
-    for section in sheet_sections:
-        for segment in section.segments:
-            segment_ids.append(segment.segment_id)
-    return segment_ids
 
 async def create_new_sheet(create_sheet_request: CreateSheetRequest, token: str) -> SheetIdResponse:
     group_id =  await _create_sheet_group_(token=token)
@@ -215,6 +184,27 @@ async def update_sheet_by_id(
     )
     return SheetIdResponse(sheet_id=sheet_id)
 
+async def delete_sheet_by_id(sheet_id: str, token: str):
+    is_valid_user = validate_user_exists(token=token)
+    if not is_valid_user:
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail=ErrorConstants.TOKEN_ERROR_MESSAGE)
+    
+    
+    sheet_details: TextDTO = await TextUtils.get_text_details_by_id(text_id=sheet_id)
+
+    user_details: UserInfoResponse = get_user_info(token=token)
+
+    if user_details.email != sheet_details.published_by:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail=ErrorConstants.FORBIDDEN_ERROR_MESSAGE
+        )
+
+    await delete_group_by_group_id(group_id=sheet_details.group_id)
+    await remove_segments_by_text_id(text_id=sheet_id)
+    await remove_table_of_content_by_text_id(text_id=sheet_id)
+    await delete_text_by_text_id(text_id=sheet_id)
+
 def upload_sheet_image_request(sheet_id: Optional[str], file: UploadFile) -> SheetImageResponse:
     # Validate and compress the uploaded image
     image_utils = ImageUtils()
@@ -238,6 +228,47 @@ def upload_sheet_image_request(sheet_id: Optional[str], file: UploadFile) -> She
     )
     
     return SheetImageResponse(url=presigned_url)
+
+
+
+async def _generate_sheet_section_(segments: List[TextSegment], segments_dict: Dict[str, SegmentDTO]) -> SheetSection:
+    sheet_segments = []
+    for segment in segments:
+        segment_details: SegmentDTO = segments_dict[segment.segment_id]
+        if segment_details.type == SegmentType.SOURCE:
+            segment_text_details: TextDTO = await TextUtils.get_text_details_by_id(text_id=segment_details.text_id)
+            sheet_segments.append(
+                SheetSegment(
+                    segment_id=segment.segment_id,
+                    segment_number=segment.segment_number,
+                    content=segment_details.content,
+                    language=segment_text_details.language,
+                    text_title=segment_text_details.title,
+                    type=segment_details.type
+                )
+            )
+        else:
+            sheet_segments.append(
+                SheetSegment(
+                    segment_id=segment.segment_id,
+                    segment_number=segment.segment_number,
+                    content=segment_details.content,
+                    type=segment_details.type
+                )
+            )
+
+    return SheetSection(
+        section_number=DEFAULT_SHEET_SECTION_NUMBER,
+        segments=sheet_segments
+    )
+
+
+def _get_all_segment_ids_in_table_of_content_(sheet_sections: Section) -> List[str]:
+    segment_ids = []
+    for section in sheet_sections:
+        for segment in section.segments:
+            segment_ids.append(segment.segment_id)
+    return segment_ids
 
 async def _update_text_details_(sheet_id: str, update_sheet_request: CreateSheetRequest):
     update_text_request = UpdateTextRequest(
@@ -353,3 +384,5 @@ async def _create_sheet_group_(token: str) -> str:
     )
     new_group: GroupDTO = await create_new_group(create_group_request=create_group_request, token=token)
     return new_group.id
+
+

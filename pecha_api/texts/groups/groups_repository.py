@@ -56,3 +56,11 @@ async def create_group(
         id=str(saved_group.id),
         type=saved_group.type
     )
+
+async def delete_group_by_id(group_id: str):
+    try:
+        group_uuid = UUID(group_id)
+        await Group.delete_group_by_id(group_id=group_uuid)
+    except CollectionWasNotInitialized as e:
+        logging.debug(e)
+        return None

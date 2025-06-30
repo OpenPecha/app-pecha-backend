@@ -9,7 +9,8 @@ from pecha_api.texts.groups.groups_service import (
     validate_group_exists,
     get_groups_by_list_of_ids,
     get_group_details,
-    create_new_group
+    create_new_group,
+    delete_group_by_group_id
 )
 
 from pecha_api.texts.groups.groups_response_models import (
@@ -38,8 +39,8 @@ async def test_validate_group_exists_invalid_uuid():
     group_id = "invalid_uuid"
     with pytest.raises(HTTPException) as exc_info:
         await validate_group_exists(group_id=group_id)
-        assert exc_info.value.status_code == status.HTTP_400_BAD_REQUEST
-        assert exc_info.value.detail == ErrorConstants.INVALID_UUID_MESSAGE
+    assert exc_info.value.status_code == status.HTTP_400_BAD_REQUEST
+    assert exc_info.value.detail == ErrorConstants.INVALID_UUID_MESSAGE
     
 @pytest.mark.asyncio
 async def test_get_list_of_group_details_success():
@@ -95,8 +96,8 @@ async def test_get_group_details_invalid_group_id():
         mock_group_details.return_value = None
         with pytest.raises(HTTPException) as exc_info:
             await get_group_details(group_id=group_id)
-            assert exc_info.value.status_code == status.HTTP_404_NOT_FOUND
-            assert exc_info.value.detail == ErrorConstants.GROUP_NOT_FOUND_MESSAGE
+        assert exc_info.value.status_code == status.HTTP_404_NOT_FOUND
+        assert exc_info.value.detail == ErrorConstants.GROUP_NOT_FOUND_MESSAGE
         
 @pytest.mark.asyncio
 async def test_get_group_details_invalid_uuid():
@@ -105,8 +106,8 @@ async def test_get_group_details_invalid_uuid():
         mock_group_details.return_value = None
         with pytest.raises(HTTPException) as exc_info:
             await get_group_details(group_id=group_id)
-            assert exc_info.value.status_code == status.HTTP_400_BAD_REQUEST
-            assert exc_info.value.detail == ErrorConstants.INVALID_UUID_MESSAGE
+        assert exc_info.value.status_code == status.HTTP_400_BAD_REQUEST
+        assert exc_info.value.detail == ErrorConstants.INVALID_UUID_MESSAGE
 
 @pytest.mark.asyncio
 async def test_create_new_group_success():
@@ -136,5 +137,22 @@ async def test_create_new_group_not_admin():
     with patch("pecha_api.texts.groups.groups_service.validate_user_exists", return_value=False):
         with pytest.raises(HTTPException) as exc_info:
             await create_new_group(create_group_request=create_group_request, token="valid_token")
-            assert exc_info.value.status_code == status.HTTP_401_UNAUTHORIZED
-            assert exc_info.value.detail == ErrorConstants.TOKEN_ERROR_MESSAGE
+        assert exc_info.value.status_code == status.HTTP_401_UNAUTHORIZED
+        assert exc_info.value.detail == ErrorConstants.TOKEN_ERROR_MESSAGE
+
+@pytest.mark.asyncio
+async def test_delete_group_by_group_id_success():
+    group_id = "4d2f3498-3cc6-4bc6-9beb-37d2f7dc0163"
+    with patch("pecha_api.texts.groups.groups_service.validate_group_exists", new_callable=AsyncMock, return_value=True),\
+        patch("pecha_api.texts.groups.groups_service.delete_group_by_id", new_callable=AsyncMock):
+        response = await delete_group_by_group_id(group_id=group_id)
+        assert response is None
+
+@pytest.mark.asyncio
+async def test_delete_group_by_group_id_invalid_group_id():
+    group_id = "4d2f3498-3cc6-4bc6-9beb-37d2f7dc0163"
+    with patch("pecha_api.texts.groups.groups_service.validate_group_exists", new_callable=AsyncMock, return_value=False):
+        with pytest.raises(HTTPException) as exc_info:
+            await delete_group_by_group_id(group_id=group_id)
+        assert exc_info.value.status_code == status.HTTP_404_NOT_FOUND
+        assert exc_info.value.detail == ErrorConstants.GROUP_NOT_FOUND_MESSAGE

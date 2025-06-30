@@ -10,7 +10,8 @@ from pecha_api.texts.segments.segments_service import (
     get_commentaries_by_segment_id,
     get_infos_by_segment_id,
     get_root_text_mapping_by_segment_id,
-    remove_segments_by_text_id
+    remove_segments_by_text_id,
+    fetch_segments_by_text_id
 )
 from pecha_api.texts.segments.segments_utils import SegmentUtils
 from pecha_api.texts.segments.segments_response_models import (
@@ -441,3 +442,25 @@ async def test_remove_segments_by_text_id_invalid_text_id():
             await remove_segments_by_text_id(text_id=text_id)
         assert exc_info.value.status_code == 404
         assert exc_info.value.detail == ErrorConstants.TEXT_NOT_FOUND_MESSAGE
+
+@pytest.mark.asyncio
+async def test_fetch_segments_by_text_id_success():
+    text_id = "text_id"
+    mock_segments = [
+        SegmentDTO(
+            id=f"id_{i}",
+            text_id=f"{text_id}_{i}",
+            content=f"content_{i}",
+            mapping=[],
+            type=SegmentType.SOURCE
+        )
+        for i in range(1,6)
+    ]
+    with patch("pecha_api.texts.segments.segments_service.get_segments_by_text_id", new_callable=AsyncMock, return_value=mock_segments):
+        response = await fetch_segments_by_text_id(text_id=text_id)
+
+        assert response is not None
+        assert len(response) == 5
+        assert response[0].id == "id_1"
+        assert response[0].text_id == f"{text_id}_1"
+        assert response[0].type == SegmentType.SOURCE

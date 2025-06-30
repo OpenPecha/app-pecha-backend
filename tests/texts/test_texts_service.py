@@ -12,6 +12,7 @@ from pecha_api.texts.texts_service import (
     get_text_details_by_text_id,
     update_text_details,
     remove_table_of_content_by_text_id,
+    delete_text_by_text_id
 )
 from pecha_api.texts.texts_response_models import (
     CreateTextRequest,
@@ -1006,16 +1007,31 @@ async def test_update_text_details_invalid_text_id():
     
 @pytest.mark.asyncio
 async def test_delete_table_of_content_success():
-    with patch("pecha_api.texts.texts_service.delete_table_of_content_by_text_id", new_callable=AsyncMock) as mock_delete_table_of_content_by_text_id, \
+    with patch("pecha_api.texts.texts_service.delete_table_of_content_by_text_id", new_callable=AsyncMock), \
         patch("pecha_api.texts.texts_service.TextUtils.validate_text_exists", new_callable=AsyncMock, return_value=True):
         response = await remove_table_of_content_by_text_id(text_id="text_id_1")
         assert response is not None
 
 @pytest.mark.asyncio
 async def test_delete_table_of_content_invalid_text_id():
-    with patch("pecha_api.texts.texts_service.delete_table_of_content_by_text_id", new_callable=AsyncMock) as mock_delete_table_of_content_by_text_id, \
+    with patch("pecha_api.texts.texts_service.delete_table_of_content_by_text_id", new_callable=AsyncMock), \
         patch("pecha_api.texts.texts_service.TextUtils.validate_text_exists", new_callable=AsyncMock, return_value=False):
         with pytest.raises(HTTPException) as exec_info:
             await remove_table_of_content_by_text_id(text_id="invalid_id")
+        assert exec_info.value.status_code == 404
+        assert exec_info.value.detail == ErrorConstants.TEXT_NOT_FOUND_MESSAGE
+
+@pytest.mark.asyncio
+async def test_delete_text_by_text_id_success():
+    with patch("pecha_api.texts.texts_service.TextUtils.validate_text_exists", new_callable=AsyncMock, return_value=True), \
+        patch("pecha_api.texts.texts_service.delete_text_by_id", new_callable=AsyncMock):
+        response = await delete_text_by_text_id(text_id="text_id_1")
+        assert response is None
+
+@pytest.mark.asyncio
+async def test_delete_text_by_text_id_invalid_text_id():
+    with patch("pecha_api.texts.texts_service.TextUtils.validate_text_exists", new_callable=AsyncMock, return_value=False):
+        with pytest.raises(HTTPException) as exec_info:
+            await delete_text_by_text_id(text_id="invalid_id")
         assert exec_info.value.status_code == 404
         assert exec_info.value.detail == ErrorConstants.TEXT_NOT_FOUND_MESSAGE

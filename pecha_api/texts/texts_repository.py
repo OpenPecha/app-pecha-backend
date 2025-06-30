@@ -131,3 +131,10 @@ async def update_text_details_by_id(text_id: str, update_text_request: UpdateTex
     await text_details.save()
     return text_details
 
+async def delete_text_by_id(text_id: str):
+    try:
+        text_uuid = UUID(text_id)
+        await Text.delete_text_by_id(text_id=text_uuid)
+    except CollectionWasNotInitialized as e:
+        logging.debug(e)
+        return None

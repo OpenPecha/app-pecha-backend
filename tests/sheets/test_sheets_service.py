@@ -28,6 +28,7 @@ from pecha_api.sheets.sheets_service import (
     create_new_sheet,
     update_sheet_by_id,
     get_sheet_by_id,
+    delete_sheet_by_id,
 )
 from pecha_api.users.users_models import Users
 from pecha_api.texts.segments.segments_response_models import (
@@ -359,6 +360,72 @@ async def test_get_sheet_by_id_invalid_sheet_id():
     with patch("pecha_api.texts.texts_utils.TextUtils.validate_text_exists", new_callable=AsyncMock, return_value=False):
         with pytest.raises(HTTPException) as exc_info:
             await get_sheet_by_id(sheet_id=sheet_id, skip=0, limit=10)
+        assert exc_info.value.status_code == status.HTTP_404_NOT_FOUND
+        assert exc_info.value.detail == ErrorConstants.TEXT_NOT_FOUND_MESSAGE
+
+@pytest.mark.asyncio
+async def test_delete_sheet_success():
+    mock_sheet_id = "text_id"
+    mock_token = "valid_token"
+    text_details = TextDTO(
+        id="sheet_id",
+        title="sheet_title",
+        language="language",
+        group_id="group_id",
+        type=TextType.SHEET,
+        is_published=True,
+        created_date="2021-01-01",
+        updated_date="2021-01-01",
+        published_date="2021-01-01",
+        published_by="test_user@gmail.com",
+        categories=[],
+        views=10
+    )
+    mock_user_details = UserInfoResponse(
+        firstname="firstname",
+        lastname="lastname",
+        username="username",
+        email="test_user@gmail.com",
+        educations=[],
+        followers=0,
+        following=0,
+        social_profiles=[]
+    )
+    with patch("pecha_api.sheets.sheets_service.validate_user_exists", return_value=True), \
+        patch("pecha_api.sheets.sheets_service.TextUtils.get_text_details_by_id", new_callable=AsyncMock, return_value=text_details), \
+        patch("pecha_api.sheets.sheets_service.get_user_info", new_callable=MagicMock, return_value=mock_user_details), \
+        patch("pecha_api.sheets.sheets_service.delete_group_by_group_id", new_callable=AsyncMock), \
+        patch("pecha_api.sheets.sheets_service.remove_segments_by_text_id", new_callable=AsyncMock), \
+        patch("pecha_api.sheets.sheets_service.remove_table_of_content_by_text_id", new_callable=AsyncMock), \
+        patch("pecha_api.sheets.sheets_service.delete_text_by_text_id", new_callable=AsyncMock):
+
+        response = await delete_sheet_by_id(
+            sheet_id=mock_sheet_id,
+            token=mock_token
+        )
+
+        assert response is None
+    
+@pytest.mark.asyncio
+async def test_delete_sheet_invalid_token():
+    with patch("pecha_api.sheets.sheets_service.validate_user_exists", return_value=False):
+        with pytest.raises(HTTPException) as exc_info:
+            await delete_sheet_by_id(
+                sheet_id="text_id",
+                token="invalid_token"
+            )
+        assert exc_info.value.status_code == status.HTTP_401_UNAUTHORIZED
+        assert exc_info.value.detail == ErrorConstants.TOKEN_ERROR_MESSAGE
+
+@pytest.mark.asyncio
+async def test_delete_sheet_invalid_sheet_id():
+    with patch("pecha_api.sheets.sheets_service.validate_user_exists", return_value=True), \
+        patch("pecha_api.texts.texts_utils.TextUtils.validate_text_exists", new_callable=AsyncMock, return_value=False):
+        with pytest.raises(HTTPException) as exc_info:
+            await delete_sheet_by_id(
+                sheet_id="invalid_sheet_id",
+                token="valid_token"
+            )
         assert exc_info.value.status_code == status.HTTP_404_NOT_FOUND
         assert exc_info.value.detail == ErrorConstants.TEXT_NOT_FOUND_MESSAGE
 
