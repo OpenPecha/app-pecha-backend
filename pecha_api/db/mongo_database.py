@@ -12,6 +12,7 @@ from ..texts.segments.segments_models import Segment
 from ..texts.texts_models import TableOfContent
 from ..texts.groups.groups_models import Group
 from ..config import get
+from fastapi import HTTPException
 
 mongodb_client = None
 mongodb = None
@@ -39,3 +40,14 @@ async def lifespan(api: FastAPI):
     # Close the MongoDB connection when the application shuts down
     if mongodb_client:
         mongodb_client.close()
+
+def with_transaction(func):
+    async def wrapper(*args, **kwargs):
+        client = AsyncIOMotorClient(get("MONGO_CONNECTION_STRING"))
+        try:
+            async with await client.start_session() as session:
+                async with session.start_transaction():
+                    return await func(*args, **kwargs, session=session)
+        except Exception as e:
+            raise HTTPException(status_code=500, detail=f"Transaction failed: {e}")
+    return wrapper
