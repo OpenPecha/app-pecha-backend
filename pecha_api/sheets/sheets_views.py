@@ -12,11 +12,9 @@ from typing import Annotated
 from .sheets_service import (
     create_new_sheet, 
     upload_sheet_image_request, 
-    get_sheets,
     get_sheets_with_filters,
     get_sheet_by_id,
     update_sheet_by_id
-    get_sheet_by_id,
 )
 
 from pecha_api.sheets.sheets_response_models import SheetIdResponse
