@@ -11,7 +11,8 @@ from .texts_repository import (
     get_table_of_content_by_content_id,
     get_sections_count_of_table_of_content,
     delete_table_of_content_by_text_id,
-    update_text_details_by_id
+    update_text_details_by_id,
+    delete_text_by_id
 )
 from .texts_response_models import (
     TableOfContent,
@@ -372,3 +373,8 @@ async def update_text_details(text_id: str, update_text_request: UpdateTextReque
     text_details.is_published = update_text_request.is_published
     return await update_text_details_by_id(text_id=text_id, update_text_request=update_text_request)
 
+async def delete_text_by_text_id(text_id: str):
+    is_valid_text = await TextUtils.validate_text_exists(text_id=text_id)
+    if not is_valid_text:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=ErrorConstants.TEXT_NOT_FOUND_MESSAGE)
+    await delete_text_by_id(text_id=text_id)

@@ -131,6 +131,10 @@ class Text(Document):
     @classmethod
     async def update_text_details_by_id(cls, text_id: UUID, text_details: TextDTO):
         return await cls.update_all(cls.id == text_id, {"$set": text_details.model_dump()})
+    
+    @classmethod
+    async def delete_text_by_id(cls, text_id: UUID):
+        return await cls.find_one(cls.id == text_id).delete()
 
 
     @classmethod

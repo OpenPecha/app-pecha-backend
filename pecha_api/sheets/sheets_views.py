@@ -14,7 +14,8 @@ from .sheets_service import (
     upload_sheet_image_request, 
     get_sheets_with_filters,
     get_sheet_by_id,
-    update_sheet_by_id
+    update_sheet_by_id,
+    delete_sheet_by_id
 )
 
 from pecha_api.sheets.sheets_response_models import SheetIdResponse
@@ -63,6 +64,15 @@ async def create_sheet(
         token=authentication_credential.credentials
     )
 
+@sheets_router.get("/{sheet_id}", status_code=status.HTTP_200_OK)
+async def get_sheet(
+    sheet_id: str,
+    skip: int = Query(default=0),
+    limit: int = Query(default=10)
+) -> SheetDetailDTO:
+    return await get_sheet_by_id(sheet_id=sheet_id, skip=skip, limit=limit)
+
+
 @sheets_router.put("/{sheet_id}", status_code=status.HTTP_200_OK)
 async def update_sheet(
     sheet_id: str,
@@ -75,7 +85,16 @@ async def update_sheet(
         token=authentication_credential.credentials
     )
 
+@sheets_router.delete("/{sheet_id}", status_code=status.HTTP_204_NO_CONTENT)
+async def delete_sheet(
+    sheet_id: str,
+    authentication_credential: Annotated[HTTPAuthorizationCredentials, Depends(oauth2_scheme)],
+):
+    await delete_sheet_by_id(
+        sheet_id=sheet_id,
+        token=authentication_credential.credentials
+    )
+
 @sheets_router.post("/upload", status_code=status.HTTP_201_CREATED)
 def upload_sheet_image(sheet_id: Optional[str] = None, file: UploadFile = File(...)):
     return upload_sheet_image_request(sheet_id=sheet_id, file=file)
-
