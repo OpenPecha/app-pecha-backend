@@ -108,6 +108,7 @@ async def get_texts_by_type(text_type: str, is_published: Optional[bool] = None,
         for text in texts
     ]
 
+
 async def create_text(create_text_request: CreateTextRequest) -> Text:
     new_text = Text(
         title=create_text_request.title,

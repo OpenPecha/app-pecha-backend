@@ -322,7 +322,7 @@ def _generate_mock_groups_version_and_commentary(mock_texts: List[TextDTO]) -> D
     for text in mock_texts:
         mock_groups[text.id] = GroupDTO(
             id=text.group_id,
-            type="TEXT" if text.type == "version" else "COMMENTARY"
+            type="text" if text.type == "version" else "commentary"
         )
     return mock_groups
     

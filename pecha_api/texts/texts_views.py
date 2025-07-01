@@ -10,8 +10,7 @@ from .texts_service import (
     create_new_text,
     get_text_by_text_id_or_term,
     get_text_details_by_text_id,
-    create_table_of_content,
-    get_texts_by_text_type
+    create_table_of_content
 )
 from .texts_response_models import (
     CreateTextRequest,
@@ -91,6 +90,7 @@ async def create_table_of_content_request(
 ):
     return await create_table_of_content(table_of_content_request=table_of_content_request, token=authentication_credential.credentials)
 
+
 @text_router.get("/sheets/", status_code=status.HTTP_200_OK)
 async def get_texts_by_type(
     is_published: Optional[bool] = Query(default=None),
@@ -109,3 +109,4 @@ async def get_texts_by_type(
         List of texts matching the specified type
     """
     return await get_texts_by_text_type(is_published=is_published, skip=skip, limit=limit)
+
