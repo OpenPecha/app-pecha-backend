@@ -12,6 +12,7 @@ from ..texts.segments.segments_models import Segment
 from ..texts.texts_models import TableOfContent
 from ..texts.groups.groups_models import Group
 from ..config import get
+from fastapi import HTTPException
 
 mongodb_client = None
 mongodb = None

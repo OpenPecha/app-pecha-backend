@@ -9,7 +9,8 @@ from .groups_repository import (
     create_group,
     check_group_exists,
     get_group_by_id,
-    get_groups_by_ids
+    get_groups_by_ids,
+    delete_group_by_id
 )
 
 from .groups_response_models import (
@@ -69,3 +70,12 @@ async def create_new_group(
     return await create_group(
         create_group_request=create_group_request
     )
+
+async def delete_group_by_group_id(group_id: str):
+    is_valid_group = await validate_group_exists(group_id=group_id)
+    if not is_valid_group:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=ErrorConstants.GROUP_NOT_FOUND_MESSAGE
+        )
+    await delete_group_by_id(group_id=group_id)
