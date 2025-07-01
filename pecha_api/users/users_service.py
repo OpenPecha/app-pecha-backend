@@ -14,7 +14,7 @@ from .user_response_models import UserInfoRequest, UserInfoResponse, SocialMedia
 from .users_enums import SocialProfile
 from .users_models import Users, SocialMediaAccount
 from ..auth.auth_repository import verify_auth0_token, decode_backend_token
-from .users_repository import get_user_by_email, update_user
+from .users_repository import get_user_by_email, update_user, get_user_by_username
 from ..uploads.S3_utils import delete_file, upload_bytes, generate_presigned_upload_url
 from ..db.database import SessionLocal
 from ..config import get, get_int
@@ -178,3 +178,47 @@ def validate_token(token: str) -> Dict[str, Any]:
         return verify_auth0_token(token)
     else:
         return decode_backend_token(token)
+
+def get_username_by_email(email: str) -> Optional[str]:
+
+    try:
+        with SessionLocal() as db_session:
+            user = get_user_by_email(db=db_session, email=email)
+            return user.username if user else None
+    except HTTPException:
+        return None
+
+def get_user_profile_by_username(username: str) -> Optional[UserInfoResponse]:
+    
+    try:
+        with SessionLocal() as db_session:
+            user = get_user_by_username(db=db_session, username=username)
+            if user:
+                return generate_user_info_response(user=user)
+    except Exception as e:
+        logging.error(f"Error getting user profile by username")
+    return None
+
+def get_publisher_info_by_username(username: str) -> Optional[Dict[str, Any]]:
+   
+    try:
+        with SessionLocal() as db_session:
+            user = get_user_by_username(db=db_session, username=username)
+            if user:
+                avatar_url = None
+                if user.avatar_url:
+                    avatar_url = generate_presigned_upload_url(
+                        bucket_name=get("AWS_BUCKET_NAME"), 
+                        s3_key=user.avatar_url
+                    )
+                
+                return {
+                    "id": str(user.id),
+                    "username": user.username,
+                    "firstname": user.firstname,
+                    "lastname": user.lastname,
+                    "avatar_url": avatar_url
+                }
+    except Exception as e:
+        logging.error(f"Error getting publisher info by username")
+    return None

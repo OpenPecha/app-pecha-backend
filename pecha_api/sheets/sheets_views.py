@@ -13,6 +13,7 @@ from .sheets_service import (
     create_new_sheet, 
     upload_sheet_image_request, 
     get_sheets,
+    get_sheets_with_filters,
     update_sheet_by_id
 )
 
@@ -26,11 +27,19 @@ sheets_router = APIRouter(
 
 @sheets_router.get("", status_code=status.HTTP_200_OK)
 async def list_sheets(
-    is_published: Optional[bool] = Query(default=True),
+    authentication_credential: Annotated[HTTPAuthorizationCredentials, Depends(oauth2_scheme)],
+    language: Optional[str] = Query(default=None),
+    email: Optional[str] = Query(default=None),
     skip: int = Query(default=0),
     limit: int = Query(default=10)
 ):
-    return await get_sheets(is_published=is_published, skip=skip, limit=limit) 
+    return await get_sheets_with_filters(
+        token=authentication_credential.credentials,
+        language=language,
+        email=email,
+        skip=skip,
+        limit=limit
+    )
 
 @sheets_router.post("", status_code=status.HTTP_201_CREATED)
 async def create_sheet(
