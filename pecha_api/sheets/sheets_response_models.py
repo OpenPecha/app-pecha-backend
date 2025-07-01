@@ -49,11 +49,6 @@ class SheetDetailDTO(BaseModel):
     limit: int
     total: int
 
-class Publisher(BaseModel):
-    id: str
-    name: str
-    profile_url: Optional[str] = None
-    image_url: Optional[str] = None
 
 class SheetModel(BaseModel):
     id: str

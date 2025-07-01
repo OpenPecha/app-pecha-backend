@@ -12,7 +12,7 @@ from pecha_api.sheets.sheets_response_models import (
     Source,
     SheetIdResponse,
     SheetDetailDTO,
-    SheetSection
+    SheetSection,
     SheetModel,
     Publisher
 )
@@ -470,7 +470,7 @@ async def test_get_sheets_with_filters_community_page_all_published():
              time_passed="",
              views="100",
              likes=[],
-             publisher=Publisher(id="pub_id", name="Test Publisher"),
+             publisher=Publisher(name="Test Publisher", username="test_publisher", email="test_publisher@gmail.com", avatar_url=None),
              language="en"
          )):
         
@@ -523,7 +523,7 @@ async def test_get_sheets_with_filters_user_own_sheets():
              time_passed="",
              views=str(text.views),
              likes=[],
-             publisher=Publisher(id="pub_id", name="Current User"),
+             publisher=Publisher(name="Current User", username="current_user", email="current_user@gmail.com", avatar_url=None),
              language=text.language
          )):
         
@@ -566,7 +566,7 @@ async def test_get_sheets_with_filters_other_user_sheets():
              time_passed="",
              views="100",
              likes=[],
-             publisher=Publisher(id="pub_id", name="Other User"),
+             publisher=Publisher(name="Other User", username="other_user", email="other_user@gmail.com", avatar_url=None),
              language="en"
          )):
         
@@ -628,6 +628,7 @@ def test_create_publisher_object_with_user_profile():
         "firstname": "John",
         "lastname": "Doe",
         "username": "johndoe",
+        "email": "johndoe@example.com",
         "avatar_url": "https://example.com/avatar.jpg"
     }
     
@@ -635,16 +636,17 @@ def test_create_publisher_object_with_user_profile():
         result = _create_publisher_object("johndoe")
         
         assert isinstance(result, Publisher)
-        assert result.id == "user_123"
         assert result.name == "John Doe"
-        assert result.profile_url is None
-        assert result.image_url == "https://example.com/avatar.jpg"
+        assert result.username == "johndoe"
+        assert result.email == "johndoe@example.com"
+        assert result.avatar_url == "https://example.com/avatar.jpg"
 
 def test_create_publisher_object_with_partial_user_profile():
     #Test _create_publisher_object when user profile has missing names
     mock_user_profile = {
         "id": "user_123",
         "username": "johndoe",
+        "email": "johndoe@example.com",
         "avatar_url": "https://example.com/avatar.jpg"
     }
     
@@ -652,10 +654,10 @@ def test_create_publisher_object_with_partial_user_profile():
         result = _create_publisher_object("johndoe")
         
         assert isinstance(result, Publisher)
-        assert result.id == "user_123"
         assert result.name == "johndoe"  # Falls back to username
-        assert result.profile_url is None
-        assert result.image_url == "https://example.com/avatar.jpg"
+        assert result.username == "johndoe"
+        assert result.email == "johndoe@example.com"
+        assert result.avatar_url == "https://example.com/avatar.jpg"
 
 
 # Test cases for _create_sheet_model function
@@ -671,10 +673,10 @@ def test_create_sheet_model_success():
     })
     
     mock_publisher = Publisher(
-        id="user_123",
         name="Test User",
-        profile_url=None,
-        image_url="https://example.com/avatar.jpg"
+        username="test_user",
+        email="test_user@example.com",
+        avatar_url="https://example.com/avatar.jpg"
     )
     
     with patch("pecha_api.sheets.sheets_service._create_publisher_object", return_value=mock_publisher):
@@ -703,10 +705,10 @@ def test_create_sheet_model_with_none_language():
     })
     
     mock_publisher = Publisher(
-        id="user_123",
         name="Test User",
-        profile_url=None,
-        image_url=None
+        username="test_user",
+        email="test_user@example.com",
+        avatar_url=None
     )
     
     with patch("pecha_api.sheets.sheets_service._create_publisher_object", return_value=mock_publisher):
@@ -731,10 +733,10 @@ def test_create_sheet_model_calls_create_publisher_object():
     })
     
     mock_publisher = Publisher(
-        id="user_123",
         name="Test Publisher",
-        profile_url=None,
-        image_url=None
+        username="test_publisher_username",
+        email="test_publisher@example.com",
+        avatar_url=None
     )
     
     with patch("pecha_api.sheets.sheets_service._create_publisher_object", return_value=mock_publisher) as mock_create_publisher:

@@ -445,18 +445,18 @@ def _create_publisher_object(published_by: str) -> Publisher:
     
     if user_profile:
         return Publisher(
-            id=user_profile["id"],
             name=f"{user_profile.get('firstname', '')} {user_profile.get('lastname', '')}".strip() or user_profile["username"],
-            profile_url=None,  # You can add profile URL logic here if needed
-            image_url=user_profile["avatar_url"]
+            username=user_profile["username"],
+            email=user_profile["email"],
+            avatar_url=user_profile["avatar_url"]
         )
     else:
         # Fallback if user profile not found
         return Publisher(
-            id="unknown",
             name=published_by,
-            profile_url=None,
-            image_url=None
+            username=published_by,
+            email=published_by,
+            avatar_url=None
         )
 
 
