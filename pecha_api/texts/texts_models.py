@@ -7,6 +7,11 @@ from .texts_response_models import Section
 from pydantic import Field
 from beanie import Document
 
+from pecha_api.sheets.sheets_enum import (
+    SortBy, 
+    SortOrder
+)
+
 from .texts_enums import TextType
 from .texts_response_models import TextDTO
 
@@ -156,6 +161,8 @@ class Text(Document):
         cls, 
         published_by: Optional[str] = None,
         is_published: Optional[bool] = None,
+        sort_by: Optional[SortBy] = None,
+        sort_order: Optional[SortOrder] = None,
         skip: int = 0, 
         limit: int = 10
     ) -> List["Text"]:
@@ -166,12 +173,26 @@ class Text(Document):
             
         if is_published is not None:
             query["is_published"] = is_published
+
+        mongo_query = cls.find(query)
+        if sort_by:
+            field = {
+                SortBy.CREATED_DATE: "created_date",
+                SortBy.PUBLISHED_DATE: "published_date",
+            }
+            sort_field = field.get(sort_by)
+            if sort_field:
+                if sort_order == SortOrder.DESC:
+                    sort_string = f"-{sort_field}"
+                else:
+                    sort_string = sort_field
             
-        texts = (
-            await cls.find(query)
-            .skip(skip)
-            .limit(limit)
-            .to_list()
-        )
+                mongo_query = mongo_query.sort(sort_string)
+
+        mongo_query = mongo_query.skip(skip).limit(limit)
+
+
+        texts = await mongo_query.to_list()
+
         return texts
 

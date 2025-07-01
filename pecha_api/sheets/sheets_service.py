@@ -16,6 +16,10 @@ from pecha_api.texts.texts_utils import TextUtils
 
 from pecha_api.users.users_models import Users
 
+from .sheets_enum import (
+    SortBy, 
+    SortOrder
+)
 
 from pecha_api.users.users_service import (
     validate_user_exists,
@@ -398,10 +402,11 @@ async def fetch_sheets(
     token: Optional[str] = None,
     language: Optional[str] = None,
     email: Optional[str] = None,
+    sort_by: Optional[SortBy] = None,
+    sort_order: Optional[SortOrder] = None,
     skip: int = 0,
     limit: int = 10
 ) -> List[SheetModel]:
-    
     # currently sheet language is not used since there's is selection of language for sheets
     if language is None:
         language = get("DEFAULT_LANGUAGE")
@@ -410,6 +415,8 @@ async def fetch_sheets(
         # Case 1: Community page - show all published sheets filtered by language
         sheets: List[TextDTO] = await get_sheets(
             is_published=True,
+            sort_by=sort_by,
+            sort_order=sort_order,
             skip=skip,
             limit=limit
         )
@@ -422,6 +429,8 @@ async def fetch_sheets(
         sheets: List[TextDTO] = await get_sheets(
             published_by=email,
             is_published=_is_sheet_owner_,
+            sort_by=sort_by,
+            sort_order=sort_order,
             skip=skip,
             limit=limit
         )

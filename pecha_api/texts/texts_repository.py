@@ -47,8 +47,22 @@ async def get_texts_by_ids(text_ids: List[str]) -> Dict[str, TextDTO]:
         for text in list_of_texts_detail
     }
 
-async def get_sheets(published_by: Optional[str] = None, is_published: bool = None, skip: int = 0, limit: int = 10) -> List[TextDTO]:
-    sheets = await Text.get_sheets(published_by=published_by, is_published=is_published, skip=skip, limit=limit)
+async def get_sheets(
+    published_by: Optional[str] = None, 
+    is_published: bool = None, 
+    sort_by: Optional[SortBy] = None, 
+    sort_order: Optional[SortOrder] = None,
+    skip: int = 0, 
+    limit: int = 10
+) -> List[TextDTO]:
+    sheets = await Text.get_sheets(
+        published_by=published_by, 
+        is_published=is_published, 
+        sort_by=sort_by,
+        sort_order=sort_order,
+        skip=skip, 
+        limit=limit
+    )
     return [
         TextDTO(
             id=str(sheet.id),

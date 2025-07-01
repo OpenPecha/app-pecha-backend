@@ -8,7 +8,10 @@ from fastapi import APIRouter, Depends, UploadFile, File
 from fastapi.security import HTTPAuthorizationCredentials
 from typing import Annotated
 
-
+from .sheets_enum import (
+    SortBy, 
+    SortOrder
+)
 from .sheets_service import (
     create_new_sheet, 
     upload_sheet_image_request, 
@@ -36,6 +39,8 @@ async def get_sheets(
     authentication_credential: Annotated[HTTPAuthorizationCredentials, Depends(oauth2_scheme)],
     language: Optional[str] = Query(default=None),
     email: Optional[str] = Query(default=None),
+    sort_by: Optional[SortBy] = Query(default=None),
+    sort_order: Optional[SortOrder] = Query(default=None),
     skip: int = Query(default=0),
     limit: int = Query(default=10)
 ):
@@ -43,6 +48,8 @@ async def get_sheets(
         token=authentication_credential.credentials if authentication_credential else None,
         language=language,
         email=email,
+        sort_by=sort_by,
+        sort_order=sort_order,
         skip=skip,
         limit=limit
     )
