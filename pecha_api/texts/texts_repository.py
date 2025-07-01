@@ -12,6 +12,10 @@ from .texts_response_models import (
     TextDTO,
     UpdateTextRequest
 )
+from pecha_api.sheets.sheets_enum import (
+    SortBy, 
+    SortOrder
+)
 from .texts_models import Text, TableOfContent
 from datetime import datetime, timezone
 from pecha_api.utils import Utils
