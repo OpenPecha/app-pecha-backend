@@ -95,6 +95,7 @@ async def get_sheet_by_id(sheet_id: str, skip: int, limit: int) -> SheetDetailDT
         sheet_details=sheet_details,
         user_details=user_details,
         sheet_sections=sections,
+        views=sheet_details.views,
         skip=skip,
         limit=limit
     )
@@ -104,6 +105,7 @@ async def _generate_sheet_detail_dto_(
     sheet_details: TextDTO,
     user_details: UserInfoResponse,
     sheet_sections: List[Section],
+    views: int,
     skip: int,
     limit: int
 ) -> SheetDetailDTO:
@@ -129,6 +131,7 @@ async def _generate_sheet_detail_dto_(
         created_date=sheet_details.created_date,
         publisher=publisher,
         content=sheet_section,
+        views=views,
         skip=skip,
         limit=limit,
         total=len(sheet_sections),
