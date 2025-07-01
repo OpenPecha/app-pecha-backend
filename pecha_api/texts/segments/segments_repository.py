@@ -4,7 +4,7 @@ from uuid import UUID
 
 from pecha_api.constants import Constants
 from .segments_models import Segment
-from .segments_response_models import CreateSegmentRequest, SegmentDTO
+from .segments_response_models import CreateSegmentRequest, SegmentDTO, MappingResponse
 import logging
 from beanie.exceptions import CollectionWasNotInitialized
 from typing import List, Dict
@@ -51,12 +51,13 @@ async def get_segments_by_ids(segment_ids: List[str]) -> Dict[str, SegmentDTO]:
     try:
         if not segment_ids:
             return {}
-        list_of_segments_detail = await Segment.get_segments(segment_ids=segment_ids)
+        list_of_segments_detail = await Segment.get_segments_by_ids(segment_ids=segment_ids)
         return {str(segment.id): SegmentDTO(
             id=str(segment.id),
             text_id=segment.text_id,
             content=segment.content,
-            mapping=segment.mapping
+            mapping=[MappingResponse(**mapping.model_dump()) for mapping in segment.mapping],
+            type=segment.type
         ) for segment in list_of_segments_detail}
     except CollectionWasNotInitialized as e:
         logging.debug(e)

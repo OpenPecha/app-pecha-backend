@@ -55,7 +55,8 @@ async def test_get_text_details_by_id_success():
         categories=["categories"],
         views=0
     )
-    with patch("pecha_api.texts.texts_utils.get_texts_by_id", new_callable=AsyncMock, return_value=text_details):
+    with patch("pecha_api.texts.texts_utils.get_texts_by_id", new_callable=AsyncMock, return_value=text_details),\
+        patch("pecha_api.texts.texts_utils.check_text_exists", new_callable=AsyncMock, return_value=True):
         response = await TextUtils.get_text_details_by_id(text_id="efb26a06-f373-450b-ba57-e7a8d4dd5b64")
         assert response.id == "efb26a06-f373-450b-ba57-e7a8d4dd5b64"
         assert response.title == "title"
