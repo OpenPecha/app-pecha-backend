@@ -10,7 +10,7 @@ from jose.exceptions import JWTClaimsError
 from jwt import ExpiredSignatureError
 
 from pecha_api.error_contants import ErrorConstants
-from .user_response_models import UserInfoRequest, UserInfoResponse, SocialMediaProfile
+from .user_response_models import UserInfoRequest, UserInfoResponse, SocialMediaProfile, PublisherInfoResponse
 from .users_enums import SocialProfile
 from .users_models import Users, SocialMediaAccount
 from ..auth.auth_repository import verify_auth0_token, decode_backend_token
@@ -199,7 +199,7 @@ def get_user_profile_by_username(username: str) -> Optional[UserInfoResponse]:
         logging.error(f"Error getting user profile by username")
     return None
 
-def get_publisher_info_by_username(username: str) -> Optional[Dict[str, Any]]:
+def get_publisher_info_by_username(username: str) -> Optional[PublisherInfoResponse]:
    
     try:
         with SessionLocal() as db_session:
@@ -212,13 +212,13 @@ def get_publisher_info_by_username(username: str) -> Optional[Dict[str, Any]]:
                         s3_key=user.avatar_url
                     )
                 
-                return {
-                    "id": str(user.id),
-                    "username": user.username,
-                    "firstname": user.firstname,
-                    "lastname": user.lastname,
-                    "avatar_url": avatar_url
-                }
+                return PublisherInfoResponse(
+                    id=str(user.id),
+                    username=user.username,
+                    firstname=user.firstname,
+                    lastname=user.lastname,
+                    avatar_url=avatar_url
+                )
     except Exception as e:
         logging.error(f"Error getting publisher info by username")
     return None
