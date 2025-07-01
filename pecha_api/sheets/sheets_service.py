@@ -251,9 +251,6 @@ async def _create_sheet_group_(token: str) -> str:
 
     return new_group.id
 
-async def get_sheets(is_published: Optional[bool] = True, skip: int = 0, limit: int = 10) -> List[SheetModel]:
-    texts = await Text.get_texts_by_type(text_type='sheet', is_published=is_published, skip=skip, limit=limit)
-    return [_create_sheet_model(text) for text in texts]
 
 async def get_sheets_with_filters(
     token: str,

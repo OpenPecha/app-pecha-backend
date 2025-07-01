@@ -10,7 +10,9 @@ from pecha_api.image_utils import ImageUtils
 from pecha_api.sheets.sheets_response_models import (
     CreateSheetRequest,
     Source,
-    SheetIdResponse
+    SheetIdResponse,
+    SheetModel,
+    Publisher
 )
 from pecha_api.texts.segments.segments_enum import SegmentType
 from pecha_api.texts.texts_response_models import (
@@ -22,7 +24,9 @@ from pecha_api.texts.texts_response_models import (
 from pecha_api.sheets.sheets_service import (
     create_new_sheet,
     update_sheet_by_id,
-    get_sheets
+    get_sheets_with_filters,
+    _create_publisher_object,
+    _create_sheet_model
 )
 from pecha_api.users.users_models import Users
 from pecha_api.texts.segments.segments_response_models import (
@@ -30,6 +34,7 @@ from pecha_api.texts.segments.segments_response_models import (
     SegmentResponse
 )
 from pecha_api.texts.texts_enums import TextType
+from pecha_api.texts.texts_models import Text
 
 
 def test_validate_and_compress_image_success():
@@ -268,185 +273,305 @@ async def test_update_sheet_invalid_token():
     assert exc_info.value.status_code == status.HTTP_401_UNAUTHORIZED
     assert exc_info.value.detail == ErrorConstants.TOKEN_ERROR_MESSAGE
 
+
+
+# Test cases for get_sheets_with_filters function
 @pytest.mark.asyncio
-async def test_get_sheets_with_default_parameters():
-    #Test get_sheets function with default parameters
-    mock_sheets = [
-        type("TextDTO", (), {
-            "id": "sheet_id_1",
-            "title": "Sheet 1",
-            "language": "en",
-            "group_id": "group_id_1",
-            "type": "sheet",
-            "is_published": True,
-            "created_date": "2024-01-01T00:00:00Z",
-            "updated_date": "2024-01-01T00:00:00Z",
-            "published_date": "2024-01-01T00:00:00Z",
-            "published_by": "test_user",
-            "categories": [],
-            "views": 0
-        })(),
-        type("TextDTO", (), {
-            "id": "sheet_id_2",
-            "title": "Sheet 2",
-            "language": "bo",
-            "group_id": "group_id_2",
-            "type": "sheet",
-            "is_published": True,
-            "created_date": "2024-01-02T00:00:00Z",
-            "updated_date": "2024-01-02T00:00:00Z",
-            "published_date": "2024-01-02T00:00:00Z",
-            "published_by": "test_user",
-            "categories": [],
-            "views": 0
-        })()
-    ]
+async def test_get_sheets_with_filters_community_page_all_published():
+    #Test get_sheets_with_filters for community page - show all published sheets
+    mock_user_details = type("User", (), {
+        "email": "current_user@gmail.com",
+    })
     
-    with patch("pecha_api.sheets.sheets_service.get_texts_by_text_type", new_callable=AsyncMock, return_value=mock_sheets) as mock_get_texts:
-        result = await get_sheets()
+    mock_text = type("Text", (), {
+        "id": "text_id",
+        "title": "Test Sheet",
+        "published_date": "2021-01-01",
+        "views": 100,
+        "published_by": "test_publisher",
+        "language": "en"
+    })
+    
+    with patch("pecha_api.sheets.sheets_service.validate_and_extract_user_details", return_value=mock_user_details), \
+         patch("pecha_api.sheets.sheets_service.Text.get_sheets_filtered", new_callable=AsyncMock, return_value=[mock_text]), \
+         patch("pecha_api.sheets.sheets_service._create_sheet_model", return_value=SheetModel(
+             id="text_id",
+             title="Test Sheet",
+             summary="",
+             published_date="2021-01-01",
+             time_passed="",
+             views="100",
+             likes=[],
+             publisher=Publisher(id="pub_id", name="Test Publisher"),
+             language="en"
+         )):
         
-        # Verify the function was called with correct default parameters
-        mock_get_texts.assert_called_once_with(
-            is_published=True,
-            text_type=TextType.SHEET.value,
+        result = await get_sheets_with_filters(
+            token="valid_token",
+            language="en",
+            email=None,
             skip=0,
             limit=10
         )
         
-        # Verify the result
-        assert result == mock_sheets
-        assert len(result) == 2
-        assert result[0].id == "sheet_id_1"
-        assert result[1].id == "sheet_id_2"
-
-@pytest.mark.asyncio
-async def test_get_sheets_with_custom_parameters():
-    #Test get_sheets function with custom parameters
-    mock_sheets = [
-        type("TextDTO", (), {
-            "id": "sheet_id_3",
-            "title": "Unpublished Sheet",
-            "language": "en",
-            "group_id": "group_id_3",
-            "type": "sheet",
-            "is_published": False,
-            "created_date": "2024-01-03T00:00:00Z",
-            "updated_date": "2024-01-03T00:00:00Z",
-            "published_date": "",
-            "published_by": "test_user",
-            "categories": [],
-            "views": 0
-        })()
-    ]
-    
-    with patch("pecha_api.sheets.sheets_service.get_texts_by_text_type", new_callable=AsyncMock, return_value=mock_sheets) as mock_get_texts:
-        result = await get_sheets(is_published=True, skip=5, limit=20)
-        
-        # Verify the function was called with correct custom parameters
-        mock_get_texts.assert_called_once_with(
-            is_published=True,
-            text_type=TextType.SHEET.value,
-            skip=5,
-            limit=20
-        )
-        
-        # Verify the result
-        assert result == mock_sheets
         assert len(result) == 1
-        assert result[0].is_published == False
+        assert result[0].id == "text_id"
+        assert result[0].title == "Test Sheet"
 
 @pytest.mark.asyncio
-async def test_get_sheets_with_none_published_parameter():
-    #Test get_sheets function with False as is_published parameter
-    mock_sheets = []
+async def test_get_sheets_with_filters_user_own_sheets():
+    #Test get_sheets_with_filters for user's own sheets - show both published and unpublished
+    mock_user_details = type("User", (), {
+        "email": "current_user@gmail.com",
+    })
     
-    with patch("pecha_api.sheets.sheets_service.get_texts_by_text_type", new_callable=AsyncMock, return_value=mock_sheets) as mock_get_texts:
-        result = await get_sheets(is_published=False, skip=0, limit=5)
-        
-        # Verify the function was called with None for is_published
-        mock_get_texts.assert_called_once_with(
-            is_published=False,
-            text_type=TextType.SHEET.value,
-            skip=0,
-            limit=5
-        )
-        
-        # Verify the result
-        assert result == mock_sheets
-        assert len(result) == 0
-
-@pytest.mark.asyncio
-async def test_get_sheets_empty_result():
-    #Test get_sheets function when no sheets are found
-    mock_sheets = []
+    mock_texts = [
+        type("Text", (), {
+            "id": "text_id_1",
+            "title": "Published Sheet",
+            "published_date": "2021-01-01",
+            "views": 100,
+            "published_by": "current_user",
+            "language": "en"
+        }),
+        type("Text", (), {
+            "id": "text_id_2",
+            "title": "Unpublished Sheet",
+            "published_date": "2021-01-02",
+            "views": 50,
+            "published_by": "current_user",
+            "language": "en"
+        })
+    ]
     
-    with patch("pecha_api.sheets.sheets_service.get_texts_by_text_type", new_callable=AsyncMock, return_value=mock_sheets) as mock_get_texts:
-        result = await get_sheets()
+    with patch("pecha_api.sheets.sheets_service.validate_and_extract_user_details", return_value=mock_user_details), \
+         patch("pecha_api.sheets.sheets_service.get_username_by_email", return_value="current_user"), \
+         patch("pecha_api.sheets.sheets_service.Text.get_sheets_filtered", new_callable=AsyncMock, return_value=mock_texts), \
+         patch("pecha_api.sheets.sheets_service._create_sheet_model", side_effect=lambda text: SheetModel(
+             id=text.id,
+             title=text.title,
+             summary="",
+             published_date=text.published_date,
+             time_passed="",
+             views=str(text.views),
+             likes=[],
+             publisher=Publisher(id="pub_id", name="Current User"),
+             language=text.language
+         )):
         
-        # Verify the function was called with default parameters
-        mock_get_texts.assert_called_once_with(
-            is_published=True,
-            text_type=TextType.SHEET.value,
+        result = await get_sheets_with_filters(
+            token="valid_token",
+            language="en",
+            email="current_user@gmail.com",
             skip=0,
             limit=10
         )
         
-        # Verify the result is empty
-        assert result == []
-        assert len(result) == 0
+        assert len(result) == 2
+        assert result[0].id == "text_id_1"
+        assert result[1].id == "text_id_2"
 
 @pytest.mark.asyncio
-async def test_get_sheets_large_dataset():
-    #Test get_sheets function with a large dataset
-    # Create a list of 15 mock sheets
-    mock_sheets = [
-        type("TextDTO", (), {
-            "id": f"sheet_id_{i}",
-            "title": f"Sheet {i}",
-            "language": "en",
-            "group_id": f"group_id_{i}",
-            "type": "sheet",
-            "is_published": True,
-            "created_date": f"2024-01-{i:02d}T00:00:00Z",
-            "updated_date": f"2024-01-{i:02d}T00:00:00Z",
-            "published_date": f"2024-01-{i:02d}T00:00:00Z",
-            "published_by": "test_user",
-            "categories": [],
-            "views": i
-        })()
-        for i in range(1, 16)
-    ]
+async def test_get_sheets_with_filters_other_user_sheets():
+    #Test get_sheets_with_filters for other user's sheets - show only published
+    mock_user_details = type("User", (), {
+        "email": "current_user@gmail.com",
+    })
     
-    with patch("pecha_api.sheets.sheets_service.get_texts_by_text_type", new_callable=AsyncMock, return_value=mock_sheets) as mock_get_texts:
-        result = await get_sheets(skip=10, limit=15)
+    mock_text = type("Text", (), {
+        "id": "text_id",
+        "title": "Other User's Sheet",
+        "published_date": "2021-01-01",
+        "views": 100,
+        "published_by": "other_user",
+        "language": "en"
+    })
+    
+    with patch("pecha_api.sheets.sheets_service.validate_and_extract_user_details", return_value=mock_user_details), \
+         patch("pecha_api.sheets.sheets_service.get_username_by_email", return_value="other_user"), \
+         patch("pecha_api.sheets.sheets_service.Text.get_sheets_filtered", new_callable=AsyncMock, return_value=[mock_text]), \
+         patch("pecha_api.sheets.sheets_service._create_sheet_model", return_value=SheetModel(
+             id="text_id",
+             title="Other User's Sheet",
+             summary="",
+             published_date="2021-01-01",
+             time_passed="",
+             views="100",
+             likes=[],
+             publisher=Publisher(id="pub_id", name="Other User"),
+             language="en"
+         )):
         
-        # Verify the function was called with pagination parameters
-        mock_get_texts.assert_called_once_with(
-            is_published=True,
-            text_type=TextType.SHEET.value,
-            skip=10,
-            limit=15
+        result = await get_sheets_with_filters(
+            token="valid_token",
+            language="en",
+            email="other_user@gmail.com",
+            skip=0,
+            limit=10
         )
         
-        # Verify the result
-        assert result == mock_sheets
-        assert len(result) == 15
-        assert result[0].id == "sheet_id_1"
-        assert result[-1].id == "sheet_id_15"
+        assert len(result) == 1
+        assert result[0].id == "text_id"
+        assert result[0].title == "Other User's Sheet"
 
 @pytest.mark.asyncio
-async def test_get_sheets_passes_correct_text_type():
-    #Test that get_sheets always passes the correct TextType.SHEET value
-    mock_sheets = []
+async def test_get_sheets_with_filters_user_not_found():
+    #Test get_sheets_with_filters when email user doesn't exist
+    mock_user_details = type("User", (), {
+        "email": "current_user@gmail.com",
+    })
     
-    with patch("pecha_api.sheets.sheets_service.get_texts_by_text_type", new_callable=AsyncMock, return_value=mock_sheets) as mock_get_texts:
-        await get_sheets()
+    with patch("pecha_api.sheets.sheets_service.validate_and_extract_user_details", return_value=mock_user_details), \
+         patch("pecha_api.sheets.sheets_service.get_username_by_email", return_value=None):
         
-        # Verify that the text_type parameter is always TextType.SHEET.value
-        call_args = mock_get_texts.call_args
-        assert call_args[1]['text_type'] == TextType.SHEET.value
+        with pytest.raises(HTTPException) as exc_info:
+            await get_sheets_with_filters(
+                token="valid_token",
+                language="en",
+                email="nonexistent@gmail.com",
+                skip=0,
+                limit=10
+            )
         
-        # Make sure it's not any other text type
-        assert call_args[1]['text_type'] != TextType.COMMENTARY.value
-        assert call_args[1]['text_type'] != "commentary"
-        assert call_args[1]['text_type'] != "version"
+        assert exc_info.value.status_code == status.HTTP_404_NOT_FOUND
+        assert "not found" in exc_info.value.detail
+
+@pytest.mark.asyncio
+async def test_get_sheets_with_filters_invalid_token():
+    #Test get_sheets_with_filters with invalid token
+    with patch("pecha_api.sheets.sheets_service.validate_and_extract_user_details", side_effect=HTTPException(status_code=401, detail="Invalid token")):
+        
+        with pytest.raises(HTTPException) as exc_info:
+            await get_sheets_with_filters(
+                token="invalid_token",
+                language="en",
+                email=None,
+                skip=0,
+                limit=10
+            )
+        
+        assert exc_info.value.status_code == 401
+
+# Test cases for _create_publisher_object function
+def test_create_publisher_object_with_user_profile():
+    #Test _create_publisher_object when user profile exists
+    mock_user_profile = {
+        "id": "user_123",
+        "firstname": "John",
+        "lastname": "Doe",
+        "username": "johndoe",
+        "avatar_url": "https://example.com/avatar.jpg"
+    }
+    
+    with patch("pecha_api.sheets.sheets_service.get_publisher_info_by_username", return_value=mock_user_profile):
+        result = _create_publisher_object("johndoe")
+        
+        assert isinstance(result, Publisher)
+        assert result.id == "user_123"
+        assert result.name == "John Doe"
+        assert result.profile_url is None
+        assert result.image_url == "https://example.com/avatar.jpg"
+
+def test_create_publisher_object_with_partial_user_profile():
+    #Test _create_publisher_object when user profile has missing names
+    mock_user_profile = {
+        "id": "user_123",
+        "username": "johndoe",
+        "avatar_url": "https://example.com/avatar.jpg"
+    }
+    
+    with patch("pecha_api.sheets.sheets_service.get_publisher_info_by_username", return_value=mock_user_profile):
+        result = _create_publisher_object("johndoe")
+        
+        assert isinstance(result, Publisher)
+        assert result.id == "user_123"
+        assert result.name == "johndoe"  # Falls back to username
+        assert result.profile_url is None
+        assert result.image_url == "https://example.com/avatar.jpg"
+
+
+# Test cases for _create_sheet_model function
+def test_create_sheet_model_success():
+    #Test _create_sheet_model with valid Text object
+    mock_text = type("Text", (), {
+        "id": "sheet_123",
+        "title": "Test Sheet Title",
+        "published_date": "2021-01-01T00:00:00Z",
+        "views": 150,
+        "published_by": "test_user",
+        "language": "en"
+    })
+    
+    mock_publisher = Publisher(
+        id="user_123",
+        name="Test User",
+        profile_url=None,
+        image_url="https://example.com/avatar.jpg"
+    )
+    
+    with patch("pecha_api.sheets.sheets_service._create_publisher_object", return_value=mock_publisher):
+        result = _create_sheet_model(mock_text)
+        
+        assert isinstance(result, SheetModel)
+        assert result.id == "sheet_123"
+        assert result.title == "Test Sheet Title"
+        assert result.summary == ""
+        assert result.published_date == "2021-01-01T00:00:00Z"
+        assert result.time_passed == ""
+        assert result.views == "150"
+        assert result.likes == []
+        assert result.publisher == mock_publisher
+        assert result.language == "en"
+
+def test_create_sheet_model_with_none_language():
+    """Test _create_sheet_model when language is None"""
+    mock_text = type("Text", (), {
+        "id": "sheet_123",
+        "title": "Test Sheet Title",
+        "published_date": "2021-01-01T00:00:00Z",
+        "views": 0,
+        "published_by": "test_user",
+        "language": None
+    })
+    
+    mock_publisher = Publisher(
+        id="user_123",
+        name="Test User",
+        profile_url=None,
+        image_url=None
+    )
+    
+    with patch("pecha_api.sheets.sheets_service._create_publisher_object", return_value=mock_publisher):
+        result = _create_sheet_model(mock_text)
+        
+        assert isinstance(result, SheetModel)
+        assert result.id == "sheet_123"
+        assert result.title == "Test Sheet Title"
+        assert result.views == "0"
+        assert result.language is None
+        assert result.publisher == mock_publisher
+
+def test_create_sheet_model_calls_create_publisher_object():
+    #Test that _create_sheet_model properly calls _create_publisher_object
+    mock_text = type("Text", (), {
+        "id": "sheet_123",
+        "title": "Test Sheet Title",
+        "published_date": "2021-01-01T00:00:00Z",
+        "views": 100,
+        "published_by": "test_publisher_username",
+        "language": "en"
+    })
+    
+    mock_publisher = Publisher(
+        id="user_123",
+        name="Test Publisher",
+        profile_url=None,
+        image_url=None
+    )
+    
+    with patch("pecha_api.sheets.sheets_service._create_publisher_object", return_value=mock_publisher) as mock_create_publisher:
+        result = _create_sheet_model(mock_text)
+        
+        # Verify that _create_publisher_object was called with the correct username
+        mock_create_publisher.assert_called_once_with("test_publisher_username")
+        assert result.publisher == mock_publisher
