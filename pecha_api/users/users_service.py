@@ -201,7 +201,7 @@ def get_user_profile_by_username(username: str) -> Optional[UserInfoResponse]:
             if user:
                 return generate_user_info_response(user=user)
     except Exception as e:
-        logging.error(f"Error getting user profile by username")
+        logging.error(f"Error getting user profile by username: {e}")
     return None
 
 def get_publisher_info_by_username(username: str) -> Optional[PublisherInfoResponse]:
@@ -225,5 +225,5 @@ def get_publisher_info_by_username(username: str) -> Optional[PublisherInfoRespo
                     avatar_url=avatar_url
                 )
     except Exception as e:
-        logging.error(f"Error getting publisher info by username")
+        logging.error(f"Error getting publisher info by username: {e}")
     return None

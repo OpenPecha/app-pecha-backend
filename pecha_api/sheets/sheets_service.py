@@ -14,6 +14,8 @@ from pecha_api.image_utils import ImageUtils
 from pecha_api.utils import Utils
 from pecha_api.texts.texts_utils import TextUtils
 
+from pecha_api.users.users_models import Users
+
 
 from pecha_api.users.users_service import (
     validate_user_exists,
@@ -79,6 +81,8 @@ from pecha_api.sheets.sheets_response_models import (
     SheetSection,
     SheetSegment
 )
+
+from pecha_api.texts.texts_repository import get_sheets
 
 DEFAULT_SHEET_SECTION_NUMBER = 1
 
@@ -390,86 +394,67 @@ async def _create_sheet_group_(token: str) -> str:
     return new_group.id
 
 
-async def get_sheets_with_filters(
-    token: str,
+async def fetch_sheets(
+    token: Optional[str] = None,
     language: Optional[str] = None,
     email: Optional[str] = None,
     skip: int = 0,
     limit: int = 10
 ) -> List[SheetModel]:
-    # Always validate the token
-    current_user = validate_and_extract_user_details(token=token)
+    
+    # currently sheet language is not used since there's is selection of language for sheets
+    if language is None:
+        language = get("DEFAULT_LANGUAGE")
     
     if email is None:
         # Case 1: Community page - show all published sheets filtered by language
-        texts = await Text.get_sheets_filtered(
-            language=language,
+        sheets: List[TextDTO] = await get_sheets(
             is_published=True,
             skip=skip,
             limit=limit
         )
     else:
-        # Get username for the provided email
-        target_username = get_username_by_email(email=email)
-        if target_username is None:
-            # Email doesn't exist, raise error
-            raise HTTPException(
-                status_code=status.HTTP_404_NOT_FOUND, 
-                detail=f"User with email '{email}' not found"
-            )
-        
-        if current_user.email == email:
-            # Case 2: User's own sheets - show both published and unpublished
-            texts = await Text.get_sheets_filtered(
-                language=language,
-                published_by=target_username,
-                is_published=None,  # Show both published and unpublished
-                skip=skip,
-                limit=limit
-            )
+        if token == "None":
+            _is_sheet_owner_ = True
         else:
-            # Case 3: Other user's sheets - show only published sheets
-            texts = await Text.get_sheets_filtered(
-                language=language,
-                published_by=target_username,
-                is_published=True,
-                skip=skip,
-                limit=limit
-            )
-    
-    return [_create_sheet_model(text) for text in texts]
-
-def _create_publisher_object(published_by: str) -> Publisher:
-
-    user_profile = get_publisher_info_by_username(username=published_by)
-    
-    if user_profile:
-        return Publisher(
-            name=f"{user_profile.get('firstname', '')} {user_profile.get('lastname', '')}".strip() or user_profile["username"],
-            username=user_profile["username"],
-            email=user_profile["email"],
-            avatar_url=user_profile["avatar_url"]
+            current_user: Users = validate_and_extract_user_details(token=token)
+            _is_sheet_owner_ = None if current_user.email == email else True
+        sheets: List[TextDTO] = await get_sheets(
+            published_by=email,
+            is_published=_is_sheet_owner_,
+            skip=skip,
+            limit=limit
         )
-    else:
-        # Fallback if user profile not found
-        return Publisher(
-            name=published_by,
-            username=published_by,
-            email=published_by,
-            avatar_url=None
-        )
+    
+    sheets_model: List[SheetModel] = _create_sheet_model_(sheets=sheets)
 
+    return sheets_model
 
-def _create_sheet_model(text: Text) -> SheetModel:
+def _create_publisher_object_(published_by: str) -> Publisher:
 
-    return SheetModel(
-        id=str(text.id),
-        title=text.title,
-        summary="",
-        published_date=text.published_date,
-        time_passed="",
-        views=str(text.views),
-        likes=[],
-        publisher=_create_publisher_object(text.published_by),
-        language=text.language
+    user_profile: UserInfoResponse = fetch_user_by_email(email=published_by)
+    
+    return Publisher(
+        name=f"{user_profile.firstname} {user_profile.lastname}".strip() or user_profile.username,
+        username=user_profile.username,
+        email=user_profile.email,
+        avatar_url=user_profile.avatar_url
     )
+
+
+def _create_sheet_model_(sheets: List[TextDTO]) -> List[SheetModel]:
+
+    return [
+        SheetModel(
+            id=str(sheet.id),
+            title=sheet.title,
+            summary="",
+            published_date=sheet.published_date,
+            time_passed="",
+            views=str(sheet.views),
+            likes=[],
+            publisher=_create_publisher_object_(published_by=sheet.published_by),
+            language=sheet.language
+        )
+        for sheet in sheets
+    ]

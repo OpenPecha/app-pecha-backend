@@ -152,18 +152,14 @@ class Text(Document):
         return texts
 
     @classmethod
-    async def get_sheets_filtered(
+    async def get_sheets(
         cls, 
-        language: Optional[str] = None,
         published_by: Optional[str] = None,
         is_published: Optional[bool] = None,
         skip: int = 0, 
         limit: int = 10
     ) -> List["Text"]:
         query = {"type": TextType.SHEET}
-        
-        if language is not None:
-            query["language"] = language
             
         if published_by is not None:
             query["published_by"] = published_by

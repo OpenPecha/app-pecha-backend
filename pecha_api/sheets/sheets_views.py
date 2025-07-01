@@ -12,7 +12,7 @@ from typing import Annotated
 from .sheets_service import (
     create_new_sheet, 
     upload_sheet_image_request, 
-    get_sheets_with_filters,
+    fetch_sheets,
     get_sheet_by_id,
     update_sheet_by_id,
     delete_sheet_by_id
@@ -32,20 +32,21 @@ sheets_router = APIRouter(
 )
 
 @sheets_router.get("", status_code=status.HTTP_200_OK)
-async def list_sheets(
+async def get_sheets(
     authentication_credential: Annotated[HTTPAuthorizationCredentials, Depends(oauth2_scheme)],
     language: Optional[str] = Query(default=None),
     email: Optional[str] = Query(default=None),
     skip: int = Query(default=0),
     limit: int = Query(default=10)
 ):
-    return await get_sheets_with_filters(
-        token=authentication_credential.credentials,
+    return await fetch_sheets(
+        token=authentication_credential.credentials if authentication_credential else None,
         language=language,
         email=email,
         skip=skip,
         limit=limit
     )
+
 @sheets_router.get("/{sheet_id}", status_code=status.HTTP_200_OK)
 async def get_sheet(
     sheet_id: str,

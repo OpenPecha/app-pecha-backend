@@ -47,6 +47,27 @@ async def get_texts_by_ids(text_ids: List[str]) -> Dict[str, TextDTO]:
         for text in list_of_texts_detail
     }
 
+async def get_sheets(published_by: Optional[str] = None, is_published: bool = None, skip: int = 0, limit: int = 10) -> List[TextDTO]:
+    sheets = await Text.get_sheets(published_by=published_by, is_published=is_published, skip=skip, limit=limit)
+    return [
+        TextDTO(
+            id=str(sheet.id),
+            title=sheet.title,
+            language=sheet.language,
+            group_id=sheet.group_id,
+            type=sheet.type,
+            is_published=sheet.is_published,
+            created_date=sheet.created_date,
+            updated_date=sheet.updated_date,
+            published_date=sheet.published_date,
+            published_by=sheet.published_by,
+            categories=sheet.categories,
+            views=sheet.views
+        )
+        for sheet in sheets
+    ]
+
+
 
 async def check_text_exists(text_id: UUID) -> bool:
     try:
