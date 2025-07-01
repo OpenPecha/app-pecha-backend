@@ -6,8 +6,9 @@ from starlette import status
 from pecha_api.image_utils import ImageUtils
 from pecha_api.utils import Utils
 from pecha_api.users.users_service import get_user_info, update_user_info, \
-    validate_and_extract_user_details, verify_admin_access, get_social_profile, update_social_profiles
-from pecha_api.users.user_response_models import UserInfoRequest, SocialMediaProfile
+    validate_and_extract_user_details, verify_admin_access, get_social_profile, update_social_profiles, \
+    get_publisher_info_by_username
+from pecha_api.users.user_response_models import UserInfoRequest, SocialMediaProfile, PublisherInfoResponse
 from pecha_api.users.users_models import Users, SocialMediaAccount
 from pecha_api.users.users_enums import SocialProfile
 from unittest.mock import patch, MagicMock
@@ -414,3 +415,112 @@ def test_update_social_profiles():
     assert user.social_media_accounts[0].profile_url == "john.doe@newemail.com"
     assert user.social_media_accounts[1].platform_name == "LINKEDIN"
     assert user.social_media_accounts[1].profile_url == "http://linkedin.com/in/johndoe"
+
+
+def test_get_publisher_info_by_username_success_with_avatar():
+    username = "johndoe"
+    user = Users(
+        id="123e4567-e89b-12d3-a456-426614174000",
+        firstname="tenzin",
+        lastname="yama",
+        username="tenya",
+        avatar_url="images/profile_images/user_123.jpg"
+    )
+
+    with patch("pecha_api.users.users_service.get_user_by_username", return_value=user), \
+            patch("pecha_api.users.users_service.generate_presigned_upload_url", 
+                  return_value="https://example.com/presigned_avatar.jpg"):
+        response = get_publisher_info_by_username(username)
+        
+        assert response is not None
+        assert isinstance(response, PublisherInfoResponse)
+        assert response.id == "123e4567-e89b-12d3-a456-426614174000"
+        assert response.username == "tenya"
+        assert response.firstname == "tenzin"
+        assert response.lastname == "yama"
+        assert response.avatar_url == "https://example.com/presigned_avatar.jpg"
+
+
+def test_get_publisher_info_by_username_success_without_avatar():
+    username = "janedoe"
+    user = Users(
+        id="456e7890-e89b-12d3-a456-426614174001",
+        firstname="tenzin",
+        lastname="yama",
+        username="tenya",
+        avatar_url=None
+    )
+
+    with patch("pecha_api.users.users_service.get_user_by_username", return_value=user):
+        response = get_publisher_info_by_username(username)
+        
+        assert response is not None
+        assert isinstance(response, PublisherInfoResponse)
+        assert response.id == "456e7890-e89b-12d3-a456-426614174001"
+        assert response.username == "tenya"
+        assert response.firstname == "tenzin"
+        assert response.lastname == "yama"
+        assert response.avatar_url is None
+
+
+def test_get_publisher_info_by_username_success_empty_avatar():
+    username = "testuser"
+    user = Users(
+        id="789e1234-e89b-12d3-a456-426614174002",
+        firstname="Test",
+        lastname="User",
+        username="testuser",
+        avatar_url=""
+    )
+
+    with patch("pecha_api.users.users_service.get_user_by_username", return_value=user):
+        response = get_publisher_info_by_username(username)
+        
+        assert response is not None
+        assert isinstance(response, PublisherInfoResponse)
+        assert response.id == "789e1234-e89b-12d3-a456-426614174002"
+        assert response.username == "testuser"
+        assert response.firstname == "Test"
+        assert response.lastname == "User"
+        assert response.avatar_url is None
+
+
+def test_get_publisher_info_by_username_user_not_found():
+    username = "nonexistentuser"
+
+    with patch("pecha_api.users.users_service.get_user_by_username", return_value=None):
+        response = get_publisher_info_by_username(username)
+        
+        assert response is None
+
+
+def test_get_publisher_info_by_username_database_exception():
+    username = "problematicuser"
+
+    with patch("pecha_api.users.users_service.get_user_by_username", 
+               side_effect=Exception("Database connection error")), \
+            patch("pecha_api.users.users_service.logging.error") as mock_logger:
+        response = get_publisher_info_by_username(username)
+        
+        assert response is None
+        mock_logger.assert_called_once_with("Error getting publisher info by username")
+
+
+def test_get_publisher_info_by_username_presigned_url_exception():
+    username = "urlproblems"
+    user = Users(
+        id="999e8888-e89b-12d3-a456-426614174003",
+        firstname="URL",
+        lastname="Problems", 
+        username="urlproblems",
+        avatar_url="images/profile_images/user_999.jpg"
+    )
+
+    with patch("pecha_api.users.users_service.get_user_by_username", return_value=user), \
+            patch("pecha_api.users.users_service.generate_presigned_upload_url", 
+                  side_effect=Exception("S3 connection error")), \
+            patch("pecha_api.users.users_service.logging.error") as mock_logger:
+        response = get_publisher_info_by_username(username)
+        
+        assert response is None
+        mock_logger.assert_called_once_with("Error getting publisher info by username")
