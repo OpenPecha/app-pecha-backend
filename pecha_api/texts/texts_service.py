@@ -102,7 +102,7 @@ async def get_sheets(published_by: Optional[str] = None, is_published: Optional[
             title=sheet.title,
             summary="",
             published_date=sheet.published_date,
-            time_passed="",
+            time_passed=Utils.time_passed(published_time=sheet.published_date, language=sheet.language),
             views=str(sheet.views),
             likes=[],
             publisher=_create_publisher_object_(published_by=sheet.published_by),

@@ -26,26 +26,37 @@ class Utils:
 
     @staticmethod
     def time_passed(published_time: int, language: str) -> str:
-        current_time = datetime.now(timezone.utc)
-        post_time = datetime.fromtimestamp(published_time // 1000, timezone.utc)
-        time_difference = current_time - post_time
-        if time_difference < timedelta(minutes=1):
-            return Utils.get_word_by_language(word='Now', language=language)
-        elif time_difference < timedelta(hours=1):
-            minutes = int(time_difference.total_seconds() / Constants.MINUTE_IN_SECONDS)
-            minute_value = Utils.get_number_by_language(value=minutes, language=language)
-            return f"{minute_value} {Utils.get_word_by_language(word='Min', language=language)}"
-        elif time_difference < timedelta(days=1):
-            hours = int(time_difference.total_seconds() / Constants.HOUR_IN_SECONDS)
-            hour_value = Utils.get_number_by_language(value=hours, language=language)
-            return f"{hour_value} {Utils.get_word_by_language(word='Hr', language=language)}"
-        elif time_difference < timedelta(weeks=1):
-            days = int(time_difference.total_seconds() / Constants.DAY_IN_SECONDS)
-            days_value = Utils.get_number_by_language(value=days, language=language)
-            return f"{days_value} {Utils.get_word_by_language(word='Day', language=language)}"
-        else:
-            return post_time.strftime('%Y-%m-%d %H:%M:%S')
+        try:
+            current_time = datetime.now(timezone.utc)
+            
+            post_time = datetime.strptime(published_time, '%Y-%m-%d %H:%M:%S').replace(tzinfo=timezone.utc)
+            
+            time_difference = current_time - post_time
+            
+            if time_difference < timedelta(minutes=1):
+                return Utils.get_word_by_language(word='Now', language=language)
+            elif time_difference < timedelta(hours=1):
+                minutes = int(time_difference.total_seconds() / Constants.MINUTE_IN_SECONDS)
+                minute_value = Utils.get_number_by_language(value=minutes, language=language)
+                return f"{minute_value} {Utils.get_word_by_language(word='Min', language=language)}"
+            elif time_difference < timedelta(days=1):
+                hours = int(time_difference.total_seconds() / Constants.HOUR_IN_SECONDS)
+                hour_value = Utils.get_number_by_language(value=hours, language=language)
+                return f"{hour_value} {Utils.get_word_by_language(word='Hr', language=language)}"
+            elif time_difference < timedelta(weeks=1):
+                days = int(time_difference.total_seconds() / Constants.DAY_IN_SECONDS)
+                days_value = Utils.get_number_by_language(value=days, language=language)
+                return f"{days_value} {Utils.get_word_by_language(word='Day', language=language)}"
+            else:
+                return post_time.strftime('%Y-%m-%d %H:%M:%S')
+                
+        except ValueError as e:
+            logging.error(f"Error in time_passed: {e}")
+            raise ValueError(f"Invalid datetime format. Expected '%Y-%m-%d %H:%M:%S', got: {published_time}")
 
+    @staticmethod
+    def get_word_by_language(word: str, language: str) -> str:
+        return Constants.TIME_PASSED_NOW[word][language]
 
     @staticmethod
     def get_value_from_dict(values: dict[str, str], language: str):
