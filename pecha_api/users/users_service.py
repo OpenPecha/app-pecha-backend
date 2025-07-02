@@ -184,15 +184,6 @@ def validate_token(token: str) -> Dict[str, Any]:
     else:
         return decode_backend_token(token)
 
-def get_username_by_email(email: str) -> Optional[str]:
-
-    try:
-        with SessionLocal() as db_session:
-            user = get_user_by_email(db=db_session, email=email)
-            return user.username if user else None
-    except HTTPException:
-        return None
-
 def get_user_profile_by_username(username: str) -> Optional[UserInfoResponse]:
     
     try:
