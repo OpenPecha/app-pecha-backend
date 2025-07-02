@@ -422,13 +422,13 @@ async def fetch_sheets(
         )
     else:
         if token == "None":
-            _is_sheet_owner_ = True
+            _is_sheet_published_ = True
         else:
             current_user: Users = validate_and_extract_user_details(token=token)
-            _is_sheet_owner_ = None if current_user.email == email else True
+            _is_sheet_published_ = None if current_user.email == email else True
         sheets: List[TextDTO] = await get_sheets(
             published_by=email,
-            is_published=_is_sheet_owner_,
+            is_published=_is_sheet_published_,
             sort_by=sort_by,
             sort_order=sort_order,
             skip=skip,

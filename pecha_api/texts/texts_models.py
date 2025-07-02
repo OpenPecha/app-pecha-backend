@@ -143,20 +143,6 @@ class Text(Document):
 
 
     @classmethod
-    async def get_texts_by_type(cls, text_type: TextType, is_published: Optional[bool] = True, skip: int = 0, limit: int = 10) -> List["Text"]:
-        query = {
-            "type": text_type,
-            "is_published": is_published
-        }
-        texts = (
-            await cls.find(query)
-            .skip(skip)
-            .limit(limit)
-            .to_list()
-        )
-        return texts
-
-    @classmethod
     async def get_sheets(
         cls, 
         published_by: Optional[str] = None,

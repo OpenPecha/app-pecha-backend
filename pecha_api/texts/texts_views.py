@@ -90,23 +90,3 @@ async def create_table_of_content_request(
 ):
     return await create_table_of_content(table_of_content_request=table_of_content_request, token=authentication_credential.credentials)
 
-
-@text_router.get("/sheets/", status_code=status.HTTP_200_OK)
-async def get_texts_by_type(
-    is_published: Optional[bool] = Query(default=None),
-    skip: int = Query(default=0),
-    limit: int = Query(default=10)
-):
-    """
-    Get texts by type (e.g., 'sheet', 'commentary', 'version')
-    
-    Args:
-        text_type: The type of text to filter by
-        skip: Number of records to skip for pagination
-        limit: Maximum number of records to return
-        
-    Returns:
-        List of texts matching the specified type
-    """
-    return await get_texts_by_text_type(is_published=is_published, skip=skip, limit=limit)
-
