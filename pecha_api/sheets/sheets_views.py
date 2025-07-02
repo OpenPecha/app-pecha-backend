@@ -25,7 +25,8 @@ from pecha_api.sheets.sheets_response_models import SheetIdResponse
 
 from .sheets_response_models import (
     CreateSheetRequest,
-    SheetDetailDTO
+    SheetDetailDTO,
+    SheetDTOResponse
 )
 
 oauth2_scheme = HTTPBearer()
@@ -43,7 +44,7 @@ async def get_sheets(
     sort_order: Optional[SortOrder] = Query(default=None),
     skip: int = Query(default=0),
     limit: int = Query(default=10)
-):
+) -> SheetDTOResponse:
     return await fetch_sheets(
         token=authentication_credential.credentials if authentication_credential else None,
         language=language,

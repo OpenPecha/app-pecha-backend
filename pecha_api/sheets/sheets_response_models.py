@@ -50,7 +50,7 @@ class SheetDetailDTO(BaseModel):
     total: int
 
 
-class SheetModel(BaseModel):
+class SheetDTO(BaseModel):
     id: str
     title: str
     summary: str
@@ -60,6 +60,12 @@ class SheetModel(BaseModel):
     likes: List[str]
     publisher: Publisher
     language: Optional[str] = None
+
+class SheetDTOResponse(BaseModel):
+    sheets: List[SheetDTO]
+    skip: int
+    limit: int
+    total: int
 
 class SheetIdRequest(BaseModel):
     id: str

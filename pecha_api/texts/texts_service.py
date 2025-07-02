@@ -12,7 +12,8 @@ from .texts_repository import (
     get_sections_count_of_table_of_content,
     delete_table_of_content_by_text_id,
     update_text_details_by_id,
-    delete_text_by_id
+    delete_text_by_id,
+    fetch_sheets_from_db
 )
 from .texts_response_models import (
     TableOfContent,
@@ -35,8 +36,24 @@ from pecha_api.cache.cache_service import (
     get_text_details_cache
 )
 
+from pecha_api.sheets.sheets_response_models import (
+    SheetDTO,
+    SheetDTOResponse,
+    Publisher
+)
+from pecha_api.sheets.sheets_enum import (
+    SortBy,
+    SortOrder
+)
+
 from .texts_utils import TextUtils
-from pecha_api.users.users_service import validate_user_exists
+from pecha_api.users.users_service import (
+    validate_user_exists,
+    fetch_user_by_email
+)
+from pecha_api.users.user_response_models import (
+    UserInfoResponse
+)
 from pecha_api.terms.terms_service import get_term
 from .segments.segments_utils import SegmentUtils
 
@@ -68,6 +85,37 @@ async def get_text_by_text_id_or_term(
     else:
         return await TextUtils.get_text_detail_by_id(text_id=text_id)
 
+async def get_sheets(published_by: Optional[str] = None, is_published: Optional[bool] = None, sort_by: Optional[SortBy] = None, sort_order: Optional[SortOrder] = None, skip: int = 0, limit: int = 10) -> SheetDTOResponse:
+    
+    sheets = await fetch_sheets_from_db(
+        published_by=published_by,
+        is_published=is_published,
+        sort_by=sort_by,
+        sort_order=sort_order,
+        skip=skip,
+        limit=limit
+    )
+    
+    sheets = [
+        SheetDTO(
+            id=str(sheet.id),
+            title=sheet.title,
+            summary="",
+            published_date=sheet.published_date,
+            time_passed="",
+            views=str(sheet.views),
+            likes=[],
+            publisher=_create_publisher_object_(published_by=sheet.published_by),
+            language=sheet.language
+        )
+        for sheet in sheets
+    ]
+    return SheetDTOResponse(
+        sheets= sheets,
+        skip=skip,
+        limit=limit,
+        total=len(sheets)
+    )
 
 async def get_table_of_contents_by_text_id(text_id: str) -> TableOfContentResponse:
     is_valid_text: bool = await TextUtils.validate_text_exists(text_id=text_id)
@@ -357,3 +405,15 @@ async def delete_text_by_text_id(text_id: str):
     if not is_valid_text:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=ErrorConstants.TEXT_NOT_FOUND_MESSAGE)
     await delete_text_by_id(text_id=text_id)
+
+
+def _create_publisher_object_(published_by: str) -> Publisher:
+
+    user_profile: UserInfoResponse = fetch_user_by_email(email=published_by)
+    
+    return Publisher(
+        name=f"{user_profile.firstname} {user_profile.lastname}".strip() or user_profile.username,
+        username=user_profile.username,
+        email=user_profile.email,
+        avatar_url=user_profile.avatar_url
+    )

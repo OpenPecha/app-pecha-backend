@@ -47,14 +47,13 @@ from pecha_api.texts.texts_service import (
     remove_table_of_content_by_text_id,
     update_text_details,
     get_table_of_contents_by_text_id,
-    delete_text_by_text_id
+    delete_text_by_text_id,
+    get_sheets
 )
 
 from pecha_api.users.users_service import (
     validate_and_extract_user_details,
-    get_username_by_email,
-    fetch_user_by_email,
-    get_publisher_info_by_username
+    fetch_user_by_email
 )
 from pecha_api.texts.texts_enums import TextType
 from pecha_api.texts.texts_response_models import (
@@ -83,12 +82,50 @@ from pecha_api.sheets.sheets_response_models import (
     SheetDetailDTO,
     Publisher,
     SheetSection,
-    SheetSegment
+    SheetSegment,
+    SheetDTOResponse
 )
 
-from pecha_api.texts.texts_repository import get_sheets
-
 DEFAULT_SHEET_SECTION_NUMBER = 1
+
+async def fetch_sheets(
+    token: Optional[str] = None,
+    language: Optional[str] = None,
+    email: Optional[str] = None,
+    sort_by: Optional[SortBy] = None,
+    sort_order: Optional[SortOrder] = None,
+    skip: int = 0,
+    limit: int = 10
+) -> SheetDTOResponse:
+    # currently sheet language is not used since there's is selection of language for sheets
+    if language is None:
+        language = get("DEFAULT_LANGUAGE")
+    
+    if email is None:
+        # Case 1: Community page - show all published sheets filtered by language
+        sheets: SheetDTOResponse = await get_sheets(
+            is_published=True,
+            sort_by=sort_by,
+            sort_order=sort_order,
+            skip=skip,
+            limit=limit
+        )
+    else:
+        if token == "None":
+            _is_sheet_published_ = True
+        else:
+            current_user: Users = validate_and_extract_user_details(token=token)
+            _is_sheet_published_ = None if current_user.email == email else True
+        sheets: SheetDTOResponse = await get_sheets(
+            published_by=email,
+            is_published=_is_sheet_published_,
+            sort_by=sort_by,
+            sort_order=sort_order,
+            skip=skip,
+            limit=limit
+        )
+    
+    return sheets
 
 async def get_sheet_by_id(sheet_id: str, skip: int, limit: int) -> SheetDetailDTO:
     sheet_details: TextDTO = await TextUtils.get_text_details_by_id(text_id=sheet_id)
@@ -398,72 +435,4 @@ async def _create_sheet_group_(token: str) -> str:
     return new_group.id
 
 
-async def fetch_sheets(
-    token: Optional[str] = None,
-    language: Optional[str] = None,
-    email: Optional[str] = None,
-    sort_by: Optional[SortBy] = None,
-    sort_order: Optional[SortOrder] = None,
-    skip: int = 0,
-    limit: int = 10
-) -> List[SheetModel]:
-    # currently sheet language is not used since there's is selection of language for sheets
-    if language is None:
-        language = get("DEFAULT_LANGUAGE")
-    
-    if email is None:
-        # Case 1: Community page - show all published sheets filtered by language
-        sheets: List[TextDTO] = await get_sheets(
-            is_published=True,
-            sort_by=sort_by,
-            sort_order=sort_order,
-            skip=skip,
-            limit=limit
-        )
-    else:
-        if token == "None":
-            _is_sheet_published_ = True
-        else:
-            current_user: Users = validate_and_extract_user_details(token=token)
-            _is_sheet_published_ = None if current_user.email == email else True
-        sheets: List[TextDTO] = await get_sheets(
-            published_by=email,
-            is_published=_is_sheet_published_,
-            sort_by=sort_by,
-            sort_order=sort_order,
-            skip=skip,
-            limit=limit
-        )
-    
-    sheets_model: List[SheetModel] = _create_sheet_model_(sheets=sheets)
 
-    return sheets_model
-
-def _create_publisher_object_(published_by: str) -> Publisher:
-
-    user_profile: UserInfoResponse = fetch_user_by_email(email=published_by)
-    
-    return Publisher(
-        name=f"{user_profile.firstname} {user_profile.lastname}".strip() or user_profile.username,
-        username=user_profile.username,
-        email=user_profile.email,
-        avatar_url=user_profile.avatar_url
-    )
-
-
-def _create_sheet_model_(sheets: List[TextDTO]) -> List[SheetModel]:
-
-    return [
-        SheetModel(
-            id=str(sheet.id),
-            title=sheet.title,
-            summary="",
-            published_date=sheet.published_date,
-            time_passed="",
-            views=str(sheet.views),
-            likes=[],
-            publisher=_create_publisher_object_(published_by=sheet.published_by),
-            language=sheet.language
-        )
-        for sheet in sheets
-    ]
