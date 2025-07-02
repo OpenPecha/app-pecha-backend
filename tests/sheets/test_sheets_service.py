@@ -13,7 +13,7 @@ from pecha_api.sheets.sheets_response_models import (
     SheetIdResponse,
     SheetDetailDTO,
     SheetSection,
-    SheetModel,
+    SheetDTO,
     Publisher
 )
 from pecha_api.texts.segments.segments_enum import SegmentType
@@ -462,7 +462,7 @@ async def test_fetch_sheets_community_page_all_published():
     
     with patch("pecha_api.sheets.sheets_service.validate_and_extract_user_details", return_value=mock_user_details), \
          patch("pecha_api.sheets.sheets_service.get_sheets", new_callable=AsyncMock, return_value=[mock_text]), \
-         patch("pecha_api.sheets.sheets_service._create_sheet_model_", return_value=[SheetModel(
+         patch("pecha_api.sheets.sheets_service._create_sheet_model_", return_value=[SheetDTO(
              id="text_id",
              title="Test Sheet",
              summary="",
@@ -515,7 +515,7 @@ async def test_fetch_sheets_user_own_sheets():
     with patch("pecha_api.sheets.sheets_service.validate_and_extract_user_details", return_value=mock_user_details), \
          patch("pecha_api.sheets.sheets_service.get_username_by_email", return_value="current_user"), \
          patch("pecha_api.sheets.sheets_service.get_sheets", new_callable=AsyncMock, return_value=mock_texts), \
-         patch("pecha_api.sheets.sheets_service._create_sheet_model_", side_effect=lambda sheets: [SheetModel(
+         patch("pecha_api.sheets.sheets_service._create_sheet_model_", side_effect=lambda sheets: [SheetDTO(
              id=sheet.id,
              title=sheet.title,
              summary="",
@@ -558,7 +558,7 @@ async def test_fetch_sheets_other_user_sheets():
     with patch("pecha_api.sheets.sheets_service.validate_and_extract_user_details", return_value=mock_user_details), \
          patch("pecha_api.sheets.sheets_service.get_username_by_email", return_value="other_user"), \
          patch("pecha_api.sheets.sheets_service.get_sheets", new_callable=AsyncMock, return_value=[mock_text]), \
-         patch("pecha_api.sheets.sheets_service._create_sheet_model_", return_value=[SheetModel(
+         patch("pecha_api.sheets.sheets_service._create_sheet_model_", return_value=[SheetDTO(
              id="text_id",
              title="Other User's Sheet",
              summary="",
@@ -673,7 +673,7 @@ def test_create_sheet_model__success():
         
         assert isinstance(result, list)
         assert len(result) == 1
-        assert isinstance(result[0], SheetModel)
+        assert isinstance(result[0], SheetDTO)
         assert result[0].id == "sheet_123"
         assert result[0].title == "Test Sheet Title"
         assert result[0].summary == ""
@@ -707,7 +707,7 @@ def test_create_sheet_model__with_none_language():
         
         assert isinstance(result, list)
         assert len(result) == 1
-        assert isinstance(result[0], SheetModel)
+        assert isinstance(result[0], SheetDTO)
         assert result[0].id == "sheet_123"
         assert result[0].title == "Test Sheet Title"
         assert result[0].views == "0"

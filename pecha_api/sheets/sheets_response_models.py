@@ -1,10 +1,8 @@
 from __future__ import annotations
 
-from typing import List, Union, Optional
+from typing import List, Optional
 
-from pydantic import BaseModel, model_validator
-
-from pecha_api.utils import Utils
+from pydantic import BaseModel
 
 from pecha_api.texts.segments.segments_models import SegmentType
 

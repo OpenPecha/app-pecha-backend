@@ -8,7 +8,7 @@ from fastapi import UploadFile, HTTPException, status
 from pecha_api.texts.texts_models import Text
 from pecha_api.error_contants import ErrorConstants
 from pecha_api.config import get
-from .sheets_response_models import CreateSheetRequest, SheetImageResponse, SheetModel, Publisher
+from .sheets_response_models import CreateSheetRequest, SheetImageResponse, Publisher
 from ..uploads.S3_utils import upload_bytes, generate_presigned_upload_url
 from pecha_api.image_utils import ImageUtils
 from pecha_api.utils import Utils
