@@ -503,7 +503,7 @@ def test_get_publisher_info_by_username_database_exception():
         response = get_publisher_info_by_username(username)
         
         assert response is None
-        mock_logger.assert_called_once_with("Error getting publisher info by username")
+        mock_logger.assert_called_once_with("Error getting publisher info by username: Database connection error")
 
 
 def test_get_publisher_info_by_username_presigned_url_exception():
@@ -523,4 +523,4 @@ def test_get_publisher_info_by_username_presigned_url_exception():
         response = get_publisher_info_by_username(username)
         
         assert response is None
-        mock_logger.assert_called_once_with("Error getting publisher info by username")
+        mock_logger.assert_called_once_with("Error getting publisher info by username: S3 connection error")
