@@ -98,8 +98,6 @@ async def fetch_sheets(
     limit: int = 10
 ) -> SheetDTOResponse:
     # currently sheet language is not used since there's is selection of language for sheets
-    if language is None:
-        language = get("DEFAULT_LANGUAGE")
     
     if email is None:
         # Case 1: Community page - show all published sheets filtered by language
