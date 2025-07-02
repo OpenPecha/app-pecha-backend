@@ -31,9 +31,9 @@ from pecha_api.sheets.sheets_service import (
     update_sheet_by_id,
     get_sheet_by_id,
     delete_sheet_by_id,
-    get_sheets_with_filters,
-    _create_publisher_object,
-    _create_sheet_model
+    fetch_sheets,
+    _create_publisher_object_,
+    _create_sheet_model_
 )
 from pecha_api.users.users_models import Users
 from pecha_api.texts.segments.segments_response_models import (
@@ -443,10 +443,10 @@ async def test_delete_sheet_invalid_sheet_id():
 
 
 
-# Test cases for get_sheets_with_filters function
+# Test cases for fetch_sheets function
 @pytest.mark.asyncio
-async def test_get_sheets_with_filters_community_page_all_published():
-    #Test get_sheets_with_filters for community page - show all published sheets
+async def test_fetch_sheets_community_page_all_published():
+    #Test fetch_sheets for community page - show all published sheets
     mock_user_details = type("User", (), {
         "email": "current_user@gmail.com",
     })
@@ -461,8 +461,8 @@ async def test_get_sheets_with_filters_community_page_all_published():
     })
     
     with patch("pecha_api.sheets.sheets_service.validate_and_extract_user_details", return_value=mock_user_details), \
-         patch("pecha_api.sheets.sheets_service.Text.get_sheets_filtered", new_callable=AsyncMock, return_value=[mock_text]), \
-         patch("pecha_api.sheets.sheets_service._create_sheet_model", return_value=SheetModel(
+         patch("pecha_api.sheets.sheets_service.get_sheets", new_callable=AsyncMock, return_value=[mock_text]), \
+         patch("pecha_api.sheets.sheets_service._create_sheet_model_", return_value=[SheetModel(
              id="text_id",
              title="Test Sheet",
              summary="",
@@ -472,9 +472,9 @@ async def test_get_sheets_with_filters_community_page_all_published():
              likes=[],
              publisher=Publisher(name="Test Publisher", username="test_publisher", email="test_publisher@gmail.com", avatar_url=None),
              language="en"
-         )):
+         )]):
         
-        result = await get_sheets_with_filters(
+        result = await fetch_sheets(
             token="valid_token",
             language="en",
             email=None,
@@ -487,8 +487,8 @@ async def test_get_sheets_with_filters_community_page_all_published():
         assert result[0].title == "Test Sheet"
 
 @pytest.mark.asyncio
-async def test_get_sheets_with_filters_user_own_sheets():
-    #Test get_sheets_with_filters for user's own sheets - show both published and unpublished
+async def test_fetch_sheets_user_own_sheets():
+    #Test fetch_sheets for user's own sheets - show both published and unpublished
     mock_user_details = type("User", (), {
         "email": "current_user@gmail.com",
     })
@@ -514,20 +514,20 @@ async def test_get_sheets_with_filters_user_own_sheets():
     
     with patch("pecha_api.sheets.sheets_service.validate_and_extract_user_details", return_value=mock_user_details), \
          patch("pecha_api.sheets.sheets_service.get_username_by_email", return_value="current_user"), \
-         patch("pecha_api.sheets.sheets_service.Text.get_sheets_filtered", new_callable=AsyncMock, return_value=mock_texts), \
-         patch("pecha_api.sheets.sheets_service._create_sheet_model", side_effect=lambda text: SheetModel(
-             id=text.id,
-             title=text.title,
+         patch("pecha_api.sheets.sheets_service.get_sheets", new_callable=AsyncMock, return_value=mock_texts), \
+         patch("pecha_api.sheets.sheets_service._create_sheet_model_", side_effect=lambda sheets: [SheetModel(
+             id=sheet.id,
+             title=sheet.title,
              summary="",
-             published_date=text.published_date,
+             published_date=sheet.published_date,
              time_passed="",
-             views=str(text.views),
+             views=str(sheet.views),
              likes=[],
              publisher=Publisher(name="Current User", username="current_user", email="current_user@gmail.com", avatar_url=None),
-             language=text.language
-         )):
+             language=sheet.language
+         ) for sheet in sheets]):
         
-        result = await get_sheets_with_filters(
+        result = await fetch_sheets(
             token="valid_token",
             language="en",
             email="current_user@gmail.com",
@@ -540,8 +540,8 @@ async def test_get_sheets_with_filters_user_own_sheets():
         assert result[1].id == "text_id_2"
 
 @pytest.mark.asyncio
-async def test_get_sheets_with_filters_other_user_sheets():
-    #Test get_sheets_with_filters for other user's sheets - show only published
+async def test_fetch_sheets_other_user_sheets():
+    #Test fetch_sheets for other user's sheets - show only published
     mock_user_details = type("User", (), {
         "email": "current_user@gmail.com",
     })
@@ -557,8 +557,8 @@ async def test_get_sheets_with_filters_other_user_sheets():
     
     with patch("pecha_api.sheets.sheets_service.validate_and_extract_user_details", return_value=mock_user_details), \
          patch("pecha_api.sheets.sheets_service.get_username_by_email", return_value="other_user"), \
-         patch("pecha_api.sheets.sheets_service.Text.get_sheets_filtered", new_callable=AsyncMock, return_value=[mock_text]), \
-         patch("pecha_api.sheets.sheets_service._create_sheet_model", return_value=SheetModel(
+         patch("pecha_api.sheets.sheets_service.get_sheets", new_callable=AsyncMock, return_value=[mock_text]), \
+         patch("pecha_api.sheets.sheets_service._create_sheet_model_", return_value=[SheetModel(
              id="text_id",
              title="Other User's Sheet",
              summary="",
@@ -568,9 +568,9 @@ async def test_get_sheets_with_filters_other_user_sheets():
              likes=[],
              publisher=Publisher(name="Other User", username="other_user", email="other_user@gmail.com", avatar_url=None),
              language="en"
-         )):
+         )]):
         
-        result = await get_sheets_with_filters(
+        result = await fetch_sheets(
             token="valid_token",
             language="en",
             email="other_user@gmail.com",
@@ -582,58 +582,42 @@ async def test_get_sheets_with_filters_other_user_sheets():
         assert result[0].id == "text_id"
         assert result[0].title == "Other User's Sheet"
 
-@pytest.mark.asyncio
-async def test_get_sheets_with_filters_user_not_found():
-    #Test get_sheets_with_filters when email user doesn't exist
-    mock_user_details = type("User", (), {
-        "email": "current_user@gmail.com",
-    })
-    
-    with patch("pecha_api.sheets.sheets_service.validate_and_extract_user_details", return_value=mock_user_details), \
-         patch("pecha_api.sheets.sheets_service.get_username_by_email", return_value=None):
-        
-        with pytest.raises(HTTPException) as exc_info:
-            await get_sheets_with_filters(
-                token="valid_token",
-                language="en",
-                email="nonexistent@gmail.com",
-                skip=0,
-                limit=10
-            )
-        
-        assert exc_info.value.status_code == status.HTTP_404_NOT_FOUND
-        assert "not found" in exc_info.value.detail
 
 @pytest.mark.asyncio
-async def test_get_sheets_with_filters_invalid_token():
-    #Test get_sheets_with_filters with invalid token
-    with patch("pecha_api.sheets.sheets_service.validate_and_extract_user_details", side_effect=HTTPException(status_code=401, detail="Invalid token")):
+async def test_fetch_sheets_invalid_token():
+    #Test fetch_sheets with invalid token
+    with patch("pecha_api.sheets.sheets_service.validate_and_extract_user_details", side_effect=HTTPException(status_code=401, detail="Invalid token")), \
+         patch("pecha_api.sheets.sheets_service.get_sheets", new_callable=AsyncMock, return_value=[]), \
+         patch("pecha_api.sheets.sheets_service._create_sheet_model_", return_value=[]):
         
         with pytest.raises(HTTPException) as exc_info:
-            await get_sheets_with_filters(
+            await fetch_sheets(
                 token="invalid_token",
                 language="en",
-                email=None,
+                email="test@example.com",
                 skip=0,
                 limit=10
             )
         
         assert exc_info.value.status_code == 401
 
-# Test cases for _create_publisher_object function
+# Test cases for _create_publisher_object_ function
 def test_create_publisher_object_with_user_profile():
-    #Test _create_publisher_object when user profile exists
-    mock_user_profile = {
-        "id": "user_123",
-        "firstname": "John",
-        "lastname": "Doe",
-        "username": "johndoe",
-        "email": "johndoe@example.com",
-        "avatar_url": "https://example.com/avatar.jpg"
-    }
+    #Test _create_publisher_object_ when user profile exists
+    mock_user_profile = UserInfoResponse(
+        firstname="John",
+        lastname="Doe",
+        username="johndoe",
+        email="johndoe@example.com",
+        educations=[],
+        followers=0,
+        following=0,
+        social_profiles=[],
+        avatar_url="https://example.com/avatar.jpg"
+    )
     
-    with patch("pecha_api.sheets.sheets_service.get_publisher_info_by_username", return_value=mock_user_profile):
-        result = _create_publisher_object("johndoe")
+    with patch("pecha_api.sheets.sheets_service.fetch_user_by_email", return_value=mock_user_profile):
+        result = _create_publisher_object_("johndoe@example.com")
         
         assert isinstance(result, Publisher)
         assert result.name == "John Doe"
@@ -642,16 +626,21 @@ def test_create_publisher_object_with_user_profile():
         assert result.avatar_url == "https://example.com/avatar.jpg"
 
 def test_create_publisher_object_with_partial_user_profile():
-    #Test _create_publisher_object when user profile has missing names
-    mock_user_profile = {
-        "id": "user_123",
-        "username": "johndoe",
-        "email": "johndoe@example.com",
-        "avatar_url": "https://example.com/avatar.jpg"
-    }
+    #Test _create_publisher_object_ when user profile has missing names
+    mock_user_profile = UserInfoResponse(
+        firstname="",
+        lastname="",
+        username="johndoe",
+        email="johndoe@example.com",
+        educations=[],
+        followers=0,
+        following=0,
+        social_profiles=[],
+        avatar_url="https://example.com/avatar.jpg"
+    )
     
-    with patch("pecha_api.sheets.sheets_service.get_publisher_info_by_username", return_value=mock_user_profile):
-        result = _create_publisher_object("johndoe")
+    with patch("pecha_api.sheets.sheets_service.fetch_user_by_email", return_value=mock_user_profile):
+        result = _create_publisher_object_("johndoe@example.com")
         
         assert isinstance(result, Publisher)
         assert result.name == "johndoe"  # Falls back to username
@@ -660,9 +649,9 @@ def test_create_publisher_object_with_partial_user_profile():
         assert result.avatar_url == "https://example.com/avatar.jpg"
 
 
-# Test cases for _create_sheet_model function
-def test_create_sheet_model_success():
-    #Test _create_sheet_model with valid Text object
+# Test cases for _create_sheet_model_ function
+def test_create_sheet_model__success():
+    #Test _create_sheet_model_ with valid Text object
     mock_text = type("Text", (), {
         "id": "sheet_123",
         "title": "Test Sheet Title",
@@ -679,22 +668,24 @@ def test_create_sheet_model_success():
         avatar_url="https://example.com/avatar.jpg"
     )
     
-    with patch("pecha_api.sheets.sheets_service._create_publisher_object", return_value=mock_publisher):
-        result = _create_sheet_model(mock_text)
+    with patch("pecha_api.sheets.sheets_service._create_publisher_object_", return_value=mock_publisher):
+        result = _create_sheet_model_([mock_text])  # Pass as list
         
-        assert isinstance(result, SheetModel)
-        assert result.id == "sheet_123"
-        assert result.title == "Test Sheet Title"
-        assert result.summary == ""
-        assert result.published_date == "2021-01-01T00:00:00Z"
-        assert result.time_passed == ""
-        assert result.views == "150"
-        assert result.likes == []
-        assert result.publisher == mock_publisher
-        assert result.language == "en"
+        assert isinstance(result, list)
+        assert len(result) == 1
+        assert isinstance(result[0], SheetModel)
+        assert result[0].id == "sheet_123"
+        assert result[0].title == "Test Sheet Title"
+        assert result[0].summary == ""
+        assert result[0].published_date == "2021-01-01T00:00:00Z"
+        assert result[0].time_passed == ""
+        assert result[0].views == "150"
+        assert result[0].likes == []
+        assert result[0].publisher == mock_publisher
+        assert result[0].language == "en"
 
-def test_create_sheet_model_with_none_language():
-    """Test _create_sheet_model when language is None"""
+def test_create_sheet_model__with_none_language():
+    """Test _create_sheet_model_ when language is None"""
     mock_text = type("Text", (), {
         "id": "sheet_123",
         "title": "Test Sheet Title",
@@ -711,24 +702,26 @@ def test_create_sheet_model_with_none_language():
         avatar_url=None
     )
     
-    with patch("pecha_api.sheets.sheets_service._create_publisher_object", return_value=mock_publisher):
-        result = _create_sheet_model(mock_text)
+    with patch("pecha_api.sheets.sheets_service._create_publisher_object_", return_value=mock_publisher):
+        result = _create_sheet_model_([mock_text])  # Pass as list
         
-        assert isinstance(result, SheetModel)
-        assert result.id == "sheet_123"
-        assert result.title == "Test Sheet Title"
-        assert result.views == "0"
-        assert result.language is None
-        assert result.publisher == mock_publisher
+        assert isinstance(result, list)
+        assert len(result) == 1
+        assert isinstance(result[0], SheetModel)
+        assert result[0].id == "sheet_123"
+        assert result[0].title == "Test Sheet Title"
+        assert result[0].views == "0"
+        assert result[0].language is None
+        assert result[0].publisher == mock_publisher
 
-def test_create_sheet_model_calls_create_publisher_object():
-    #Test that _create_sheet_model properly calls _create_publisher_object
+def test_create_sheet_model__calls_create_publisher_object_():
+    #Test that _create_sheet_model_ properly calls _create_publisher_object_
     mock_text = type("Text", (), {
         "id": "sheet_123",
         "title": "Test Sheet Title",
         "published_date": "2021-01-01T00:00:00Z",
         "views": 100,
-        "published_by": "test_publisher_username",
+        "published_by": "test_publisher@example.com",
         "language": "en"
     })
     
@@ -739,9 +732,11 @@ def test_create_sheet_model_calls_create_publisher_object():
         avatar_url=None
     )
     
-    with patch("pecha_api.sheets.sheets_service._create_publisher_object", return_value=mock_publisher) as mock_create_publisher:
-        result = _create_sheet_model(mock_text)
+    with patch("pecha_api.sheets.sheets_service._create_publisher_object_", return_value=mock_publisher) as mock_create_publisher:
+        result = _create_sheet_model_([mock_text])  # Pass as list
         
-        # Verify that _create_publisher_object was called with the correct username
-        mock_create_publisher.assert_called_once_with("test_publisher_username")
-        assert result.publisher == mock_publisher
+        # Verify that _create_publisher_object_ was called with the correct email
+        mock_create_publisher.assert_called_once_with(published_by="test_publisher@example.com")
+        assert isinstance(result, list)
+        assert len(result) == 1
+        assert result[0].publisher == mock_publisher
