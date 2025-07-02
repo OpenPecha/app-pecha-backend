@@ -1,83 +1,212 @@
 import os
 import uuid
-from typing import Optional
+from typing import Optional, Dict, List
+import hashlib
+from fastapi import UploadFile, HTTPException, status
 
-from fastapi import APIRouter, Depends, UploadFile, File
 
+from pecha_api.error_contants import ErrorConstants
 from pecha_api.config import get
-from .sheets_repository import get_sheets_by_topic, get_users_sheets, create_sheet
-from .sheets_response_models import SheetModel, Publisher, SheetsResponse, CreateSheetRequest, SheetImageResponse, SheetIdRequest, CreateSheetResponse
-from ..users.users_repository import get_user_by_username
-from ..db.database import SessionLocal
+from .sheets_response_models import CreateSheetRequest, SheetImageResponse
 from ..uploads.S3_utils import upload_bytes, generate_presigned_upload_url
-from ..topics.topics_repository import get_topic_by_id
-
-from pecha_api.utils import Utils
 from pecha_api.image_utils import ImageUtils
+from pecha_api.utils import Utils
+from pecha_api.texts.texts_utils import TextUtils
 
-async def get_sheets(topic_id: str,language: str) -> SheetsResponse:
-    sheets = get_sheets_by_topic(topic_id=topic_id)
-    publisher = Publisher(
-        id=str(uuid.uuid4()),
-        name='Person Name',
-        profile_url="",
-        image_url=""
+
+from pecha_api.users.users_service import (
+    validate_user_exists,
+    get_user_info
+)
+from pecha_api.users.user_response_models import UserInfoResponse
+
+from pecha_api.texts.groups.groups_response_models import (
+    CreateGroupRequest,
+    GroupDTO
+)
+from pecha_api.texts.groups.groups_enums import GroupType
+from pecha_api.texts.groups.groups_service import (
+    create_new_group,
+    delete_group_by_group_id
+)
+
+from pecha_api.texts.texts_response_models import (
+    CreateTextRequest,
+    UpdateTextRequest
+)
+from pecha_api.texts.texts_service import (
+    create_new_text,
+    create_table_of_content,
+    remove_table_of_content_by_text_id,
+    update_text_details,
+    get_table_of_contents_by_text_id,
+    delete_text_by_text_id
+)
+
+from pecha_api.users.users_service import (
+    validate_and_extract_user_details,
+    fetch_user_by_email
+)
+from pecha_api.texts.texts_enums import TextType
+from pecha_api.texts.texts_response_models import (
+    TextDTO,
+    TableOfContent,
+    TableOfContentResponse,
+    Section,
+    TextSegment
+)
+
+from pecha_api.texts.segments.segments_models import SegmentType
+from pecha_api.texts.segments.segments_response_models import (
+    CreateSegment,
+    CreateSegmentRequest,
+    SegmentResponse,
+    SegmentDTO
+)
+from pecha_api.texts.segments.segments_service import (
+    create_new_segment,
+    remove_segments_by_text_id,
+    get_segments_details_by_ids
+)
+
+from pecha_api.sheets.sheets_response_models import (
+    SheetIdResponse,
+    SheetDetailDTO,
+    Publisher,
+    SheetSection,
+    SheetSegment
+)
+
+DEFAULT_SHEET_SECTION_NUMBER = 1
+
+async def get_sheet_by_id(sheet_id: str, skip: int, limit: int) -> SheetDetailDTO:
+    sheet_details: TextDTO = await TextUtils.get_text_details_by_id(text_id=sheet_id)
+    user_details: UserInfoResponse = fetch_user_by_email(email=sheet_details.published_by)
+    sheet_table_of_content_response: TableOfContentResponse = await get_table_of_contents_by_text_id(text_id=sheet_id)
+
+    sheet_table_of_content: Optional[TableOfContent] = (
+        sheet_table_of_content_response.contents[0]
+        if sheet_table_of_content_response.contents else None
     )
-    if language is None:
-        language = get("DEFAULT_LANGUAGE")
-    sheets_list = [
-        SheetModel(
-            id=str(sheet.id),
-            title=sheet.titles.get(language, ""),
-            summary=sheet.summaries.get(language, ""),
-            publisher=publisher
-        )
-        for sheet in sheets
-    ]
-    sheet_response = SheetsResponse(sheets=sheets_list)
-    return sheet_response
 
-# new service for get_sheet_by_id
-async def get_sheets_by_userID(user_id: str, language: str, skip: int, limit: int) -> SheetsResponse:
-    if language is None:
-        language = get("DEFAULT_LANGUAGE")
-    publisher = None
-    with SessionLocal() as db_session:
-        publisher = get_user_by_username(db=db_session, username=user_id)
-        publisher = Publisher(
-            id=str(publisher.id),
-            name=publisher.firstname + " " + publisher.lastname,
-            profile_url="",
-            image_url=""
+    sections = sheet_table_of_content.sections if sheet_table_of_content else []
+
+    sheet_dto: SheetDetailDTO = await _generate_sheet_detail_dto_(
+        sheet_details=sheet_details,
+        user_details=user_details,
+        sheet_sections=sections,
+        views=sheet_details.views,
+        skip=skip,
+        limit=limit
+    )
+    return sheet_dto
+
+async def _generate_sheet_detail_dto_(
+    sheet_details: TextDTO,
+    user_details: UserInfoResponse,
+    sheet_sections: List[Section],
+    views: int,
+    skip: int,
+    limit: int
+) -> SheetDetailDTO:
+    publisher = Publisher(
+        name=f"{user_details.firstname} {user_details.lastname}",
+        username=user_details.username,
+        email=user_details.email,
+        avatar_url=user_details.avatar_url
+    )
+    segment_ids = _get_all_segment_ids_in_table_of_content_(sheet_sections=sheet_sections)
+    segments_dict: Dict[str, SegmentDTO] = await get_segments_details_by_ids(segment_ids=segment_ids)
+
+    sheet_section: Optional[SheetSection] = None
+    if sheet_sections:
+        sheet_section = await _generate_sheet_section_(
+            segments=sheet_sections[0].segments,
+            segments_dict=segments_dict
         )
-    sheets = await get_users_sheets(user_id=user_id, language=language, skip=skip, limit=limit)
-    sheets_list = []
-    for sheet in sheets:
-        topic_list = []
-        for topic_id in sheet.topic_id:
-            topic = await get_topic_by_id(topic_id)
-            topic_list.append(topic.titles)
-        sheets_list.append(
-            SheetModel(
-                id=str(sheet.id),
-                title=sheet.titles,
-                summary=sheet.summaries,
-                publisher=publisher,
-                published_date=sheet.published_date,
-                time_passed=sheet.published_date,
-                views=sheet.views,
-                likes=sheet.likes,
-                topics=topic_list,
-                language=language
-            )
+
+    return SheetDetailDTO(
+        id=sheet_details.id,
+        sheet_title=sheet_details.title,
+        created_date=sheet_details.created_date,
+        publisher=publisher,
+        content=sheet_section,
+        views=views,
+        skip=skip,
+        limit=limit,
+        total=len(sheet_sections),
+    )
+
+
+async def create_new_sheet(create_sheet_request: CreateSheetRequest, token: str) -> SheetIdResponse:
+    group_id =  await _create_sheet_group_(token=token)
+    text_id = await _create_sheet_text_(
+        title=create_sheet_request.title, 
+        token=token, 
+        group_id=group_id
+    )
+    sheet_segments: Dict[str, str] = await _process_and_upload_sheet_segments(
+        create_sheet_request=create_sheet_request,
+        text_id=text_id,
+        token=token
+    )
+    await _generate_and_upload_sheet_table_of_content(
+        create_sheet_request=create_sheet_request,
+        text_id=text_id,
+        segment_dict=sheet_segments,
+        token=token
+    )
+    return SheetIdResponse(sheet_id=text_id)
+
+async def update_sheet_by_id(
+        sheet_id: str, 
+        update_sheet_request: CreateSheetRequest, 
+        token: str
+    ) -> SheetIdResponse:
+
+    is_valid_user = validate_user_exists(token=token)
+    if not is_valid_user:
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail=ErrorConstants.TOKEN_ERROR_MESSAGE)
+
+    await remove_segments_by_text_id(text_id=sheet_id)
+
+    await remove_table_of_content_by_text_id(text_id=sheet_id)
+
+    await _update_text_details_(sheet_id=sheet_id, update_sheet_request=update_sheet_request)
+
+    sheet_segments: Dict[str, str] = await _process_and_upload_sheet_segments(
+        create_sheet_request=update_sheet_request,
+        text_id=sheet_id,
+        token=token
+    )
+    await _generate_and_upload_sheet_table_of_content(
+        create_sheet_request=update_sheet_request,
+        text_id=sheet_id,
+        segment_dict=sheet_segments,
+        token=token
+    )
+    return SheetIdResponse(sheet_id=sheet_id)
+
+async def delete_sheet_by_id(sheet_id: str, token: str):
+    is_valid_user = validate_user_exists(token=token)
+    if not is_valid_user:
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail=ErrorConstants.TOKEN_ERROR_MESSAGE)
+    
+    
+    sheet_details: TextDTO = await TextUtils.get_text_details_by_id(text_id=sheet_id)
+
+    user_details: UserInfoResponse = get_user_info(token=token)
+
+    if user_details.email != sheet_details.published_by:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail=ErrorConstants.FORBIDDEN_ERROR_MESSAGE
         )
-    sheet_response = SheetsResponse(sheets=sheets_list)
-    return sheet_response
-    
-async def create_new_sheet(create_sheet_request: CreateSheetRequest) -> CreateSheetResponse:
-    new_sheet = await create_sheet(create_sheet_request=create_sheet_request)
-    return new_sheet
-    
+
+    await delete_group_by_group_id(group_id=sheet_details.group_id)
+    await remove_segments_by_text_id(text_id=sheet_id)
+    await remove_table_of_content_by_text_id(text_id=sheet_id)
+    await delete_text_by_text_id(text_id=sheet_id)
 
 def upload_sheet_image_request(sheet_id: Optional[str], file: UploadFile) -> SheetImageResponse:
     # Validate and compress the uploaded image
@@ -87,7 +216,7 @@ def upload_sheet_image_request(sheet_id: Optional[str], file: UploadFile) -> She
     unique_id = str(uuid.uuid4())
     
     # If no id is provided, use a random UUID as the folder name
-    path = f"images/sheet_images"
+    path = "images/sheet_images"
     image_path_full = f"{path}/{sheet_id}/{unique_id}" if sheet_id is not None else f"{path}/{unique_id}"
     sheet_image_name = f"{image_path_full}/{file_name}{ext}"
     upload_key = upload_bytes(
@@ -102,3 +231,161 @@ def upload_sheet_image_request(sheet_id: Optional[str], file: UploadFile) -> She
     )
     
     return SheetImageResponse(url=presigned_url)
+
+
+
+async def _generate_sheet_section_(segments: List[TextSegment], segments_dict: Dict[str, SegmentDTO]) -> SheetSection:
+    sheet_segments = []
+    for segment in segments:
+        segment_details: SegmentDTO = segments_dict[segment.segment_id]
+        if segment_details.type == SegmentType.SOURCE:
+            segment_text_details: TextDTO = await TextUtils.get_text_details_by_id(text_id=segment_details.text_id)
+            sheet_segments.append(
+                SheetSegment(
+                    segment_id=segment.segment_id,
+                    segment_number=segment.segment_number,
+                    content=segment_details.content,
+                    language=segment_text_details.language,
+                    text_title=segment_text_details.title,
+                    type=segment_details.type
+                )
+            )
+        else:
+            sheet_segments.append(
+                SheetSegment(
+                    segment_id=segment.segment_id,
+                    segment_number=segment.segment_number,
+                    content=segment_details.content,
+                    type=segment_details.type
+                )
+            )
+
+    return SheetSection(
+        section_number=DEFAULT_SHEET_SECTION_NUMBER,
+        segments=sheet_segments
+    )
+
+
+def _get_all_segment_ids_in_table_of_content_(sheet_sections: Section) -> List[str]:
+    segment_ids = []
+    for section in sheet_sections:
+        for segment in section.segments:
+            segment_ids.append(segment.segment_id)
+    return segment_ids
+
+async def _update_text_details_(sheet_id: str, update_sheet_request: CreateSheetRequest):
+    update_text_request = UpdateTextRequest(
+        title=update_sheet_request.title,
+        is_published=update_sheet_request.is_published
+    )
+    await update_text_details(text_id=sheet_id, update_text_request=update_text_request)
+
+
+async def _generate_and_upload_sheet_table_of_content(
+        create_sheet_request: CreateSheetRequest,
+        text_id: str,
+        segment_dict: Dict[str, str],
+        token: str
+):
+    sheet_table_of_content = _generate_sheet_table_of_content_(
+        create_sheet_request=create_sheet_request, 
+        text_id=text_id,
+        segment_dict=segment_dict
+    )
+    await create_table_of_content(
+        table_of_content_request=sheet_table_of_content,
+        token=token
+    )
+    return sheet_table_of_content
+
+async def _process_and_upload_sheet_segments(
+        create_sheet_request: CreateSheetRequest,
+        text_id: str,
+        token: str
+) -> Dict[str, str]:
+    create_segment_request_payload: CreateSegmentRequest = _generate_segment_creation_request_payload_(
+        create_sheet_request=create_sheet_request,
+        text_id=text_id
+    )
+    new_segments: SegmentResponse = await create_new_segment(
+        create_segment_request=create_segment_request_payload,
+        token=token
+    )
+
+    segment_dict: Dict[str, str] = _generate_segment_dictionary_(new_segments=new_segments)
+    
+    return segment_dict
+
+def _generate_sheet_table_of_content_(create_sheet_request: CreateSheetRequest, text_id: str, segment_dict: Dict[str, str]) -> TableOfContent:
+    section = Section(
+        id=str(uuid.uuid4()),
+        section_number=1,
+        segments=[],
+        created_date=Utils.get_utc_date_time(),
+        updated_date=Utils.get_utc_date_time()
+    )
+    for source in create_sheet_request.source:
+        if source.type == SegmentType.SOURCE:
+            segment = TextSegment(
+                segment_number = source.position,
+                segment_id = source.content
+            )
+        else:
+            content_hash_value = hashlib.sha256(source.content.encode()).hexdigest()
+            segment = TextSegment(
+                segment_number = source.position,
+                segment_id = segment_dict[content_hash_value]
+            )
+        section.segments.append(segment)
+
+    table_of_content = TableOfContent(
+        text_id=text_id,
+        sections=[section]
+    )
+    
+    return table_of_content
+
+
+def _generate_segment_dictionary_(new_segments: SegmentResponse) -> Dict[str, str]:
+    segment_dict = {}
+    for segment in new_segments.segments:
+        if segment.type != SegmentType.SOURCE:
+            content_hash_value = hashlib.sha256(segment.content.encode()).hexdigest()
+            segment_dict[content_hash_value] = segment.id
+    return segment_dict
+
+def _generate_segment_creation_request_payload_(create_sheet_request: CreateSheetRequest, text_id: str) -> CreateSegmentRequest:
+    create_segment_request = CreateSegmentRequest(
+        text_id=text_id,
+        segments=[]
+    )
+    for source in create_sheet_request.source:
+        create_segment_request.segments.append(
+            CreateSegment(
+                content=source.content,
+                type=source.type
+            )
+        )
+    return create_segment_request
+
+async def _create_sheet_text_(title: str, token: str, group_id: str) -> str:
+    user_details = validate_and_extract_user_details(token=token)
+    create_text_request = CreateTextRequest(
+        title=title,
+        group_id=group_id,
+        language=None,
+        published_by=user_details.email,
+        type=TextType.SHEET
+    )
+    new_text: TextDTO = await create_new_text(create_text_request=create_text_request, token=token)
+    return new_text.id
+
+
+async def _create_sheet_group_(token: str) -> str:
+    create_group_request = CreateGroupRequest(
+        type=GroupType.SHEET
+    )
+    new_group: GroupDTO = await create_new_group(create_group_request=create_group_request, token=token)
+    return new_group.id
+
+

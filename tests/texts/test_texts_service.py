@@ -9,17 +9,18 @@ from pecha_api.texts.texts_service import (
     get_text_by_text_id_or_term,
     create_table_of_content,
     get_table_of_contents_by_text_id,
-    get_text_details_by_text_id
+    get_text_details_by_text_id,
+    update_text_details,
+    remove_table_of_content_by_text_id,
+    delete_text_by_text_id
 )
 from pecha_api.texts.texts_response_models import (
     CreateTextRequest,
     TextDTO,
     TextVersion,
-    TextVersionResponse,
     TableOfContent,
     Section,
     TextSegment,
-    TextsCategoryResponse,
     TableOfContentResponse,
     TextDetailsRequest,
     DetailTableOfContentResponse,
@@ -27,10 +28,40 @@ from pecha_api.texts.texts_response_models import (
     DetailSection,
     DetailTextSegment,
     Translation,
-    DetailTextMapping
+    DetailTextMapping,
+    UpdateTextRequest
 )
+
+from pecha_api.texts.texts_enums import TextType
+
 from pecha_api.error_contants import ErrorConstants
 from typing import List
+
+@pytest.mark.asyncio
+async def test_get_text_by_text_id_or_term_without_term_id_success():
+    text_id = "efb26a06-f373-450b-ba57-e7a8d4dd5b64"
+    term_id = None
+    with patch("pecha_api.texts.texts_service.TextUtils.get_text_detail_by_id", new_callable=AsyncMock) as mock_get_text_detail_by_id:
+        mock_get_text_detail_by_id.return_value = TextDTO(
+            id=text_id,
+            title="བྱང་ཆུབ་སེམས་དཔའི་སྤྱོད་པ་ལ་འཇུག་པ།",
+            language="bo",
+            group_id="group_id_1",
+            type="commentary",
+            is_published=True,
+            created_date="2025-03-21 09:40:34.025024",
+            updated_date="2025-03-21 09:40:34.025035",
+            published_date="2025-03-21 09:40:34.025038",
+            published_by="pecha",
+            categories=[],
+            views=0
+        )
+
+        response = await get_text_by_text_id_or_term(text_id=text_id, term_id=term_id, language=None, skip=0, limit=10)
+
+        assert response is not None
+        assert isinstance(response, TextDTO)
+        assert response.id == text_id
 
 @pytest.mark.asyncio
 async def test_get_text_by_term_id():
@@ -42,25 +73,29 @@ async def test_get_text_by_term_id():
             id="a48c0814-ce56-4ada-af31-f74b179b52a9",
             title="སྤྱོད་འཇུག་དཀའ་འགྲེལ།",
             language="bo",
+            group_id="group_id_1",
             type="commentary",
             is_published=True,
             created_date="2025-03-21 09:40:34.025024",
             updated_date="2025-03-21 09:40:34.025035",
             published_date="2025-03-21 09:40:34.025038",
             published_by="pecha",
-            categories=[]
+            categories=[],
+            views=0
         ),
         TextDTO(
             id="032b9a5f-0712-40d8-b7ec-73c8c94f1c15",
             title="བྱང་ཆུབ་སེམས་དཔའི་སྤྱོད་པ་ལ་འཇུག་པ།",
             language="bo",
+            group_id="group_id_1",
             type="version",
             is_published=True,
             created_date="2025-03-20 09:26:16.571522",
             updated_date="2025-03-20 09:26:16.571532",
             published_date="2025-03-20 09:26:16.571536",
             published_by="pecha",
-            categories=[]
+            categories=[],
+            views=0
         )
     ]
 
@@ -105,7 +140,7 @@ async def test_get_versions_by_group_id():
         published_date="2025-03-20 09:26:16.571536",
         published_by="pecha",
         categories=[],
-        parent_id=None
+        views=0
     )
     texts_by_group_id = [
         TextDTO(
@@ -120,14 +155,13 @@ async def test_get_versions_by_group_id():
             published_date="2025-03-20 09:26:16.571536",
             published_by="pecha",
             categories=[],
-            parent_id=None
+            views=0
         ),
         TextDTO(
             id="text_id_2",
             title="The Way of the Bodhisattva",
-            parent_id="032b9a5f-0712-40d8-b7ec-73c8c94f1c15",
-            priority=None,
             language="en",
+            group_id="group_id_1",
             type="version",
             is_published=True,
             created_date="2025-03-20 09:28:28.076920",
@@ -135,14 +169,13 @@ async def test_get_versions_by_group_id():
             published_date="2025-03-20 09:28:28.076938",
             published_by="pecha",
             categories=[],
-            group_id="group_id_1"
+            views=0
         ),
         TextDTO(
             id="text_id_3",
             title="शबोधिचर्यावतार",
-            parent_id="032b9a5f-0712-40d8-b7ec-73c8c94f1c15",
-            priority=None,
             language="sa",
+            group_id="group_id_1",
             type="version",
             is_published=True,
             created_date="2025-03-20 09:29:51.154697",
@@ -150,7 +183,7 @@ async def test_get_versions_by_group_id():
             published_date="2025-03-20 09:29:51.154712",
             published_by="pecha",
             categories=[],
-            group_id="group_id_1"
+            views=0
         )
     ]
     mock_table_of_content = TableOfContent(
@@ -166,8 +199,7 @@ async def test_get_versions_by_group_id():
                     sections=[],
                     created_date="2025-03-16 04:40:54.757652",
                     updated_date="2025-03-16 04:40:54.757652",
-                    published_date="2025-03-16 04:40:54.757652",
-                    published_by="pecha"
+                    published_date="2025-03-16 04:40:54.757652"
                 )
             ]
         )
@@ -197,27 +229,25 @@ async def test_get_versions_by_group_id():
 
 
 @pytest.mark.asyncio
-async def test_create_new_root_text():
+async def test_create_new_text():
     text_id = "efb26a06-f373-450b-ba57-e7a8d4dd5b64"
     title = "བྱང་ཆུབ་སེམས་དཔའི་སྤྱོད་པ་ལ་འཇུག་པ།"
     language = "bo"
-    parent_id = None
     is_published = True
     group_id = "67dd22a8d9f06ab28feedc90"
     created_date = "2025-03-16 04:40:54.757652"
     updated_date = "2025-03-16 04:40:54.757652"
     published_date = "2025-03-16 04:40:54.757652"
     published_by = "pecha"
-    type_ = "version"
+    type_ = TextType.VERSION
     categories = []
-    with patch('pecha_api.texts.texts_service.verify_admin_access', return_value=True), \
+    with patch('pecha_api.texts.texts_service.validate_user_exists', return_value=True), \
             patch('pecha_api.texts.texts_service.create_text', new_callable=AsyncMock) as mock_create_text,\
             patch('pecha_api.texts.texts_service.validate_group_exists', new_callable=AsyncMock) as mock_validate_group_exists:
         mock_create_text.return_value = AsyncMock(
             id=text_id,
             title=title,
             language=language,
-            parent_id=parent_id,
             is_published=is_published,
             group_id=group_id,
             created_date=created_date,
@@ -225,14 +255,13 @@ async def test_create_new_root_text():
             published_date=published_date,
             published_by=published_by,
             type=type_,
-            categories=categories
+            categories=categories,
         )
         mock_validate_group_exists.return_value = True
         response = await create_new_text(
             create_text_request=CreateTextRequest(
                 title=title,
                 language=language,
-                parent_id=parent_id,
                 group_id=group_id,
                 published_by=published_by,
                 type=type_,
@@ -245,33 +274,31 @@ async def test_create_new_root_text():
         assert response.id == text_id
         assert response.title == title
         assert response.language == language
-        assert response.type == type_
+        assert response.type == type_.value
         assert response.is_published == is_published
         assert response.created_date == created_date
         assert response.updated_date == updated_date
         assert response.published_date == published_date
         assert response.published_by == published_by
         assert response.categories == categories
-        assert response.parent_id == parent_id
     
 @pytest.mark.asyncio
-async def test_create_new_root_text_not_admin():
-    with patch("pecha_api.texts.texts_service.verify_admin_access", return_value=False):
+async def test_create_new_text_invalid_user():
+    with patch("pecha_api.texts.texts_service.validate_user_exists", return_value=False):
         with pytest.raises(HTTPException) as exc_info:
             await create_new_text(
                 create_text_request=CreateTextRequest(
                     title="བྱང་ཆུབ་སེམས་དཔའི་སྤྱོད་པ་ལ་འཇུག་པ།",
                     language="bo",
-                    parent_id=None,
                     group_id="67dd22a8d9f06ab28feedc90",
                     published_by="pecha",
-                    type="version",
+                    type=TextType.VERSION,
                     categories=[]
                 ),
                 token="user"
             )
-        assert exc_info.value.status_code == 403
-        assert exc_info.value.detail == ErrorConstants.ADMIN_ERROR_MESSAGE
+        assert exc_info.value.status_code == 401
+        assert exc_info.value.detail == ErrorConstants.TOKEN_ERROR_MESSAGE
 
 @pytest.mark.asyncio
 async def test_create_table_of_content_success():
@@ -292,13 +319,12 @@ async def test_create_table_of_content_success():
                 sections=[],
                 created_date="2025-03-16 04:40:54.757652",
                 updated_date="2025-03-16 04:40:54.757652",
-                published_date="2025-03-16 04:40:54.757652",
-                published_by="pecha"
+                published_date="2025-03-16 04:40:54.757652"
             )
         ]
     )
 
-    with patch("pecha_api.texts.texts_service.verify_admin_access", return_value=True), \
+    with patch("pecha_api.texts.texts_service.validate_user_exists", return_value=True), \
             patch("pecha_api.texts.texts_service.TextUtils.validate_text_exists", new_callable=AsyncMock) as mock_validate_text_exists, \
             patch("pecha_api.texts.texts_service.SegmentUtils.validate_segments_exists", new_callable=AsyncMock) as mock_validate_segments_exists, \
             patch("pecha_api.texts.texts_service.create_table_of_content_detail", new_callable=AsyncMock) as mock_create_table_of_content_detail:
@@ -322,12 +348,12 @@ async def test_create_table_of_content_success():
         assert response.sections[0].segments[0].segment_number == table_of_content.sections[0].segments[0].segment_number
     
 @pytest.mark.asyncio
-async def test_create_table_of_content_not_admin():
-    with patch("pecha_api.texts.texts_service.verify_admin_access", return_value=False):
+async def test_create_table_of_content_invalid_user():
+    with patch("pecha_api.texts.texts_service.validate_user_exists", return_value=False):
         with pytest.raises(HTTPException) as exc_info:
             await create_table_of_content(table_of_content_request={}, token="user")
-        assert exc_info.value.status_code == 403
-        assert exc_info.value.detail == ErrorConstants.ADMIN_ERROR_MESSAGE
+        assert exc_info.value.status_code == 401
+        assert exc_info.value.detail == ErrorConstants.TOKEN_ERROR_MESSAGE
 
 @pytest.mark.asyncio
 async def test_create_table_of_content_invalid_text():
@@ -336,7 +362,7 @@ async def test_create_table_of_content_invalid_text():
         text_id="efb26a06-f373-450b-ba57-e7a8d4dd5b64",
         sections=[]
     )
-    with patch("pecha_api.texts.texts_service.verify_admin_access", return_value=True), \
+    with patch("pecha_api.texts.texts_service.validate_user_exists", return_value=True), \
         patch("pecha_api.texts.texts_utils.check_text_exists", new_callable=AsyncMock, return_value=False):
         with pytest.raises(HTTPException) as exc_info:
             await create_table_of_content(table_of_content_request=table_of_content, token="admin")
@@ -354,7 +380,7 @@ async def test_create_table_of_content_invalid_segment():
         "efb26a06-f373-450b-ba57-e7a8d4dd5b64",
         "efb26a06-f373-450b-ba57-e7a8d4dd5b65"
     ]
-    with patch("pecha_api.texts.texts_service.verify_admin_access", return_value=True), \
+    with patch("pecha_api.texts.texts_service.validate_user_exists", return_value=True), \
         patch("pecha_api.texts.texts_service.TextUtils.get_all_segment_ids", return_value=segment_ids), \
         patch("pecha_api.texts.texts_service.TextUtils.validate_text_exists", new_callable=AsyncMock, return_value=True), \
         patch("pecha_api.texts.segments.segments_utils.check_all_segment_exists", new_callable=AsyncMock, return_value=False):
@@ -389,6 +415,7 @@ async def test_get_table_of_contents_by_text_id_success():
         id="id_1",
         title="text_1",
         language="bo",
+        group_id="group_id_1",
         type="version",
         is_published=True,
         created_date="2025-03-16 04:40:54.757652",
@@ -396,7 +423,7 @@ async def test_get_table_of_contents_by_text_id_success():
         published_date="2025-03-16 04:40:54.757652",
         published_by="pecha",
         categories=[],
-        parent_id=None
+        views=0
     )
     with patch("pecha_api.texts.texts_service.TextUtils.validate_text_exists", new_callable=AsyncMock, return_value=True), \
         patch("pecha_api.texts.texts_service.TextUtils.get_text_detail_by_id", new_callable=AsyncMock) as mock_get_text_detail_by_id, \
@@ -447,14 +474,14 @@ async def test_get_text_details_by_text_id_with_content_id_only_success():
             id="id_1",
             title="text_1",
             language="bo",
+            group_id="group_id_1",
             type="version",
             is_published=True,
             created_date="2025-03-16 04:40:54.757652",
             updated_date="2025-03-16 04:40:54.757652",
             published_date="2025-03-16 04:40:54.757652",
             published_by="pecha",
-            categories=[],
-            parent_id=None
+            categories=[]
         )
     table_of_content = TableOfContent(
         id="id_1",
@@ -502,8 +529,7 @@ async def test_get_text_details_by_text_id_with_content_id_only_success():
                 sections=[],
                 created_date="2025-03-16 04:40:54.757652",
                 updated_date="2025-03-16 04:40:54.757652",
-                published_date="2025-03-16 04:40:54.757652",
-                published_by="pecha"
+                published_date="2025-03-16 04:40:54.757652"
             )
             for i in range(1,6)
         ]
@@ -567,14 +593,14 @@ async def test_get_text_details_by_text_id_with_content_id_and_version_id_succes
             id="id_1",
             title="text_1",
             language="bo",
+            group_id="group_id_1",
             type="version",
             is_published=True,
             created_date="2025-03-16 04:40:54.757652",
             updated_date="2025-03-16 04:40:54.757652",
             published_date="2025-03-16 04:40:54.757652",
             published_by="pecha",
-            categories=[],
-            parent_id=None
+            categories=[]
         )
     table_of_content = TableOfContent(
         id="id_1",
@@ -595,8 +621,7 @@ async def test_get_text_details_by_text_id_with_content_id_and_version_id_succes
                 sections=[],
                 created_date="2025-03-16 04:40:54.757652",
                 updated_date="2025-03-16 04:40:54.757652",
-                published_date="2025-03-16 04:40:54.757652",
-                published_by="pecha"
+                published_date="2025-03-16 04:40:54.757652"
             )
             for i in range(1,6)
         ]
@@ -697,14 +722,14 @@ async def test_get_text_details_by_text_id_with_segment_id_success():
             id="id_1",
             title="text_1",
             language="bo",
+            group_id="group_id_1",
             type="version",
             is_published=True,
             created_date="2025-03-16 04:40:54.757652",
             updated_date="2025-03-16 04:40:54.757652",
             published_date="2025-03-16 04:40:54.757652",
             published_by="pecha",
-            categories=[],
-            parent_id=None
+            categories=[]
         )
     table_of_content = TableOfContent(
         id="id_1",
@@ -726,7 +751,7 @@ async def test_get_text_details_by_text_id_with_segment_id_success():
                 created_date="2025-03-16 04:40:54.757652",
                 updated_date="2025-03-16 04:40:54.757652",
                 published_date="2025-03-16 04:40:54.757652",
-                published_by="pecha"
+            
             )
             for i in range(1,6)
         ]
@@ -752,8 +777,7 @@ async def test_get_text_details_by_text_id_with_segment_id_success():
                 sections=[],
                 created_date="2025-03-16 04:40:54.757652",
                 updated_date="2025-03-16 04:40:54.757652",
-                published_date="2025-03-16 04:40:54.757652",
-                published_by="pecha"
+                published_date="2025-03-16 04:40:54.757652"
             )
             for i in range(1,6)
         ]
@@ -821,14 +845,14 @@ async def test_get_text_details_by_text_id_with_content_id_and_section_id_only_s
             id="id_1",
             title="text_1",
             language="bo",
+            group_id="group_id_1",
             type="version",
             is_published=True,
             created_date="2025-03-16 04:40:54.757652",
             updated_date="2025-03-16 04:40:54.757652",
             published_date="2025-03-16 04:40:54.757652",
             published_by="pecha",
-            categories=[],
-            parent_id=None
+            categories=[]
         )
     table_of_content = TableOfContent(
         id="id_1",
@@ -849,8 +873,7 @@ async def test_get_text_details_by_text_id_with_content_id_and_section_id_only_s
                 sections=[],
                 created_date="2025-03-16 04:40:54.757652",
                 updated_date="2025-03-16 04:40:54.757652",
-                published_date="2025-03-16 04:40:54.757652",
-                published_by="pecha"
+                published_date="2025-03-16 04:40:54.757652"
             )
             for i in range(1,6)
         ]
@@ -876,8 +899,7 @@ async def test_get_text_details_by_text_id_with_content_id_and_section_id_only_s
                 sections=[],
                 created_date="2025-03-16 04:40:54.757652",
                 updated_date="2025-03-16 04:40:54.757652",
-                published_date="2025-03-16 04:40:54.757652",
-                published_by="pecha"
+                published_date="2025-03-16 04:40:54.757652"
             )
             for i in range(1,6)
         ]
@@ -948,3 +970,68 @@ async def test_get_text_details_by_text_id_invalid_text_id():
         assert exec_info.value.status_code == 404
         assert exec_info.value.detail == ErrorConstants.TEXT_NOT_FOUND_MESSAGE
 
+@pytest.mark.asyncio
+async def test_update_text_details_success():
+    mock_text_details = TextDTO(
+        id="text_id_1",
+        title="text_title",
+        language="bo",
+        group_id="group_id_1",
+        type="version",
+        is_published=False,
+        created_date="created_date",
+        updated_date="updated_date",
+        published_date="published_date",
+        published_by="published_by",
+        categories=[],
+        views=0
+    )
+    with patch("pecha_api.texts.texts_service.TextUtils.validate_text_exists", new_callable=AsyncMock, return_value=True), \
+        patch("pecha_api.texts.texts_service.TextUtils.get_text_detail_by_id", new_callable=AsyncMock) as mock_get_text_detail_by_id, \
+        patch("pecha_api.texts.texts_service.update_text_details_by_id", new_callable=AsyncMock, return_value=mock_text_details):
+        mock_get_text_detail_by_id.return_value = mock_text_details
+        
+        response = await update_text_details(text_id="text_id_1", update_text_request=UpdateTextRequest(title="updated_title", is_published=True))
+        
+        assert response is not None
+        assert response.title == "updated_title"
+        assert response.is_published == True
+
+@pytest.mark.asyncio
+async def test_update_text_details_invalid_text_id():
+    with patch("pecha_api.texts.texts_service.TextUtils.validate_text_exists", new_callable=AsyncMock, return_value=False):
+        with pytest.raises(HTTPException) as exec_info:
+            await update_text_details(text_id="invalid_id", update_text_request=UpdateTextRequest(title="updated_title", is_published=True))
+        assert exec_info.value.status_code == 404
+        assert exec_info.value.detail == ErrorConstants.TEXT_NOT_FOUND_MESSAGE
+    
+@pytest.mark.asyncio
+async def test_delete_table_of_content_success():
+    with patch("pecha_api.texts.texts_service.delete_table_of_content_by_text_id", new_callable=AsyncMock), \
+        patch("pecha_api.texts.texts_service.TextUtils.validate_text_exists", new_callable=AsyncMock, return_value=True):
+        response = await remove_table_of_content_by_text_id(text_id="text_id_1")
+        assert response is not None
+
+@pytest.mark.asyncio
+async def test_delete_table_of_content_invalid_text_id():
+    with patch("pecha_api.texts.texts_service.delete_table_of_content_by_text_id", new_callable=AsyncMock), \
+        patch("pecha_api.texts.texts_service.TextUtils.validate_text_exists", new_callable=AsyncMock, return_value=False):
+        with pytest.raises(HTTPException) as exec_info:
+            await remove_table_of_content_by_text_id(text_id="invalid_id")
+        assert exec_info.value.status_code == 404
+        assert exec_info.value.detail == ErrorConstants.TEXT_NOT_FOUND_MESSAGE
+
+@pytest.mark.asyncio
+async def test_delete_text_by_text_id_success():
+    with patch("pecha_api.texts.texts_service.TextUtils.validate_text_exists", new_callable=AsyncMock, return_value=True), \
+        patch("pecha_api.texts.texts_service.delete_text_by_id", new_callable=AsyncMock):
+        response = await delete_text_by_text_id(text_id="text_id_1")
+        assert response is None
+
+@pytest.mark.asyncio
+async def test_delete_text_by_text_id_invalid_text_id():
+    with patch("pecha_api.texts.texts_service.TextUtils.validate_text_exists", new_callable=AsyncMock, return_value=False):
+        with pytest.raises(HTTPException) as exec_info:
+            await delete_text_by_text_id(text_id="invalid_id")
+        assert exec_info.value.status_code == 404
+        assert exec_info.value.detail == ErrorConstants.TEXT_NOT_FOUND_MESSAGE

@@ -7,6 +7,9 @@ from .texts_response_models import Section
 from pydantic import Field
 from beanie import Document
 
+from .texts_enums import TextType
+from .texts_response_models import TextDTO
+
 class TableOfContent(Document):
     id: uuid.UUID = Field(default_factory=uuid.uuid4)
     text_id: str
@@ -18,6 +21,10 @@ class TableOfContent(Document):
     @classmethod
     async def get_table_of_contents_by_text_id(cls, text_id: str) -> List["TableOfContent"]: # this methods is getting all the available table of content for a text
         return await cls.find(cls.text_id == text_id).to_list()
+
+    @classmethod
+    async def delete_table_of_content_by_text_id(cls, text_id: str):
+        return await cls.find(cls.text_id == text_id).delete()
     
     @classmethod
     async def get_sections_count(cls, content_id: str) -> int:
@@ -40,16 +47,16 @@ class TableOfContent(Document):
 class Text(Document):
     id: uuid.UUID = Field(default_factory=uuid.uuid4)
     title: str
-    language: str
-    parent_id: Optional[str] = None
+    language: Optional[str] = None
     group_id: str
     is_published: bool
     created_date: str
     updated_date: str
     published_date: str
     published_by: str
-    type: str
-    categories: List[str]
+    type: TextType
+    categories: Optional[List[str]] = None
+    views: Optional[int] = 0
 
     class Settings:
         collection = "texts"
@@ -120,4 +127,13 @@ class Text(Document):
             .to_list()
         )
         return texts
+    
+    @classmethod
+    async def update_text_details_by_id(cls, text_id: UUID, text_details: TextDTO):
+        return await cls.update_all(cls.id == text_id, {"$set": text_details.model_dump()})
+    
+    @classmethod
+    async def delete_text_by_id(cls, text_id: UUID):
+        return await cls.find_one(cls.id == text_id).delete()
+
 

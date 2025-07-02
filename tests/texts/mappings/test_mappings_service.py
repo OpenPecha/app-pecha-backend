@@ -8,6 +8,7 @@ from pecha_api.texts.mappings.mappings_response_models import TextMappingRequest
 from pecha_api.texts.mappings.mappings_service import update_segment_mapping
 from pecha_api.texts.segments.segments_models import Mapping
 from pecha_api.texts.segments.segments_response_models import SegmentResponse
+from pecha_api.texts.segments.segments_enum import SegmentType
 
 
 @pytest.mark.asyncio
@@ -39,6 +40,7 @@ async def test_update_segment_mapping_success():
     mock_updated_segment.id = uuid.UUID(segment_id)
     mock_updated_segment.text_id = text_id
     mock_updated_segment.content = "Test content"
+    mock_updated_segment.type = SegmentType.SOURCE
     mock_updated_segment.mapping = [Mapping(
         text_id=parent_text_id,
         segments=[parent_segment_id]
@@ -48,6 +50,7 @@ async def test_update_segment_mapping_success():
     mock_segment.text_id = text_id
     mock_segment.content = "Test content"
     mock_segment.mapping = []
+    mock_segment.type = SegmentType.SOURCE
 
     with patch('pecha_api.texts.mappings.mappings_service.verify_admin_access', return_value=True), \
             patch('pecha_api.texts.mappings.mappings_service._validate_mapping_request', new_callable=AsyncMock, return_value=True), \
@@ -262,6 +265,7 @@ async def test_update_segment_mapping_error_400():
     mock_segment.text_id = text_id
     mock_segment.content = "Test content"
     mock_segment.mapping = []
+    mock_segment.type = SegmentType.SOURCE
 
     with patch('pecha_api.texts.mappings.mappings_service.verify_admin_access', return_value=True), \
             patch('pecha_api.texts.mappings.mappings_service._validate_mapping_request', new_callable=AsyncMock, return_value=True) as mock_validate, \

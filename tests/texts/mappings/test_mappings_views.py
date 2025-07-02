@@ -5,6 +5,7 @@ from pecha_api.app import api
 from fastapi import HTTPException
 
 from pecha_api.texts.segments.segments_response_models import SegmentResponse, MappingResponse,SegmentDTO
+from pecha_api.texts.segments.segments_enum import SegmentType
 
 client = TestClient(api)
 
@@ -44,6 +45,7 @@ def test_create_text_mapping(mock_update_mapping):
                 id="cce14575-ebc3-43aa-bcce-777676f3b2e2",
                 text_id="2ff4215e-bc9e-4d16-8d7e-b4adea3c6ef9",
                 content="content pf the segment",
+                type=SegmentType.SOURCE,
                 mapping=[mapping_response]
 
             )
@@ -58,7 +60,7 @@ def test_create_text_mapping(mock_update_mapping):
 
     # Assert
     assert response.status_code == 201
-    assert response.json() == section_response.model_dump()
+    assert response.json() == section_response.model_dump(mode="json")
 
 
 def test_create_text_mapping_403():

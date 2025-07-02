@@ -7,10 +7,11 @@ from pydantic import Field
 from .groups_response_models import (
     GroupDTO
 )
+from .groups_enums import GroupType
 
 class Group(Document):
     id: uuid.UUID = Field(default_factory=uuid.uuid4)
-    type: str
+    type: GroupType
 
     class Settings:
         collection = "groups"
@@ -29,3 +30,7 @@ class Group(Document):
         group_ids = [UUID(group_id) for group_id in group_ids]
         search = await cls.find({"_id": {"$in": group_ids}}).to_list()
         return search
+    
+    @classmethod
+    async def delete_group_by_id(cls, group_id: UUID):
+        return await cls.find_one(cls.id == group_id).delete()

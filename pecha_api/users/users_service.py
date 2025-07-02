@@ -29,6 +29,11 @@ def get_user_info(token: str) -> UserInfoResponse:
     user_info_response = generate_user_info_response(user=current_user)
     return user_info_response
 
+def fetch_user_by_email(email: str) -> Optional[UserInfoResponse]:
+    with SessionLocal() as db_session:
+        user = get_user_by_email(db=db_session, email=email)
+        db_session.close()
+    return generate_user_info_response(user=user)
 
 def generate_user_info_response(user: Users) -> Optional[UserInfoResponse]:
     if user:
@@ -156,6 +161,13 @@ def verify_admin_access(token: str) -> bool:
     current_user = validate_and_extract_user_details(token=token)
     if hasattr(current_user, 'is_admin') and current_user.is_admin is not None:
         return current_user.is_admin
+    else:
+        return False
+
+def validate_user_exists(token: str) -> bool:
+    current_user = validate_and_extract_user_details(token=token)
+    if current_user:
+        return True
     else:
         return False
 
