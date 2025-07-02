@@ -184,16 +184,6 @@ def validate_token(token: str) -> Dict[str, Any]:
     else:
         return decode_backend_token(token)
 
-def get_user_profile_by_username(username: str) -> Optional[UserInfoResponse]:
-    
-    try:
-        with SessionLocal() as db_session:
-            user = get_user_by_username(db=db_session, username=username)
-            if user:
-                return generate_user_info_response(user=user)
-    except Exception as e:
-        logging.error(f"Error getting user profile by username: {e}")
-    return None
 
 def get_publisher_info_by_username(username: str) -> Optional[PublisherInfoResponse]:
    
