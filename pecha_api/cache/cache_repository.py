@@ -26,7 +26,7 @@ def _build_key(key: str) -> str:
     return f"{prefix}{key}"
 
 
-async def set_cache(hash_key: str, value: Any) -> bool:
+def set_cache(hash_key: str, value: Any) -> bool:
     """Set value in cache with default timeout"""
     try:
         client = get_client()
@@ -40,7 +40,7 @@ async def set_cache(hash_key: str, value: Any) -> bool:
         return False
 
 
-async def get_cache_data(hash_key: str) -> Optional[Any]:
+def get_cache_data(hash_key: str) -> Optional[Any]:
     """Get value from cache"""
     try:
         client = get_client()
@@ -59,7 +59,7 @@ async def get_cache_data(hash_key: str) -> Optional[Any]:
         return None
 
 
-async def delete_cache(hash_key: str) -> bool:
+def delete_cache(hash_key: str) -> bool:
     """Delete key from cache"""
     try:
         client = get_client()
@@ -70,7 +70,7 @@ async def delete_cache(hash_key: str) -> bool:
         return False
 
 
-async def exists_in_cache(hash_key: str) -> bool:
+def exists_in_cache(hash_key: str) -> bool:
     """Check if key exists in cache"""
     try:
         client = get_client()
@@ -81,7 +81,7 @@ async def exists_in_cache(hash_key: str) -> bool:
         return False
 
 
-async def clear_cache(pattern: str = "*") -> bool:
+def clear_cache(pattern: str = "*") -> bool:
     """Clear all keys matching pattern"""
     try:
         client = get_client()
