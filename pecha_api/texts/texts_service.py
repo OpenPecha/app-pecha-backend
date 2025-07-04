@@ -33,7 +33,13 @@ from .groups.groups_service import (
 )
 from pecha_api.cache.cache_service import (
     set_text_details_cache,
-    get_text_details_cache
+    get_text_details_cache,
+    get_text_by_text_id_or_term_cache,
+    set_text_by_text_id_or_term_cache,
+    get_table_of_contents_by_text_id_cache,
+    set_table_of_contents_by_text_id_cache,
+    get_text_versions_by_group_id_cache,
+    set_text_versions_by_group_id_cache
 )
 
 from pecha_api.sheets.sheets_response_models import (
@@ -72,10 +78,21 @@ async def get_text_by_text_id_or_term(
     if language is None:
         language = get("DEFAULT_LANGUAGE")
 
+    cached_data = await get_text_by_text_id_or_term_cache(
+        text_id = text_id,
+        term_id = term_id,
+        language = language,
+        skip = skip,
+        limit = limit
+    )
+
+    if cached_data is not None:
+        return cached_data
+
     if term_id is not None:
         term = await get_term(term_id=term_id, language=language)
         texts = await _get_texts_by_term_id(term_id=term_id, language=language, skip=skip, limit=limit)
-        return TextsCategoryResponse(
+        response = TextsCategoryResponse(
             term=term,
             texts=texts,
             total=len(texts),
@@ -83,7 +100,19 @@ async def get_text_by_text_id_or_term(
             limit=limit
         )
     else:
-        return await TextUtils.get_text_detail_by_id(text_id=text_id)
+        response =await TextUtils.get_text_detail_by_id(text_id=text_id)
+    
+    await set_text_by_text_id_or_term_cache(
+        text_id = text_id,
+        term_id = term_id,
+        language = language,
+        skip = skip,
+        limit = limit,
+        data = response
+    )
+
+    return response
+
 
 async def get_sheets(published_by: Optional[str] = None, is_published: Optional[bool] = None, sort_by: Optional[SortBy] = None, sort_order: Optional[SortOrder] = None, skip: int = 0, limit: int = 10) -> SheetDTOResponse:
     
@@ -121,9 +150,16 @@ async def get_table_of_contents_by_text_id(text_id: str) -> TableOfContentRespon
     is_valid_text: bool = await TextUtils.validate_text_exists(text_id=text_id)
     if not is_valid_text:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=ErrorConstants.TEXT_NOT_FOUND_MESSAGE)
+    
+    cached_data = await get_table_of_contents_by_text_id_cache(
+        text_id = text_id
+    )
+    if cached_data is not None:
+        return cached_data
+
     text = await TextUtils.get_text_detail_by_id(text_id=text_id)
     table_of_contents = await get_contents_by_id(text_id=text_id)
-    return TableOfContentResponse(
+    response = TableOfContentResponse(
         text_detail=text,
         contents=[
             TableOfContent(
@@ -134,6 +170,13 @@ async def get_table_of_contents_by_text_id(text_id: str) -> TableOfContentRespon
             for content in table_of_contents
         ]
     )
+
+    await set_table_of_contents_by_text_id_cache(
+        text_id = text_id,
+        data = response
+    )
+    
+    return response
 
 async def remove_table_of_content_by_text_id(text_id: str):
     is_valid_text = await TextUtils.validate_text_exists(text_id=text_id)
@@ -193,6 +236,16 @@ async def get_text_versions_by_group_id(text_id: str, language: str, skip: int, 
     '''
     if language is None:
         language = get("DEFAULT_LANGUAGE")
+    
+    cached_data = await get_text_versions_by_group_id_cache(
+        text_id = text_id,
+        language = language,
+        skip = skip,
+        limit = limit
+    )
+    if cached_data is not None:
+        return cached_data
+    
     root_text = await TextUtils.get_text_detail_by_id(text_id=text_id)
     group_id = root_text.group_id
     texts = await get_texts_by_group_id(group_id=group_id, skip=skip, limit=limit)
@@ -204,10 +257,20 @@ async def get_text_versions_by_group_id(text_id: str, language: str, skip: int, 
 
     list_of_version = _get_list_of_text_version_response_model(versions=versions, versions_table_of_content_id_dict=versions_table_of_content_id_dict)
 
-    return TextVersionResponse(
+    response = TextVersionResponse(
         text=root_text,
         versions=list_of_version
     )
+
+    await set_text_versions_by_group_id_cache(
+        text_id = text_id,
+        language = language,
+        skip = skip,
+        limit = limit,
+        data = response
+    )
+
+    return response
 
 
 async def create_new_text(
