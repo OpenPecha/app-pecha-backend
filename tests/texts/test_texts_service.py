@@ -502,8 +502,7 @@ async def test_get_text_details_by_text_id_with_content_id_only_success():
                 sections=[],
                 created_date="2025-03-16 04:40:54.757652",
                 updated_date="2025-03-16 04:40:54.757652",
-                published_date="2025-03-16 04:40:54.757652",
-                published_by="pecha"
+                published_date="2025-03-16 04:40:54.757652"
             )
             for i in range(1,6)
         ]
@@ -651,8 +650,7 @@ async def test_get_text_details_by_text_id_with_content_id_and_version_id_succes
                 sections=[],
                 created_date="2025-03-16 04:40:54.757652",
                 updated_date="2025-03-16 04:40:54.757652",
-                published_date="2025-03-16 04:40:54.757652",
-                published_by="pecha"
+                published_date="2025-03-16 04:40:54.757652"
             )
             for i in range(1,6)
         ]
