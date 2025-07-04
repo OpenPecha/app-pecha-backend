@@ -8,7 +8,7 @@ from pecha_api.texts.segments.segments_service import (
     get_translations_by_segment_id,
     get_segment_details_by_id,
     get_commentaries_by_segment_id,
-    get_infos_by_segment_id,
+    get_info_by_segment_id,
     get_root_text_mapping_by_segment_id,
     remove_segments_by_text_id,
     fetch_segments_by_text_id
@@ -359,7 +359,7 @@ async def test_get_infos_by_segment_id_success():
         patch("pecha_api.texts.segments.segments_service.SegmentUtils.get_count_of_each_commentary_and_version", new_callable=AsyncMock, return_value={"version": 1, "commentary": 2}), \
         patch("pecha_api.texts.segments.segments_service.SegmentUtils.get_root_mapping_count", new_callable=AsyncMock, return_value=3):
         mock_get_related_mapped_segment.return_value = related_mapped_segments
-        response = await get_infos_by_segment_id(segment_id=segment_id)
+        response = await get_info_by_segment_id(segment_id=segment_id)
         assert isinstance(response, SegmentInfoResponse)
         assert isinstance(response.segment_info, SegmentInfo)
         assert isinstance(response.segment_info.related_text, RelatedText)
@@ -375,7 +375,7 @@ async def test_get_infos_by_segment_id_invalid_segment_id():
     segment_id = "efb26a06-f373-450b-ba57-e7a8d4dd5b64"
     with patch("pecha_api.texts.segments.segments_service.SegmentUtils.validate_segment_exists", new_callable=AsyncMock, return_value=False):
         with pytest.raises(HTTPException) as exc_info:
-            await get_infos_by_segment_id(segment_id=segment_id)
+            await get_info_by_segment_id(segment_id=segment_id)
         assert exc_info.value.status_code == 404
         assert exc_info.value.detail == ErrorConstants.SEGMENT_NOT_FOUND_MESSAGE
 

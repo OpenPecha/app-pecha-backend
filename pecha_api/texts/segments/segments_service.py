@@ -118,7 +118,7 @@ async def get_commentaries_by_segment_id(
         commentaries=commentaries
     )
 
-async def get_infos_by_segment_id(segment_id: str) -> SegmentInfoResponse:
+async def get_info_by_segment_id(segment_id: str) -> SegmentInfoResponse:
     is_valid_segment = await SegmentUtils.validate_segment_exists(segment_id=segment_id)
     if not is_valid_segment:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=ErrorConstants.SEGMENT_NOT_FOUND_MESSAGE)
