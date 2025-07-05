@@ -12,7 +12,8 @@ from pecha_api.texts.texts_service import (
     get_text_details_by_text_id,
     update_text_details,
     remove_table_of_content_by_text_id,
-    delete_text_by_text_id
+    delete_text_by_text_id,
+    get_sheet
 )
 from pecha_api.texts.texts_response_models import (
     CreateTextRequest,
@@ -29,7 +30,8 @@ from pecha_api.texts.texts_response_models import (
     DetailTextSegment,
     Translation,
     DetailTextMapping,
-    UpdateTextRequest
+    UpdateTextRequest,
+    TextDTOResponse
 )
 
 from pecha_api.texts.texts_enums import TextType
@@ -405,8 +407,7 @@ async def test_get_table_of_contents_by_text_id_success():
                     sections=[],
                     created_date="2025-03-16 04:40:54.757652",
                     updated_date="2025-03-16 04:40:54.757652",
-                    published_date="2025-03-16 04:40:54.757652",
-                    published_by="pecha"
+                    published_date="2025-03-16 04:40:54.757652"
                 )
             ]
         )
@@ -502,8 +503,7 @@ async def test_get_text_details_by_text_id_with_content_id_only_success():
                 sections=[],
                 created_date="2025-03-16 04:40:54.757652",
                 updated_date="2025-03-16 04:40:54.757652",
-                published_date="2025-03-16 04:40:54.757652",
-                published_by="pecha"
+                published_date="2025-03-16 04:40:54.757652"
             )
             for i in range(1,6)
         ]
@@ -651,8 +651,7 @@ async def test_get_text_details_by_text_id_with_content_id_and_version_id_succes
                 sections=[],
                 created_date="2025-03-16 04:40:54.757652",
                 updated_date="2025-03-16 04:40:54.757652",
-                published_date="2025-03-16 04:40:54.757652",
-                published_by="pecha"
+                published_date="2025-03-16 04:40:54.757652"
             )
             for i in range(1,6)
         ]
@@ -1031,7 +1030,38 @@ async def test_delete_text_by_text_id_success():
 @pytest.mark.asyncio
 async def test_delete_text_by_text_id_invalid_text_id():
     with patch("pecha_api.texts.texts_service.TextUtils.validate_text_exists", new_callable=AsyncMock, return_value=False):
-        with pytest.raises(HTTPException) as exec_info:
-            await delete_text_by_text_id(text_id="invalid_id")
-        assert exec_info.value.status_code == 404
-        assert exec_info.value.detail == ErrorConstants.TEXT_NOT_FOUND_MESSAGE
+        with pytest.raises(HTTPException) as exc_info:
+            await delete_text_by_text_id(text_id="invalid_text_id")
+
+        assert exc_info.value.status_code == 404
+        assert exc_info.value.detail == ErrorConstants.TEXT_NOT_FOUND_MESSAGE
+
+@pytest.mark.asyncio
+async def test_get_sheet_success_user_viewing_own_sheets():
+    email = "test_user@gmail.com"
+    mock_sheets = [
+            type("Text", (), {
+                "id": f"sheet_id_{i}",
+                "title": "Test Sheet",
+                "language": "en",
+                "group_id": "group_id",
+                "type": "sheet",
+                "is_published": True if i % 2 == 0 else False,
+                "created_date": "2021-01-01",
+                "updated_date": "2021-01-01",
+                "published_date": "2021-01-01",
+                "published_by": email,
+                "categories": [],
+                "views": 10
+            })()
+            for i in range(1,11)
+        ]
+    with patch("pecha_api.texts.texts_service.fetch_sheets_from_db", new_callable=AsyncMock, return_value=mock_sheets):
+
+        response = await get_sheet(published_by=email, is_published=None, sort_by=None, sort_order=None, skip=0, limit=10)
+
+        assert response is not None
+        assert len(response) == 10
+        for sheet in response:
+            assert sheet.published_by == email
+

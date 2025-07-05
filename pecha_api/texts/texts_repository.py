@@ -12,6 +12,10 @@ from .texts_response_models import (
     TextDTO,
     UpdateTextRequest
 )
+from pecha_api.sheets.sheets_enum import (
+    SortBy, 
+    SortOrder
+)
 from .texts_models import Text, TableOfContent
 from datetime import datetime, timezone
 from pecha_api.utils import Utils
@@ -46,6 +50,24 @@ async def get_texts_by_ids(text_ids: List[str]) -> Dict[str, TextDTO]:
         )
         for text in list_of_texts_detail
     }
+
+async def fetch_sheets_from_db(
+    published_by: Optional[str] = None, 
+    is_published: Optional[bool] = None, 
+    sort_by: Optional[SortBy] = None, 
+    sort_order: Optional[SortOrder] = None,
+    skip: int = 0, 
+    limit: int = 10
+) -> List[Text]:
+    sheets = await Text.get_sheets(
+        published_by=published_by, 
+        is_published=is_published, 
+        sort_by=sort_by,
+        sort_order=sort_order,
+        skip=skip, 
+        limit=limit
+    )
+    return sheets
 
 
 async def check_text_exists(text_id: UUID) -> bool:
@@ -86,7 +108,6 @@ async def get_texts_by_group_id(group_id: str, skip: int, limit: int) -> List[Te
         )
         for text in texts
     ]
-
 
 async def create_text(create_text_request: CreateTextRequest) -> Text:
     new_text = Text(
