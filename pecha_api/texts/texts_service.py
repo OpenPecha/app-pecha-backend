@@ -37,7 +37,7 @@ from pecha_api.cache.cache_service import (
 
 from .texts_utils import TextUtils
 from pecha_api.users.users_service import validate_user_exists
-from pecha_api.terms.terms_service import get_term
+from pecha_api.collections.collections_service import get_collection
 from .segments.segments_utils import SegmentUtils
 
 from typing import List, Dict, Optional
@@ -45,9 +45,9 @@ from pecha_api.config import get
 from pecha_api.utils import Utils
 
 
-async def get_text_by_text_id_or_term(
+async def get_text_by_text_id_or_collection(
         text_id: str,
-        term_id: str,
+        collection_id: str,
         language: str,
         skip: int,
         limit: int
@@ -55,9 +55,9 @@ async def get_text_by_text_id_or_term(
     if language is None:
         language = get("DEFAULT_LANGUAGE")
 
-    if term_id is not None:
-        term = await get_term(term_id=term_id, language=language)
-        texts = await _get_texts_by_term_id(term_id=term_id, language=language, skip=skip, limit=limit)
+    if collection_id_id is not None:
+        term = await get_collection(collection_id=collection_id, language=language)
+        texts = await _get_texts_by_collection_id(collection_id=collection_id, language=language, skip=skip, limit=limit)
         return TextsCategoryResponse(
             term=term,
             texts=texts,
@@ -273,8 +273,8 @@ async def _validate_text_detail_request(text_id: str, text_details_request: Text
     await TextUtils.validate_text_exists(text_id=text_id)
 
 
-async def _get_texts_by_term_id(term_id: str, language: str, skip: int, limit: int) -> List[TextDTO]:
-    texts = await get_texts_by_term(term_id=term_id, language=language, skip=skip, limit=limit)
+async def _get_texts_by_collection_id(collection_id: str, language: str, skip: int, limit: int) -> List[TextDTO]:
+    texts = await get_texts_by_term(collection_id=collection_id, language=language, skip=skip, limit=limit)
     filter_text_base_on_group_id_type = await TextUtils.filter_text_base_on_group_id_type(texts=texts,
                                                                                           language=language)
     root_text = filter_text_base_on_group_id_type["root_text"]

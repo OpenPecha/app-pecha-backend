@@ -99,8 +99,8 @@ async def test_get_text_by_term_id():
         )
     ]
 
-    with patch('pecha_api.texts.texts_service.get_texts_by_term', new_callable=AsyncMock) as mock_get_texts_by_category, \
-            patch('pecha_api.terms.terms_service.get_term_by_id', new_callable=AsyncMock) as mock_get_term, \
+    with patch('pecha_api.texts.texts_service.get_texts_by_collection', new_callable=AsyncMock) as mock_get_texts_by_category, \
+            patch('pecha_api.terms.terms_service.get_collection_by_id', new_callable=AsyncMock) as mock_get_term, \
             patch('pecha_api.texts.texts_service.TextUtils.filter_text_base_on_group_id_type', new_callable=AsyncMock) as mock_filter_text_base_on_group_id_type:
         mock_filter_text_base_on_group_id_type.return_value = {"root_text": mock_texts_by_category[1], "commentary": [mock_texts_by_category[0]]}
         mock_get_texts_by_category.return_value = mock_texts_by_category

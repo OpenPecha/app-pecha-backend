@@ -1,7 +1,7 @@
 from typing import List, Optional, Dict, Union
 from uuid import UUID
 
-from pecha_api.terms.terms_response_models import TermsModel
+from pecha_api.collections.collections_response_models import CollectionModel
 
 from pydantic import BaseModel
 
@@ -133,7 +133,7 @@ class TextVersionResponse(BaseModel):
 
 
 class TextsCategoryResponse(BaseModel):
-    term: TermsModel
+    term: CollectionModel
     texts : List[TextDTO]
     total: int
     skip: int

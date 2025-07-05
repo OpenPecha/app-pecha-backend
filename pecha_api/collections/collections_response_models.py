@@ -3,17 +3,17 @@ from typing import Dict, List, Optional
 from pydantic import BaseModel
 
 
-class CreateTermRequest(BaseModel):
+class CreateCollectionRequest(BaseModel):
     slug: str
     titles: Dict[str, str]
     descriptions: Dict[str, str]
     parent_id: Optional[str]
 
-class UpdateTermRequest(BaseModel):
+class UpdateCollectionRequest(BaseModel):
     titles: Dict[str, str]
     descriptions: Dict[str, str]
 
-class TermsModel(BaseModel):
+class CollectionModel(BaseModel):
     id: str
     title: str
     description: str
@@ -21,9 +21,9 @@ class TermsModel(BaseModel):
     has_child: bool
 
 
-class TermsResponse(BaseModel):
-    parent: Optional[TermsModel]
-    terms: List[TermsModel]
+class CollectionsResponse(BaseModel):
+    parent: Optional[CollectionModel]
+    collections: List[CollectionModel]
     total: int
     skip: int
     limit: int

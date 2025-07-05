@@ -25,7 +25,7 @@ DEFAULTS = dict(
     MONGO_CONNECTION_STRING="mongodb://admin:pechaAdmin@localhost:27017/pecha?authSource=admin",
 
     MONGO_DATABASE_NAME="pecha",
-    REFRESH_TOKEN_EXPIRE_DAYS=30,
+    REFRESH_TOKEN_EXPIRE_DAYS=30,   
     SENDGRID_API_KEY="",
     SENDGRID_SENDER_EMAIL="",
     VERSION="0.0.1",
