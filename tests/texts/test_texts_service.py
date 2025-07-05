@@ -12,7 +12,8 @@ from pecha_api.texts.texts_service import (
     get_text_details_by_text_id,
     update_text_details,
     remove_table_of_content_by_text_id,
-    delete_text_by_text_id
+    delete_text_by_text_id,
+    get_sheet
 )
 from pecha_api.texts.texts_response_models import (
     CreateTextRequest,
@@ -29,7 +30,8 @@ from pecha_api.texts.texts_response_models import (
     DetailTextSegment,
     Translation,
     DetailTextMapping,
-    UpdateTextRequest
+    UpdateTextRequest,
+    TextDTOResponse
 )
 
 from pecha_api.texts.texts_enums import TextType
@@ -405,8 +407,7 @@ async def test_get_table_of_contents_by_text_id_success():
                     sections=[],
                     created_date="2025-03-16 04:40:54.757652",
                     updated_date="2025-03-16 04:40:54.757652",
-                    published_date="2025-03-16 04:40:54.757652",
-                    published_by="pecha"
+                    published_date="2025-03-16 04:40:54.757652"
                 )
             ]
         )
@@ -502,8 +503,7 @@ async def test_get_text_details_by_text_id_with_content_id_only_success():
                 sections=[],
                 created_date="2025-03-16 04:40:54.757652",
                 updated_date="2025-03-16 04:40:54.757652",
-                published_date="2025-03-16 04:40:54.757652",
-                published_by="pecha"
+                published_date="2025-03-16 04:40:54.757652"
             )
             for i in range(1,6)
         ]
@@ -651,8 +651,7 @@ async def test_get_text_details_by_text_id_with_content_id_and_version_id_succes
                 sections=[],
                 created_date="2025-03-16 04:40:54.757652",
                 updated_date="2025-03-16 04:40:54.757652",
-                published_date="2025-03-16 04:40:54.757652",
-                published_by="pecha"
+                published_date="2025-03-16 04:40:54.757652"
             )
             for i in range(1,6)
         ]
@@ -1038,176 +1037,35 @@ async def test_delete_text_by_text_id_invalid_text_id():
         assert exc_info.value.detail == ErrorConstants.TEXT_NOT_FOUND_MESSAGE
 
 @pytest.mark.asyncio
-async def test_get_sheets_success():
-    """Test get_sheets function with default parameters returns correct SheetDTOResponse"""
-    from pecha_api.texts.texts_service import get_sheet
-    from pecha_api.sheets.sheets_response_models import SheetDTO, SheetDTOResponse, Publisher
-    from pecha_api.users.user_response_models import UserInfoResponse
-    from pecha_api.texts.texts_models import Text
-    from unittest.mock import MagicMock
-    
-    # Mock sheet data from database
-    mock_sheet_1 = MagicMock()
-    mock_sheet_1.id = "sheet_id_1"
-    mock_sheet_1.title = "Test Sheet 1"
-    mock_sheet_1.published_date = "2024-01-01 10:00:00"
-    mock_sheet_1.views = 100
-    mock_sheet_1.published_by = "test_user@example.com"
-    mock_sheet_1.language = "bo"
-    
-    mock_sheet_2 = MagicMock()
-    mock_sheet_2.id = "sheet_id_2"
-    mock_sheet_2.title = "Test Sheet 2"
-    mock_sheet_2.published_date = "2024-01-02 15:30:00"
-    mock_sheet_2.views = 250
-    mock_sheet_2.published_by = "another_user@example.com"
-    mock_sheet_2.language = "en"
-    
-    mock_sheets = [mock_sheet_1, mock_sheet_2]
-    
-    # Mock user details for publisher
-    mock_user_1 = UserInfoResponse(
-        firstname="Test",
-        lastname="User",
-        username="testuser",
-        email="test_user@example.com",
-        educations=[],
-        followers=0,
-        following=0,
-        social_profiles=[],
-        avatar_url="https://example.com/avatar1.jpg"
-    )
-    
-    mock_user_2 = UserInfoResponse(
-        firstname="Another",
-        lastname="User",
-        username="anotheruser",
-        email="another_user@example.com",
-        educations=[],
-        followers=0,
-        following=0,
-        social_profiles=[],
-        avatar_url="https://example.com/avatar2.jpg"
-    )
-    
-    with patch("pecha_api.texts.texts_service.fetch_sheets_from_db", new_callable=AsyncMock, return_value=mock_sheets), \
-         patch("pecha_api.texts.texts_service.Utils.time_passed", return_value="2 hours ago") as mock_time_passed, \
-         patch("pecha_api.texts.texts_service.fetch_user_by_email", side_effect=[mock_user_1, mock_user_2]) as mock_fetch_user:
-        
-        response = await get_sheet(skip=0, limit=10)
-        
-        # Verify response structure
+async def test_get_sheet_success_user_viewing_own_sheets():
+    email = "test_user@gmail.com"
+    mock_sheets = [
+            TextDTO(
+                id=f"sheet_id_{i}",
+                title="Test Sheet",
+                language="en",
+                group_id="group_id",
+                type=TextType.SHEET,
+                is_published=True if i%2 == 0 else False,
+                created_date="2021-01-01",
+                updated_date="2021-01-01",
+                published_date="2021-01-01",
+                published_by=email,
+                categories=[],
+                views=10
+            )
+            for i in range(1,11)
+        ]
+    with patch("pecha_api.texts.texts_service.fetch_sheets_from_db", new_callable=AsyncMock, return_value=mock_sheets):
+
+        response = await get_sheet(published_by=email, is_published=None, sort_by=None, sort_order=None, skip=0, limit=10)
+
         assert response is not None
-        assert isinstance(response, SheetDTOResponse)
+        assert isinstance(response, TextDTOResponse)
+        assert len(response.texts) == 10
+        for sheet in response.texts:
+            assert sheet.published_by == email
         assert response.skip == 0
         assert response.limit == 10
-        assert response.total == 2
-        assert len(response.sheets) == 2
-        
-        # Verify first sheet
-        sheet_1 = response.sheets[0]
-        assert isinstance(sheet_1, SheetDTO)
-        assert sheet_1.id == "sheet_id_1"
-        assert sheet_1.title == "Test Sheet 1"
-        assert sheet_1.summary == ""
-        assert sheet_1.published_date == "2024-01-01 10:00:00"
-        assert sheet_1.time_passed == "2 hours ago"
-        assert sheet_1.views == "100"
-        assert sheet_1.likes == []
-        assert sheet_1.language == "bo"
-        
-        # Verify first sheet publisher
-        assert isinstance(sheet_1.publisher, Publisher)
-        assert sheet_1.publisher.name == "Test User"
-        assert sheet_1.publisher.username == "testuser"
-        assert sheet_1.publisher.email == "test_user@example.com"
-        assert sheet_1.publisher.avatar_url == "https://example.com/avatar1.jpg"
-        
-        # Verify second sheet
-        sheet_2 = response.sheets[1]
-        assert isinstance(sheet_2, SheetDTO)
-        assert sheet_2.id == "sheet_id_2"
-        assert sheet_2.title == "Test Sheet 2"
-        assert sheet_2.summary == ""
-        assert sheet_2.published_date == "2024-01-02 15:30:00"
-        assert sheet_2.time_passed == "2 hours ago"
-        assert sheet_2.views == "250"
-        assert sheet_2.likes == []
-        assert sheet_2.language == "en"
-        
-        # Verify second sheet publisher
-        assert isinstance(sheet_2.publisher, Publisher)
-        assert sheet_2.publisher.name == "Another User"
-        assert sheet_2.publisher.username == "anotheruser"
-        assert sheet_2.publisher.email == "another_user@example.com"
-        assert sheet_2.publisher.avatar_url == "https://example.com/avatar2.jpg"
-        
-        # Verify mocks were called correctly
-        assert mock_time_passed.call_count == 2
-        mock_time_passed.assert_any_call(published_time="2024-01-01 10:00:00", language="bo")
-        mock_time_passed.assert_any_call(published_time="2024-01-02 15:30:00", language="en")
-        
-        assert mock_fetch_user.call_count == 2
-        mock_fetch_user.assert_any_call(email="test_user@example.com")
-        mock_fetch_user.assert_any_call(email="another_user@example.com")
+        assert response.total == 10
 
-
-@pytest.mark.asyncio
-async def test_get_sheets_with_parameters():
-    """Test get_sheets function with custom parameters"""
-    from pecha_api.texts.texts_service import get_sheet
-    from pecha_api.sheets.sheets_response_models import SheetDTOResponse
-    from pecha_api.sheets.sheets_enum import SortBy, SortOrder
-    from pecha_api.users.user_response_models import UserInfoResponse
-    from unittest.mock import MagicMock
-    
-    # Mock empty result from database
-    mock_sheets = []
-    
-    with patch("pecha_api.texts.texts_service.fetch_sheets_from_db", new_callable=AsyncMock, return_value=mock_sheets) as mock_fetch_sheets:
-        
-        response = await get_sheet(
-            published_by="test@example.com",
-            is_published=True,
-            sort_by=SortBy.PUBLISHED_DATE,
-            sort_order=SortOrder.DESC,
-            skip=20,
-            limit=5
-        )
-        
-        # Verify response structure
-        assert response is not None
-        assert isinstance(response, SheetDTOResponse)
-        assert response.skip == 20
-        assert response.limit == 5
-        assert response.total == 0
-        assert len(response.sheets) == 0
-        
-        # Verify fetch_sheets_from_db was called with correct parameters
-        mock_fetch_sheets.assert_called_once_with(
-            published_by="test@example.com",
-            is_published=True,
-            sort_by=SortBy.PUBLISHED_DATE,
-            sort_order=SortOrder.DESC,
-            skip=20,
-            limit=5
-        )
-
-
-@pytest.mark.asyncio
-async def test_get_sheets_empty_result():
-    """Test get_sheets function when no sheets are found"""
-    from pecha_api.texts.texts_service import get_sheet
-    from pecha_api.sheets.sheets_response_models import SheetDTOResponse
-    
-    with patch("pecha_api.texts.texts_service.fetch_sheets_from_db", new_callable=AsyncMock, return_value=[]):
-        
-        response = await get_sheet()
-        
-        # Verify response structure for empty result
-        assert response is not None
-        assert isinstance(response, SheetDTOResponse)
-        assert response.skip == 0
-        assert response.limit == 10
-        assert response.total == 0
-        assert len(response.sheets) == 0

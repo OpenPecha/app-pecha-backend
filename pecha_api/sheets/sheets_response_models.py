@@ -54,7 +54,7 @@ class SheetDTO(BaseModel):
     summary: str
     published_date: str
     time_passed: str
-    views: str
+    views: int
     likes: List[str]
     publisher: Publisher
     language: Optional[str] = None
