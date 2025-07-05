@@ -141,7 +141,6 @@ async def get_sheet_by_id(sheet_id: str, skip: int, limit: int) -> SheetDetailDT
         sheet_details=sheet_details,
         user_details=user_details,
         sheet_sections=sections,
-        views=sheet_details.views,
         skip=skip,
         limit=limit
     )
