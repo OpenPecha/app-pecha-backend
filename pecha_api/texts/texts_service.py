@@ -86,7 +86,7 @@ async def get_text_by_text_id_or_term(
     else:
         return await TextUtils.get_text_detail_by_id(text_id=text_id)
 
-async def get_sheet(published_by: Optional[str] = None, is_published: Optional[bool] = None, sort_by: Optional[SortBy] = None, sort_order: Optional[SortOrder] = None, skip: int = 0, limit: int = 10) -> TextDTOResponse:
+async def get_sheet(published_by: Optional[str] = None, is_published: Optional[bool] = None, sort_by: Optional[SortBy] = None, sort_order: Optional[SortOrder] = None, skip: int = 0, limit: int = 10):
     
     sheets = await fetch_sheets_from_db(
         published_by=published_by,
@@ -96,30 +96,7 @@ async def get_sheet(published_by: Optional[str] = None, is_published: Optional[b
         skip=skip,
         limit=limit
     )
-    
-    texts = [
-        TextDTO(
-            id=str(sheet.id),
-            title=sheet.title,
-            language=sheet.language,
-            group_id=sheet.group_id,
-            type=sheet.type,
-            is_published=sheet.is_published,
-            created_date=sheet.created_date,
-            updated_date=sheet.updated_date,
-            published_date=sheet.published_date,
-            published_by=sheet.published_by,
-            categories=sheet.categories,
-            views=sheet.views
-        )
-        for sheet in sheets
-    ]
-    return TextDTOResponse(
-        texts = texts,
-        skip=skip,
-        limit=limit,
-        total=len(sheets)
-    )
+    return sheets
 
 async def get_table_of_contents_by_text_id(text_id: str) -> TableOfContentResponse:
     is_valid_text: bool = await TextUtils.validate_text_exists(text_id=text_id)

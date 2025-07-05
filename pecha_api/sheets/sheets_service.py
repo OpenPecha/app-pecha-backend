@@ -103,7 +103,7 @@ async def fetch_sheets(
     
     if email is None:
         # Case 1: Community page - show all published sheets filtered by language
-        sheets: TextDTOResponse = await get_sheet(
+        sheets = await get_sheet(
             is_published=True,
             sort_by=sort_by,
             sort_order=sort_order,
@@ -111,7 +111,7 @@ async def fetch_sheets(
             limit=limit
         )
     else:
-        sheets: TextDTOResponse = await _fetch_user_sheets_(
+        sheets = await _fetch_user_sheets_(
             token = token,
             email = email,
             sort_by = sort_by,

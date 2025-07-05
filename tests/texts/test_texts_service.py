@@ -1040,20 +1040,20 @@ async def test_delete_text_by_text_id_invalid_text_id():
 async def test_get_sheet_success_user_viewing_own_sheets():
     email = "test_user@gmail.com"
     mock_sheets = [
-            TextDTO(
-                id=f"sheet_id_{i}",
-                title="Test Sheet",
-                language="en",
-                group_id="group_id",
-                type=TextType.SHEET,
-                is_published=True if i%2 == 0 else False,
-                created_date="2021-01-01",
-                updated_date="2021-01-01",
-                published_date="2021-01-01",
-                published_by=email,
-                categories=[],
-                views=10
-            )
+            type("Text", (), {
+                "id": f"sheet_id_{i}",
+                "title": "Test Sheet",
+                "language": "en",
+                "group_id": "group_id",
+                "type": "sheet",
+                "is_published": True if i % 2 == 0 else False,
+                "created_date": "2021-01-01",
+                "updated_date": "2021-01-01",
+                "published_date": "2021-01-01",
+                "published_by": email,
+                "categories": [],
+                "views": 10
+            })()
             for i in range(1,11)
         ]
     with patch("pecha_api.texts.texts_service.fetch_sheets_from_db", new_callable=AsyncMock, return_value=mock_sheets):
@@ -1061,11 +1061,7 @@ async def test_get_sheet_success_user_viewing_own_sheets():
         response = await get_sheet(published_by=email, is_published=None, sort_by=None, sort_order=None, skip=0, limit=10)
 
         assert response is not None
-        assert isinstance(response, TextDTOResponse)
-        assert len(response.texts) == 10
-        for sheet in response.texts:
+        assert len(response) == 10
+        for sheet in response:
             assert sheet.published_by == email
-        assert response.skip == 0
-        assert response.limit == 10
-        assert response.total == 10
 
