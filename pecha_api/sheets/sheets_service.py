@@ -328,7 +328,7 @@ async def _fetch_user_sheets_(token: str, email: str, sort_by: SortBy, sort_orde
     )
     return sheets
 
-def _generate_sheet_dto_response_(sheets: TextDTOResponse) -> SheetDTOResponse:
+def _generate_sheet_dto_response_(sheets) -> SheetDTOResponse:
     sheets_dto = [
         SheetDTO(
             id = sheet.id,
