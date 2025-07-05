@@ -11,6 +11,7 @@ from datetime import datetime, timezone, timedelta
 from urllib.parse import urlparse
 from .config import get_int
 from pecha_api.error_contants import ErrorConstants
+from .config import get
 
 from .constants import Constants
 
@@ -68,6 +69,8 @@ class Utils:
 
     @staticmethod
     def get_word_by_language(word: str, language: str) -> str:
+        if language is None:
+            language = get("DEFAULT_LANGUAGE")
         return Constants.TIME_PASSED_NOW[word][language]
 
     @staticmethod
@@ -89,6 +92,8 @@ class Utils:
 
     @staticmethod
     def get_number_by_language(value: int, language: str) -> str:
+        if not language:
+            language = "en"  # default language
         return "".join(
             [Constants.LANGUAGE_NUMBER[language][char] if "0" <= char <= "9" else char for char in str(value)])
 
