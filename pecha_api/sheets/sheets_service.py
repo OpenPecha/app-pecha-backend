@@ -141,11 +141,47 @@ async def get_sheet_by_id(sheet_id: str, skip: int, limit: int) -> SheetDetailDT
         sheet_details=sheet_details,
         user_details=user_details,
         sheet_sections=sections,
+        views=sheet_details.views,
         skip=skip,
         limit=limit
     )
     return sheet_dto
 
+async def _generate_sheet_detail_dto_(
+    sheet_details: TextDTO,
+    user_details: UserInfoResponse,
+    sheet_sections: List[Section],
+    views: int,
+    skip: int,
+    limit: int
+) -> SheetDetailDTO:
+    publisher = Publisher(
+        name=f"{user_details.firstname} {user_details.lastname}",
+        username=user_details.username,
+        email=user_details.email,
+        avatar_url=user_details.avatar_url
+    )
+    segment_ids = _get_all_segment_ids_in_table_of_content_(sheet_sections=sheet_sections)
+    segments_dict: Dict[str, SegmentDTO] = await get_segments_details_by_ids(segment_ids=segment_ids)
+
+    sheet_section: Optional[SheetSection] = None
+    if sheet_sections:
+        sheet_section = await _generate_sheet_section_(
+            segments=sheet_sections[0].segments,
+            segments_dict=segments_dict
+        )
+
+    return SheetDetailDTO(
+        id=sheet_details.id,
+        sheet_title=sheet_details.title,
+        created_date=sheet_details.created_date,
+        publisher=publisher,
+        content=sheet_section,
+        views=views,
+        skip=skip,
+        limit=limit,
+        total=len(sheet_sections),
+    )
 
 
 async def create_new_sheet(create_sheet_request: CreateSheetRequest, token: str) -> SheetIdResponse:
