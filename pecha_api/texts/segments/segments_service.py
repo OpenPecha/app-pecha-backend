@@ -36,6 +36,19 @@ from .segments_response_models import (
     SegmentRootMappingResponse
 )
 
+from pecha_api.cache.cache_service import (
+    get_segment_details_by_id_cache,
+    set_segment_details_by_id_cache,
+    get_segment_info_by_id_cache,
+    set_segment_info_by_id_cache,
+    get_segment_root_mapping_by_id_cache,
+    set_segment_root_mapping_by_id_cache,
+    get_segment_translations_by_id_cache,
+    set_segment_translations_by_id_cache,
+    get_segment_commentaries_by_id_cache,
+    set_segment_commentaries_by_id_cache
+)
+
 from ...users.users_service import validate_user_exists
 
 async def get_segments_details_by_ids(segment_ids: List[str]) -> Dict[str, SegmentDTO]:
@@ -43,6 +56,12 @@ async def get_segments_details_by_ids(segment_ids: List[str]) -> Dict[str, Segme
     return segments
 
 async def get_segment_details_by_id(segment_id: str, text_details: bool = False) -> SegmentDTO:
+    cache_data = get_segment_details_by_id_cache(
+        segment_id = segment_id,
+        text_details = text_details
+    )
+    if cache_data is not None:
+        return cache_data
     segment = await get_segment_by_id(segment_id=segment_id)
     if not segment:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=ErrorConstants.SEGMENT_NOT_FOUND_MESSAGE)
@@ -52,7 +71,8 @@ async def get_segment_details_by_id(segment_id: str, text_details: bool = False)
     text = None
     if text_details:
         text = await TextUtils.get_text_details_by_id(text_id=segment.text_id)
-    return SegmentDTO(
+    
+    response = SegmentDTO(
         id=str(segment.id),
         text_id=segment.text_id,
         content=segment.content,
@@ -60,6 +80,12 @@ async def get_segment_details_by_id(segment_id: str, text_details: bool = False)
         type=segment.type,
         text=text
     )
+    set_segment_details_by_id_cache(
+        segment_id = segment_id,
+        text_details = text_details,
+        data = response
+    )
+    return response
 
 async def create_new_segment(create_segment_request: CreateSegmentRequest, token: str) -> SegmentResponse:
     is_valid_user = validate_user_exists(token=token)
@@ -84,19 +110,27 @@ async def get_translations_by_segment_id(segment_id: str) -> SegmentTranslations
     """
     Get translations for a given segment ID.
     """
+    cache_data = get_segment_translations_by_id_cache(segment_id = segment_id)
+    if cache_data is not None:
+        return cache_data
     is_valid_segment = await SegmentUtils.validate_segment_exists(segment_id=segment_id)
     if not is_valid_segment:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=ErrorConstants.SEGMENT_NOT_FOUND_MESSAGE)
     parent_segment = await get_segment_by_id(segment_id=segment_id)
     mapped_segments = await get_related_mapped_segments(parent_segment_id=segment_id)
     translations = await SegmentUtils.filter_segment_mapping_by_type_or_text_id(segments=mapped_segments, type="version")
-    return SegmentTranslationsResponse(
+    response = SegmentTranslationsResponse(
         parent_segment=ParentSegment(
             segment_id=str(parent_segment.id),
             content=parent_segment.content
         ),
         translations=translations
     )
+    set_segment_translations_by_id_cache(
+        segment_id = segment_id,
+        data = response
+    )
+    return response
 
 async def get_commentaries_by_segment_id(
         segment_id: str
@@ -104,28 +138,39 @@ async def get_commentaries_by_segment_id(
     """"
        Get commentaries for a given segment ID.
     """
+    cache_data = get_segment_commentaries_by_id_cache(segment_id = segment_id)
+    if cache_data is not None:
+        return cache_data
     is_valid_segment = await SegmentUtils.validate_segment_exists(segment_id=segment_id)
     if not is_valid_segment:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=ErrorConstants.SEGMENT_NOT_FOUND_MESSAGE)
     parent_segment = await get_segment_by_id(segment_id=segment_id)
     mapped_segments = await get_related_mapped_segments(parent_segment_id=segment_id)
     commentaries = await SegmentUtils.filter_segment_mapping_by_type_or_text_id(segments=mapped_segments, type="commentary")
-    return SegmentCommentariesResponse(
+    response = SegmentCommentariesResponse(
         parent_segment=ParentSegment(
             segment_id=segment_id,
             content=parent_segment.content
         ),
         commentaries=commentaries
     )
+    set_segment_commentaries_by_id_cache(
+        segment_id = segment_id,
+        data = response
+    )
+    return response
 
 async def get_info_by_segment_id(segment_id: str) -> SegmentInfoResponse:
+    cache_data = get_segment_info_by_id_cache(segment_id = segment_id)
+    if cache_data is not None:
+        return cache_data
     is_valid_segment = await SegmentUtils.validate_segment_exists(segment_id=segment_id)
     if not is_valid_segment:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=ErrorConstants.SEGMENT_NOT_FOUND_MESSAGE)
     mapped_segments = await get_related_mapped_segments(parent_segment_id=segment_id)
     counts = await SegmentUtils.get_count_of_each_commentary_and_version(mapped_segments)
     segment_root_mapping_count = await SegmentUtils.get_root_mapping_count(segment_id=segment_id)
-    return SegmentInfoResponse(
+    response = SegmentInfoResponse(
         segment_info= SegmentInfo(
             segment_id=segment_id,
             translations=counts["version"],
@@ -138,20 +183,33 @@ async def get_info_by_segment_id(segment_id: str) -> SegmentInfoResponse:
             )
         )
     ) 
+    set_segment_info_by_id_cache(
+        segment_id = segment_id,
+        data = response
+    )
+    return response
 
 async def get_root_text_mapping_by_segment_id(segment_id: str) -> SegmentRootMappingResponse:
+    cache_data = get_segment_root_mapping_by_id_cache(segment_id = segment_id)
+    if cache_data is not None:
+        return cache_data
     is_valid_segment = await SegmentUtils.validate_segment_exists(segment_id=segment_id)
     if not is_valid_segment:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=ErrorConstants.SEGMENT_NOT_FOUND_MESSAGE)
     segment = await get_segment_by_id(segment_id=segment_id)
     segment_root_mapping = await SegmentUtils.get_segment_root_mapping_details(segment=segment)
-    return SegmentRootMappingResponse(
+    response = SegmentRootMappingResponse(
         parent_segment=ParentSegment(
             segment_id=segment_id,
             content=segment.content
         ),
         segment_root_mapping=segment_root_mapping
     )
+    set_segment_root_mapping_by_id_cache(
+        segment_id = segment_id,
+        data = response
+    )
+    return response
     
 async def fetch_segments_by_text_id(text_id: str) -> List[SegmentDTO]:
     segments = await get_segments_by_text_id(text_id=text_id)
