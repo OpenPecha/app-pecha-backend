@@ -1,20 +1,23 @@
-from typing import Optional
-import io
+from typing import Optional, List, Union
+import hashlib
 import logging
-from PIL import Image
 from beanie import PydanticObjectId
-from fastapi import HTTPException, UploadFile
+from fastapi import HTTPException
 from bson.errors import InvalidId
 from starlette import status
 from datetime import datetime, timezone, timedelta
 from urllib.parse import urlparse
-from .config import get_int
-from pecha_api.error_contants import ErrorConstants
 
 from .constants import Constants
 
 
 class Utils:
+
+    @staticmethod
+    def generate_hash_key(payload: List[Union[str, int]]) -> str:
+        params_str = "".join(str(param) for param in payload)
+        hash_value = hashlib.sha256(params_str.encode()).hexdigest()
+        return hash_value
 
     @staticmethod
     def get_utc_date_time() -> str:

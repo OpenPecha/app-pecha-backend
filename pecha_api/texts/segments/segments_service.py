@@ -36,7 +36,7 @@ from .segments_response_models import (
     SegmentRootMappingResponse
 )
 
-from pecha_api.cache.cache_service import (
+from .segments_cache_service import (
     get_segment_details_by_id_cache,
     set_segment_details_by_id_cache,
     get_segment_info_by_id_cache,

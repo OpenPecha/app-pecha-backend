@@ -31,7 +31,7 @@ from .texts_response_models import (
 from .groups.groups_service import (
     validate_group_exists
 )
-from pecha_api.cache.cache_service import (
+from pecha_api.texts.texts_cache_service import (
     set_text_details_cache,
     get_text_details_cache,
     get_text_by_text_id_or_term_cache,
