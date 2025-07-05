@@ -22,6 +22,11 @@ from pecha_api.users.users_service import (
     validate_user_exists
 )
 
+from .groups_cache_service import (
+    get_group_by_id_cache,
+    set_group_by_id_cache
+)
+
 async def validate_group_exists(group_id: str) -> bool:
     is_exists = False
     try:
@@ -39,6 +44,9 @@ async def get_groups_by_list_of_ids(group_ids: List[str]) -> Dict[str, GroupDTO]
     return groups
 
 async def get_group_details(group_id: str) -> GroupDTO | None:
+    cache_data = get_group_by_id_cache(group_id=group_id)
+    if cache_data:
+        return cache_data
     try:
         uuid_group_id = UUID(group_id)
         group_details = await get_group_by_id(group_id=uuid_group_id)
@@ -47,10 +55,12 @@ async def get_group_details(group_id: str) -> GroupDTO | None:
                 status_code=status.HTTP_404_NOT_FOUND,
                 detail=ErrorConstants.GROUP_NOT_FOUND_MESSAGE
             )
-        return GroupDTO(
+        response = GroupDTO(
             id=str(group_details.id),
             type=group_details.type
         )
+        set_group_by_id_cache(group_id=group_id, data=response)
+        return response
     except ValueError:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
