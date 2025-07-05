@@ -35,6 +35,12 @@ class TextDTO(BaseModel):
     categories: Optional[List[str]] = None
     views: Optional[int] = None
 
+class TextDTOResponse(BaseModel):
+    texts: List[TextDTO]
+    skip: int
+    limit: int
+    total: int
+
 # Text TOC Response Models
 class Translation(BaseModel):
     text_id: str

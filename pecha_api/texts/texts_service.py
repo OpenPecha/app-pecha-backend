@@ -26,7 +26,8 @@ from .texts_response_models import (
     CreateTextRequest,
     TextDetailsRequest,
     DetailTextMapping,
-    UpdateTextRequest
+    UpdateTextRequest,
+    TextDTOResponse
 )
 from .groups.groups_service import (
     validate_group_exists
@@ -85,7 +86,7 @@ async def get_text_by_text_id_or_term(
     else:
         return await TextUtils.get_text_detail_by_id(text_id=text_id)
 
-async def get_sheets(published_by: Optional[str] = None, is_published: Optional[bool] = None, sort_by: Optional[SortBy] = None, sort_order: Optional[SortOrder] = None, skip: int = 0, limit: int = 10) -> SheetDTOResponse:
+async def get_sheet(published_by: Optional[str] = None, is_published: Optional[bool] = None, sort_by: Optional[SortBy] = None, sort_order: Optional[SortOrder] = None, skip: int = 0, limit: int = 10) -> TextDTOResponse:
     
     sheets = await fetch_sheets_from_db(
         published_by=published_by,
@@ -96,22 +97,25 @@ async def get_sheets(published_by: Optional[str] = None, is_published: Optional[
         limit=limit
     )
     
-    sheets = [
-        SheetDTO(
+    texts = [
+        TextDTO(
             id=str(sheet.id),
             title=sheet.title,
-            summary="",
+            language=sheet.language,
+            group_id=sheet.group_id,
+            type=sheet.type,
+            is_published=sheet.is_published,
+            created_date=sheet.created_date,
+            updated_date=sheet.updated_date,
             published_date=sheet.published_date,
-            time_passed=Utils.time_passed(published_time=sheet.published_date, language=sheet.language),
-            views=str(sheet.views),
-            likes=[],
-            publisher=_create_publisher_object_(published_by=sheet.published_by),
-            language=sheet.language
+            published_by=sheet.published_by,
+            categories=sheet.categories,
+            views=sheet.views
         )
         for sheet in sheets
     ]
-    return SheetDTOResponse(
-        sheets= sheets,
+    return TextDTOResponse(
+        texts = texts,
         skip=skip,
         limit=limit,
         total=len(sheets)
@@ -407,13 +411,3 @@ async def delete_text_by_text_id(text_id: str):
     await delete_text_by_id(text_id=text_id)
 
 
-def _create_publisher_object_(published_by: str) -> Publisher:
-
-    user_profile: UserInfoResponse = fetch_user_by_email(email=published_by)
-    
-    return Publisher(
-        name=f"{user_profile.firstname} {user_profile.lastname}".strip() or user_profile.username,
-        username=user_profile.username,
-        email=user_profile.email,
-        avatar_url=user_profile.avatar_url
-    )

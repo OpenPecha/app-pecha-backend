@@ -1040,7 +1040,7 @@ async def test_delete_text_by_text_id_invalid_text_id():
 @pytest.mark.asyncio
 async def test_get_sheets_success():
     """Test get_sheets function with default parameters returns correct SheetDTOResponse"""
-    from pecha_api.texts.texts_service import get_sheets
+    from pecha_api.texts.texts_service import get_sheet
     from pecha_api.sheets.sheets_response_models import SheetDTO, SheetDTOResponse, Publisher
     from pecha_api.users.user_response_models import UserInfoResponse
     from pecha_api.texts.texts_models import Text
@@ -1094,7 +1094,7 @@ async def test_get_sheets_success():
          patch("pecha_api.texts.texts_service.Utils.time_passed", return_value="2 hours ago") as mock_time_passed, \
          patch("pecha_api.texts.texts_service.fetch_user_by_email", side_effect=[mock_user_1, mock_user_2]) as mock_fetch_user:
         
-        response = await get_sheets(skip=0, limit=10)
+        response = await get_sheet(skip=0, limit=10)
         
         # Verify response structure
         assert response is not None
@@ -1155,7 +1155,7 @@ async def test_get_sheets_success():
 @pytest.mark.asyncio
 async def test_get_sheets_with_parameters():
     """Test get_sheets function with custom parameters"""
-    from pecha_api.texts.texts_service import get_sheets
+    from pecha_api.texts.texts_service import get_sheet
     from pecha_api.sheets.sheets_response_models import SheetDTOResponse
     from pecha_api.sheets.sheets_enum import SortBy, SortOrder
     from pecha_api.users.user_response_models import UserInfoResponse
@@ -1166,7 +1166,7 @@ async def test_get_sheets_with_parameters():
     
     with patch("pecha_api.texts.texts_service.fetch_sheets_from_db", new_callable=AsyncMock, return_value=mock_sheets) as mock_fetch_sheets:
         
-        response = await get_sheets(
+        response = await get_sheet(
             published_by="test@example.com",
             is_published=True,
             sort_by=SortBy.PUBLISHED_DATE,
@@ -1197,12 +1197,12 @@ async def test_get_sheets_with_parameters():
 @pytest.mark.asyncio
 async def test_get_sheets_empty_result():
     """Test get_sheets function when no sheets are found"""
-    from pecha_api.texts.texts_service import get_sheets
+    from pecha_api.texts.texts_service import get_sheet
     from pecha_api.sheets.sheets_response_models import SheetDTOResponse
     
     with patch("pecha_api.texts.texts_service.fetch_sheets_from_db", new_callable=AsyncMock, return_value=[]):
         
-        response = await get_sheets()
+        response = await get_sheet()
         
         # Verify response structure for empty result
         assert response is not None

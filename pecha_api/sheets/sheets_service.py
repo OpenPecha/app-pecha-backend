@@ -39,7 +39,8 @@ from pecha_api.texts.groups.groups_service import (
 
 from pecha_api.texts.texts_response_models import (
     CreateTextRequest,
-    UpdateTextRequest
+    UpdateTextRequest,
+    TextDTOResponse
 )
 from pecha_api.texts.texts_service import (
     create_new_text,
@@ -48,7 +49,7 @@ from pecha_api.texts.texts_service import (
     update_text_details,
     get_table_of_contents_by_text_id,
     delete_text_by_text_id,
-    get_sheets
+    get_sheet
 )
 
 from pecha_api.users.users_service import (
@@ -83,7 +84,8 @@ from pecha_api.sheets.sheets_response_models import (
     Publisher,
     SheetSection,
     SheetSegment,
-    SheetDTOResponse
+    SheetDTOResponse,
+    SheetDTO
 )
 
 DEFAULT_SHEET_SECTION_NUMBER = 1
@@ -101,7 +103,7 @@ async def fetch_sheets(
     
     if email is None:
         # Case 1: Community page - show all published sheets filtered by language
-        sheets: SheetDTOResponse = await get_sheets(
+        sheets: TextDTOResponse = await get_sheet(
             is_published=True,
             sort_by=sort_by,
             sort_order=sort_order,
@@ -109,21 +111,19 @@ async def fetch_sheets(
             limit=limit
         )
     else:
-        if token == "None":
-            _is_sheet_published_ = True
-        else:
-            current_user: Users = validate_and_extract_user_details(token=token)
-            _is_sheet_published_ = None if current_user.email == email else True
-        sheets: SheetDTOResponse = await get_sheets(
-            published_by=email,
-            is_published=_is_sheet_published_,
-            sort_by=sort_by,
-            sort_order=sort_order,
-            skip=skip,
-            limit=limit
+        sheets: TextDTOResponse = await _fetch_user_sheets_(
+            token = token,
+            email = email,
+            sort_by = sort_by,
+            sort_order = sort_order,
+            skip = skip,
+            limit = limit
         )
     
+    sheets: SheetDTOResponse = _generate_sheet_dto_response_(sheets = sheets)
+    
     return sheets
+
 
 async def get_sheet_by_id(sheet_id: str, skip: int, limit: int) -> SheetDetailDTO:
     sheet_details: TextDTO = await TextUtils.get_text_details_by_id(text_id=sheet_id)
@@ -146,39 +146,6 @@ async def get_sheet_by_id(sheet_id: str, skip: int, limit: int) -> SheetDetailDT
     )
     return sheet_dto
 
-async def _generate_sheet_detail_dto_(
-    sheet_details: TextDTO,
-    user_details: UserInfoResponse,
-    sheet_sections: List[Section],
-    skip: int,
-    limit: int
-) -> SheetDetailDTO:
-    publisher = Publisher(
-        name=f"{user_details.firstname} {user_details.lastname}",
-        username=user_details.username,
-        email=user_details.email,
-        avatar_url=user_details.avatar_url
-    )
-    segment_ids = _get_all_segment_ids_in_table_of_content_(sheet_sections=sheet_sections)
-    segments_dict: Dict[str, SegmentDTO] = await get_segments_details_by_ids(segment_ids=segment_ids)
-
-    sheet_section: Optional[SheetSection] = None
-    if sheet_sections:
-        sheet_section = await _generate_sheet_section_(
-            segments=sheet_sections[0].segments,
-            segments_dict=segments_dict
-        )
-
-    return SheetDetailDTO(
-        id=sheet_details.id,
-        sheet_title=sheet_details.title,
-        created_date=sheet_details.created_date,
-        publisher=publisher,
-        content=sheet_section,
-        skip=skip,
-        limit=limit,
-        total=len(sheet_sections),
-    )
 
 
 async def create_new_sheet(create_sheet_request: CreateSheetRequest, token: str) -> SheetIdResponse:
@@ -276,6 +243,88 @@ def upload_sheet_image_request(sheet_id: Optional[str], file: UploadFile) -> She
     return SheetImageResponse(url=presigned_url)
 
 
+async def _generate_sheet_detail_dto_(
+    sheet_details: TextDTO,
+    user_details: UserInfoResponse,
+    sheet_sections: List[Section],
+    skip: int,
+    limit: int
+) -> SheetDetailDTO:
+    publisher = Publisher(
+        name=f"{user_details.firstname} {user_details.lastname}",
+        username=user_details.username,
+        email=user_details.email,
+        avatar_url=user_details.avatar_url
+    )
+    segment_ids = _get_all_segment_ids_in_table_of_content_(sheet_sections=sheet_sections)
+    segments_dict: Dict[str, SegmentDTO] = await get_segments_details_by_ids(segment_ids=segment_ids)
+
+    sheet_section: Optional[SheetSection] = None
+    if sheet_sections:
+        sheet_section = await _generate_sheet_section_(
+            segments=sheet_sections[0].segments,
+            segments_dict=segments_dict
+        )
+
+    return SheetDetailDTO(
+        id=sheet_details.id,
+        sheet_title=sheet_details.title,
+        created_date=sheet_details.created_date,
+        publisher=publisher,
+        content=sheet_section,
+        skip=skip,
+        limit=limit,
+        total=len(sheet_sections),
+    )
+
+async def _fetch_user_sheets_(token: str, email: str, sort_by: SortBy, sort_order: SortOrder, skip: int, limit: int) -> TextDTOResponse:
+    if token == "None":
+            _is_sheet_published_ = True
+    else:
+        current_user: Users = validate_and_extract_user_details(token=token)
+        _is_sheet_published_ = None if current_user.email == email else True
+    sheets: SheetDTOResponse = await get_sheet(
+        published_by=email,
+        is_published=_is_sheet_published_,
+        sort_by=sort_by,
+        sort_order=sort_order,
+        skip=skip,
+        limit=limit
+    )
+    return sheets
+
+def _generate_sheet_dto_response_(sheets: TextDTOResponse) -> SheetDTOResponse:
+    sheets_dto = [
+        SheetDTO(
+            id = sheet.id,
+            title = sheet.title,
+            summary = sheet.summary,
+            published_date = sheet.published_date,
+            time_passed = Utils.time_passed(published_time=sheet.published_date, language=sheet.language),
+            views = sheet.views,
+            likes = sheet.likes,
+            publisher = _create_publisher_object_(published_by=sheet.published_by),
+            language = sheet.language
+        )
+        for sheet in sheets.texts
+    ]
+    return SheetDTOResponse(
+        sheets = sheets_dto,
+        skip = sheets.skip,
+        limit = sheets.limit,
+        total = sheets.total
+    )
+
+def _create_publisher_object_(published_by: str) -> Publisher:
+
+    user_profile: UserInfoResponse = fetch_user_by_email(email=published_by)
+    
+    return Publisher(
+        name=f"{user_profile.firstname} {user_profile.lastname}".strip() or user_profile.username,
+        username=user_profile.username,
+        email=user_profile.email,
+        avatar_url=user_profile.avatar_url
+    )
 
 async def _generate_sheet_section_(segments: List[TextSegment], segments_dict: Dict[str, SegmentDTO]) -> SheetSection:
     sheet_segments = []
