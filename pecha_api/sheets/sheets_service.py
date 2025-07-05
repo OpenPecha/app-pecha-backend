@@ -120,7 +120,7 @@ async def fetch_sheets(
             limit = limit
         )
     
-    sheets: SheetDTOResponse = _generate_sheet_dto_response_(sheets = sheets)
+    sheets: SheetDTOResponse = _generate_sheet_dto_response_(sheets = sheets, skip = skip, limit = limit)
     
     return sheets
 
@@ -312,13 +312,13 @@ async def _generate_sheet_detail_dto_(
         total=len(sheet_sections),
     )
 
-async def _fetch_user_sheets_(token: str, email: str, sort_by: SortBy, sort_order: SortOrder, skip: int, limit: int) -> TextDTOResponse:
+async def _fetch_user_sheets_(token: str, email: str, sort_by: SortBy, sort_order: SortOrder, skip: int, limit: int):
     if token == "None":
             _is_sheet_published_ = True
     else:
         current_user: Users = validate_and_extract_user_details(token=token)
         _is_sheet_published_ = None if current_user.email == email else True
-    sheets: SheetDTOResponse = await get_sheet(
+    sheets = await get_sheet(
         published_by=email,
         is_published=_is_sheet_published_,
         sort_by=sort_by,
@@ -328,26 +328,26 @@ async def _fetch_user_sheets_(token: str, email: str, sort_by: SortBy, sort_orde
     )
     return sheets
 
-def _generate_sheet_dto_response_(sheets) -> SheetDTOResponse:
+def _generate_sheet_dto_response_(sheets, skip: int, limit: int) -> SheetDTOResponse:
     sheets_dto = [
         SheetDTO(
-            id = sheet.id,
+            id = str(sheet.id),
             title = sheet.title,
-            summary = sheet.summary,
+            summary = "summary",
             published_date = sheet.published_date,
             time_passed = Utils.time_passed(published_time=sheet.published_date, language=sheet.language),
             views = sheet.views,
-            likes = sheet.likes,
+            likes = sheet.likes or [],
             publisher = _create_publisher_object_(published_by=sheet.published_by),
             language = sheet.language
         )
-        for sheet in sheets.texts
+        for sheet in sheets
     ]
     return SheetDTOResponse(
         sheets = sheets_dto,
-        skip = sheets.skip,
-        limit = sheets.limit,
-        total = sheets.total
+        skip = skip,
+        limit = limit,
+        total = len(sheets)
     )
 
 def _create_publisher_object_(published_by: str) -> Publisher:

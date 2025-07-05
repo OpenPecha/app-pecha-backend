@@ -62,6 +62,7 @@ class Text(Document):
     type: TextType
     categories: Optional[List[str]] = None
     views: Optional[int] = 0
+    likes: Optional[List[str]] = []
 
     class Settings:
         collection = "texts"

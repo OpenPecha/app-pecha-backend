@@ -497,8 +497,8 @@ async def test_fetch_sheets_user_own_sheets():
         social_profiles=[]
     )
     mock_sheets = _generate_mock_sheets_response_()
-    for i in range(len(mock_sheets.texts)):
-        mock_sheets.texts[i].published_by = "mock_user@gmail.com"
+    for i in range(len(mock_sheets)):
+        mock_sheets[i].published_by = "mock_user@gmail.com"
     
     with patch("pecha_api.sheets.sheets_service.validate_and_extract_user_details", return_value=mock_user_details), \
         patch("pecha_api.sheets.sheets_service.Utils.time_passed", return_value="time passed"), \
@@ -537,8 +537,8 @@ async def test_fetch_sheets_user_viewing_other_users_sheets_status_logged_in():
         social_profiles=[]
     )
     mock_sheets = _generate_mock_sheets_response_()
-    for i in range(len(mock_sheets.texts)):
-        mock_sheets.texts[i].published_by = "other_user@gmail.com"
+    for i in range(len(mock_sheets)):
+        mock_sheets[i].published_by = "other_user@gmail.com"
     
     with patch("pecha_api.sheets.sheets_service.validate_and_extract_user_details", return_value=mock_user_details), \
         patch("pecha_api.sheets.sheets_service.Utils.time_passed", return_value="time passed"), \
@@ -579,9 +579,8 @@ async def test_fetch_sheets_invalid_token():
         assert exc_info.value.detail == ErrorConstants.TOKEN_ERROR_MESSAGE
 
 
-def _generate_mock_sheets_response_() -> TextDTOResponse:
-    return TextDTOResponse(
-        texts = [
+def _generate_mock_sheets_response_():
+    return [
             TextDTO(
                 id=f"sheet_id_{i}",
                 title="Test Sheet",
@@ -597,8 +596,4 @@ def _generate_mock_sheets_response_() -> TextDTOResponse:
                 views=10
             )
             for i in range(1,6)
-        ],
-        skip=0,
-        limit=10,
-        total=5
-    )
+        ]

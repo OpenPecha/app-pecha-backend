@@ -1,4 +1,5 @@
-from typing import Optional
+from typing import Optional, List, Union
+import hashlib
 import io
 import logging
 from PIL import Image
@@ -17,6 +18,12 @@ from .constants import Constants
 class Utils:
 
     @staticmethod
+    def generate_hash_key(payload: List[Union[str, int]]) -> str:
+        params_str = "".join(str(param) for param in payload)
+        hash_value = hashlib.sha256(params_str.encode()).hexdigest()
+        return hash_value
+
+    @staticmethod
     def get_utc_date_time() -> str:
         return datetime.now(timezone.utc).strftime('%Y-%m-%d %H:%M:%S')
 
@@ -28,7 +35,6 @@ class Utils:
             post_time = datetime.strptime(published_time, '%Y-%m-%d %H:%M:%S').replace(tzinfo=timezone.utc)
             
             time_difference = current_time - post_time
-            
             if time_difference < timedelta(minutes=1):
                 return Utils.get_word_by_language(word='Now', language=language)
             elif time_difference < timedelta(hours=1):
@@ -43,8 +49,18 @@ class Utils:
                 days = int(time_difference.total_seconds() / Constants.DAY_IN_SECONDS)
                 days_value = Utils.get_number_by_language(value=days, language=language)
                 return f"{days_value} {Utils.get_word_by_language(word='Day', language=language)}"
+            elif time_difference.total_seconds() < Constants.MONTH_IN_SECONDS:
+                weeks = int(time_difference.total_seconds() / Constants.WEEK_IN_SECONDS)
+                weeks_value = Utils.get_number_by_language(value=weeks, language=language)
+                return f"{weeks_value} {Utils.get_word_by_language(word='Week', language=language)}"
+            elif time_difference.total_seconds() < Constants.YEAR_IN_SECONDS:
+                months = int(time_difference.total_seconds() / Constants.MONTH_IN_SECONDS)
+                months_value = Utils.get_number_by_language(value=months, language=language)
+                return f"{months_value} {Utils.get_word_by_language(word='Month', language=language)}"
             else:
-                return post_time.strftime('%Y-%m-%d %H:%M:%S')
+                years = int(time_difference.total_seconds() / Constants.YEAR_IN_SECONDS)
+                years_value = Utils.get_number_by_language(value=years, language=language)
+                return f"{years_value} {Utils.get_word_by_language(word='Year', language=language)}"
                 
         except ValueError as e:
             logging.error(f"Error in time_passed: {e}")
