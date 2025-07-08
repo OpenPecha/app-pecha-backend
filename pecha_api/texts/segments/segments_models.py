@@ -45,17 +45,17 @@ class Segment(Document):
         segment = await cls.find_one(cls.id == segment_id)
         return segment is not None
 
+    
     @classmethod
     async def exists_all(cls, segment_ids: List[uuid.UUID], batch_size: int = 100) -> bool:
-        for i in range(0, len(segment_ids), batch_size):
-            batch_ids = segment_ids[i: i + batch_size]
-            found_segments = await cls.find({"_id": {"$in": batch_ids}}).to_list()
-
-            found_ids = {text.id for text in found_segments}
-            # If any ID from the current batch is missing, stop early
-            if len(found_ids) < len(batch_ids):
+        if not segment_ids:
+            return False
+        found_segments = await cls.find({"_id": {"$in": segment_ids}}).to_list()
+        found_ids = {segment.id for segment in found_segments}
+        for segment_id in segment_ids:
+            if segment_id not in found_ids:
                 return False
-        return True  # All IDs exist
+        return True
 
     @classmethod
     async def get_segments_by_ids(cls, segment_ids: List[str]) -> List["Segment"]:

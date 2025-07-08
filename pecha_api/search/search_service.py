@@ -21,6 +21,7 @@ from typing import List
 MAX_SEARCH_LIMIT = 30
 
 async def get_search_results(query: str, search_type: SearchType, text_id: str = None, skip: int = 0, limit: int = 10) -> SearchResponse:
+
     cache_data = get_search_cache(query=query, search_type=search_type, text_id=text_id, skip=skip, limit=limit)
     if cache_data:
         return cache_data
@@ -39,7 +40,6 @@ async def get_search_results(query: str, search_type: SearchType, text_id: str =
             limit=limit
         )
     set_search_cache(query=query, search_type=search_type, text_id=text_id, skip=skip, limit=limit, data=response)
-
     return response
 
 

@@ -43,6 +43,7 @@ class SheetDetailDTO(BaseModel):
     created_date: str
     publisher: Publisher
     content: Optional[SheetSection] = None
+    views: int = 0
     skip: int
     limit: int
     total: int
@@ -54,8 +55,8 @@ class SheetDTO(BaseModel):
     summary: str
     published_date: str
     time_passed: str
-    views: str
-    likes: List[str]
+    views: int
+    likes: Optional[List[str]] = []
     publisher: Publisher
     language: Optional[str] = None
 

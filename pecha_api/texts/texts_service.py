@@ -26,7 +26,8 @@ from .texts_response_models import (
     CreateTextRequest,
     TextDetailsRequest,
     DetailTextMapping,
-    UpdateTextRequest
+    UpdateTextRequest,
+    TextDTOResponse
 )
 from .groups.groups_service import (
     validate_group_exists
@@ -114,7 +115,7 @@ async def get_text_by_text_id_or_term(
     return response
 
 
-async def get_sheets(published_by: Optional[str] = None, is_published: Optional[bool] = None, sort_by: Optional[SortBy] = None, sort_order: Optional[SortOrder] = None, skip: int = 0, limit: int = 10) -> SheetDTOResponse:
+async def get_sheet(published_by: Optional[str] = None, is_published: Optional[bool] = None, sort_by: Optional[SortBy] = None, sort_order: Optional[SortOrder] = None, skip: int = 0, limit: int = 10):
     
     sheets = await fetch_sheets_from_db(
         published_by=published_by,
@@ -124,27 +125,7 @@ async def get_sheets(published_by: Optional[str] = None, is_published: Optional[
         skip=skip,
         limit=limit
     )
-    
-    sheets = [
-        SheetDTO(
-            id=str(sheet.id),
-            title=sheet.title,
-            summary="",
-            published_date=sheet.published_date,
-            time_passed=Utils.time_passed(published_time=sheet.published_date, language=sheet.language),
-            views=str(sheet.views),
-            likes=[],
-            publisher=_create_publisher_object_(published_by=sheet.published_by),
-            language=sheet.language
-        )
-        for sheet in sheets
-    ]
-    return SheetDTOResponse(
-        sheets= sheets,
-        skip=skip,
-        limit=limit,
-        total=len(sheets)
-    )
+    return sheets
 
 async def get_table_of_contents_by_text_id(text_id: str) -> TableOfContentResponse:
     is_valid_text: bool = await TextUtils.validate_text_exists(text_id=text_id)
@@ -470,13 +451,3 @@ async def delete_text_by_text_id(text_id: str):
     await delete_text_by_id(text_id=text_id)
 
 
-def _create_publisher_object_(published_by: str) -> Publisher:
-
-    user_profile: UserInfoResponse = fetch_user_by_email(email=published_by)
-    
-    return Publisher(
-        name=f"{user_profile.firstname} {user_profile.lastname}".strip() or user_profile.username,
-        username=user_profile.username,
-        email=user_profile.email,
-        avatar_url=user_profile.avatar_url
-    )

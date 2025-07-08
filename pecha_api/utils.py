@@ -1,5 +1,6 @@
 from typing import Optional, List, Union
 import hashlib
+import io
 import logging
 from beanie import PydanticObjectId
 from fastapi import HTTPException
@@ -7,6 +8,9 @@ from bson.errors import InvalidId
 from starlette import status
 from datetime import datetime, timezone, timedelta
 from urllib.parse import urlparse
+from .config import get_int
+from pecha_api.error_contants import ErrorConstants
+from .config import get
 
 from .constants import Constants
 
@@ -31,7 +35,6 @@ class Utils:
             post_time = datetime.strptime(published_time, '%Y-%m-%d %H:%M:%S').replace(tzinfo=timezone.utc)
             
             time_difference = current_time - post_time
-            
             if time_difference < timedelta(minutes=1):
                 return Utils.get_word_by_language(word='Now', language=language)
             elif time_difference < timedelta(hours=1):
@@ -46,8 +49,18 @@ class Utils:
                 days = int(time_difference.total_seconds() / Constants.DAY_IN_SECONDS)
                 days_value = Utils.get_number_by_language(value=days, language=language)
                 return f"{days_value} {Utils.get_word_by_language(word='Day', language=language)}"
+            elif time_difference.total_seconds() < Constants.MONTH_IN_SECONDS:
+                weeks = int(time_difference.total_seconds() / Constants.WEEK_IN_SECONDS)
+                weeks_value = Utils.get_number_by_language(value=weeks, language=language)
+                return f"{weeks_value} {Utils.get_word_by_language(word='Week', language=language)}"
+            elif time_difference.total_seconds() < Constants.YEAR_IN_SECONDS:
+                months = int(time_difference.total_seconds() / Constants.MONTH_IN_SECONDS)
+                months_value = Utils.get_number_by_language(value=months, language=language)
+                return f"{months_value} {Utils.get_word_by_language(word='Month', language=language)}"
             else:
-                return post_time.strftime('%Y-%m-%d %H:%M:%S')
+                years = int(time_difference.total_seconds() / Constants.YEAR_IN_SECONDS)
+                years_value = Utils.get_number_by_language(value=years, language=language)
+                return f"{years_value} {Utils.get_word_by_language(word='Year', language=language)}"
                 
         except ValueError as e:
             logging.error(f"Error in time_passed: {e}")
@@ -55,6 +68,8 @@ class Utils:
 
     @staticmethod
     def get_word_by_language(word: str, language: str) -> str:
+        if language is None:
+            language = get("DEFAULT_LANGUAGE")
         return Constants.TIME_PASSED_NOW[word][language]
 
     @staticmethod
@@ -76,6 +91,8 @@ class Utils:
 
     @staticmethod
     def get_number_by_language(value: int, language: str) -> str:
+        if not language:
+            language = "en"  # default language
         return "".join(
             [Constants.LANGUAGE_NUMBER[language][char] if "0" <= char <= "9" else char for char in str(value)])
 

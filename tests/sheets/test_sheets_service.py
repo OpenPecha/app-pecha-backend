@@ -25,7 +25,9 @@ from pecha_api.texts.texts_response_models import (
     TextSegment,
     TextDTO,
     TextSegment,
-    TableOfContentResponse
+    TableOfContentResponse,
+    TextDTOResponse,
+    TextDTO
 )
 from pecha_api.texts.texts_enums import TextType
 from pecha_api.sheets.sheets_service import (
@@ -449,10 +451,22 @@ async def test_delete_sheet_invalid_sheet_id():
 # Test cases for fetch_sheets function
 @pytest.mark.asyncio
 async def test_fetch_sheets_community_page_all_published():
-
+    mock_user = UserInfoResponse(
+        firstname="firstname",
+        lastname="lastname",
+        username="username",
+        email="test_user@gmail.com",
+        educations=[],
+        avatar_url="avatar_url",
+        social_profiles=[],
+        followers=0,
+        following=0,
+    )
     mock_sheets = _generate_mock_sheets_response_()
     
-    with patch("pecha_api.sheets.sheets_service.get_sheets", new_callable=AsyncMock, return_value=mock_sheets):
+    with patch("pecha_api.sheets.sheets_service.get_sheet", new_callable=AsyncMock, return_value=mock_sheets), \
+        patch("pecha_api.sheets.sheets_service.Utils.time_passed", return_value="time passed"), \
+        patch("pecha_api.sheets.sheets_service.fetch_user_by_email", new_callable=MagicMock, return_value=mock_user):
         
         result = await fetch_sheets(
             token="valid_token",
@@ -476,12 +490,24 @@ async def test_fetch_sheets_user_own_sheets():
     mock_user_details = type("User", (), {
         "email": "mock_user@gmail.com",
     })
+    mock_publisher_details = UserInfoResponse(
+        firstname="firstname",
+        lastname="lastname",
+        username="username",
+        email="mock_user@gmail.com",
+        educations=[],
+        followers=0,
+        following=0,
+        social_profiles=[]
+    )
     mock_sheets = _generate_mock_sheets_response_()
-    for i in range(len(mock_sheets.sheets)):
-        mock_sheets.sheets[i].publisher.email = "mock_user@gmail.com"
+    for i in range(len(mock_sheets)):
+        mock_sheets[i].published_by = "mock_user@gmail.com"
     
     with patch("pecha_api.sheets.sheets_service.validate_and_extract_user_details", return_value=mock_user_details), \
-         patch("pecha_api.sheets.sheets_service.get_sheets", new_callable=AsyncMock, return_value=_generate_mock_sheets_response_()):
+        patch("pecha_api.sheets.sheets_service.Utils.time_passed", return_value="time passed"), \
+        patch("pecha_api.sheets.sheets_service.fetch_user_by_email", new_callable=MagicMock, return_value=mock_publisher_details), \
+        patch("pecha_api.sheets.sheets_service.get_sheet", new_callable=AsyncMock, return_value=mock_sheets):
         
         result = await fetch_sheets(
             token="valid_token",
@@ -504,13 +530,24 @@ async def test_fetch_sheets_user_viewing_other_users_sheets_status_logged_in():
     mock_user_details = type("User", (), {
         "email": "mock_user@gmail.com",
     })
-    
+    mock_publisher_details = UserInfoResponse(
+        firstname="firstname",
+        lastname="lastname",
+        username="username",
+        email="other_user@gmail.com",
+        educations=[],
+        followers=0,
+        following=0,
+        social_profiles=[]
+    )
     mock_sheets = _generate_mock_sheets_response_()
-    for i in range(len(mock_sheets.sheets)):
-        mock_sheets.sheets[i].publisher.email = "other_user@gmail.com"
+    for i in range(len(mock_sheets)):
+        mock_sheets[i].published_by = "other_user@gmail.com"
     
     with patch("pecha_api.sheets.sheets_service.validate_and_extract_user_details", return_value=mock_user_details), \
-        patch("pecha_api.sheets.sheets_service.get_sheets", new_callable=AsyncMock, return_value=mock_sheets):
+        patch("pecha_api.sheets.sheets_service.Utils.time_passed", return_value="time passed"), \
+        patch("pecha_api.sheets.sheets_service.fetch_user_by_email", new_callable=MagicMock, return_value=mock_publisher_details), \
+        patch("pecha_api.sheets.sheets_service.get_sheet", new_callable=AsyncMock, return_value=mock_sheets):
         
         result = await fetch_sheets(
             token="valid_token",
@@ -531,7 +568,8 @@ async def test_fetch_sheets_user_viewing_other_users_sheets_status_logged_in():
 @pytest.mark.asyncio
 async def test_fetch_sheets_invalid_token():
     #Test fetch_sheets with invalid token
-    with patch("pecha_api.sheets.sheets_service.validate_and_extract_user_details", side_effect=HTTPException(status_code=401, detail=ErrorConstants.TOKEN_ERROR_MESSAGE)):
+    with patch("pecha_api.sheets.sheets_service.validate_and_extract_user_details", side_effect=HTTPException(status_code=401, detail=ErrorConstants.TOKEN_ERROR_MESSAGE)), \
+        patch("pecha_api.sheets.sheets_service.Utils.time_passed", return_value="time passed"):
         with pytest.raises(HTTPException) as exc_info:
             await fetch_sheets(
                 token="invalid_token",
@@ -546,26 +584,20 @@ async def test_fetch_sheets_invalid_token():
 
 
 def _generate_mock_sheets_response_():
-    return SheetDTOResponse(
-        sheets = [
-            SheetDTO(
+    return [
+            TextDTO(
                 id=f"sheet_id_{i}",
                 title="Test Sheet",
-                summary="",
+                language="en",
+                group_id="group_id",
+                type=TextType.SHEET,
+                is_published=True,
+                created_date="2021-01-01",
+                updated_date="2021-01-01",
                 published_date="2021-01-01",
-                time_passed="",
-                views="100",
-                likes=[],
-                publisher=Publisher(
-                    name="Test Publisher", 
-                    username="test_publisher", 
-                    email="test_publisher@gmail.com", 
-                    avatar_url=None
-                ),
+                published_by="test_user",
+                categories=[],
+                views=10
             )
             for i in range(1,6)
-        ],
-        skip=0,
-        limit=10,
-        total=5
-    )
+        ]
