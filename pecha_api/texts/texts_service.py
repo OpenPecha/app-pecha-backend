@@ -54,7 +54,7 @@ from pecha_api.users.users_service import (
 from pecha_api.terms.terms_service import get_term
 from .segments.segments_utils import SegmentUtils
 
-from typing import List, Dict, Optional, Union
+from typing import List, Dict, Optional
 from pecha_api.config import get
 from pecha_api.utils import Utils
 
@@ -65,11 +65,11 @@ async def get_text_by_text_id_or_term(
         language: str,
         skip: int,
         limit: int
-) -> Union[TextsCategoryResponse, TextDTO]:
+) -> TextsCategoryResponse | TextDTO:
     if language is None:
         language = get("DEFAULT_LANGUAGE")
 
-    cached_data: Union[TextsCategoryResponse, TextDTO] = await get_text_by_text_id_or_term_cache(
+    cached_data: TextsCategoryResponse | TextDTO = await get_text_by_text_id_or_term_cache(
         text_id = text_id,
         term_id = term_id,
         language = language,
