@@ -9,6 +9,10 @@ from .search_response_models import (
     Search,
     SheetResultItem
 )
+from .search_cache_service import (
+    get_search_cache,
+    set_search_cache
+)
 from .search_client import search_client
 from pecha_api.config import get
 
@@ -17,22 +21,26 @@ from typing import List
 MAX_SEARCH_LIMIT = 30
 
 async def get_search_results(query: str, search_type: SearchType, text_id: str = None, skip: int = 0, limit: int = 10) -> SearchResponse:
+    cache_data = get_search_cache(query=query, search_type=search_type, text_id=text_id, skip=skip, limit=limit)
+    if cache_data:
+        return cache_data
     if SearchType.SOURCE == search_type:
-        source_search_response: SearchResponse = await _source_search(
+        response: SearchResponse = await _source_search(
             query=query,
             text_id=text_id,
             skip=skip,
             limit=limit
         )
-        return source_search_response
 
     elif SearchType.SHEET == search_type:
-        sheet_search_response: SearchResponse = _sheet_search(
+        response: SearchResponse = _sheet_search(
             query=query,
             skip=skip,
             limit=limit
         )
-        return sheet_search_response
+    set_search_cache(query=query, search_type=search_type, text_id=text_id, skip=skip, limit=limit, data=response)
+
+    return response
 
 
 async def _source_search(
