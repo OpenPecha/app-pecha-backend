@@ -32,3 +32,10 @@ class UserInfoResponse(BaseModel):
     followers: int
     following: int
     social_profiles: List[SocialMediaProfile]
+
+class PublisherInfoResponse(BaseModel):
+    id: str
+    username: str
+    firstname: str
+    lastname: str
+    avatar_url: Optional[str] = None

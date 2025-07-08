@@ -27,13 +27,21 @@ class TextDTO(BaseModel):
     language: Optional[str] = None
     group_id: str
     type: str
+    summary: Optional[str] = ""
     is_published: bool
     created_date: str
     updated_date: str
     published_date: str
     published_by: str
     categories: Optional[List[str]] = None
-    views: Optional[int] = None
+    views: Optional[int] = 0
+    likes: Optional[List[str]] = []
+
+class TextDTOResponse(BaseModel):
+    texts: List[TextDTO]
+    skip: int
+    limit: int
+    total: int
 
 # Text TOC Response Models
 class Translation(BaseModel):

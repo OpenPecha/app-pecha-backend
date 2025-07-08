@@ -1,5 +1,5 @@
 import pytest
-from unittest.mock import patch, AsyncMock, Mock
+from unittest.mock import patch, AsyncMock, Mock, MagicMock
 
 from pecha_api.search.search_response_models import (
     SearchResponse,
@@ -21,7 +21,9 @@ async def test_get_search_results_for_source_success():
     mock_client = Mock()
     mock_client.search = AsyncMock(return_value=mock_elastic_response)
 
-    with patch("pecha_api.search.search_service.search_client", new_callable=Mock, return_value=mock_client):
+    with patch("pecha_api.search.search_service.search_client", new_callable=Mock, return_value=mock_client), \
+        patch("pecha_api.search.search_service.get_search_results_cache", new_callable=MagicMock, return_value=None), \
+        patch("pecha_api.search.search_service.set_search_results_cache", new_callable=MagicMock):
         response = await get_search_results(query="query", search_type=SearchType.SOURCE, skip=0, limit=2)
 
         assert response is not None
@@ -59,7 +61,9 @@ async def test_get_search_results_for_sheet_success():
         for i in range(1,6)
     ]
 
-    with patch("pecha_api.search.search_service._mock_sheet_data_", new_callable=Mock, return_value=mock_sheet_search):
+    with patch("pecha_api.search.search_service._mock_sheet_data_", new_callable=Mock, return_value=mock_sheet_search), \
+        patch("pecha_api.search.search_service.get_search_results_cache", new_callable=MagicMock, return_value=None), \
+        patch("pecha_api.search.search_service.set_search_results_cache", new_callable=MagicMock):
 
         response = await get_search_results(query="query", search_type=SearchType.SHEET)
 
@@ -83,7 +87,9 @@ async def test_get_search_results_for_source_within_text_success():
     mock_client = Mock()
     mock_client.search = AsyncMock(return_value=mock_elastic_response)
 
-    with patch("pecha_api.search.search_service.search_client", new_callable=Mock, return_value=mock_client):
+    with patch("pecha_api.search.search_service.search_client", new_callable=Mock, return_value=mock_client), \
+        patch("pecha_api.search.search_service.get_search_results_cache", new_callable=MagicMock, return_value=None), \
+        patch("pecha_api.search.search_service.set_search_results_cache", new_callable=MagicMock):
 
         response = await get_search_results(query="query", search_type=SearchType.SOURCE, text_id=text_id, skip=0, limit=10)
 
