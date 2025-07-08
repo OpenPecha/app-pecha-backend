@@ -39,7 +39,7 @@ async def get_text(
 ):
     return await get_text_by_text_id_or_collection(
         text_id=text_id,
-        collection_id=term_id,
+        collection_id=collection_id,
         language=language,
         skip=skip,
         limit=limit
