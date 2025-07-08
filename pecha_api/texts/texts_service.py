@@ -69,7 +69,7 @@ async def get_text_by_text_id_or_term(
     if language is None:
         language = get("DEFAULT_LANGUAGE")
 
-    cached_data: TextsCategoryResponse | TextDTO = await get_text_by_text_id_or_term_cache(
+    cached_data: TextsCategoryResponse | TextDTO = get_text_by_text_id_or_term_cache(
         text_id = text_id,
         term_id = term_id,
         language = language,
@@ -93,7 +93,7 @@ async def get_text_by_text_id_or_term(
     else:
         response =await TextUtils.get_text_detail_by_id(text_id=text_id)
     
-    await set_text_by_text_id_or_term_cache(
+    set_text_by_text_id_or_term_cache(
         text_id = text_id,
         term_id = term_id,
         language = language,
@@ -122,7 +122,7 @@ async def get_table_of_contents_by_text_id(text_id: str) -> TableOfContentRespon
     if not is_valid_text:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=ErrorConstants.TEXT_NOT_FOUND_MESSAGE)
     
-    cached_data: TableOfContentResponse = await get_table_of_contents_by_text_id_cache(
+    cached_data: TableOfContentResponse = get_table_of_contents_by_text_id_cache(
         text_id = text_id
     )
     if cached_data is not None:
@@ -142,7 +142,7 @@ async def get_table_of_contents_by_text_id(text_id: str) -> TableOfContentRespon
         ]
     )
 
-    await set_table_of_contents_by_text_id_cache(
+    set_table_of_contents_by_text_id_cache(
         text_id = text_id,
         data = response
     )
@@ -172,7 +172,7 @@ async def get_text_details_by_text_id(
         text_details_request=text_details_request
     )
     # Check if the table of content exists in the cache database
-    cached_data: DetailTableOfContentResponse = await get_text_details_cache(
+    cached_data: DetailTableOfContentResponse = get_text_details_cache(
         text_id=text_id,
         content_id=str(table_of_content.id),
         version_id=text_details_request.version_id,
@@ -187,7 +187,7 @@ async def get_text_details_by_text_id(
         table_of_content=table_of_content,
         text_details_request=text_details_request
     )
-    await set_text_details_cache(
+    set_text_details_cache(
         text_id=text_id,
         content_id=str(table_of_content.id),
         version_id=text_details_request.version_id,
@@ -208,7 +208,7 @@ async def get_text_versions_by_group_id(text_id: str, language: str, skip: int, 
     if language is None:
         language = get("DEFAULT_LANGUAGE")
     
-    cached_data: TextVersionResponse = await get_text_versions_by_group_id_cache(
+    cached_data: TextVersionResponse = get_text_versions_by_group_id_cache(
         text_id = text_id,
         language = language,
         skip = skip,
@@ -233,7 +233,7 @@ async def get_text_versions_by_group_id(text_id: str, language: str, skip: int, 
         versions=list_of_version
     )
 
-    await set_text_versions_by_group_id_cache(
+    set_text_versions_by_group_id_cache(
         text_id = text_id,
         language = language,
         skip = skip,
