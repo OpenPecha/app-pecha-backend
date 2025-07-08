@@ -20,10 +20,14 @@ class CollectionModel(BaseModel):
     slug: str
     has_child: bool
 
-
-class CollectionsResponse(BaseModel):
-    parent: Optional[CollectionModel]
-    collections: List[CollectionModel]
+class Pagination(BaseModel):
     total: int
     skip: int
     limit: int
+
+class CollectionsResponse(BaseModel):
+    parent: Optional[CollectionModel]
+    pagination: Pagination
+    collections: List[CollectionModel]
+    
+    

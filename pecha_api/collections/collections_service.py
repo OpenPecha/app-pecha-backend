@@ -5,7 +5,7 @@ from starlette import status
 from pecha_api.error_contants import ErrorConstants
 from pecha_api.utils import Utils
 from ..config import get
-from ..collections.collections_response_models import CollectionModel, CollectionsResponse, CreateCollectionRequest, UpdateCollectionRequest
+from ..collections.collections_response_models import CollectionModel, CollectionsResponse, Pagination, CreateCollectionRequest, UpdateCollectionRequest
 from .collections_repository import get_child_count, get_collections_by_parent, create_collection, update_collection_titles, delete_collection, \
     get_collection_by_id
 from ..users.users_service import verify_admin_access
@@ -31,8 +31,13 @@ async def get_all_collections(language: str, parent_id: Optional[str], skip: int
             slug=collection.slug
         )
         for collection in collections
-    ]
-    collection_response = CollectionsResponse(parent=parent_collection, collections=collection_list, total=total, skip=skip, limit=limit)
+    ]   
+    pagination = {
+        "total": total,
+        "skip": skip,
+        "limit": limit
+    }
+    collection_response = CollectionsResponse(parent=parent_collection, pagination=pagination, collections=collection_list)
     return collection_response
 
 
