@@ -28,7 +28,8 @@ async def get_all_collections(language: str, parent_id: Optional[str], skip: int
             title=Utils.get_value_from_dict(values=collection.titles, language=language),
             description=Utils.get_value_from_dict(values=collection.descriptions, language=language),
             has_child=collection.has_sub_child,
-            language=language
+            language=language,
+            slug=collection.slug
         )
         for collection in collections
     ]   
@@ -52,7 +53,9 @@ async def create_new_collection(create_collection_request: CreateCollectionReque
             title=Utils.get_value_from_dict(values=new_collection.titles, language=language),
             description=Utils.get_value_from_dict(values=new_collection.descriptions, language=language),
             has_child=new_collection.has_sub_child,
+            language=language,
             slug=new_collection.slug
+
         )
     else:
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail=ErrorConstants.ADMIN_ERROR_MESSAGE)
@@ -65,6 +68,7 @@ async def get_collection(collection_id: str,language: str) -> Optional[Collectio
             title=Utils.get_value_from_dict(values=selected_collection.titles, language=language),
             description=Utils.get_value_from_dict(values=selected_collection.descriptions, language=language),
             has_child=selected_collection.has_sub_child,
+            language=language,
             slug=selected_collection.slug
         )
     return None
@@ -81,6 +85,7 @@ async def update_existing_collection(collection_id: str, update_collection_reque
             title=Utils.get_value_from_dict(values=updated_collection.titles, language=language),
             description=Utils.get_value_from_dict(values=updated_collection.descriptions, language=language),
             has_child=updated_collection.has_sub_child,
+            language=language,
             slug=updated_collection.slug
         )
     else:
