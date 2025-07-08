@@ -3,7 +3,7 @@ from starlette import status
 
 from pecha_api.error_contants import ErrorConstants
 from .texts_repository import (
-    get_texts_by_term,
+    get_texts_by_collection,
     get_texts_by_group_id,
     create_text,
     create_table_of_content_detail,
@@ -55,11 +55,11 @@ async def get_text_by_text_id_or_collection(
     if language is None:
         language = get("DEFAULT_LANGUAGE")
 
-    if collection_id_id is not None:
-        term = await get_collection(collection_id=collection_id, language=language)
+    if collection_id is not None:
+        collection = await get_collection(collection_id=collection_id, language=language)
         texts = await _get_texts_by_collection_id(collection_id=collection_id, language=language, skip=skip, limit=limit)
         return TextsCategoryResponse(
-            term=term,
+            collection=collection,
             texts=texts,
             total=len(texts),
             skip=skip,
@@ -274,7 +274,7 @@ async def _validate_text_detail_request(text_id: str, text_details_request: Text
 
 
 async def _get_texts_by_collection_id(collection_id: str, language: str, skip: int, limit: int) -> List[TextDTO]:
-    texts = await get_texts_by_term(collection_id=collection_id, language=language, skip=skip, limit=limit)
+    texts = await get_texts_by_collection(collection_id=collection_id, language=language, skip=skip, limit=limit)
     filter_text_base_on_group_id_type = await TextUtils.filter_text_base_on_group_id_type(texts=texts,
                                                                                           language=language)
     root_text = filter_text_base_on_group_id_type["root_text"]
