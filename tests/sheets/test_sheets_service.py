@@ -12,7 +12,11 @@ from pecha_api.sheets.sheets_response_models import (
     Source,
     SheetIdResponse,
     SheetDetailDTO,
-    SheetSection
+    SheetSection,
+    SheetDTO,
+    Publisher,
+    SheetDTOResponse,
+    SheetDTO
 )
 from pecha_api.texts.segments.segments_enum import SegmentType
 from pecha_api.texts.texts_response_models import (
@@ -21,7 +25,9 @@ from pecha_api.texts.texts_response_models import (
     TextSegment,
     TextDTO,
     TextSegment,
-    TableOfContentResponse
+    TableOfContentResponse,
+    TextDTOResponse,
+    TextDTO
 )
 from pecha_api.texts.texts_enums import TextType
 from pecha_api.sheets.sheets_service import (
@@ -29,13 +35,16 @@ from pecha_api.sheets.sheets_service import (
     update_sheet_by_id,
     get_sheet_by_id,
     delete_sheet_by_id,
+    fetch_sheets
 )
-from pecha_api.users.users_models import Users
+
 from pecha_api.texts.segments.segments_response_models import (
     SegmentDTO, 
     SegmentResponse
 )
 from pecha_api.users.user_response_models import UserInfoResponse
+from pecha_api.texts.texts_enums import TextType
+
 
 def test_validate_and_compress_image_success():
     file_content = io.BytesIO(b"fake_image_data")
@@ -431,3 +440,160 @@ async def test_delete_sheet_invalid_sheet_id():
 
 
 
+
+
+
+
+# Test cases for fetch_sheets function
+@pytest.mark.asyncio
+async def test_fetch_sheets_community_page_all_published():
+    mock_user = UserInfoResponse(
+        firstname="firstname",
+        lastname="lastname",
+        username="username",
+        email="test_user@gmail.com",
+        educations=[],
+        avatar_url="avatar_url",
+        social_profiles=[],
+        followers=0,
+        following=0,
+    )
+    mock_sheets = _generate_mock_sheets_response_()
+    
+    with patch("pecha_api.sheets.sheets_service.get_sheet", new_callable=AsyncMock, return_value=mock_sheets), \
+        patch("pecha_api.sheets.sheets_service.Utils.time_passed", return_value="time passed"), \
+        patch("pecha_api.sheets.sheets_service.fetch_user_by_email", new_callable=MagicMock, return_value=mock_user):
+        
+        result = await fetch_sheets(
+            token="valid_token",
+            language="en",
+            email=None,
+            skip=0,
+            limit=10
+        )
+        
+        assert result is not None
+        assert isinstance(result, SheetDTOResponse)
+        assert result.sheets is not None
+        assert len(result.sheets) == 5
+        assert isinstance(result.sheets[0], SheetDTO)
+        assert result.sheets[0].id == "sheet_id_1"
+        assert result.sheets[-1].id == "sheet_id_5"
+
+@pytest.mark.asyncio
+async def test_fetch_sheets_user_own_sheets():
+    #Test fetch_sheets for user's own sheets - show both published and unpublished
+    mock_user_details = type("User", (), {
+        "email": "mock_user@gmail.com",
+    })
+    mock_publisher_details = UserInfoResponse(
+        firstname="firstname",
+        lastname="lastname",
+        username="username",
+        email="mock_user@gmail.com",
+        educations=[],
+        followers=0,
+        following=0,
+        social_profiles=[]
+    )
+    mock_sheets = _generate_mock_sheets_response_()
+    for i in range(len(mock_sheets)):
+        mock_sheets[i].published_by = "mock_user@gmail.com"
+    
+    with patch("pecha_api.sheets.sheets_service.validate_and_extract_user_details", return_value=mock_user_details), \
+        patch("pecha_api.sheets.sheets_service.Utils.time_passed", return_value="time passed"), \
+        patch("pecha_api.sheets.sheets_service.fetch_user_by_email", new_callable=MagicMock, return_value=mock_publisher_details), \
+        patch("pecha_api.sheets.sheets_service.get_sheet", new_callable=AsyncMock, return_value=mock_sheets):
+        
+        result = await fetch_sheets(
+            token="valid_token",
+            email="mock_user@gmail.com",
+            skip=0,
+            limit=10
+        )
+        
+        assert result is not None
+        assert isinstance(result, SheetDTOResponse)
+        assert result.sheets is not None
+        assert len(result.sheets) == 5
+        assert isinstance(result.sheets[0], SheetDTO)
+        assert result.sheets[0].id == "sheet_id_1"
+        assert result.sheets[-1].id == "sheet_id_5"
+
+@pytest.mark.asyncio
+async def test_fetch_sheets_user_viewing_other_users_sheets_status_logged_in():
+    #Test fetch_sheets for user viewing other user's sheets - show only published
+    mock_user_details = type("User", (), {
+        "email": "mock_user@gmail.com",
+    })
+    mock_publisher_details = UserInfoResponse(
+        firstname="firstname",
+        lastname="lastname",
+        username="username",
+        email="other_user@gmail.com",
+        educations=[],
+        followers=0,
+        following=0,
+        social_profiles=[]
+    )
+    mock_sheets = _generate_mock_sheets_response_()
+    for i in range(len(mock_sheets)):
+        mock_sheets[i].published_by = "other_user@gmail.com"
+    
+    with patch("pecha_api.sheets.sheets_service.validate_and_extract_user_details", return_value=mock_user_details), \
+        patch("pecha_api.sheets.sheets_service.Utils.time_passed", return_value="time passed"), \
+        patch("pecha_api.sheets.sheets_service.fetch_user_by_email", new_callable=MagicMock, return_value=mock_publisher_details), \
+        patch("pecha_api.sheets.sheets_service.get_sheet", new_callable=AsyncMock, return_value=mock_sheets):
+        
+        result = await fetch_sheets(
+            token="valid_token",
+            language="en",
+            email="test_user@gmail.com",
+            skip=0,
+            limit=10
+        )
+        
+        assert result is not None
+        assert isinstance(result, SheetDTOResponse)
+        assert result.sheets is not None
+        assert len(result.sheets) == 5
+        assert isinstance(result.sheets[0], SheetDTO)
+        assert result.sheets[0].id == "sheet_id_1"
+        assert result.sheets[-1].id == "sheet_id_5"
+
+@pytest.mark.asyncio
+async def test_fetch_sheets_invalid_token():
+    #Test fetch_sheets with invalid token
+    with patch("pecha_api.sheets.sheets_service.validate_and_extract_user_details", side_effect=HTTPException(status_code=401, detail=ErrorConstants.TOKEN_ERROR_MESSAGE)), \
+        patch("pecha_api.sheets.sheets_service.Utils.time_passed", return_value="time passed"):
+        with pytest.raises(HTTPException) as exc_info:
+            await fetch_sheets(
+                token="invalid_token",
+                language="en",
+                email="test@example.com",
+                skip=0,
+                limit=10
+            )
+        
+        assert exc_info.value.status_code == 401
+        assert exc_info.value.detail == ErrorConstants.TOKEN_ERROR_MESSAGE
+
+
+def _generate_mock_sheets_response_():
+    return [
+            TextDTO(
+                id=f"sheet_id_{i}",
+                title="Test Sheet",
+                language="en",
+                group_id="group_id",
+                type=TextType.SHEET,
+                is_published=True,
+                created_date="2021-01-01",
+                updated_date="2021-01-01",
+                published_date="2021-01-01",
+                published_by="test_user",
+                categories=[],
+                views=10
+            )
+            for i in range(1,6)
+        ]

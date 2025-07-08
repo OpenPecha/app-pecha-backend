@@ -12,7 +12,8 @@ from .texts_repository import (
     get_sections_count_of_table_of_content,
     delete_table_of_content_by_text_id,
     update_text_details_by_id,
-    delete_text_by_id
+    delete_text_by_id,
+    fetch_sheets_from_db
 )
 from .texts_response_models import (
     TableOfContent,
@@ -25,7 +26,8 @@ from .texts_response_models import (
     CreateTextRequest,
     TextDetailsRequest,
     DetailTextMapping,
-    UpdateTextRequest
+    UpdateTextRequest,
+    TextDTOResponse
 )
 from .groups.groups_service import (
     validate_group_exists
@@ -35,9 +37,26 @@ from pecha_api.cache.cache_service import (
     get_text_details_cache
 )
 
+from pecha_api.sheets.sheets_response_models import (
+    SheetDTO,
+    SheetDTOResponse,
+    Publisher
+)
+from pecha_api.sheets.sheets_enum import (
+    SortBy,
+    SortOrder
+)
+
 from .texts_utils import TextUtils
 from pecha_api.users.users_service import validate_user_exists
 from pecha_api.collections.collections_service import get_collection
+from pecha_api.users.users_service import (
+    validate_user_exists,
+    fetch_user_by_email
+)
+from pecha_api.users.user_response_models import (
+    UserInfoResponse
+)
 from .segments.segments_utils import SegmentUtils
 
 from typing import List, Dict, Optional
@@ -68,6 +87,17 @@ async def get_text_by_text_id_or_collection(
     else:
         return await TextUtils.get_text_detail_by_id(text_id=text_id)
 
+async def get_sheet(published_by: Optional[str] = None, is_published: Optional[bool] = None, sort_by: Optional[SortBy] = None, sort_order: Optional[SortOrder] = None, skip: int = 0, limit: int = 10):
+    
+    sheets = await fetch_sheets_from_db(
+        published_by=published_by,
+        is_published=is_published,
+        sort_by=sort_by,
+        sort_order=sort_order,
+        skip=skip,
+        limit=limit
+    )
+    return sheets
 
 async def get_table_of_contents_by_text_id(text_id: str) -> TableOfContentResponse:
     is_valid_text: bool = await TextUtils.validate_text_exists(text_id=text_id)
@@ -342,7 +372,6 @@ def _get_list_of_text_version_response_model(versions: List[TextDTO], versions_t
     ]
     return list_of_version
 
-
 async def update_text_details(text_id: str, update_text_request: UpdateTextRequest):
     is_valid_text = await TextUtils.validate_text_exists(text_id=text_id)
     if not is_valid_text:
@@ -358,3 +387,5 @@ async def delete_text_by_text_id(text_id: str):
     if not is_valid_text:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=ErrorConstants.TEXT_NOT_FOUND_MESSAGE)
     await delete_text_by_id(text_id=text_id)
+
+
