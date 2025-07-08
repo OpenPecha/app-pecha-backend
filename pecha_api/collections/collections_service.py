@@ -33,11 +33,8 @@ async def get_all_collections(language: str, parent_id: Optional[str], skip: int
         )
         for collection in collections
     ]   
-    pagination = {
-        "total": total,
-        "skip": skip,
-        "limit": limit
-    }
+    pagination = Pagination(total=total, skip=skip, limit=limit)
+
     collection_response = CollectionsResponse(parent=parent_collection, pagination=pagination, collections=collection_list)
     return collection_response
 
