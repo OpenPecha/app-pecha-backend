@@ -34,6 +34,8 @@ def test_get_user_info_success():
     )
 
     with patch("pecha_api.users.users_service.validate_token", return_value={"email": "john.doe@example.com"}), \
+        patch("pecha_api.users.users_service.get_user_info_cache", return_value=None), \
+        patch("pecha_api.users.users_service.set_user_info_cache", return_value=None), \
             patch("pecha_api.users.users_service.get_user_by_email", return_value=user):
         response = get_user_info(token)
         assert response.firstname == "John"
@@ -61,6 +63,8 @@ def test_get_user_info_with_social_accounts():
     )
 
     with patch("pecha_api.users.users_service.validate_token", return_value={"email": "john.doe@example.com"}), \
+        patch("pecha_api.users.users_service.get_user_info_cache", return_value=None), \
+        patch("pecha_api.users.users_service.set_user_info_cache", return_value=None), \
             patch("pecha_api.users.users_service.get_user_by_email", return_value=user):
         response = get_user_info(token)
         assert response.firstname == "John"
