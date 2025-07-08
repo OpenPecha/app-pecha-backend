@@ -17,7 +17,7 @@ class CollectionModel(BaseModel):
     id: str
     title: str
     description: str
-    slug: str
+    language: str
     has_child: bool
 
 class Pagination(BaseModel):

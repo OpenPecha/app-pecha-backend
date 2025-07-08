@@ -28,7 +28,7 @@ async def get_all_collections(language: str, parent_id: Optional[str], skip: int
             title=Utils.get_value_from_dict(values=collection.titles, language=language),
             description=Utils.get_value_from_dict(values=collection.descriptions, language=language),
             has_child=collection.has_sub_child,
-            slug=collection.slug
+            language=language
         )
         for collection in collections
     ]   
