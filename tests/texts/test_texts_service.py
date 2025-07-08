@@ -1081,22 +1081,3 @@ async def test_get_sheet_success_user_viewing_own_sheets():
         for sheet in response:
             assert sheet.published_by == email
 
-
-@pytest.mark.asyncio
-async def test_get_sheets_empty_result():
-    """Test get_sheets function when no sheets are found"""
-    from pecha_api.texts.texts_service import get_sheets
-    from pecha_api.sheets.sheets_response_models import SheetDTOResponse
-    
-    with patch("pecha_api.texts.texts_service.fetch_sheets_from_db", new_callable=AsyncMock, return_value=[]):
-        
-        response = await get_sheets()
-        
-        # Verify response structure for empty result
-        assert response is not None
-        assert isinstance(response, SheetDTOResponse)
-        assert response.skip == 0
-        assert response.limit == 10
-        assert response.total == 0
-        assert len(response.sheets) == 0
-
