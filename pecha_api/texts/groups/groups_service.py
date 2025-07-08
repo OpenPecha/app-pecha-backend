@@ -44,7 +44,7 @@ async def get_groups_by_list_of_ids(group_ids: List[str]) -> Dict[str, GroupDTO]
     return groups
 
 async def get_group_details(group_id: str) -> GroupDTO | None:
-    cache_data = get_group_by_id_cache(group_id=group_id)
+    cache_data: GroupDTO = get_group_by_id_cache(group_id=group_id)
     if cache_data:
         return cache_data
     try:

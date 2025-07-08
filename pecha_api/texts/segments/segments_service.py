@@ -56,7 +56,7 @@ async def get_segments_details_by_ids(segment_ids: List[str]) -> Dict[str, Segme
     return segments
 
 async def get_segment_details_by_id(segment_id: str, text_details: bool = False) -> SegmentDTO:
-    cache_data = get_segment_details_by_id_cache(
+    cache_data: SegmentDTO = get_segment_details_by_id_cache(
         segment_id = segment_id,
         text_details = text_details
     )
@@ -110,7 +110,7 @@ async def get_translations_by_segment_id(segment_id: str) -> SegmentTranslations
     """
     Get translations for a given segment ID.
     """
-    cache_data = get_segment_translations_by_id_cache(segment_id = segment_id)
+    cache_data: SegmentTranslationsResponse = get_segment_translations_by_id_cache(segment_id = segment_id)
     if cache_data is not None:
         return cache_data
     is_valid_segment = await SegmentUtils.validate_segment_exists(segment_id=segment_id)
@@ -138,7 +138,7 @@ async def get_commentaries_by_segment_id(
     """"
        Get commentaries for a given segment ID.
     """
-    cache_data = get_segment_commentaries_by_id_cache(segment_id = segment_id)
+    cache_data: SegmentCommentariesResponse = get_segment_commentaries_by_id_cache(segment_id = segment_id)
     if cache_data is not None:
         return cache_data
     is_valid_segment = await SegmentUtils.validate_segment_exists(segment_id=segment_id)
@@ -161,7 +161,7 @@ async def get_commentaries_by_segment_id(
     return response
 
 async def get_info_by_segment_id(segment_id: str) -> SegmentInfoResponse:
-    cache_data = get_segment_info_by_id_cache(segment_id = segment_id)
+    cache_data: SegmentInfoResponse = get_segment_info_by_id_cache(segment_id = segment_id)
     if cache_data is not None:
         return cache_data
     is_valid_segment = await SegmentUtils.validate_segment_exists(segment_id=segment_id)
@@ -190,7 +190,7 @@ async def get_info_by_segment_id(segment_id: str) -> SegmentInfoResponse:
     return response
 
 async def get_root_text_mapping_by_segment_id(segment_id: str) -> SegmentRootMappingResponse:
-    cache_data = get_segment_root_mapping_by_id_cache(segment_id = segment_id)
+    cache_data: SegmentRootMappingResponse = get_segment_root_mapping_by_id_cache(segment_id = segment_id)
     if cache_data is not None:
         return cache_data
     is_valid_segment = await SegmentUtils.validate_segment_exists(segment_id=segment_id)

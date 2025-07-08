@@ -107,7 +107,7 @@ async def fetch_sheets(
 ) -> SheetDTOResponse:
     # currently sheet language is not used since there's is selection of language for sheets
     
-    cache_data = get_fetch_sheets_cache(
+    cache_data: SheetDTOResponse = get_fetch_sheets_cache(
         token=token,
         language=language,
         email=email,
@@ -158,7 +158,7 @@ async def fetch_sheets(
 
 
 async def get_sheet_by_id(sheet_id: str, skip: int, limit: int) -> SheetDetailDTO:
-    cache_data = get_sheet_by_id_cache(
+    cache_data: SheetDetailDTO = get_sheet_by_id_cache(
         sheet_id=sheet_id,
         skip=skip,
         limit=limit
