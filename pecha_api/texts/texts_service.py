@@ -27,7 +27,10 @@ from .texts_response_models import (
     TextDetailsRequest,
     DetailTextMapping,
     UpdateTextRequest,
-    TextDTOResponse
+    TextDTOResponse,
+    NewTextDetailsRequest,
+    Section,
+    NewDetailTableOfContentResponse
 )
 from .groups.groups_service import (
     validate_group_exists
@@ -54,9 +57,10 @@ from pecha_api.users.users_service import (
 from pecha_api.terms.terms_service import get_term
 from .segments.segments_utils import SegmentUtils
 
-from typing import List, Dict, Optional
+from typing import List, Dict, Optional, Tuple, Set
 from pecha_api.config import get
 from pecha_api.utils import Utils
+from .texts_enums import PaginationDirection
 
 
 async def get_text_by_text_id_or_term(
@@ -154,6 +158,50 @@ async def remove_table_of_content_by_text_id(text_id: str):
     if not is_valid_text:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=ErrorConstants.TEXT_NOT_FOUND_MESSAGE)
     return await delete_table_of_content_by_text_id(text_id=text_id)
+
+async def new_get_text_details_by_text_id(
+        text_id: str,
+        text_details_request: NewTextDetailsRequest
+) -> DetailTableOfContentResponse:
+    
+    await _validate_text_detail_request(
+        text_id=text_id,
+        text_details_request=text_details_request
+    )
+    selected_text = await TextUtils.get_text_detail_by_id(text_id=text_id)
+    
+    table_of_content: TableOfContent = await _new_receive_table_of_content(
+        text_id=text_id,
+        text_details_request=text_details_request
+    )
+    
+    segments_with_position: List[Tuple[str, int]] = _get_segments_with_position_(
+        table_of_content=table_of_content,
+    )
+    total_segments = len(segments_with_position)
+    trimmed_segment_dict = _get_trimmed_segment_dict_(
+        segments_with_position=segments_with_position,
+        segment_id=text_details_request.segment_id,
+        direction=text_details_request.direction,
+        size=text_details_request.size
+    )
+
+    paginated_table_of_content: TableOfContent = _generate_paginated_table_of_content_by_segments_(
+        table_of_content = table_of_content,
+        segment_dict = trimmed_segment_dict
+    )
+
+    detail_table_of_content: NewDetailTableOfContentResponse = await _new_mapping_table_of_content(
+        text=selected_text,
+        table_of_content=paginated_table_of_content,
+        version_id=text_details_request.version_id,
+        size=text_details_request.size,
+        total_segments=total_segments,
+        pagination_direction=text_details_request.direction
+    )
+
+    return detail_table_of_content
+    
 
 async def get_text_details_by_text_id(
         text_id: str,
@@ -285,6 +333,27 @@ async def create_table_of_content(table_of_content_request: TableOfContent, toke
 
 
 # PRIVATE FUNCTIONS
+
+async def _new_mapping_table_of_content(
+        text: TextDTO, 
+        table_of_content: TableOfContent,
+        version_id: str,
+        size: int,
+        total_segments: int,
+        pagination_direction: PaginationDirection,
+) -> NewDetailTableOfContentResponse:
+    detail_table_of_content = await SegmentUtils.get_mapped_segment_content_for_table_of_content(
+        table_of_content=table_of_content,
+        version_id=version_id
+    )
+    detail_table_of_content = NewDetailTableOfContentResponse(
+        text_detail=text,
+        content=detail_table_of_content,
+        size=size,
+        pagination_direction=pagination_direction,
+        total_segments=total_segments
+    )
+    return detail_table_of_content
 
 async def _mapping_table_of_content(text: TextDTO, table_of_content: TableOfContent,
                                     text_details_request: TextDetailsRequest):
@@ -441,3 +510,136 @@ async def delete_text_by_text_id(text_id: str):
     await delete_text_by_id(text_id=text_id)
 
 
+def _filter_single_section_(section: Section, wanted_segment_ids: Set[str]) -> Section | None:
+    kept_segments = []
+    for segment in section.segments:
+        if segment.segment_id in wanted_segment_ids:
+            kept_segments.append(segment)
+    
+    kept_subsections = []
+    if section.sections:
+        for subsection in section.sections:
+            filtered_subsection = _filter_single_section_(subsection, wanted_segment_ids)
+            if filtered_subsection is not None:
+                kept_subsections.append(filtered_subsection)
+    
+    has_wanted_segments = len(kept_segments) > 0
+    has_valid_subsections = len(kept_subsections) > 0
+    
+    if has_wanted_segments or has_valid_subsections:
+        new_section = Section(
+            id=section.id,
+            title=section.title,
+            section_number=section.section_number,
+            parent_id=section.parent_id,
+            segments=kept_segments,
+            sections=kept_subsections if kept_subsections else None,
+            created_date=section.created_date,
+            updated_date=section.updated_date,
+            published_date=section.published_date
+        )
+        return new_section
+    else:
+        return None
+
+def _generate_paginated_table_of_content_by_segments_(
+    table_of_content: TableOfContent,
+    segment_dict: Dict[str, int]
+) -> TableOfContent:
+    wanted_segment_ids = set(segment_dict.keys())
+    
+    filtered_sections = []
+    for section in table_of_content.sections:
+        filtered_section = _filter_single_section_(section=section, wanted_segment_ids=wanted_segment_ids)
+        if filtered_section is not None:
+            filtered_sections.append(filtered_section)
+    
+    paginated_table_of_content = TableOfContent(
+        id=table_of_content.id,
+        text_id=table_of_content.text_id,
+        sections=filtered_sections
+    )
+    
+    return paginated_table_of_content
+
+
+def _get_trimmed_segment_dict_(segments_with_position:List[Tuple[str,int]], segment_id: str, direction: PaginationDirection, size: int) -> Dict[str, int]:
+    
+
+    dict_segment_id_with_position: Dict[str, int] = dict(segments_with_position)
+
+    segment_position = dict_segment_id_with_position.get(segment_id) - 1
+
+    if direction == PaginationDirection.NEXT:
+        trimmed_segments_with_position = segments_with_position[segment_position : segment_position + size]
+
+    else:
+        trimmed_segments_with_position = segments_with_position[segment_position - size : segment_position]
+    
+    trimmed_segments_with_position = dict(trimmed_segments_with_position)
+
+    return trimmed_segments_with_position
+
+def _get_segments_with_position_(table_of_content: TableOfContent) -> List[Tuple[str, int]]:
+    segments_with_position: List[Tuple[str, int]] = []
+    position = 0
+    
+    def get_segment_from_section(section: Section):
+        nonlocal position
+        
+        for segment in section.segments:
+            segments_with_position.append((segment.segment_id, position))
+            position += 1
+        
+        if section.sections:
+            for sub_section in section.sections: 
+                get_segment_from_section(sub_section)
+    
+    for section in table_of_content.sections:
+        get_segment_from_section(section)
+    
+    return segments_with_position
+
+
+async def _new_receive_table_of_content(text_id: str, text_details_request: NewTextDetailsRequest) -> TableOfContent:
+    table_of_content = None
+    if text_details_request.content_id is not None:
+        table_of_content:TableOfContent = await get_table_of_content_by_content_id(
+            content_id=text_details_request.content_id,
+            skip=text_details_request.skip,
+            limit=text_details_request.limit
+        )
+    else:
+        table_of_contents: List[TableOfContent] = await get_contents_by_id(text_id=text_id)
+        table_of_content: TableOfContent = _search_table_of_content_where_segment_id_exists(table_of_contents=table_of_contents, segment_id=text_details_request.segment_id)
+        text_details_request.skip = max(0, table_of_content.sections[0].section_number - 1)
+        text_details_request.limit = 1
+    if table_of_content is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=ErrorConstants.TABLE_OF_CONTENT_NOT_FOUND_MESSAGE
+        )
+    return table_of_content
+
+def _search_section_(sections: List[Section], segment_id: str) -> bool:
+    for section in sections:
+        for segment in section.segments:
+            if segment.segment_id == segment_id:
+                return True
+        
+        if section.sections:
+            result = _search_section_(sections=section.sections, segment_id=segment_id)
+            if result:  
+                return result
+    
+    return False
+
+def _search_table_of_content_where_segment_id_exists(table_of_contents: List[TableOfContent], segment_id: str) -> TableOfContent:
+    for table_of_content in table_of_contents:
+        result = _search_section_(sections=table_of_content.sections, segment_id=segment_id)
+        if result:
+            return table_of_content
+    raise HTTPException(
+        status_code=status.HTTP_404_NOT_FOUND,
+        detail=ErrorConstants.TABLE_OF_CONTENT_NOT_FOUND_MESSAGE
+    )
