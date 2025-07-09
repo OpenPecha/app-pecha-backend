@@ -159,10 +159,12 @@ async def remove_table_of_content_by_text_id(text_id: str):
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=ErrorConstants.TEXT_NOT_FOUND_MESSAGE)
     return await delete_table_of_content_by_text_id(text_id=text_id)
 
+
+# NEW TEXT DETAILS SERVICE
 async def new_get_text_details_by_text_id(
         text_id: str,
         text_details_request: NewTextDetailsRequest
-) -> DetailTableOfContentResponse:
+) -> NewDetailTableOfContentResponse:
     
     await _validate_text_detail_request(
         text_id=text_id,
