@@ -23,10 +23,19 @@ from PIL import Image
 from pecha_api.utils import Utils
 from pecha_api.image_utils import ImageUtils
 
+from .user_cache_service import (
+    get_user_info_cache,
+    set_user_info_cache
+)
+
 
 def get_user_info(token: str) -> UserInfoResponse:
+    cached_data: UserInfoResponse = get_user_info_cache(token=token)
+    if cached_data:
+        return cached_data
     current_user = validate_and_extract_user_details(token=token)
     user_info_response = generate_user_info_response(user=current_user)
+    set_user_info_cache(token=token, data=user_info_response)
     return user_info_response
 
 def fetch_user_by_email(email: str) -> Optional[UserInfoResponse]:

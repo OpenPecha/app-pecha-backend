@@ -40,8 +40,8 @@ DEFAULTS = dict(
     PECHA_BACKEND_ENDPOINT="https://pecha-backend-12341825340-1fb0112.onrender.com/api/v1",
 
     # Search configuration
-    ELASTICSEARCH_URL= "",
-    ELASTICSEARCH_API="",
+    ELASTICSEARCH_URL= None,
+    ELASTICSEARCH_API=None,
     ELASTICSEARCH_CONTENT_INDEX = "pecha-texts",
     ELASTICSEARCH_SEGMENT_INDEX = "pecha-segments",
     ELASTICSEARCH_SHEET_INDEX = "pecha-sheets"

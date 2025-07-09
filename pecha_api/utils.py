@@ -2,9 +2,8 @@ from typing import Optional, List, Union
 import hashlib
 import io
 import logging
-from PIL import Image
 from beanie import PydanticObjectId
-from fastapi import HTTPException, UploadFile
+from fastapi import HTTPException
 from bson.errors import InvalidId
 from starlette import status
 from datetime import datetime, timezone, timedelta
