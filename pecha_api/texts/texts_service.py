@@ -560,7 +560,7 @@ def _generate_paginated_table_of_content_by_segments_(
             filtered_sections.append(filtered_section)
     
     paginated_table_of_content = TableOfContent(
-        id=table_of_content.id,
+        id=str(table_of_content.id),
         text_id=table_of_content.text_id,
         sections=filtered_sections
     )
@@ -611,14 +611,12 @@ async def _new_receive_table_of_content(text_id: str, text_details_request: NewT
     if text_details_request.content_id is not None:
         table_of_content:TableOfContent = await get_table_of_content_by_content_id(
             content_id=text_details_request.content_id,
-            skip=text_details_request.skip,
-            limit=text_details_request.limit
+            skip=0,
+            limit=1
         )
     else:
         table_of_contents: List[TableOfContent] = await get_contents_by_id(text_id=text_id)
         table_of_content: TableOfContent = _search_table_of_content_where_segment_id_exists(table_of_contents=table_of_contents, segment_id=text_details_request.segment_id)
-        text_details_request.skip = max(0, table_of_content.sections[0].section_number - 1)
-        text_details_request.limit = 1
     if table_of_content is None:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,

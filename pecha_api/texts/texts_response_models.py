@@ -88,7 +88,7 @@ class NewDetailTableOfContentResponse(BaseModel):
     text_detail: TextDTO
     content: DetailTableOfContent
     size: int
-    direction: PaginationDirection
+    pagination_direction: PaginationDirection
     current_segment_position: int
     total_segments: int
 
