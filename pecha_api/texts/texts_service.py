@@ -187,7 +187,7 @@ async def new_get_text_details_by_text_id(
         direction=text_details_request.direction,
         size=text_details_request.size
     )
-
+    current_segment_position = trimmed_segment_dict.get(text_details_request.segment_id)
     paginated_table_of_content: TableOfContent = _generate_paginated_table_of_content_by_segments_(
         table_of_content = table_of_content,
         segment_dict = trimmed_segment_dict
@@ -199,6 +199,7 @@ async def new_get_text_details_by_text_id(
         version_id=text_details_request.version_id,
         size=text_details_request.size,
         total_segments=total_segments,
+        current_segment_position=current_segment_position,
         pagination_direction=text_details_request.direction
     )
 
@@ -342,6 +343,7 @@ async def _new_mapping_table_of_content(
         version_id: str,
         size: int,
         total_segments: int,
+        current_segment_position: int,
         pagination_direction: PaginationDirection,
 ) -> NewDetailTableOfContentResponse:
     detail_table_of_content = await SegmentUtils.get_mapped_segment_content_for_table_of_content(
@@ -353,6 +355,7 @@ async def _new_mapping_table_of_content(
         content=detail_table_of_content,
         size=size,
         pagination_direction=pagination_direction,
+        current_segment_position=current_segment_position,
         total_segments=total_segments
     )
     return detail_table_of_content
