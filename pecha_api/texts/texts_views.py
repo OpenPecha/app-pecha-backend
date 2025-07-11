@@ -84,8 +84,8 @@ async def get_contents_with_details(
         text_id: str,
         text_details_request: NewTextDetailsRequest
 ) -> NewDetailTableOfContentResponse:
-    return await get_text_details_by_text_id(text_id=text_id, text_details_request=text_details_request)
     return await new_get_text_details_by_text_id(text_id=text_id, text_details_request=text_details_request)
+    return await get_text_details_by_text_id(text_id=text_id, text_details_request=text_details_request)
 
 @text_router.post("/table-of-content", status_code=status.HTTP_200_OK)
 async def create_table_of_content_request(
