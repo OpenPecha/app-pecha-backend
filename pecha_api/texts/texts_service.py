@@ -176,6 +176,7 @@ async def new_get_text_details_by_text_id(
         text_id=text_id,
         text_details_request=text_details_request
     )
+
     
     segments_with_position: List[Tuple[str, int]] = _get_segments_with_position_(
         table_of_content=table_of_content,
@@ -551,6 +552,7 @@ def _generate_paginated_table_of_content_by_segments_(
     table_of_content: TableOfContent,
     segment_dict: Dict[str, int]
 ) -> TableOfContent:
+
     wanted_segment_ids = set(segment_dict.keys())
     
     filtered_sections = []
@@ -602,7 +604,6 @@ def _get_segments_with_position_(table_of_content: TableOfContent) -> List[Tuple
     
     for section in table_of_content.sections:
         get_segment_from_section(section)
-    
     return segments_with_position
 
 
@@ -610,9 +611,7 @@ async def _new_receive_table_of_content(text_id: str, text_details_request: NewT
     table_of_content = None
     if text_details_request.content_id is not None:
         table_of_content:TableOfContent = await get_table_of_content_by_content_id(
-            content_id=text_details_request.content_id,
-            skip=0,
-            limit=1
+            content_id=text_details_request.content_id
         )
     else:
         table_of_contents: List[TableOfContent] = await get_contents_by_id(text_id=text_id)
