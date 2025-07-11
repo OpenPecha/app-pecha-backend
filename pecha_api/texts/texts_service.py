@@ -177,7 +177,6 @@ async def new_get_text_details_by_text_id(
         text_details_request=text_details_request
     )
 
-    
     segments_with_position: List[Tuple[str, int]] = _get_segments_with_position_(
         table_of_content=table_of_content,
     )
@@ -577,6 +576,7 @@ def _get_trimmed_segment_dict_(segments_with_position:List[Tuple[str,int]], segm
 
     segment_position = dict_segment_id_with_position.get(segment_id) - 1
 
+
     if direction == PaginationDirection.NEXT:
         trimmed_segments_with_position = segments_with_position[segment_position : segment_position + size]
 
@@ -589,7 +589,7 @@ def _get_trimmed_segment_dict_(segments_with_position:List[Tuple[str,int]], segm
 
 def _get_segments_with_position_(table_of_content: TableOfContent) -> List[Tuple[str, int]]:
     segments_with_position: List[Tuple[str, int]] = []
-    position = 0
+    position = 1
     
     def get_segment_from_section(section: Section):
         nonlocal position
