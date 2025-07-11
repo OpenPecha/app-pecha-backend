@@ -70,11 +70,11 @@ async def get_text_by_text_id_or_collection(
     if language is None:
         language = get("DEFAULT_LANGUAGE")
 
-    if term_id is not None:
-        term = await get_term(term_id=term_id, language=language)
-        texts = await _get_texts_by_term_id(term_id=term_id, language=language, skip=skip, limit=limit)
+    if collection_id is not None:
+        collection = await get_collection(collection_id=collection_id, language=language)
+        texts = await _get_texts_by_collection_id(collection_id=collection_id, language=language, skip=skip, limit=limit)
         return TextsCategoryResponse(
-            term=term,
+            collection=collection,
             texts=texts,
             total=len(texts),
             skip=skip,
@@ -85,7 +85,7 @@ async def get_text_by_text_id_or_collection(
     
     set_text_by_text_id_or_term_cache(
         text_id = text_id,
-        term_id = term_id,
+        collection_id = collection_id,
         language = language,
         skip = skip,
         limit = limit,
