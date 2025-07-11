@@ -73,14 +73,6 @@ async def create_sheet(
         token=authentication_credential.credentials
     )
 
-@sheets_router.get("/{sheet_id}", status_code=status.HTTP_200_OK)
-async def get_sheet(
-    sheet_id: str,
-    skip: int = Query(default=0),
-    limit: int = Query(default=10)
-) -> SheetDetailDTO:
-    return await get_sheet_by_id(sheet_id=sheet_id, skip=skip, limit=limit)
-
 
 @sheets_router.put("/{sheet_id}", status_code=status.HTTP_200_OK)
 async def update_sheet(

@@ -9,6 +9,8 @@ from pecha_api.topics.topics_response_models import TopicsResponse, TopicModel, 
 @pytest.mark.asyncio
 async def test_get_topics_without_parent():
     with patch('pecha_api.topics.topics_service.get_child_count', new_callable=AsyncMock, return_value=2), \
+        patch('pecha_api.topics.topics_service.get_topics_cache', return_value=None), \
+        patch('pecha_api.topics.topics_service.set_topics_cache', return_value=None), \
             patch('pecha_api.topics.topics_service.get_topics_by_parent',
                   new_callable=AsyncMock) as mock_get_topics_by_parent, \
             patch('pecha_api.config.get', new_callable=AsyncMock, return_value="en"):
@@ -32,6 +34,8 @@ async def test_get_topics_with_parent():
             patch('pecha_api.topics.topics_service.get_topics_by_parent',
                   new_callable=AsyncMock) as mock_get_topics_by_parent, \
             patch('pecha_api.topics.topics_service.get_topic_by_id',new_callable=AsyncMock) as mock_get_topic_by_id, \
+            patch('pecha_api.topics.topics_service.get_topics_cache', return_value=None), \
+        patch('pecha_api.topics.topics_service.set_topics_cache', return_value=None), \
             patch('pecha_api.config.get', return_value="en"):
         mock_get_topics_by_parent.return_value = [
             AsyncMock(id="id_1", titles={"en": "The power of loving kindness", "bo": "བྱམས་སེམས་ཀྱི་ནུས་པ།"}, parent_id=None,
@@ -53,6 +57,8 @@ async def test_get_topics_with_parent():
 @pytest.mark.asyncio
 async def test_get_topics_language_en():
     with patch('pecha_api.topics.topics_service.get_child_count', new_callable=AsyncMock, return_value=1), \
+        patch('pecha_api.topics.topics_service.get_topics_cache', return_value=None), \
+        patch('pecha_api.topics.topics_service.set_topics_cache', return_value=None), \
             patch('pecha_api.topics.topics_service.get_topics_by_parent',
                   new_callable=AsyncMock) as mock_get_topics_by_parent:
         mock_get_topics_by_parent.return_value = [
@@ -68,6 +74,8 @@ async def test_get_topics_language_en():
 @pytest.mark.asyncio
 async def test_get_topics_language_bo():
     with patch('pecha_api.topics.topics_service.get_child_count', new_callable=AsyncMock, return_value=1), \
+        patch('pecha_api.topics.topics_service.get_topics_cache', return_value=None), \
+        patch('pecha_api.topics.topics_service.set_topics_cache', return_value=None), \
             patch('pecha_api.topics.topics_service.get_topics_by_parent',
                   new_callable=AsyncMock) as mock_get_topics_by_parent:
         mock_get_topics_by_parent.return_value = [
@@ -84,6 +92,8 @@ async def test_get_topics_language_bo():
 @pytest.mark.asyncio
 async def test_get_topics_pagination():
     with patch('pecha_api.topics.topics_service.get_child_count', return_value=1), \
+        patch('pecha_api.topics.topics_service.get_topics_cache', return_value=None), \
+        patch('pecha_api.topics.topics_service.set_topics_cache', return_value=None), \
             patch('pecha_api.topics.topics_service.get_topics_by_parent',
                   new_callable=AsyncMock) as mock_get_topics_by_parent, \
             patch('pecha_api.config.get', return_value="en"):

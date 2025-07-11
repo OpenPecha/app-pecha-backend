@@ -348,6 +348,8 @@ async def test_get_sheet_by_id_success():
         )
     }
     with patch("pecha_api.sheets.sheets_service.TextUtils.get_text_details_by_id", new_callable=AsyncMock, return_value=mock_sheet_details), \
+        patch("pecha_api.sheets.sheets_service.get_sheet_by_id_cache", new_callable=MagicMock, return_value=None), \
+        patch("pecha_api.sheets.sheets_service.set_sheet_by_id_cache", new_callable=MagicMock), \
         patch("pecha_api.sheets.sheets_service.fetch_user_by_email", new_callable=MagicMock, return_value=mock_user_details), \
         patch("pecha_api.sheets.sheets_service.get_segments_details_by_ids", new_callable=AsyncMock, return_value=segment_dict), \
         patch("pecha_api.sheets.sheets_service.get_table_of_contents_by_text_id", new_callable=AsyncMock, return_value=mock_table_of_content_response):
@@ -366,7 +368,9 @@ async def test_get_sheet_by_id_success():
 @pytest.mark.asyncio
 async def test_get_sheet_by_id_invalid_sheet_id():
     sheet_id="invalid_sheet_id"
-    with patch("pecha_api.texts.texts_utils.TextUtils.validate_text_exists", new_callable=AsyncMock, return_value=False):
+    with patch("pecha_api.texts.texts_utils.TextUtils.validate_text_exists", new_callable=AsyncMock, return_value=False), \
+        patch("pecha_api.sheets.sheets_service.get_sheet_by_id_cache", new_callable=MagicMock, return_value=None),\
+        patch("pecha_api.sheets.sheets_service.set_sheet_by_id_cache", new_callable=MagicMock):
         with pytest.raises(HTTPException) as exc_info:
             await get_sheet_by_id(sheet_id=sheet_id, skip=0, limit=10)
         assert exc_info.value.status_code == status.HTTP_404_NOT_FOUND
