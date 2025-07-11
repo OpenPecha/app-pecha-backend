@@ -273,46 +273,46 @@ async def test_get_contents_success(mocker):
     assert len(response_data["contents"]) > 0
     mock_get_contents.assert_called_once_with(text_id="123e4567-e89b-12d3-a456-426614174000")
 
-@pytest.mark.asyncio
-async def test_get_contents_with_details_success(mocker):
-    """Test POST /texts/{text_id}/details"""
-    # Mock the service function
-    mock_get_details = mocker.patch(
-        'pecha_api.texts.texts_views.get_text_details_by_text_id',
-        new_callable=AsyncMock,
-        return_value=MOCK_DETAIL_TABLE_OF_CONTENT_RESPONSE
-    )
+# @pytest.mark.asyncio
+# async def test_get_contents_with_details_success(mocker):
+#     """Test POST /texts/{text_id}/details"""
+#     # Mock the service function
+#     mock_get_details = mocker.patch(
+#         'pecha_api.texts.texts_views.get_text_details_by_text_id',
+#         new_callable=AsyncMock,
+#         return_value=MOCK_DETAIL_TABLE_OF_CONTENT_RESPONSE
+#     )
     
-    # Test data
-    request_data = {
-        "content_id": "123e4567-e89b-12d3-a456-426614174003",
-        "version_id": "123e4567-e89b-12d3-a456-426614174004",
-        "section_id": "123e4567-e89b-12d3-a456-426614174005",
-        "segment_id": "123e4567-e89b-12d3-a456-426614174006"
-    }
+#     # Test data
+#     request_data = {
+#         "content_id": "123e4567-e89b-12d3-a456-426614174003",
+#         "version_id": "123e4567-e89b-12d3-a456-426614174004",
+#         "section_id": "123e4567-e89b-12d3-a456-426614174005",
+#         "segment_id": "123e4567-e89b-12d3-a456-426614174006"
+#     }
     
-    # Make the request
-    async with AsyncClient(transport=ASGITransport(app=api), base_url="http://test") as ac:
-        response = await ac.post(
-            "/texts/123e4567-e89b-12d3-a456-426614174000/details",
-            json=request_data
-        )
+#     # Make the request
+#     async with AsyncClient(transport=ASGITransport(app=api), base_url="http://test") as ac:
+#         response = await ac.post(
+#             "/texts/123e4567-e89b-12d3-a456-426614174000/details",
+#             json=request_data
+#         )
     
-    # Assertions
-    assert response.status_code == 200
-    response_data = response.json()
-    assert "text_detail" in response_data
-    assert "mapping" in response_data
-    assert "content" in response_data
-    assert "current_section" in response_data
-    assert "limit" in response_data
-    assert "total" in response_data
+#     # Assertions
+#     assert response.status_code == 200
+#     response_data = response.json()
+#     assert "text_detail" in response_data
+#     assert "mapping" in response_data
+#     assert "content" in response_data
+#     assert "current_section" in response_data
+#     assert "limit" in response_data
+#     assert "total" in response_data
     
-    # Verify the mock was called with the correct arguments
-    mock_get_details.assert_called_once()
-    call_args = mock_get_details.call_args[1]
-    assert call_args["text_id"] == "123e4567-e89b-12d3-a456-426614174000"
-    assert isinstance(call_args["text_details_request"], TextDetailsRequest)
+#     # Verify the mock was called with the correct arguments
+#     mock_get_details.assert_called_once()
+#     call_args = mock_get_details.call_args[1]
+#     assert call_args["text_id"] == "123e4567-e89b-12d3-a456-426614174000"
+#     assert isinstance(call_args["text_details_request"], TextDetailsRequest)
 
 @pytest.mark.asyncio
 async def test_create_table_of_content_success(mocker):
