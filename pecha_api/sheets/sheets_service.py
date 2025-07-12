@@ -91,7 +91,8 @@ from .sheets_cache_service import (
     get_fetch_sheets_cache,
     set_fetch_sheets_cache,
     get_sheet_by_id_cache,
-    set_sheet_by_id_cache
+    set_sheet_by_id_cache,
+    delete_sheet_by_id_cache
 )
 
 DEFAULT_SHEET_SECTION_NUMBER = 1
@@ -275,6 +276,9 @@ async def update_sheet_by_id(
         text_id=sheet_id,
         segment_dict=sheet_segments,
         token=token
+    )
+    delete_sheet_by_id_cache(
+        sheet_id=sheet_id
     )
     return SheetIdResponse(sheet_id=sheet_id)
 
