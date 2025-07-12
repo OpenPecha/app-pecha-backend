@@ -27,7 +27,6 @@ def _build_key(key: str) -> str:
 
 
 def set_cache(hash_key: str, value: Any) -> bool:
-    return False
     """Set value in cache with default timeout"""
     try:
         client = get_client()
@@ -42,7 +41,6 @@ def set_cache(hash_key: str, value: Any) -> bool:
 
 
 def get_cache_data(hash_key: str) -> Optional[Any]:
-    return None
     """Get value from cache"""
     try:
         client = get_client()

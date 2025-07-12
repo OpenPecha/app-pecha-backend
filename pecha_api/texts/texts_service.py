@@ -77,7 +77,7 @@ async def get_text_by_text_id_or_term(
         limit = limit
     )
 
-    if cached_data is not None:
+    if False and cached_data is not None:
         return cached_data
 
     if term_id is not None:
@@ -125,7 +125,7 @@ async def get_table_of_contents_by_text_id(text_id: str) -> TableOfContentRespon
     cached_data: TableOfContentResponse = get_table_of_contents_by_text_id_cache(
         text_id = text_id
     )
-    if cached_data is not None:
+    if False and cached_data is not None:
         return cached_data
 
     text = await TextUtils.get_text_detail_by_id(text_id=text_id)
