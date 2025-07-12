@@ -303,6 +303,10 @@ async def delete_sheet_by_id(sheet_id: str, token: str):
     await remove_table_of_content_by_text_id(text_id=sheet_id)
     await delete_text_by_text_id(text_id=sheet_id)
 
+    delete_sheet_by_id_cache(
+        sheet_id=sheet_id
+    )
+
 def upload_sheet_image_request(sheet_id: Optional[str], file: UploadFile) -> SheetImageResponse:
     # Validate and compress the uploaded image
     image_utils = ImageUtils()
