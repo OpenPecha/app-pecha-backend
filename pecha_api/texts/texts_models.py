@@ -111,7 +111,7 @@ class Text(Document):
         return True  # All IDs exist
     
     @classmethod
-    async def get_texts_by_term_id(cls, term_id: str, language: str, skip: int, limit: int) -> List["Text"]:
+    async def get_texts_by_collection_id(cls, term_id: str, language: str, skip: int, limit: int) -> List["Text"]:
         query = {
             "categories": term_id,
         }

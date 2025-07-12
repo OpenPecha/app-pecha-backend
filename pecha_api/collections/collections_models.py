@@ -3,7 +3,7 @@ from typing import Dict, List, Optional
 from beanie import Document, PydanticObjectId
 from pydantic import  Field
 
-class Term(Document):
+class Collection(Document):
     id: PydanticObjectId = Field(default_factory=PydanticObjectId, alias="_id")
     slug: str
     titles: Dict[str, str]  # Dictionary with language_id as key and title as value
@@ -13,7 +13,7 @@ class Term(Document):
 
     class Settings:
         # Define the collection name in MongoDB
-        collection = "terms"
+        collection = "collections"
 
     class Config:
         # Config for Pydantic to allow alias to be used
@@ -25,11 +25,11 @@ class Term(Document):
         indexes = [("slug", 1)]
 
     @classmethod
-    async def get_by_id(cls, parent_id: PydanticObjectId) -> "Term":
+    async def get_by_id(cls, parent_id: PydanticObjectId) -> "Collection":
         return await cls.find({"parent_id": parent_id})
 
     @classmethod
-    async def get_children_by_id(cls, parent_id: PydanticObjectId,skip: int, limit: int) -> List["Term"]:
+    async def get_children_by_id(cls, parent_id: PydanticObjectId,skip: int, limit: int) -> List["Collection"]:
         return await cls.find({"parent_id": parent_id}).skip(skip).limit(limit).to_list()
 
     @classmethod
