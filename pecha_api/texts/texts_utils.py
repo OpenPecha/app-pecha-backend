@@ -157,65 +157,6 @@ class TextUtils:
             views=text.views
         )
         
-    @staticmethod
-    def remove_segments_from_list_of_table_of_content(table_of_content: List[TableOfContent]) -> List[TableOfContent]:
-        """
-        Removes all segments from each section in a list of TableOfContent models while maintaining the section structure.
-        
-        Args:
-            table_of_content: A list of TableOfContent models or a single TableOfContent model
-            
-        Returns:
-            List of TableOfContent models with the same structure but no segments,
-            or a single TableOfContent model if that was the input
-        """
-        # Define recursive function for processing sections - defined once, used for all cases
-        def process_section_without_segments(section):
-            # Create a new section with the same metadata but empty segments list
-            new_section = Section(
-                id=str(section.id),
-                title=section.title,
-                section_number=section.section_number,
-                parent_id=section.parent_id,
-                segments=[],  # Empty segments list
-                sections=[],
-                created_date=section.created_date,
-                updated_date=section.updated_date,
-                published_date=section.published_date
-            )
-            
-            # Process nested sections recursively
-            if section.sections:
-                for subsection in section.sections:
-                    clean_subsection = process_section_without_segments(subsection)
-                    new_section.sections.append(clean_subsection)
-            
-            return new_section
-            
-        # Helper function to process a single TableOfContent
-        def process_table_of_content(content):
-            clean_content = TableOfContent(
-                id=str(content.id) if content.id else None,
-                text_id=content.text_id,
-                sections=[]
-            )
-            
-            # Process all top-level sections
-            for section in content.sections:
-                clean_section = process_section_without_segments(section)
-                clean_content.sections.append(clean_section)
-                
-            return clean_content
-        
-        # Process a list of TableOfContent objects
-        if isinstance(table_of_content, list):
-            result = []
-            for content in table_of_content:
-                result.append(process_table_of_content(content))
-            return result
-        
-        # Process individual TableOfContent object
-        return process_table_of_content(table_of_content)
 
     @staticmethod
     async def get_table_of_content_id_and_respective_section_by_segment_id(text_id: str, segment_id: str) -> Optional[TableOfContent]:

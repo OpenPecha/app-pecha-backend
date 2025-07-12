@@ -17,22 +17,23 @@ from typing import List
 MAX_SEARCH_LIMIT = 30
 
 async def get_search_results(query: str, search_type: SearchType, text_id: str = None, skip: int = 0, limit: int = 10) -> SearchResponse:
+
     if SearchType.SOURCE == search_type:
-        source_search_response: SearchResponse = await _source_search(
+        response: SearchResponse = await _source_search(
             query=query,
             text_id=text_id,
             skip=skip,
             limit=limit
         )
-        return source_search_response
 
     elif SearchType.SHEET == search_type:
-        sheet_search_response: SearchResponse = _sheet_search(
+        response: SearchResponse = _sheet_search(
             query=query,
             skip=skip,
             limit=limit
         )
-        return sheet_search_response
+    
+    return response
 
 
 async def _source_search(

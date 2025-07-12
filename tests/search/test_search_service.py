@@ -1,5 +1,5 @@
 import pytest
-from unittest.mock import patch, AsyncMock, Mock
+from unittest.mock import patch, AsyncMock, Mock, MagicMock
 
 from pecha_api.search.search_response_models import (
     SearchResponse,

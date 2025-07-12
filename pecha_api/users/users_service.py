@@ -10,11 +10,11 @@ from jose.exceptions import JWTClaimsError
 from jwt import ExpiredSignatureError
 
 from pecha_api.error_contants import ErrorConstants
-from .user_response_models import UserInfoRequest, UserInfoResponse, SocialMediaProfile
+from .user_response_models import UserInfoRequest, UserInfoResponse, SocialMediaProfile, PublisherInfoResponse
 from .users_enums import SocialProfile
 from .users_models import Users, SocialMediaAccount
 from ..auth.auth_repository import verify_auth0_token, decode_backend_token
-from .users_repository import get_user_by_email, update_user
+from .users_repository import get_user_by_email, update_user, get_user_by_username
 from ..uploads.S3_utils import delete_file, upload_bytes, generate_presigned_upload_url
 from ..db.database import SessionLocal
 from ..config import get, get_int
@@ -23,10 +23,19 @@ from PIL import Image
 from pecha_api.utils import Utils
 from pecha_api.image_utils import ImageUtils
 
+from .user_cache_service import (
+    get_user_info_cache,
+    set_user_info_cache
+)
+
 
 def get_user_info(token: str) -> UserInfoResponse:
+    cached_data: UserInfoResponse = get_user_info_cache(token=token)
+    if False and cached_data:
+        return cached_data
     current_user = validate_and_extract_user_details(token=token)
     user_info_response = generate_user_info_response(user=current_user)
+    set_user_info_cache(token=token, data=user_info_response)
     return user_info_response
 
 def fetch_user_by_email(email: str) -> Optional[UserInfoResponse]:
@@ -183,3 +192,28 @@ def validate_token(token: str) -> Dict[str, Any]:
         return verify_auth0_token(token)
     else:
         return decode_backend_token(token)
+
+
+def get_publisher_info_by_username(username: str) -> Optional[PublisherInfoResponse]:
+   
+    try:
+        with SessionLocal() as db_session:
+            user = get_user_by_username(db=db_session, username=username)
+            if user:
+                avatar_url = None
+                if user.avatar_url:
+                    avatar_url = generate_presigned_upload_url(
+                        bucket_name=get("AWS_BUCKET_NAME"), 
+                        s3_key=user.avatar_url
+                    )
+                
+                return PublisherInfoResponse(
+                    id=str(user.id),
+                    username=user.username,
+                    firstname=user.firstname,
+                    lastname=user.lastname,
+                    avatar_url=avatar_url
+                )
+    except Exception as e:
+        logging.error(f"Error getting publisher info by username: {e}")
+    return None

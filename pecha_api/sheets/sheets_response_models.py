@@ -1,10 +1,8 @@
 from __future__ import annotations
 
-from typing import List, Union, Optional
+from typing import List, Optional
 
-from pydantic import BaseModel, model_validator
-
-from pecha_api.utils import Utils
+from pydantic import BaseModel
 
 from pecha_api.texts.segments.segments_models import SegmentType
 
@@ -14,7 +12,7 @@ class Source(BaseModel):
     content: str
 
 class CreateSheetRequest(BaseModel):
-    title: str
+    title: Optional[str] = ""
     source: List[Source]
     is_published: bool = False
 
@@ -50,6 +48,23 @@ class SheetDetailDTO(BaseModel):
     limit: int
     total: int
 
+
+class SheetDTO(BaseModel):
+    id: str
+    title: str
+    summary: str
+    published_date: str
+    time_passed: str
+    views: int
+    likes: Optional[List[str]] = []
+    publisher: Publisher
+    language: Optional[str] = None
+
+class SheetDTOResponse(BaseModel):
+    sheets: List[SheetDTO]
+    skip: int
+    limit: int
+    total: int
 
 class SheetIdRequest(BaseModel):
     id: str

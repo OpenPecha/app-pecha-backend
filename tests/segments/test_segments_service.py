@@ -1,5 +1,5 @@
 import uuid
-from unittest.mock import AsyncMock, patch
+from unittest.mock import AsyncMock, patch, MagicMock
 from fastapi import HTTPException
 import uuid
 import pytest
@@ -8,7 +8,7 @@ from pecha_api.texts.segments.segments_service import (
     get_translations_by_segment_id,
     get_segment_details_by_id,
     get_commentaries_by_segment_id,
-    get_infos_by_segment_id,
+    get_info_by_segment_id,
     get_root_text_mapping_by_segment_id,
     remove_segments_by_text_id,
     fetch_segments_by_text_id
@@ -62,6 +62,8 @@ async def test_get_translations_by_segment_id_success():
         for i in range(1, 4)
     ]
     with patch("pecha_api.texts.segments.segments_service.SegmentUtils.validate_segment_exists", new_callable=AsyncMock, return_value=True), \
+        patch("pecha_api.texts.segments.segments_service.get_segment_translations_by_id_cache", new_callable=MagicMock, return_value=None), \
+        patch("pecha_api.texts.segments.segments_service.set_segment_translations_by_id_cache", new_callable=MagicMock), \
         patch("pecha_api.texts.segments.segments_service.get_segment_by_id", new_callable=AsyncMock) as mock_segment, \
         patch("pecha_api.texts.segments.segments_service.SegmentUtils.filter_segment_mapping_by_type_or_text_id", new_callable=AsyncMock) as mock_filter, \
         patch("pecha_api.texts.segments.segments_service.get_related_mapped_segments", new_callable=AsyncMock) as mock_translations:
@@ -70,6 +72,7 @@ async def test_get_translations_by_segment_id_success():
         mock_filter.return_value = translations
 
         response = await get_translations_by_segment_id(segment_id=segment_id)
+        
         assert response == SegmentTranslationsResponse(
             parent_segment=ParentSegment(
                 segment_id=segment_id,
@@ -83,7 +86,9 @@ async def test_get_translations_by_segment_id_success():
 async def test_get_translations_by_segment_id_segment_not_found():
     segment_id = "efb26a06-f373-450b-ba57-e7a8d4dd5b64"
 
-    with patch("pecha_api.texts.segments.segments_service.SegmentUtils.validate_segment_exists", new_callable=AsyncMock, return_value=False):
+    with patch("pecha_api.texts.segments.segments_service.SegmentUtils.validate_segment_exists", new_callable=AsyncMock, return_value=False), \
+        patch("pecha_api.texts.segments.segments_service.get_segment_translations_by_id_cache", new_callable=MagicMock, return_value=None), \
+        patch("pecha_api.texts.segments.segments_service.set_segment_translations_by_id_cache", new_callable=MagicMock, return_value=None):
         with pytest.raises(HTTPException) as excinfo:
             await get_translations_by_segment_id(segment_id=segment_id)
         assert excinfo.value.status_code == 404
@@ -359,7 +364,7 @@ async def test_get_infos_by_segment_id_success():
         patch("pecha_api.texts.segments.segments_service.SegmentUtils.get_count_of_each_commentary_and_version", new_callable=AsyncMock, return_value={"version": 1, "commentary": 2}), \
         patch("pecha_api.texts.segments.segments_service.SegmentUtils.get_root_mapping_count", new_callable=AsyncMock, return_value=3):
         mock_get_related_mapped_segment.return_value = related_mapped_segments
-        response = await get_infos_by_segment_id(segment_id=segment_id)
+        response = await get_info_by_segment_id(segment_id=segment_id)
         assert isinstance(response, SegmentInfoResponse)
         assert isinstance(response.segment_info, SegmentInfo)
         assert isinstance(response.segment_info.related_text, RelatedText)
@@ -375,7 +380,7 @@ async def test_get_infos_by_segment_id_invalid_segment_id():
     segment_id = "efb26a06-f373-450b-ba57-e7a8d4dd5b64"
     with patch("pecha_api.texts.segments.segments_service.SegmentUtils.validate_segment_exists", new_callable=AsyncMock, return_value=False):
         with pytest.raises(HTTPException) as exc_info:
-            await get_infos_by_segment_id(segment_id=segment_id)
+            await get_info_by_segment_id(segment_id=segment_id)
         assert exc_info.value.status_code == 404
         assert exc_info.value.detail == ErrorConstants.SEGMENT_NOT_FOUND_MESSAGE
 

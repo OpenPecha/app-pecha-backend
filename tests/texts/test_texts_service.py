@@ -1,4 +1,4 @@
-from unittest.mock import AsyncMock, patch
+from unittest.mock import AsyncMock, patch, MagicMock
 from fastapi import HTTPException
 
 from pecha_api.terms.terms_response_models import TermsModel
@@ -12,7 +12,8 @@ from pecha_api.texts.texts_service import (
     get_text_details_by_text_id,
     update_text_details,
     remove_table_of_content_by_text_id,
-    delete_text_by_text_id
+    delete_text_by_text_id,
+    get_sheet
 )
 from pecha_api.texts.texts_response_models import (
     CreateTextRequest,
@@ -29,7 +30,8 @@ from pecha_api.texts.texts_response_models import (
     DetailTextSegment,
     Translation,
     DetailTextMapping,
-    UpdateTextRequest
+    UpdateTextRequest,
+    TextDTOResponse
 )
 
 from pecha_api.texts.texts_enums import TextType
@@ -41,7 +43,9 @@ from typing import List
 async def test_get_text_by_text_id_or_term_without_term_id_success():
     text_id = "efb26a06-f373-450b-ba57-e7a8d4dd5b64"
     term_id = None
-    with patch("pecha_api.texts.texts_service.TextUtils.get_text_detail_by_id", new_callable=AsyncMock) as mock_get_text_detail_by_id:
+    with patch("pecha_api.texts.texts_service.TextUtils.get_text_detail_by_id", new_callable=AsyncMock) as mock_get_text_detail_by_id, \
+        patch("pecha_api.texts.texts_service.set_text_by_text_id_or_term_cache", new_callable=MagicMock, return_value=None), \
+        patch("pecha_api.texts.texts_service.get_text_by_text_id_or_term_cache", new_callable=MagicMock, return_value=None):
         mock_get_text_detail_by_id.return_value = TextDTO(
             id=text_id,
             title="བྱང་ཆུབ་སེམས་དཔའི་སྤྱོད་པ་ལ་འཇུག་པ།",
@@ -101,6 +105,8 @@ async def test_get_text_by_term_id():
 
     with patch('pecha_api.texts.texts_service.get_texts_by_term', new_callable=AsyncMock) as mock_get_texts_by_category, \
             patch('pecha_api.terms.terms_service.get_term_by_id', new_callable=AsyncMock) as mock_get_term, \
+            patch("pecha_api.texts.texts_service.set_text_by_text_id_or_term_cache", new_callable=MagicMock, return_value=None), \
+            patch("pecha_api.texts.texts_service.get_text_by_text_id_or_term_cache", new_callable=MagicMock, return_value=None), \
             patch('pecha_api.texts.texts_service.TextUtils.filter_text_base_on_group_id_type', new_callable=AsyncMock) as mock_filter_text_base_on_group_id_type:
         mock_filter_text_base_on_group_id_type.return_value = {"root_text": mock_texts_by_category[1], "commentary": [mock_texts_by_category[0]]}
         mock_get_texts_by_category.return_value = mock_texts_by_category
@@ -205,6 +211,8 @@ async def test_get_versions_by_group_id():
         )
     language = "en"
     with patch('pecha_api.texts.texts_service.TextUtils.get_text_detail_by_id', new_callable=AsyncMock) as mock_text_detail, \
+        patch("pecha_api.texts.texts_service.get_text_versions_by_group_id_cache", new_callable=MagicMock, return_value=None),\
+        patch("pecha_api.texts.texts_service.set_text_versions_by_group_id_cache", new_callable=MagicMock, return_value=None),\
         patch('pecha_api.texts.texts_service.get_texts_by_group_id', new_callable=AsyncMock) as mock_get_texts_by_group_id,\
         patch('pecha_api.texts.texts_service.get_contents_by_id', new_callable=AsyncMock) as mock_get_contents_by_id:
         mock_text_detail.return_value = text_detail
@@ -405,8 +413,7 @@ async def test_get_table_of_contents_by_text_id_success():
                     sections=[],
                     created_date="2025-03-16 04:40:54.757652",
                     updated_date="2025-03-16 04:40:54.757652",
-                    published_date="2025-03-16 04:40:54.757652",
-                    published_by="pecha"
+                    published_date="2025-03-16 04:40:54.757652"
                 )
             ]
         )
@@ -426,6 +433,8 @@ async def test_get_table_of_contents_by_text_id_success():
         views=0
     )
     with patch("pecha_api.texts.texts_service.TextUtils.validate_text_exists", new_callable=AsyncMock, return_value=True), \
+        patch("pecha_api.texts.texts_service.get_table_of_contents_by_text_id_cache", new_callable=MagicMock, return_value=None),\
+        patch("pecha_api.texts.texts_service.set_table_of_contents_by_text_id_cache", new_callable=MagicMock, return_value=None),\
         patch("pecha_api.texts.texts_service.TextUtils.get_text_detail_by_id", new_callable=AsyncMock) as mock_get_text_detail_by_id, \
         patch("pecha_api.texts.texts_service.get_contents_by_id", new_callable=AsyncMock) as mock_get_contents_by_id:
         mock_get_text_detail_by_id.return_value = text_detail
@@ -502,8 +511,7 @@ async def test_get_text_details_by_text_id_with_content_id_only_success():
                 sections=[],
                 created_date="2025-03-16 04:40:54.757652",
                 updated_date="2025-03-16 04:40:54.757652",
-                published_date="2025-03-16 04:40:54.757652",
-                published_by="pecha"
+                published_date="2025-03-16 04:40:54.757652"
             )
             for i in range(1,6)
         ]
@@ -535,6 +543,8 @@ async def test_get_text_details_by_text_id_with_content_id_only_success():
         ]
     )
     with patch("pecha_api.texts.texts_service.TextUtils.validate_text_exists", new_callable=AsyncMock, return_value=True), \
+        patch("pecha_api.texts.texts_service.get_text_details_cache", new_callable=MagicMock, return_value=None), \
+        patch("pecha_api.texts.texts_service.set_text_details_cache", new_callable=MagicMock, return_value=None), \
         patch("pecha_api.texts.texts_service.TextUtils.get_text_detail_by_id", new_callable=AsyncMock) as mock_get_text_detail_by_id, \
         patch("pecha_api.texts.texts_service.get_table_of_content_by_content_id", new_callable=AsyncMock) as mock_get_table_of_content_by_content_id, \
         patch("pecha_api.texts.texts_service.get_sections_count_of_table_of_content", new_callable=AsyncMock) as mock_get_sections_count_of_table_of_content, \
@@ -651,14 +661,15 @@ async def test_get_text_details_by_text_id_with_content_id_and_version_id_succes
                 sections=[],
                 created_date="2025-03-16 04:40:54.757652",
                 updated_date="2025-03-16 04:40:54.757652",
-                published_date="2025-03-16 04:40:54.757652",
-                published_by="pecha"
+                published_date="2025-03-16 04:40:54.757652"
             )
             for i in range(1,6)
         ]
     )
     with patch("pecha_api.texts.texts_service.TextUtils.validate_text_exists", new_callable=AsyncMock, return_value=True), \
         patch("pecha_api.texts.texts_service.TextUtils.get_text_detail_by_id", new_callable=AsyncMock) as mock_get_text_detail_by_id, \
+        patch("pecha_api.texts.texts_service.get_text_details_cache", new_callable=MagicMock, return_value=None), \
+        patch("pecha_api.texts.texts_service.set_text_details_cache", new_callable=MagicMock, return_value=None), \
         patch("pecha_api.texts.texts_service.get_table_of_content_by_content_id", new_callable=AsyncMock) as mock_get_table_of_content_by_content_id, \
         patch("pecha_api.texts.texts_service.get_sections_count_of_table_of_content", new_callable=AsyncMock) as mock_get_sections_count_of_table_of_content, \
         patch("pecha_api.texts.texts_service.SegmentUtils.get_mapped_segment_content_for_table_of_content", new_callable=AsyncMock) as mock_get_mapped_segment_content:
@@ -785,6 +796,8 @@ async def test_get_text_details_by_text_id_with_segment_id_success():
     with patch("pecha_api.texts.texts_service.TextUtils.validate_text_exists", new_callable=AsyncMock, return_value=True), \
         patch("pecha_api.texts.texts_service.SegmentUtils.validate_segment_exists", new_callable=AsyncMock, return_value=True), \
         patch("pecha_api.texts.texts_service.TextUtils.get_text_detail_by_id", new_callable=AsyncMock) as mock_get_text_detail_by_id, \
+        patch("pecha_api.texts.texts_service.get_text_details_cache", new_callable=MagicMock, return_value=None), \
+        patch("pecha_api.texts.texts_service.set_text_details_cache", new_callable=MagicMock, return_value=None), \
         patch("pecha_api.texts.texts_service.TextUtils.get_table_of_content_id_and_respective_section_by_segment_id", new_callable=AsyncMock) as mock_get_table_of_content_by_content_id, \
         patch("pecha_api.texts.texts_service.get_sections_count_of_table_of_content", new_callable=AsyncMock) as mock_get_sections_count_of_table_of_content, \
         patch("pecha_api.texts.texts_service.SegmentUtils.get_mapped_segment_content_for_table_of_content", new_callable=AsyncMock) as mock_get_mapped_segment_content:
@@ -906,6 +919,8 @@ async def test_get_text_details_by_text_id_with_content_id_and_section_id_only_s
     )
     with patch("pecha_api.texts.texts_service.TextUtils.validate_text_exists", new_callable=AsyncMock, return_value=True), \
         patch("pecha_api.texts.texts_service.TextUtils.get_text_detail_by_id", new_callable=AsyncMock) as mock_get_text_detail_by_id, \
+        patch("pecha_api.texts.texts_service.get_text_details_cache", new_callable=MagicMock, return_value=None), \
+        patch("pecha_api.texts.texts_service.set_text_details_cache", new_callable=MagicMock, return_value=None), \
         patch("pecha_api.texts.texts_service.get_table_of_content_by_content_id", new_callable=AsyncMock) as mock_get_table_of_content_by_content_id, \
         patch("pecha_api.texts.texts_service.get_sections_count_of_table_of_content", new_callable=AsyncMock) as mock_get_sections_count_of_table_of_content, \
         patch("pecha_api.texts.texts_service.SegmentUtils.get_mapped_segment_content_for_table_of_content", new_callable=AsyncMock) as mock_get_mapped_segment_content:
@@ -1031,7 +1046,38 @@ async def test_delete_text_by_text_id_success():
 @pytest.mark.asyncio
 async def test_delete_text_by_text_id_invalid_text_id():
     with patch("pecha_api.texts.texts_service.TextUtils.validate_text_exists", new_callable=AsyncMock, return_value=False):
-        with pytest.raises(HTTPException) as exec_info:
-            await delete_text_by_text_id(text_id="invalid_id")
-        assert exec_info.value.status_code == 404
-        assert exec_info.value.detail == ErrorConstants.TEXT_NOT_FOUND_MESSAGE
+        with pytest.raises(HTTPException) as exc_info:
+            await delete_text_by_text_id(text_id="invalid_text_id")
+
+        assert exc_info.value.status_code == 404
+        assert exc_info.value.detail == ErrorConstants.TEXT_NOT_FOUND_MESSAGE
+
+@pytest.mark.asyncio
+async def test_get_sheet_success_user_viewing_own_sheets():
+    email = "test_user@gmail.com"
+    mock_sheets = [
+            type("Text", (), {
+                "id": f"sheet_id_{i}",
+                "title": "Test Sheet",
+                "language": "en",
+                "group_id": "group_id",
+                "type": "sheet",
+                "is_published": True if i % 2 == 0 else False,
+                "created_date": "2021-01-01",
+                "updated_date": "2021-01-01",
+                "published_date": "2021-01-01",
+                "published_by": email,
+                "categories": [],
+                "views": 10
+            })()
+            for i in range(1,11)
+        ]
+    with patch("pecha_api.texts.texts_service.fetch_sheets_from_db", new_callable=AsyncMock, return_value=mock_sheets):
+
+        response = await get_sheet(published_by=email, is_published=None, sort_by=None, sort_order=None, skip=0, limit=10)
+
+        assert response is not None
+        assert len(response) == 10
+        for sheet in response:
+            assert sheet.published_by == email
+

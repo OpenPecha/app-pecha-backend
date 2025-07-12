@@ -34,14 +34,14 @@ DEFAULTS = dict(
     CACHE_PORT=6379,
     CACHE_DB=0,
     CACHE_PREFIX="pecha:",
-    CACHE_DEFAULT_TIMEOUT=14400, # 4 hours in seconds
+    CACHE_DEFAULT_TIMEOUT=30, # 30 seconds in seconds
 
     SHORT_URL_GENERATION_ENDPOINT="https://url-shortening-14682653622-b69c6fd.onrender.com/api/v1",
     PECHA_BACKEND_ENDPOINT="https://pecha-backend-12341825340-1fb0112.onrender.com/api/v1",
 
     # Search configuration
-    ELASTICSEARCH_URL= "https://my-elasticsearch-project-f0c060.es.ap-southeast-1.aws.elastic.cloud:443",
-    ELASTICSEARCH_API="RHNaa1o1Y0Izc1ZjOWZWWm41NHU6N1M0VDl2UmNGWmRVR3dMMmJfWERzUQ==",
+    ELASTICSEARCH_URL= None,
+    ELASTICSEARCH_API=None,
     ELASTICSEARCH_CONTENT_INDEX = "pecha-texts",
     ELASTICSEARCH_SEGMENT_INDEX = "pecha-segments",
     ELASTICSEARCH_SHEET_INDEX = "pecha-sheets"
