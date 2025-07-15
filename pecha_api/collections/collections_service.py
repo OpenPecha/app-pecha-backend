@@ -85,8 +85,8 @@ async def update_existing_collection(collection_id: str, update_collection_reque
             language=language,
             slug=updated_collection.slug
         )
-    else:
-        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail=ErrorConstants.ADMIN_ERROR_MESSAGE)
+    
+    raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail=ErrorConstants.ADMIN_ERROR_MESSAGE)
 
 
 async def delete_existing_collection(collection_id: str, token: str):
@@ -94,5 +94,5 @@ async def delete_existing_collection(collection_id: str, token: str):
     if is_admin:
         await delete_collection(collection_id=collection_id)
         return collection_id
-    else:
-        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail=ErrorConstants.ADMIN_ERROR_MESSAGE)
+    
+    raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail=ErrorConstants.ADMIN_ERROR_MESSAGE)

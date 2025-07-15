@@ -44,7 +44,7 @@ async def create_collection(language: str | None, create_collection_request: Cre
 async def update_collection_by_id(collection_id: str, language: str | None, update_collection_request: UpdateCollectionRequest,
                             authentication_credential: Annotated[HTTPAuthorizationCredentials, Depends(oauth2_scheme)]):
     return await update_existing_collection(
-        update_collection_request_id=collection_id,
+        collection_id=collection_id,
         update_collection_request=update_collection_request,
         token=authentication_credential.credentials,
         language=language
