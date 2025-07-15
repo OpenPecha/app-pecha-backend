@@ -60,7 +60,7 @@ async def get_segment_details_by_id(segment_id: str, text_details: bool = False)
         segment_id = segment_id,
         text_details = text_details
     )
-    if cache_data is not None:
+    if False and cache_data is not None:
         return cache_data
     segment = await get_segment_by_id(segment_id=segment_id)
     if not segment:
@@ -111,7 +111,7 @@ async def get_translations_by_segment_id(segment_id: str) -> SegmentTranslations
     Get translations for a given segment ID.
     """
     cache_data: SegmentTranslationsResponse = get_segment_translations_by_id_cache(segment_id = segment_id)
-    if cache_data is not None:
+    if False and cache_data is not None:
         return cache_data
     is_valid_segment = await SegmentUtils.validate_segment_exists(segment_id=segment_id)
     if not is_valid_segment:
@@ -136,7 +136,7 @@ async def get_commentaries_by_segment_id(
         segment_id: str
 ) -> SegmentCommentariesResponse:
     cache_data: SegmentCommentariesResponse = get_segment_commentaries_by_id_cache(segment_id = segment_id)
-    if cache_data is not None:
+    if False and cache_data is not None:
         return cache_data
     is_valid_segment = await SegmentUtils.validate_segment_exists(segment_id=segment_id)
     if not is_valid_segment:
@@ -159,7 +159,7 @@ async def get_commentaries_by_segment_id(
 
 async def get_info_by_segment_id(segment_id: str) -> SegmentInfoResponse:
     cache_data: SegmentInfoResponse = get_segment_info_by_id_cache(segment_id = segment_id)
-    if cache_data is not None:
+    if False and cache_data is not None:
         return cache_data
     is_valid_segment = await SegmentUtils.validate_segment_exists(segment_id=segment_id)
     if not is_valid_segment:
@@ -188,7 +188,7 @@ async def get_info_by_segment_id(segment_id: str) -> SegmentInfoResponse:
 
 async def get_root_text_mapping_by_segment_id(segment_id: str) -> SegmentRootMappingResponse:
     cache_data: SegmentRootMappingResponse = get_segment_root_mapping_by_id_cache(segment_id = segment_id)
-    if cache_data is not None:
+    if False and cache_data is not None:
         return cache_data
     is_valid_segment = await SegmentUtils.validate_segment_exists(segment_id=segment_id)
     if not is_valid_segment:
