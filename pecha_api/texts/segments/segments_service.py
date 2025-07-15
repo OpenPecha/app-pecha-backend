@@ -135,9 +135,6 @@ async def get_translations_by_segment_id(segment_id: str) -> SegmentTranslations
 async def get_commentaries_by_segment_id(
         segment_id: str
 ) -> SegmentCommentariesResponse:
-    """"
-       Get commentaries for a given segment ID.
-    """
     cache_data: SegmentCommentariesResponse = get_segment_commentaries_by_id_cache(segment_id = segment_id)
     if cache_data is not None:
         return cache_data
