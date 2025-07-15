@@ -31,7 +31,7 @@ from .user_cache_service import (
 
 def get_user_info(token: str) -> UserInfoResponse:
     cached_data: UserInfoResponse = get_user_info_cache(token=token)
-    if cached_data:
+    if False and cached_data:
         return cached_data
     current_user = validate_and_extract_user_details(token=token)
     user_info_response = generate_user_info_response(user=current_user)

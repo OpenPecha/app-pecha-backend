@@ -1,7 +1,8 @@
 from pecha_api.utils import Utils
 from pecha_api.cache.cache_repository import (
     get_cache_data,
-    set_cache
+    set_cache,
+    delete_cache
 )
 
 from .sheets_response_models import (
@@ -30,3 +31,8 @@ def set_sheet_by_id_cache(sheet_id: str = None, skip: int = 0, limit: int = 10, 
     payload = [sheet_id, skip, limit]
     hashed_key: str = Utils.generate_hash_key(payload = payload)
     set_cache(hash_key = hashed_key, value = data)
+
+def delete_sheet_by_id_cache(sheet_id: str = None, skip: int = 0, limit: int = 10):
+    payload = [sheet_id, skip, limit]
+    hashed_key: str = Utils.generate_hash_key(payload = payload)
+    delete_cache(hash_key = hashed_key)
