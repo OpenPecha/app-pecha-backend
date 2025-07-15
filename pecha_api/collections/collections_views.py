@@ -40,7 +40,7 @@ async def create_collection(language: str | None, create_collection_request: Cre
     )
 
 
-@collections_router.put("{collection_id}", status_code=status.HTTP_202_ACCEPTED)
+@collections_router.put("/{collection_id}", status_code=status.HTTP_202_ACCEPTED)
 async def update_collection_by_id(collection_id: str, language: str | None, update_collection_request: UpdateCollectionRequest,
                             authentication_credential: Annotated[HTTPAuthorizationCredentials, Depends(oauth2_scheme)]):
     return await update_existing_collection(
@@ -51,7 +51,7 @@ async def update_collection_by_id(collection_id: str, language: str | None, upda
     )
 
 
-@collections_router.delete("/collections{collection_id}", status_code=status.HTTP_204_NO_CONTENT)
+@collections_router.delete("/{collection_id}", status_code=status.HTTP_204_NO_CONTENT)
 async def delete_collection_by_id(collection_id: str,
                             authentication_credential: Annotated[HTTPAuthorizationCredentials, Depends(oauth2_scheme)]):
     return await delete_existing_collection(
