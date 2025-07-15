@@ -25,12 +25,10 @@ from .texts_response_models import (
     TextsCategoryResponse,
     CreateTextRequest,
     TextDetailsRequest,
-    DetailTextMapping,
     UpdateTextRequest,
-    TextDTOResponse,
-    NewTextDetailsRequest,
+    TextDetailsRequest,
     Section,
-    NewDetailTableOfContentResponse
+    DetailTableOfContentResponse
 )
 from .groups.groups_service import (
     validate_group_exists
@@ -161,10 +159,10 @@ async def remove_table_of_content_by_text_id(text_id: str):
 
 
 # NEW TEXT DETAILS SERVICE
-async def new_get_text_details_by_text_id(
+async def get_text_details_by_text_id(
         text_id: str,
-        text_details_request: NewTextDetailsRequest
-) -> NewDetailTableOfContentResponse:
+        text_details_request: TextDetailsRequest
+) -> DetailTableOfContentResponse:
     
     await _validate_text_detail_request(
         text_id=text_id,
@@ -172,7 +170,7 @@ async def new_get_text_details_by_text_id(
     )
     selected_text = await TextUtils.get_text_detail_by_id(text_id=text_id)
     
-    table_of_content: TableOfContent = await _new_receive_table_of_content(
+    table_of_content: TableOfContent = await _receive_table_of_content(
         text_id=text_id,
         text_details_request=text_details_request
     )
@@ -193,7 +191,7 @@ async def new_get_text_details_by_text_id(
         segment_dict = trimmed_segment_dict
     )
 
-    detail_table_of_content: NewDetailTableOfContentResponse = await _new_mapping_table_of_content(
+    detail_table_of_content: DetailTableOfContentResponse = await _new_mapping_table_of_content(
         text=selected_text,
         table_of_content=paginated_table_of_content,
         version_id=text_details_request.version_id,
@@ -203,49 +201,6 @@ async def new_get_text_details_by_text_id(
         pagination_direction=text_details_request.direction
     )
 
-    return detail_table_of_content
-    
-
-async def get_text_details_by_text_id(
-        text_id: str,
-        text_details_request: TextDetailsRequest
-) -> DetailTableOfContentResponse:
-    '''
-       In the following process first we will get the table of content if content_id is provided
-       Otherwise the frontend should have send segment_id which means we'll have to search this segment_id in table of contents
-       Later after getting the table of content we need to map each segment_id with it's content
-       If version ID is provied then we need to first identify the text_id in the mapping field and check if it's matching with the version_id, if yes we just map the segment_id with it's content
-       '''
-    await _validate_text_detail_request(text_id=text_id, text_details_request=text_details_request)
-    selected_text = await TextUtils.get_text_detail_by_id(text_id=text_id)
-    table_of_content = await _receive_table_of_content(
-        text_id=text_id,
-        text_details_request=text_details_request
-    )
-    # Check if the table of content exists in the cache database
-    cached_data: DetailTableOfContentResponse = get_text_details_cache(
-        text_id=text_id,
-        content_id=str(table_of_content.id),
-        version_id=text_details_request.version_id,
-        skip=text_details_request.skip,
-        limit=text_details_request.limit
-    )
-    # if the same table of content with same skip and limit is again found when searching segments in toc. It's returned from cache
-    if cached_data is not None:
-        return cached_data
-    detail_table_of_content = await _mapping_table_of_content(
-        text=selected_text,
-        table_of_content=table_of_content,
-        text_details_request=text_details_request
-    )
-    set_text_details_cache(
-        text_id=text_id,
-        content_id=str(table_of_content.id),
-        version_id=text_details_request.version_id,
-        skip=text_details_request.skip,
-        limit=text_details_request.limit,
-        data=detail_table_of_content
-    )
     return detail_table_of_content
 
 
@@ -345,12 +300,12 @@ async def _new_mapping_table_of_content(
         total_segments: int,
         current_segment_position: int,
         pagination_direction: PaginationDirection,
-) -> NewDetailTableOfContentResponse:
+) -> DetailTableOfContentResponse:
     detail_table_of_content = await SegmentUtils.get_mapped_segment_content_for_table_of_content(
         table_of_content=table_of_content,
         version_id=version_id
     )
-    detail_table_of_content = NewDetailTableOfContentResponse(
+    detail_table_of_content = DetailTableOfContentResponse(
         text_detail=text,
         content=detail_table_of_content,
         size=size,
@@ -360,30 +315,6 @@ async def _new_mapping_table_of_content(
     )
     return detail_table_of_content
 
-async def _mapping_table_of_content(text: TextDTO, table_of_content: TableOfContent,
-                                    text_details_request: TextDetailsRequest):
-    total_sections = await get_sections_count_of_table_of_content(
-        content_id=str(table_of_content.id)
-    )
-    detail_table_of_content = await SegmentUtils.get_mapped_segment_content_for_table_of_content(
-        table_of_content=table_of_content,
-        version_id=text_details_request.version_id
-    )
-    detail_table_of_content = DetailTableOfContentResponse(
-        text_detail=text,
-        mapping=DetailTextMapping(
-            segment_id=text_details_request.segment_id,
-            section_id=text_details_request.section_id
-        ),
-        content=detail_table_of_content,
-        skip=text_details_request.skip,
-        current_section=min(total_sections, text_details_request.skip + 1),
-        limit=text_details_request.limit,
-        total=total_sections
-    )
-    return detail_table_of_content
-
-async def _receive_table_of_content(text_id: str, text_details_request: TextDetailsRequest):
     table_of_content = None
     if text_details_request.content_id is not None:
         table_of_content = await get_table_of_content_by_content_id(
@@ -607,7 +538,7 @@ def _get_segments_with_position_(table_of_content: TableOfContent) -> List[Tuple
     return segments_with_position
 
 
-async def _new_receive_table_of_content(text_id: str, text_details_request: NewTextDetailsRequest) -> TableOfContent:
+async def _receive_table_of_content(text_id: str, text_details_request: TextDetailsRequest) -> TableOfContent:
     table_of_content = None
     if text_details_request.content_id is not None:
         table_of_content:TableOfContent = await get_table_of_content_by_content_id(

@@ -11,7 +11,7 @@ from .texts_service import (
     get_text_by_text_id_or_term,
     get_text_details_by_text_id,
     create_table_of_content,
-    new_get_text_details_by_text_id
+    get_text_details_by_text_id
 )
 from .texts_response_models import (
     CreateTextRequest,
@@ -21,8 +21,7 @@ from .texts_response_models import (
     TextDTO,
     TextVersionResponse,
     DetailTableOfContentResponse,
-    NewDetailTableOfContentResponse,
-    NewTextDetailsRequest
+    TextDetailsRequest
 )
 
 oauth2_scheme = HTTPBearer()
@@ -82,9 +81,8 @@ async def get_contents(
 @text_router.post("/{text_id}/details", status_code=status.HTTP_200_OK)
 async def get_contents_with_details(
         text_id: str,
-        text_details_request: NewTextDetailsRequest
-) -> NewDetailTableOfContentResponse:
-    return await new_get_text_details_by_text_id(text_id=text_id, text_details_request=text_details_request)
+        text_details_request: TextDetailsRequest
+) -> DetailTableOfContentResponse:
     return await get_text_details_by_text_id(text_id=text_id, text_details_request=text_details_request)
 
 @text_router.post("/table-of-content", status_code=status.HTTP_200_OK)

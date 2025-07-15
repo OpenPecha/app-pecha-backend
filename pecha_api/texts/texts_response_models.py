@@ -71,20 +71,7 @@ class DetailTableOfContent(BaseModel):
     text_id: str
     sections: List[DetailSection]
 
-class DetailTextMapping(BaseModel):
-    segment_id: Optional[str] = None
-    section_id: Optional[str] = None
-
 class DetailTableOfContentResponse(BaseModel):
-    text_detail: TextDTO
-    mapping: DetailTextMapping
-    content: DetailTableOfContent
-    skip: int
-    current_section: int
-    limit: int
-    total: int
-
-class NewDetailTableOfContentResponse(BaseModel):
     text_detail: TextDTO
     content: DetailTableOfContent
     size: int
@@ -116,15 +103,8 @@ class TableOfContentResponse(BaseModel):
     text_detail: TextDTO
     contents: List[TableOfContent]
 
-class TextDetailsRequest(BaseModel):
-    content_id: Optional[str] = None
-    version_id: Optional[str] = None
-    segment_id: Optional[str] = None
-    section_id: Optional[str] = None
-    skip: int = 0
-    limit: int = 1
 
-class NewTextDetailsRequest(BaseModel):
+class TextDetailsRequest(BaseModel):
     content_id: Optional[str] = None
     version_id: Optional[str] = None
     segment_id: Optional[str] = None
