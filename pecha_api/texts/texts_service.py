@@ -191,7 +191,7 @@ async def get_text_details_by_text_id(
         segment_dict = trimmed_segment_dict
     )
 
-    detail_table_of_content: DetailTableOfContentResponse = await _new_mapping_table_of_content(
+    detail_table_of_content: DetailTableOfContentResponse = await _mapping_table_of_content(
         text=selected_text,
         table_of_content=paginated_table_of_content,
         version_id=text_details_request.version_id,
@@ -292,7 +292,7 @@ async def create_table_of_content(table_of_content_request: TableOfContent, toke
 
 # PRIVATE FUNCTIONS
 
-async def _new_mapping_table_of_content(
+async def _mapping_table_of_content(
         text: TextDTO, 
         table_of_content: TableOfContent,
         version_id: str,
@@ -506,7 +506,6 @@ def _get_trimmed_segment_dict_(segments_with_position:List[Tuple[str,int]], segm
     dict_segment_id_with_position: Dict[str, int] = dict(segments_with_position)
 
     segment_position = dict_segment_id_with_position.get(segment_id) - 1
-
 
     if direction == PaginationDirection.NEXT:
         trimmed_segments_with_position = segments_with_position[segment_position : segment_position + size]
