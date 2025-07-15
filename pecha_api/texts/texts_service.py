@@ -119,21 +119,32 @@ async def get_sheet(published_by: Optional[str] = None, is_published: Optional[b
     )
     return sheets
 
-async def get_table_of_contents_by_text_id(text_id: str) -> TableOfContentResponse:
+async def get_table_of_contents_by_text_id(text_id: str, language: str, skip: int = 0, limit: int = 10) -> TableOfContentResponse:
+    
+    if language is None:
+        language = get("DEFAULT_LANGUAGE")
+    
+    cached_data: TableOfContentResponse = get_table_of_contents_by_text_id_cache(
+        text_id = text_id,
+        language = language,
+        skip = skip,
+        limit = limit
+    )
+    if cached_data is not None:
+        return cached_data
+    
     is_valid_text: bool = await TextUtils.validate_text_exists(text_id=text_id)
     if not is_valid_text:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=ErrorConstants.TEXT_NOT_FOUND_MESSAGE)
     
-    cached_data: TableOfContentResponse = get_table_of_contents_by_text_id_cache(
-        text_id = text_id
-    )
-    if cached_data is not None:
-        return cached_data
-
-    text = await TextUtils.get_text_detail_by_id(text_id=text_id)
-    table_of_contents = await get_contents_by_id(text_id=text_id)
+    text_detail: TextDTO = await TextUtils.get_text_detail_by_id(text_id=text_id)
+    group_id: str = text_detail.group_id
+    texts: List[TextDTO] = await get_texts_by_group_id(group_id=group_id, skip=skip, limit=limit)
+    filtered_text_on_root_and_version = TextUtils.filter_text_on_root_and_version(texts=texts, language=language)
+    root_text: TextDTO = filtered_text_on_root_and_version["root_text"]
+    table_of_contents: List[TableOfContent] = await get_contents_by_id(text_id=root_text.id)
     response = TableOfContentResponse(
-        text_detail=text,
+        text_detail=root_text,
         contents=[
             TableOfContent(
                 id=str(content.id),
@@ -146,6 +157,9 @@ async def get_table_of_contents_by_text_id(text_id: str) -> TableOfContentRespon
 
     set_table_of_contents_by_text_id_cache(
         text_id = text_id,
+        language = language,
+        skip = skip,
+        limit = limit,
         data = response
     )
     

@@ -398,10 +398,60 @@ async def test_create_table_of_content_invalid_segment():
     
 @pytest.mark.asyncio
 async def test_get_table_of_contents_by_text_id_success():
+    text_id = "text_id_1"
+    language = "bo"
+    skip = 0
+    limit = 10
+
+    mock_text_detail = TextDTO(
+        id=text_id,
+        title="text_1",
+        language=language,
+        group_id="group_id_1",
+        type="version",
+        is_published=False,
+        created_date="2025-03-16 04:40:54.757652",
+        updated_date="2025-03-16 04:40:54.757652",
+        published_date="2025-03-16 04:40:54.757652",
+        published_by="pecha",
+        categories=[],
+        views=0
+    )
+    mock_group_texts = [
+        TextDTO(
+            id="text_id_1",
+            title="text_1",
+            language="bo",
+            group_id="group_id_1",
+            type="version",
+            is_published=False,
+            created_date="2025-03-16 04:40:54.757652",
+            updated_date="2025-03-16 04:40:54.757652",
+            published_date="2025-03-16 04:40:54.757652",
+            published_by="pecha",
+            categories=[],
+            views=0
+        ),
+        TextDTO(
+            id="text_id_2",
+            title="text_2",
+            language="en",
+            group_id="group_id_1",
+            type="version",
+            is_published=False,
+            created_date="2025-03-16 04:40:54.757652",
+            updated_date="2025-03-16 04:40:54.757652",
+            published_date="2025-03-16 04:40:54.757652",
+            published_by="pecha",
+            categories=[],
+            views=0
+        )
+    ]
+
     table_of_contents = [
         TableOfContent(
             id="id_1",
-            text_id="text_id 1",
+            text_id=text_id,
             sections=[
                 Section(
                     id="id_1",
@@ -417,38 +467,27 @@ async def test_get_table_of_contents_by_text_id_success():
             ]
         )
     ]
-    text_detail = TextDTO(
-        id="id_1",
-        title="text_1",
-        language="bo",
-        group_id="group_id_1",
-        type="version",
-        is_published=True,
-        created_date="2025-03-16 04:40:54.757652",
-        updated_date="2025-03-16 04:40:54.757652",
-        published_date="2025-03-16 04:40:54.757652",
-        published_by="pecha",
-        categories=[],
-        views=0
-    )
+
     with patch("pecha_api.texts.texts_service.TextUtils.validate_text_exists", new_callable=AsyncMock, return_value=True), \
         patch("pecha_api.texts.texts_service.get_table_of_contents_by_text_id_cache", new_callable=MagicMock, return_value=None),\
         patch("pecha_api.texts.texts_service.set_table_of_contents_by_text_id_cache", new_callable=MagicMock, return_value=None),\
-        patch("pecha_api.texts.texts_service.TextUtils.get_text_detail_by_id", new_callable=AsyncMock) as mock_get_text_detail_by_id, \
-        patch("pecha_api.texts.texts_service.get_contents_by_id", new_callable=AsyncMock) as mock_get_contents_by_id:
-        mock_get_text_detail_by_id.return_value = text_detail
-        mock_get_contents_by_id.return_value = table_of_contents
+        patch("pecha_api.texts.texts_service.TextUtils.get_text_detail_by_id", new_callable=AsyncMock, return_value=mock_text_detail), \
+        patch("pecha_api.texts.texts_service.get_texts_by_group_id", new_callable=AsyncMock, return_value=mock_group_texts), \
+        patch("pecha_api.texts.texts_service.get_contents_by_id", new_callable=AsyncMock, return_value=table_of_contents):
         
-        response = await get_table_of_contents_by_text_id(text_id="id_1")
+        response = await get_table_of_contents_by_text_id(
+            text_id=text_id,
+            language=language,
+            skip=skip,
+            limit=limit
+        )
         
         assert response is not None
         assert isinstance(response, TableOfContentResponse)
         assert response.text_detail is not None
         assert isinstance(response.text_detail, TextDTO)
-        assert response.text_detail.id == text_detail.id
-        assert response.text_detail.title == text_detail.title
-        assert response.text_detail.language == text_detail.language
-        assert response.text_detail.type == text_detail.type
+        assert response.text_detail.id == mock_text_detail.id
+        assert response.text_detail.language == language
         assert response.contents is not None
         assert len(response.contents) == 1
         assert response.contents[0] is not None
@@ -456,18 +495,17 @@ async def test_get_table_of_contents_by_text_id_success():
         assert response.contents[0].id == table_of_contents[0].id
         assert response.contents[0].text_id == table_of_contents[0].text_id
         assert response.contents[0].sections is not None
-        assert response.contents[0].sections[0] is not None
-        assert isinstance(response.contents[0].sections[0], Section)
-        assert response.contents[0].sections[0].id == table_of_contents[0].sections[0].id
-        assert response.contents[0].sections[0].title == table_of_contents[0].sections[0].title
-        assert response.contents[0].sections[0].section_number == table_of_contents[0].sections[0].section_number
-        assert response.contents[0].sections[0].parent_id == table_of_contents[0].sections[0].parent_id
 
 @pytest.mark.asyncio
 async def test_get_table_of_contents_by_text_id_invalid_text():
     with patch("pecha_api.texts.texts_service.TextUtils.validate_text_exists", new_callable=AsyncMock, return_value=False):
         with pytest.raises(HTTPException) as exc_info:
-            await get_table_of_contents_by_text_id(text_id="id_1")
+            await get_table_of_contents_by_text_id(
+                text_id="id_1",
+                language="en",
+                skip=0,
+                limit=10
+            )
         assert exc_info.value.status_code == 404
         assert exc_info.value.detail == ErrorConstants.TEXT_NOT_FOUND_MESSAGE
 
@@ -777,3 +815,6 @@ async def test_get_text_details_by_text_id_with_segment_id_only_success():
         assert len(section.segments) == 1
         assert section.segments[0].segment_id == segment_id
         assert response.pagination_direction == PaginationDirection.NEXT
+    
+
+

@@ -254,7 +254,12 @@ async def test_get_contents_success(mocker):
     assert "contents" in response_data
     assert isinstance(response_data["contents"], list)
     assert len(response_data["contents"]) > 0
-    mock_get_contents.assert_called_once_with(text_id="123e4567-e89b-12d3-a456-426614174000")
+    mock_get_contents.assert_called_once_with(
+        text_id="123e4567-e89b-12d3-a456-426614174000",
+        language=None,
+        skip=0,
+        limit=10
+    )
 
 
 @pytest.mark.asyncio
