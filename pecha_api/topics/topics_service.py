@@ -25,7 +25,7 @@ async def get_topics(language: Optional[str], search: Optional[str], hierarchy: 
         skip=skip, 
         limit=limit
     )
-    if cached_data:
+    if False and cached_data:
         return cached_data
     total = await get_child_count(parent_id=parent_id)
     parent_topic = await get_topic(topic_id=parent_id, language=language)

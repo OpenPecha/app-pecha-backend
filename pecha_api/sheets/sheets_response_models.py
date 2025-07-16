@@ -12,7 +12,7 @@ class Source(BaseModel):
     content: str
 
 class CreateSheetRequest(BaseModel):
-    title: str
+    title: Optional[str] = ""
     source: List[Source]
     is_published: bool = False
 

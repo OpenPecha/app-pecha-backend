@@ -79,7 +79,7 @@ async def get_text_by_text_id_or_term(
         limit = limit
     )
 
-    if cached_data is not None:
+    if False and cached_data is not None:
         return cached_data
 
     if term_id is not None:
@@ -130,7 +130,7 @@ async def get_table_of_contents_by_text_id(text_id: str, language: str, skip: in
         skip = skip,
         limit = limit
     )
-    if cached_data is not None:
+    if False and cached_data is not None:
         return cached_data
     
     is_valid_text: bool = await TextUtils.validate_text_exists(text_id=text_id)
