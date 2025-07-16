@@ -106,20 +106,6 @@ async def fetch_sheets(
     skip: int = 0,
     limit: int = 10
 ) -> SheetDTOResponse:
-    # currently sheet language is not used since there's is selection of language for sheets
-    
-    # cache_data: SheetDTOResponse = get_fetch_sheets_cache(
-    #     token=token,
-    #     language=language,
-    #     email=email,
-    #     sort_by=sort_by,
-    #     sort_order=sort_order,
-    #     skip=skip,
-    #     limit=limit
-    # )
-
-    # if cache_data:
-    #     return cache_data
 
     if email is None:
         # Case 1: Community page - show all published sheets filtered by language
@@ -142,30 +128,11 @@ async def fetch_sheets(
     
 
     sheets: SheetDTOResponse = _generate_sheet_dto_response_(sheets = sheets, skip = skip, limit = limit)
-    
-      
-    # set_fetch_sheets_cache(
-    #     token=token,
-    #     language=language,
-    #     email=email,
-    #     sort_by=sort_by,
-    #     sort_order=sort_order,
-    #     skip=skip,
-    #     limit=limit,
-    #     data=sheets
-    # )
       
     return sheets
 
 
 async def get_sheet_by_id(sheet_id: str, skip: int, limit: int) -> SheetDetailDTO:
-    # cache_data: SheetDetailDTO = get_sheet_by_id_cache(
-    #     sheet_id=sheet_id,
-    #     skip=skip,
-    #     limit=limit
-    # )
-    # if cache_data:
-    #     return cache_data
     sheet_details: TextDTO = await TextUtils.get_text_details_by_id(text_id=sheet_id)
     user_details: UserInfoResponse = fetch_user_by_email(email=sheet_details.published_by)
     sheet_table_of_content_response: TableOfContentResponse = await get_table_of_contents_by_text_id(text_id=sheet_id)
@@ -184,13 +151,6 @@ async def get_sheet_by_id(sheet_id: str, skip: int, limit: int) -> SheetDetailDT
         skip=skip,
         limit=limit
     )
-
-    # set_sheet_by_id_cache(
-    #     sheet_id=sheet_id,
-    #     skip=skip,
-    #     limit=limit,
-    #     data=sheet_dto
-    # )
     return sheet_dto
 
 async def _generate_sheet_detail_dto_(
