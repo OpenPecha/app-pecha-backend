@@ -25,14 +25,14 @@ def get_text_details_cache(text_id: str = None, content_id: str = None, version_
     cache_data: DetailTableOfContentResponse = get_cache_data(hash_key =hashed_key)
     return cache_data
 
-def get_text_by_text_id_or_term_cache(text_id: str = None, term_id: str = None, language: str = None, skip: int = None, limit: int = None) -> TextsCategoryResponse | TextDTO:
-    payload = [text_id, term_id, language, skip, limit]
+def get_text_by_text_id_or_term_cache(text_id: str = None, collection_id: str = None, language: str = None, skip: int = None, limit: int = None) -> TextsCategoryResponse | TextDTO:
+    payload = [text_id, collection_id, language, skip, limit]
     hashed_key: str = Utils.generate_hash_key(payload = payload)
     cache_data: TextsCategoryResponse | TextDTO = get_cache_data(hash_key = hashed_key)
     return cache_data
 
-def set_text_by_text_id_or_term_cache(text_id: str = None, term_id: str = None, language: str = None, skip: int = None, limit: int = None, data: TextsCategoryResponse = None):
-    payload = [text_id, term_id, language, skip, limit]
+def set_text_by_text_id_or_term_cache(text_id: str = None, collection_id: str = None, language: str = None, skip: int = None, limit: int = None, data: TextsCategoryResponse = None):
+    payload = [text_id, collection_id, language, skip, limit]
     hashed_key: str = Utils.generate_hash_key(payload = payload)
     set_cache(hash_key = hashed_key, value = data)
 

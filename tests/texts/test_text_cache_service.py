@@ -101,7 +101,7 @@ async def test_set_text_details_cache_for_text_details_response():
 @pytest.mark.asyncio
 async def test_get_text_by_text_id_or_term_cache_empty_cache():
     with patch("pecha_api.texts.texts_cache_service.get_cache_data", new_callable=Mock, return_value=None):
-        response = get_text_by_text_id_or_term_cache(text_id="text_id", term_id="term_id", language="en", skip=0, limit=10)
+        response = get_text_by_text_id_or_term_cache(text_id="text_id", collection_id="collection_id", language="en", skip=0, limit=10)
 
         assert response is None
 
@@ -123,7 +123,7 @@ async def test_get_text_by_text_id_or_term_cache_for_text_by_text_id_or_term_res
     )
     with patch("pecha_api.texts.texts_cache_service.get_cache_data", new_callable=Mock, return_value=mock_cache_data):
 
-        response = get_text_by_text_id_or_term_cache(text_id="text_id", term_id="term_id", language="en", skip=0, limit=10)
+        response = get_text_by_text_id_or_term_cache(text_id="text_id", collection_id="collection_id", language="en", skip=0, limit=10)
 
         assert response is not None
         assert isinstance(response, TextDTO)
@@ -147,7 +147,7 @@ async def test_set_text_by_text_id_or_term_cache_for_text_by_text_id_or_term_res
     )
 
     with patch("pecha_api.texts.texts_cache_service.set_text_by_text_id_or_term_cache", new_callable=Mock):
-        set_text_by_text_id_or_term_cache(text_id="text_id", term_id="term_id", language="en", skip=0, limit=10, data=mock_cache_data)
+        set_text_by_text_id_or_term_cache(text_id="text_id", collection_id="collection_id", language="en", skip=0, limit=10, data=mock_cache_data)
 
 @pytest.mark.asyncio
 async def test_get_table_of_contents_by_text_id_cache_empty_cache():

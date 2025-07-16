@@ -1,12 +1,12 @@
 from unittest.mock import AsyncMock, patch, MagicMock
 from fastapi import HTTPException
 
-from pecha_api.terms.terms_response_models import TermsModel
+from pecha_api.collections.collections_response_models import CollectionModel
 import pytest
 from pecha_api.texts.texts_service import (
     create_new_text,
     get_text_versions_by_group_id,
-    get_text_by_text_id_or_term,
+    get_text_by_text_id_or_collection,
     create_table_of_content,
     get_table_of_contents_by_text_id,
     get_text_details_by_text_id,
@@ -40,9 +40,9 @@ from pecha_api.error_contants import ErrorConstants
 from typing import List
 
 @pytest.mark.asyncio
-async def test_get_text_by_text_id_or_term_without_term_id_success():
+async def test_get_text_by_text_id_or_collection_without_collection_id_success():
     text_id = "efb26a06-f373-450b-ba57-e7a8d4dd5b64"
-    term_id = None
+    collection_id = None
     with patch("pecha_api.texts.texts_service.TextUtils.get_text_detail_by_id", new_callable=AsyncMock) as mock_get_text_detail_by_id, \
         patch("pecha_api.texts.texts_service.set_text_by_text_id_or_term_cache", new_callable=MagicMock, return_value=None), \
         patch("pecha_api.texts.texts_service.get_text_by_text_id_or_term_cache", new_callable=MagicMock, return_value=None):
@@ -61,15 +61,15 @@ async def test_get_text_by_text_id_or_term_without_term_id_success():
             views=0
         )
 
-        response = await get_text_by_text_id_or_term(text_id=text_id, term_id=term_id, language=None, skip=0, limit=10)
+        response = await get_text_by_text_id_or_collection(text_id=text_id, collection_id=collection_id, language=None, skip=0, limit=10)
 
         assert response is not None
         assert isinstance(response, TextDTO)
         assert response.id == text_id
 
 @pytest.mark.asyncio
-async def test_get_text_by_term_id():
-    mock_term = AsyncMock(id="id_1", titles={"bo": "སྤྱོད་འཇུག"}, descriptions={
+async def test_get_text_by_collection_id():
+    mock_collection = AsyncMock(id="id_1", titles={"bo": "སྤྱོད་འཇུག"}, descriptions={
         "bo": "དུས་རབས་ ༨ པའི་ནང་སློབ་དཔོན་ཞི་བ་ལྷས་མཛད་པའི་རྩ་བ་དང་དེའི་འགྲེལ་བ་སོགས།"}, slug="bodhicaryavatara",
                           has_sub_child=False)
     mock_texts_by_category = [
@@ -103,20 +103,18 @@ async def test_get_text_by_term_id():
         )
     ]
 
-    with patch('pecha_api.texts.texts_service.get_texts_by_term', new_callable=AsyncMock) as mock_get_texts_by_category, \
-            patch('pecha_api.terms.terms_service.get_term_by_id', new_callable=AsyncMock) as mock_get_term, \
-            patch("pecha_api.texts.texts_service.set_text_by_text_id_or_term_cache", new_callable=MagicMock, return_value=None), \
-            patch("pecha_api.texts.texts_service.get_text_by_text_id_or_term_cache", new_callable=MagicMock, return_value=None), \
+    with patch('pecha_api.texts.texts_service.get_texts_by_collection', new_callable=AsyncMock) as mock_get_texts_by_category, \
+            patch('pecha_api.collections.collections_service.get_collection_by_id', new_callable=AsyncMock) as mock_get_collection, \
             patch('pecha_api.texts.texts_service.TextUtils.filter_text_base_on_group_id_type', new_callable=AsyncMock) as mock_filter_text_base_on_group_id_type:
         mock_filter_text_base_on_group_id_type.return_value = {"root_text": mock_texts_by_category[1], "commentary": [mock_texts_by_category[0]]}
         mock_get_texts_by_category.return_value = mock_texts_by_category
-        mock_get_term.return_value = mock_term
-        response = await get_text_by_text_id_or_term(text_id="", term_id="id_1", language="bo", skip=0, limit=10)
+        mock_get_collection.return_value = mock_collection
+        response = await get_text_by_text_id_or_collection(text_id="", collection_id="id_1", language="bo", skip=0, limit=10)
         assert response is not None
-        assert response.term is not None
-        term: TermsModel = response.term
-        assert term.id == "id_1"
-        assert term.slug == "bodhicaryavatara"
+        assert response.collection is not None
+        collection: CollectionModel = response.collection
+        assert collection.id == "id_1"
+        assert collection.slug == "bodhicaryavatara"
         assert response.texts is not None
         texts: List[TextDTO] = response.texts
         assert len(texts) == 2
