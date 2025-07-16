@@ -17,16 +17,7 @@ from .topics_cache_service import (
 async def get_topics(language: Optional[str], search: Optional[str], hierarchy: Optional[bool], parent_id: Optional[str], skip: int, limit: int) -> TopicsResponse:
     if language is None:
         language = get("DEFAULT_LANGUAGE")
-    cached_data: TopicsResponse = get_topics_cache(
-        parent_id=parent_id, 
-        language=language, 
-        search=search, 
-        hierarchy=hierarchy, 
-        skip=skip, 
-        limit=limit
-    )
-    if False and cached_data:
-        return cached_data
+    
     total = await get_child_count(parent_id=parent_id)
     parent_topic = await get_topic(topic_id=parent_id, language=language)
     topics = await get_topics_by_parent(
@@ -46,15 +37,7 @@ async def get_topics(language: Optional[str], search: Optional[str], hierarchy: 
         for topic in topics
     ]
     topic_response = TopicsResponse(parent=parent_topic,topics=topic_list, total=total, skip=skip, limit=limit)
-    set_topics_cache(
-        parent_id=parent_id, 
-        language=language, 
-        search=search, 
-        hierarchy=hierarchy, 
-        skip=skip, 
-        limit=limit, 
-        data=topic_response
-    )
+    
     return topic_response
 
 async def create_new_topic(create_topic_request: CreateTopicRequest, token: str, language: Optional[str]) -> TopicModel:

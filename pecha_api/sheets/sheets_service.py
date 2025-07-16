@@ -135,7 +135,11 @@ async def fetch_sheets(
 async def get_sheet_by_id(sheet_id: str, skip: int, limit: int) -> SheetDetailDTO:
     sheet_details: TextDTO = await TextUtils.get_text_details_by_id(text_id=sheet_id)
     user_details: UserInfoResponse = fetch_user_by_email(email=sheet_details.published_by)
-    sheet_table_of_content_response: TableOfContentResponse = await get_table_of_contents_by_text_id(text_id=sheet_id)
+    sheet_table_of_content_response: TableOfContentResponse = await get_table_of_contents_by_text_id(
+        text_id=sheet_id,
+        skip=skip,
+        limit=limit
+    )
 
     sheet_table_of_content: Optional[TableOfContent] = (
         sheet_table_of_content_response.contents[0]

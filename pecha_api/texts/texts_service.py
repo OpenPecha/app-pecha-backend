@@ -119,19 +119,10 @@ async def get_sheet(published_by: Optional[str] = None, is_published: Optional[b
     )
     return sheets
 
-async def get_table_of_contents_by_text_id(text_id: str, language: str, skip: int = 0, limit: int = 10) -> TableOfContentResponse:
+async def get_table_of_contents_by_text_id(text_id: str, language: str = None, skip: int = 0, limit: int = 10) -> TableOfContentResponse:
     
     if language is None:
         language = get("DEFAULT_LANGUAGE")
-    
-    cached_data: TableOfContentResponse = get_table_of_contents_by_text_id_cache(
-        text_id = text_id,
-        language = language,
-        skip = skip,
-        limit = limit
-    )
-    if False and cached_data is not None:
-        return cached_data
     
     is_valid_text: bool = await TextUtils.validate_text_exists(text_id=text_id)
     if not is_valid_text:
@@ -155,14 +146,6 @@ async def get_table_of_contents_by_text_id(text_id: str, language: str, skip: in
             )
             for content in table_of_contents
         ]
-    )
-
-    set_table_of_contents_by_text_id_cache(
-        text_id = text_id,
-        language = language,
-        skip = skip,
-        limit = limit,
-        data = response
     )
     
     return response
