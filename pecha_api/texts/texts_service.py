@@ -502,11 +502,13 @@ def _get_trimmed_segment_dict_(segments_with_position:List[Tuple[str,int]], segm
 
     segment_position = dict_segment_id_with_position.get(segment_id) - 1
 
+    total_segments = len(segments_with_position)
+
     if direction == PaginationDirection.NEXT:
-        trimmed_segments_with_position = segments_with_position[segment_position : segment_position + size]
+        trimmed_segments_with_position = segments_with_position[segment_position : min(segment_position + size, total_segments)]
 
     else:
-        trimmed_segments_with_position = segments_with_position[segment_position - size : segment_position]
+        trimmed_segments_with_position = segments_with_position[max(0, segment_position - size) : segment_position + 1]
     
     trimmed_segments_with_position = dict(trimmed_segments_with_position)
 
