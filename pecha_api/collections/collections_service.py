@@ -54,8 +54,8 @@ async def create_new_collection(create_collection_request: CreateCollectionReque
             slug=new_collection.slug
 
         )
-    else:
-        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail=ErrorConstants.ADMIN_ERROR_MESSAGE)
+    
+    raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail=ErrorConstants.ADMIN_ERROR_MESSAGE)
 
 async def get_collection(collection_id: str,language: str) -> Optional[CollectionModel]:
     selected_collection = await get_collection_by_id(collection_id=collection_id)
