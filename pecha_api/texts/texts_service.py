@@ -79,7 +79,7 @@ async def get_text_by_text_id_or_term(
         limit = limit
     )
 
-    if False and cached_data is not None:
+    if cached_data is not None:
         return cached_data
 
     if term_id is not None:
