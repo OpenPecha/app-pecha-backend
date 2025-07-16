@@ -329,27 +329,6 @@ async def _mapping_table_of_content(
     )
     return detail_table_of_content
 
-    table_of_content = None
-    if text_details_request.content_id is not None:
-        table_of_content = await get_table_of_content_by_content_id(
-            content_id=text_details_request.content_id,
-            skip=text_details_request.skip,
-            limit=text_details_request.limit
-        )
-    elif text_details_request.segment_id is not None:
-        table_of_content = await TextUtils.get_table_of_content_id_and_respective_section_by_segment_id(
-            text_id=text_id,
-            segment_id=text_details_request.segment_id
-        )
-        text_details_request.skip = max(0, table_of_content.sections[0].section_number - 1)
-        text_details_request.limit = 1
-    if table_of_content is None:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail=ErrorConstants.TABLE_OF_CONTENT_NOT_FOUND_MESSAGE
-        )
-    return table_of_content
-
 
 async def _validate_text_detail_request(text_id: str, text_details_request: TextDetailsRequest) -> bool:
     # Check if text_id is provided

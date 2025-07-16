@@ -222,6 +222,7 @@ async def _generate_sheet_detail_dto_(
         created_date=sheet_details.created_date,
         publisher=publisher,
         content=sheet_section,
+        is_published=sheet_details.is_published,
         views=views,
         skip=skip,
         limit=limit,
