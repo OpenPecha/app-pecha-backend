@@ -49,7 +49,8 @@ from pecha_api.texts.texts_service import (
     update_text_details,
     get_table_of_contents_by_text_id,
     delete_text_by_text_id,
-    get_sheet
+    get_sheet,
+    get_table_of_content_by_sheet_id
 )
 
 from pecha_api.users.users_service import (
@@ -135,16 +136,11 @@ async def fetch_sheets(
 async def get_sheet_by_id(sheet_id: str, skip: int, limit: int) -> SheetDetailDTO:
     sheet_details: TextDTO = await TextUtils.get_text_details_by_id(text_id=sheet_id)
     user_details: UserInfoResponse = fetch_user_by_email(email=sheet_details.published_by)
-    sheet_table_of_content_response: TableOfContentResponse = await get_table_of_contents_by_text_id(
-        text_id=sheet_id,
-        skip=skip,
-        limit=limit
+    sheet_table_of_content: Optional[TableOfContent] = await get_table_of_content_by_sheet_id(
+        sheet_id=sheet_id
     )
-
-    sheet_table_of_content: Optional[TableOfContent] = (
-        sheet_table_of_content_response.contents[0]
-        if sheet_table_of_content_response.contents else None
-    )
+    if sheet_table_of_content is None:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=ErrorConstants.TABLE_OF_CONTENT_NOT_FOUND_MESSAGE)
 
     sections = sheet_table_of_content.sections if sheet_table_of_content else []
 

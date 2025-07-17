@@ -309,10 +309,7 @@ async def test_get_sheet_by_id_success():
         following=0,
         social_profiles=[]
     )
-    mock_table_of_content_response = TableOfContentResponse(
-        text_detail=mock_sheet_details,
-        contents=[
-            TableOfContent(
+    mock_table_of_content_response = TableOfContent(
                 text_id=sheet_id,
                 sections=[
                     Section(
@@ -331,8 +328,7 @@ async def test_get_sheet_by_id_success():
                     )
                 ]
             )
-        ]
-    )
+    
     segment_dict = {
         "segment_id_1": SegmentDTO(
             id="segment_id_1",
@@ -352,7 +348,7 @@ async def test_get_sheet_by_id_success():
         patch("pecha_api.sheets.sheets_service.set_sheet_by_id_cache", new_callable=MagicMock), \
         patch("pecha_api.sheets.sheets_service.fetch_user_by_email", new_callable=MagicMock, return_value=mock_user_details), \
         patch("pecha_api.sheets.sheets_service.get_segments_details_by_ids", new_callable=AsyncMock, return_value=segment_dict), \
-        patch("pecha_api.sheets.sheets_service.get_table_of_contents_by_text_id", new_callable=AsyncMock, return_value=mock_table_of_content_response):
+        patch("pecha_api.sheets.sheets_service.get_table_of_content_by_sheet_id", new_callable=AsyncMock, return_value=mock_table_of_content_response):
 
         response = await get_sheet_by_id(sheet_id=sheet_id, skip=0, limit=10)
 

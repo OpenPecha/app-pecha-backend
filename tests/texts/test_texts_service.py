@@ -13,7 +13,8 @@ from pecha_api.texts.texts_service import (
     update_text_details,
     remove_table_of_content_by_text_id,
     delete_text_by_text_id,
-    get_sheet
+    get_sheet,
+    get_table_of_content_by_sheet_id
 )
 from pecha_api.texts.texts_response_models import (
     CreateTextRequest,
@@ -916,3 +917,52 @@ async def test_get_text_details_by_text_id_with_content_id_only_success():
         assert len(section.segments) == 1
         assert section.segments[0].segment_id == "segment_id_1"
         assert response.pagination_direction == PaginationDirection.NEXT
+    
+
+@pytest.mark.asyncio
+async def test_get_table_of_content_by_sheet_id_success():
+    sheet_id = "sheet_id_1"
+    mock_table_of_contents = [
+        TableOfContent(
+            id="content_id_1",
+            text_id=sheet_id,
+            sections=[
+                Section(
+                    id="section_id_1",
+                    title="section_title",
+                    section_number=1,
+                    parent_id="parent_id_1",
+                    segments=[
+                        TextSegment(
+                            segment_id="segment_id_1",
+                            segment_number=1
+                        )
+                    ],
+                    sections=[],
+                    created_date="created_date",
+                    updated_date="updated_date",
+                    published_date="published_date"
+                )
+            ]
+        )
+    ]
+    with patch("pecha_api.texts.texts_service.TextUtils.validate_text_exists", new_callable=AsyncMock, return_value=True), \
+        patch("pecha_api.texts.texts_service.get_contents_by_id", new_callable=AsyncMock, return_value=mock_table_of_contents):
+    
+        response = await get_table_of_content_by_sheet_id(sheet_id=sheet_id)
+
+        assert response is not None
+        assert isinstance(response, TableOfContent)
+        assert response.id == "content_id_1"
+
+@pytest.mark.asyncio
+async def test_get_table_of_content_by_sheet_id_invalid_sheet_id():
+    sheet_id = "invalid_sheet_id"
+
+    with patch("pecha_api.texts.texts_service.TextUtils.validate_text_exists", new_callable=AsyncMock, return_value=False):
+        with pytest.raises(HTTPException) as exc_info:
+            await get_table_of_content_by_sheet_id(sheet_id=sheet_id)
+
+        assert exc_info.value.status_code == 404
+        assert exc_info.value.detail == ErrorConstants.TEXT_NOT_FOUND_MESSAGE
+    

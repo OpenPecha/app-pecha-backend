@@ -119,6 +119,18 @@ async def get_sheet(published_by: Optional[str] = None, is_published: Optional[b
     )
     return sheets
 
+async def get_table_of_content_by_sheet_id(sheet_id: str) -> Optional[TableOfContent]:
+    table_of_content = None
+    is_valid_sheet: bool = await TextUtils.validate_text_exists(text_id=sheet_id)
+    if not is_valid_sheet:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=ErrorConstants.TEXT_NOT_FOUND_MESSAGE)
+    
+    table_of_contents: List[TableOfContent] = await get_contents_by_id(text_id=sheet_id)
+    if len(table_of_contents) > 0 and table_of_contents[0] is not None:
+        table_of_content: TableOfContent = table_of_contents[0]
+    
+    return table_of_content
+
 async def get_table_of_contents_by_text_id(text_id: str, language: str = None, skip: int = 0, limit: int = 10) -> TableOfContentResponse:
     
     if language is None:
