@@ -108,9 +108,11 @@ def _generate_short_url_payload_(share_request: ShareRequest, og_description: st
     return payload
 
 def _generate_url_(
-        segment_id: str,
+        segment_id: str | None = None,
         content_id: str,
         text_id: str,
         content_index: int
 ) -> str:
+    if segment_id is None:
+        return f"{PECHA_FRONTEND_ENDPOINT}?contentId={content_id}&text_id={text_id}&contentIndex={content_index}"
     return f"{PECHA_FRONTEND_ENDPOINT}?segment_id={segment_id}&contentId={content_id}&text_id={text_id}&contentIndex={content_index}"
