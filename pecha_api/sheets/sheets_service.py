@@ -88,13 +88,6 @@ from pecha_api.sheets.sheets_response_models import (
     SheetDTOResponse,
     SheetDTO
 )
-from .sheets_cache_service import (
-    get_fetch_sheets_cache,
-    set_fetch_sheets_cache,
-    get_sheet_by_id_cache,
-    set_sheet_by_id_cache,
-    delete_sheet_by_id_cache
-)
 
 DEFAULT_SHEET_SECTION_NUMBER = 1
 
@@ -502,6 +495,10 @@ def _generate_segment_creation_request_payload_(create_sheet_request: CreateShee
         segments=[]
     )
     for source in create_sheet_request.source:
+        if source.type == SegmentType.SOURCE:
+            continue
+        if source.type == SegmentType.IMAGE:
+            source.content = _process_s3_image_url_(url=source.content)
         create_segment_request.segments.append(
             CreateSegment(
                 content=source.content,
@@ -509,6 +506,16 @@ def _generate_segment_creation_request_payload_(create_sheet_request: CreateShee
             )
         )
     return create_segment_request
+
+def _process_s3_image_url_(url: str) -> str:
+    STARTING_INDEX = 43
+    ENDING_INDEX = None
+    for char in url:
+        if char == "?":
+            ENDING_INDEX = url.index(char)
+            break
+    trimmed_url = url[STARTING_INDEX:ENDING_INDEX]
+    return trimmed_url
 
 async def _create_sheet_text_(title: str, token: str, group_id: str) -> str:
     user_details = validate_and_extract_user_details(token=token)

@@ -37,22 +37,20 @@ from .segments_response_models import (
 )
 
 from .segments_cache_service import (
-    get_segment_details_by_id_cache,
-    set_segment_details_by_id_cache,
-    get_segment_info_by_id_cache,
     set_segment_info_by_id_cache,
-    get_segment_root_mapping_by_id_cache,
-    set_segment_root_mapping_by_id_cache,
-    get_segment_translations_by_id_cache,
-    set_segment_translations_by_id_cache,
-    get_segment_commentaries_by_id_cache,
-    set_segment_commentaries_by_id_cache
 )
+
+from pecha_api.uploads.S3_utils import generate_presigned_upload_url
+
+from .segments_enum import SegmentType
 
 from ...users.users_service import validate_user_exists
 
 async def get_segments_details_by_ids(segment_ids: List[str]) -> Dict[str, SegmentDTO]:
     segments: Dict[str, SegmentDTO] = await get_segments_by_ids(segment_ids=segment_ids)
+    for segment in segments.values():
+        if segment.type == SegmentType.IMAGE:
+            segment.content = generate_presigned_upload_url(bucket_name="bucket", s3_key="key")
     return segments
 
 async def get_segment_details_by_id(segment_id: str, text_details: bool = False) -> SegmentDTO:
