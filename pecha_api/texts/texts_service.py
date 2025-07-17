@@ -173,7 +173,6 @@ async def get_text_details_by_text_id(
         text_id=text_id,
         text_details_request=text_details_request
     )
-
     segments_with_position: List[Tuple[str, int]] = _get_segments_with_position_(
         table_of_content=table_of_content,
     )
@@ -519,19 +518,41 @@ def _get_segments_with_position_(table_of_content: TableOfContent) -> List[Tuple
 
 async def _receive_table_of_content(text_id: str, text_details_request: TextDetailsRequest) -> TableOfContent:
     table_of_content = None
-    if text_details_request.content_id is not None:
+    if text_details_request.content_id is not None and text_details_request.segment_id is not None:
         table_of_content:TableOfContent = await get_table_of_content_by_content_id(
             content_id=text_details_request.content_id
         )
-    else:
+    elif text_details_request.segment_id is not None:
         table_of_contents: List[TableOfContent] = await get_contents_by_id(text_id=text_id)
         table_of_content: TableOfContent = _search_table_of_content_where_segment_id_exists(table_of_contents=table_of_contents, segment_id=text_details_request.segment_id)
+    else:
+        table_of_content = await get_contents_by_id(text_id=text_id)
+        segment_id, table_of_content = _get_first_segment_and_table_of_content_(table_of_contents=table_of_content)
+        text_details_request.segment_id = segment_id
+
     if table_of_content is None:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail=ErrorConstants.TABLE_OF_CONTENT_NOT_FOUND_MESSAGE
         )
     return table_of_content
+
+def _get_first_segment_and_table_of_content_(table_of_contents: List[TableOfContent]) -> tuple[str | None, TableOfContent | None]:
+    def find_first_segment(sections: list) -> str | None:
+        for section in sections:
+            if section.segments:
+                return section.segments[0].segment_id
+            if section.sections:
+                result = find_first_segment(section.sections)
+                if result:
+                    return result
+        return None
+
+    for table_of_content in table_of_contents:
+        segment_id = find_first_segment(sections=table_of_content.sections)
+        if segment_id:
+            return segment_id, table_of_content
+    return None, None
 
 def _search_section_(sections: List[Section], segment_id: str) -> bool:
     for section in sections:
