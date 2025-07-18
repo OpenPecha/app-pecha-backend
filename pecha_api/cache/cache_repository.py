@@ -39,13 +39,12 @@ def set_cache(hash_key: str, value: Any) -> bool:
         logging.error("An error occurred in set_cache", exc_info=True)
         return False
 
-
-async def get_cache_data(hash_key: str) -> Optional[Any]:
+def get_cache_data(hash_key: str) -> Optional[Any]:
     """Get value from cache"""
     try:
         client = get_client()
         full_key = _build_key(hash_key)
-        value = await client.get(full_key)
+        value = client.get(full_key)
         if value is None:
             return None
 
@@ -81,14 +80,14 @@ def exists_in_cache(hash_key: str) -> bool:
         return False
 
 
-async def clear_cache(pattern: str = "*") -> bool:
+def clear_cache(pattern: str = "*") -> bool:
     """Clear all keys matching pattern"""
     try:
         client = get_client()
         full_key = _build_key(pattern)
-        keys = await client.keys(full_key)
+        keys = client.keys(full_key)
         if keys:
-            return bool(await client.delete(*keys))
+            return bool(client.delete(*keys))
         return True
     except Exception:
         logging.error("An error occurred in clear_cache", exc_info=True)
