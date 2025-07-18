@@ -35,6 +35,7 @@ DEFAULTS = dict(
     CACHE_DB=0,
     CACHE_PREFIX="pecha:",
     CACHE_DEFAULT_TIMEOUT=30, # 30 seconds in seconds
+    CACHE_CONNECTION_STRING="redis://localhost:6379",
 
     SHORT_URL_GENERATION_ENDPOINT="https://url-shortening-14682653622-b69c6fd.onrender.com/api/v1",
     PECHA_BACKEND_ENDPOINT="https://pecha-backend-12341825340-1fb0112.onrender.com/api/v1",
@@ -52,7 +53,7 @@ def get(key: str) -> str:
     if key in os.environ:
         return os.environ[key]
     else:
-        return DEFAULTS[key]
+        return str(DEFAULTS[key])
 
 
 def get_float(key: str) -> float:
