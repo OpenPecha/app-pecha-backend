@@ -71,7 +71,7 @@ async def get_text_by_text_id_or_term(
     if language is None:
         language = get("DEFAULT_LANGUAGE")
 
-    cached_data: TextsCategoryResponse | TextDTO = get_text_by_text_id_or_term_cache(
+    cached_data: TextsCategoryResponse | TextDTO = await get_text_by_text_id_or_term_cache(
         text_id = text_id,
         term_id = term_id,
         language = language,
@@ -95,7 +95,7 @@ async def get_text_by_text_id_or_term(
     else:
         response =await TextUtils.get_text_detail_by_id(text_id=text_id)
     
-    set_text_by_text_id_or_term_cache(
+    await set_text_by_text_id_or_term_cache(
         text_id = text_id,
         term_id = term_id,
         language = language,
@@ -224,7 +224,7 @@ async def get_text_versions_by_group_id(text_id: str, language: str, skip: int, 
     if language is None:
         language = get("DEFAULT_LANGUAGE")
     
-    cached_data: TextVersionResponse = get_text_versions_by_group_id_cache(
+    cached_data: TextVersionResponse = await get_text_versions_by_group_id_cache(
         text_id = text_id,
         language = language,
         skip = skip,
@@ -249,7 +249,7 @@ async def get_text_versions_by_group_id(text_id: str, language: str, skip: int, 
         versions=list_of_version
     )
 
-    set_text_versions_by_group_id_cache(
+    await set_text_versions_by_group_id_cache(
         text_id = text_id,
         language = language,
         skip = skip,

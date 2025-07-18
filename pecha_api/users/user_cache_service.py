@@ -7,13 +7,15 @@ from .user_response_models import (
     UserInfoResponse
 )
 
-def get_user_info_cache(token: str) -> UserInfoResponse:
+async def get_user_info_cache(token: str) -> UserInfoResponse:
+    """Get user info cache asynchronously."""
     payload = [token]
     hashed_key: str = Utils.generate_hash_key(payload = payload)
-    cache_data: UserInfoResponse = get_cache_data(hash_key = hashed_key)
+    cache_data: UserInfoResponse = await get_cache_data(hash_key = hashed_key)
     return cache_data
 
-def set_user_info_cache(token: str, data: UserInfoResponse):
+async def set_user_info_cache(token: str, data: UserInfoResponse):
+    """Set user info cache asynchronously."""
     payload = [token]
     hashed_key: str = Utils.generate_hash_key(payload = payload)
-    set_cache(hash_key = hashed_key, value = data)
+    await set_cache(hash_key = hashed_key, value = data)

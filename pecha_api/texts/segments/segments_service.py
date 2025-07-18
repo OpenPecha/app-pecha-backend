@@ -144,7 +144,7 @@ async def get_info_by_segment_id(segment_id: str) -> SegmentInfoResponse:
     if not is_valid_segment:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=ErrorConstants.SEGMENT_NOT_FOUND_MESSAGE)
     
-    cache_data = get_segment_info_by_id_cache(segment_id=segment_id)
+    cache_data = await get_segment_info_by_id_cache(segment_id=segment_id)
     if cache_data:
         return cache_data
     
@@ -164,7 +164,7 @@ async def get_info_by_segment_id(segment_id: str) -> SegmentInfoResponse:
             )
         )
     ) 
-    set_segment_info_by_id_cache(
+    await set_segment_info_by_id_cache(
         segment_id = segment_id,
         data = response
     )
