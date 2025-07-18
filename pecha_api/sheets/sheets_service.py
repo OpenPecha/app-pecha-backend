@@ -242,7 +242,7 @@ async def delete_sheet_by_id(sheet_id: str, token: str):
     
     sheet_details: TextDTO = await TextUtils.get_text_details_by_id(text_id=sheet_id)
 
-    user_details: UserInfoResponse = get_user_info(token=token)
+    user_details: UserInfoResponse = await get_user_info(token=token)
 
     if user_details.email != sheet_details.published_by:
         raise HTTPException(
