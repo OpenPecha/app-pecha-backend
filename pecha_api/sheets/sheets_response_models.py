@@ -44,7 +44,7 @@ class SheetDetailDTO(BaseModel):
     publisher: Publisher
     content: Optional[SheetSection] = None
     views: int = 0
-    is_published: bool = False
+    is_published: bool
     skip: int
     limit: int
     total: int

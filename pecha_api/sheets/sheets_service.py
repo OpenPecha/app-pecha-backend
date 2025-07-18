@@ -136,7 +136,6 @@ async def get_sheet_by_id(sheet_id: str, skip: int, limit: int) -> SheetDetailDT
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=ErrorConstants.TABLE_OF_CONTENT_NOT_FOUND_MESSAGE)
 
     sections = sheet_table_of_content.sections if sheet_table_of_content else []
-
     sheet_dto: SheetDetailDTO = await _generate_sheet_detail_dto_(
         sheet_details=sheet_details,
         user_details=user_details,
@@ -169,7 +168,6 @@ async def _generate_sheet_detail_dto_(
             segments=sheet_sections[0].segments,
             segments_dict=segments_dict
         )
-
     return SheetDetailDTO(
         id=sheet_details.id,
         sheet_title=sheet_details.title,
@@ -313,6 +311,7 @@ async def _generate_sheet_detail_dto_(
         id=sheet_details.id,
         sheet_title=sheet_details.title,
         created_date=sheet_details.created_date,
+        is_published=sheet_details.is_published,
         publisher=publisher,
         content=sheet_section,
         skip=skip,
