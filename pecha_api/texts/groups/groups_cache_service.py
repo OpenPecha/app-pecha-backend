@@ -14,6 +14,8 @@ async def get_group_by_id_cache(group_id: str = None) -> GroupDTO:
     payload = [group_id]
     hashed_key: str = Utils.generate_hash_key(payload = payload)
     cache_data: GroupDTO = await get_cache_data(hash_key = hashed_key)
+    if cache_data and isinstance(cache_data, dict):
+        cache_data = GroupDTO(**cache_data)
     return cache_data
 
 async def set_group_by_id_cache(group_id: str = None, data: GroupDTO = None):
