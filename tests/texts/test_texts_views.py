@@ -9,11 +9,9 @@ from pecha_api.app import api
 from pecha_api.texts.texts_response_models import (
     CreateTextRequest,
     TableOfContentResponse,
-    TextDetailsRequest,
     TextDTO,
     TextVersionResponse,
     TextVersion,
-    DetailTableOfContentResponse,
     TableOfContent,
     Section
 )
@@ -65,21 +63,6 @@ MOCK_TABLE_OF_CONTENT_RESPONSE = TableOfContentResponse(
     contents=[MOCK_TABLE_OF_CONTENT]
 )
 
-# For testing details endpoint
-MOCK_DETAIL_TABLE_OF_CONTENT_RESPONSE = DetailTableOfContentResponse(
-    text_detail=MOCK_TEXT_DTO,
-    mapping={"segment_id": "seg123", "section_id": "sec123"},
-    content={
-        "id": "content123",
-        "text_id": "123e4567-e89b-12d3-a456-426614174000",
-        "sections": []
-    },
-    skip=0,
-    current_section=0,
-    limit=10,
-    total=1
-)
-
 # Create a TextVersion instance for the response
 MOCK_TEXT_VERSION = TextVersion(
     id="123e4567-e89b-12d3-a456-426614174003",
@@ -110,7 +93,7 @@ async def test_get_text_by_text_id(mocker):
     """Test GET /texts with text_id parameter"""
     # Mock the service function
     mock_get_text = mocker.patch(
-        'pecha_api.texts.texts_views.get_text_by_text_id_or_term',
+        'pecha_api.texts.texts_views.get_text_by_text_id_or_collection',
         new_callable=AsyncMock,
         return_value=MOCK_TEXT_DTO
     )
@@ -131,28 +114,28 @@ async def test_get_text_by_text_id(mocker):
     assert response_data["language"] == MOCK_TEXT_DTO.language
     mock_get_text.assert_called_once_with(
         text_id="123e4567-e89b-12d3-a456-426614174000",
-        term_id=None,
+        collection_id=None,
         language="bo",
         skip=0,
         limit=10
     )
 
 @pytest.mark.asyncio
-async def test_get_text_by_term_id(mocker):
-    """Test GET /texts with term_id parameter"""
+async def test_get_text_by_collection_id(mocker):
+    """Test GET /texts with collection_id parameter"""
     # Mock the service function
     mock_get_text = mocker.patch(
-        'pecha_api.texts.texts_views.get_text_by_text_id_or_term',
+        'pecha_api.texts.texts_views.get_text_by_text_id_or_collection',
         new_callable=AsyncMock,
         return_value=MOCK_TEXT_DTO
     )
     
-    # The term ID that will be used in the request
-    test_term_id = "123e4567-e89b-12d3-a456-426614174001"
+    # The collection ID that will be used in the request
+    test_collection_id = "123e4567-e89b-12d3-a456-426614174001"
     
     # Make the request
     async with AsyncClient(transport=ASGITransport(app=api), base_url="http://test") as ac:
-        response = await ac.get(f"/texts?term_id={test_term_id}&language=bo&skip=0&limit=10")
+        response = await ac.get(f"/texts?collection_id={test_collection_id}&language=bo&skip=0&limit=10")
     
     # Assertions
     assert response.status_code == 200
@@ -164,7 +147,7 @@ async def test_get_text_by_term_id(mocker):
     # Remove the contents check as it's not part of the TextDTO model
     mock_get_text.assert_called_once_with(
         text_id=None,
-        term_id=test_term_id,
+        collection_id=test_collection_id,
         language="bo",
         skip=0,
         limit=10
@@ -271,48 +254,13 @@ async def test_get_contents_success(mocker):
     assert "contents" in response_data
     assert isinstance(response_data["contents"], list)
     assert len(response_data["contents"]) > 0
-    mock_get_contents.assert_called_once_with(text_id="123e4567-e89b-12d3-a456-426614174000")
-
-@pytest.mark.asyncio
-async def test_get_contents_with_details_success(mocker):
-    """Test POST /texts/{text_id}/details"""
-    # Mock the service function
-    mock_get_details = mocker.patch(
-        'pecha_api.texts.texts_views.get_text_details_by_text_id',
-        new_callable=AsyncMock,
-        return_value=MOCK_DETAIL_TABLE_OF_CONTENT_RESPONSE
+    mock_get_contents.assert_called_once_with(
+        text_id="123e4567-e89b-12d3-a456-426614174000",
+        language=None,
+        skip=0,
+        limit=10
     )
-    
-    # Test data
-    request_data = {
-        "content_id": "123e4567-e89b-12d3-a456-426614174003",
-        "version_id": "123e4567-e89b-12d3-a456-426614174004",
-        "section_id": "123e4567-e89b-12d3-a456-426614174005",
-        "segment_id": "123e4567-e89b-12d3-a456-426614174006"
-    }
-    
-    # Make the request
-    async with AsyncClient(transport=ASGITransport(app=api), base_url="http://test") as ac:
-        response = await ac.post(
-            "/texts/123e4567-e89b-12d3-a456-426614174000/details",
-            json=request_data
-        )
-    
-    # Assertions
-    assert response.status_code == 200
-    response_data = response.json()
-    assert "text_detail" in response_data
-    assert "mapping" in response_data
-    assert "content" in response_data
-    assert "current_section" in response_data
-    assert "limit" in response_data
-    assert "total" in response_data
-    
-    # Verify the mock was called with the correct arguments
-    mock_get_details.assert_called_once()
-    call_args = mock_get_details.call_args[1]
-    assert call_args["text_id"] == "123e4567-e89b-12d3-a456-426614174000"
-    assert isinstance(call_args["text_details_request"], TextDetailsRequest)
+
 
 @pytest.mark.asyncio
 async def test_create_table_of_content_success(mocker):

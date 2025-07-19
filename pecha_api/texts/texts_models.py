@@ -41,7 +41,7 @@ class TableOfContent(Document):
     @classmethod
     async def get_table_of_content_by_content_id(cls, content_id: str, skip: int, limit: int) -> Optional["TableOfContent"]:
         contents = await cls.find_one(cls.id == UUID(content_id))
-        if contents:
+        if contents and skip is not None and limit is not None:
             contents.sections.sort(key=lambda section: section.section_number)
             if (skip * limit) > len(contents.sections):
                 return None
@@ -111,9 +111,9 @@ class Text(Document):
         return True  # All IDs exist
     
     @classmethod
-    async def get_texts_by_term_id(cls, term_id: str, language: str, skip: int, limit: int) -> List["Text"]:
+    async def get_texts_by_collection_id(cls, collection_id: str, language: str, skip: int, limit: int) -> List["Text"]:
         query = {
-            "categories": term_id,
+            "categories": collection_id,
         }
         texts = (
             await cls.find(query)

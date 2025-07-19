@@ -86,8 +86,8 @@ async def check_all_text_exists(text_ids: List[UUID]) -> bool:
         logging.debug(e)
         return False
 
-async def get_texts_by_term(term_id: str, language: str, skip: int, limit: int) -> List[Text]:
-    return await Text.get_texts_by_term_id(term_id=term_id, language=language, skip=skip, limit=limit)
+async def get_texts_by_collection(collection_id: str, language: str, skip: int, limit: int) -> List[Text]:
+    return await Text.get_texts_by_collection_id(collection_id=collection_id, language=language, skip=skip, limit=limit)
 
 async def get_texts_by_group_id(group_id: str, skip: int, limit: int) -> List[TextDTO]:
     texts = await Text.get_texts_by_group_id(group_id=group_id, skip=skip, limit=limit)
@@ -137,7 +137,7 @@ async def create_table_of_content_detail(table_of_content_request: TableOfConten
 async def get_contents_by_id(text_id: str) -> List[TableOfContent]:
     return await TableOfContent.get_table_of_contents_by_text_id(text_id=text_id)
     
-async def get_table_of_content_by_content_id(content_id: str, skip: int, limit: int) -> Optional[TableOfContent]:
+async def get_table_of_content_by_content_id(content_id: str, skip: int = None, limit: int = None) -> Optional[TableOfContent]:
     return await TableOfContent.get_table_of_content_by_content_id(content_id=content_id, skip=skip, limit=limit)
 
 
