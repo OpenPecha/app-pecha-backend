@@ -13,7 +13,8 @@ from pecha_api.texts.texts_service import (
     update_text_details,
     remove_table_of_content_by_text_id,
     delete_text_by_text_id,
-    get_sheet
+    get_sheet,
+    _validate_text_detail_request
 )
 from pecha_api.texts.texts_response_models import (
     CreateTextRequest,
@@ -916,3 +917,105 @@ async def test_get_text_details_by_text_id_with_content_id_only_success():
         assert len(section.segments) == 1
         assert section.segments[0].segment_id == "segment_id_1"
         assert response.pagination_direction == PaginationDirection.NEXT
+
+@pytest.mark.asyncio
+async def test_validate_text_detail_request_success():
+    text_id = "text_id_1"
+    content_id = "content_id_1"
+    version_id = "version_id_1"
+    segment_id = "segment_id_1"
+    section_id = "section_id_1"
+    size = 20
+    direction = PaginationDirection.NEXT
+
+    text_details_request = TextDetailsRequest(
+        content_id=content_id,
+        version_id=version_id,
+        segment_id=segment_id,
+        section_id=section_id,
+        size=size,
+        direction=direction
+    )
+
+    with patch("pecha_api.texts.texts_service.TextUtils.validate_text_exists", new_callable=AsyncMock, return_value=True), \
+        patch("pecha_api.texts.texts_service.SegmentUtils.validate_segment_exists", new_callable=AsyncMock, return_value=True):
+        
+        response = await _validate_text_detail_request(text_id=text_id, text_details_request=text_details_request)
+        
+@pytest.mark.asyncio
+async def test_validate_text_detail_request_text_id_is_none():
+    text_id = None
+    content_id = "content_id_1"
+    version_id = "version_id_1"
+    segment_id = "segment_id_1"
+    section_id = "section_id_1"
+    size = 20
+    direction = PaginationDirection.NEXT
+
+    text_details_request = TextDetailsRequest(
+        content_id=content_id,
+        version_id=version_id,
+        segment_id=segment_id,
+        section_id=section_id,
+        size=size,
+        direction=direction
+    )
+
+    with pytest.raises(HTTPException) as e:
+        await _validate_text_detail_request(text_id=text_id, text_details_request=text_details_request)
+
+    assert e.value.status_code == 400
+    assert e.value.detail == ErrorConstants.TEXT_OR_TERM_NOT_FOUND_MESSAGE
+
+@pytest.mark.asyncio
+async def test_validate_text_detail_request_invalid_version_id():
+    text_id = None
+    content_id = "content_id_1"
+    version_id = "invalid_version_id_1"
+    segment_id = "segment_id_1"
+    section_id = "section_id_1"
+    size = 20
+    direction = PaginationDirection.NEXT
+
+    text_details_request = TextDetailsRequest(
+        content_id=content_id,
+        version_id=version_id,
+        segment_id=segment_id,
+        section_id=section_id,
+        size=size,
+        direction=direction
+    )
+
+    with patch("pecha_api.texts.texts_service.TextUtils.validate_text_exists", new_callable=AsyncMock, return_value=False):
+        with pytest.raises(HTTPException) as e:
+            await _validate_text_detail_request(text_id=text_id, text_details_request=text_details_request)
+        assert e.value.status_code == 400
+        assert e.value.detail == ErrorConstants.TEXT_OR_TERM_NOT_FOUND_MESSAGE
+
+@pytest.mark.asyncio
+async def test_validate_text_detail_request_invalid_segment_id():
+    text_id = None
+    content_id = "content_id_1"
+    version_id = "version_id_1"
+    segment_id = "invalid_segment_id_1"
+    section_id = "section_id_1"
+    size = 20
+    direction = PaginationDirection.NEXT
+    
+    text_details_request = TextDetailsRequest(
+        content_id=content_id,
+        version_id=version_id,
+        segment_id=segment_id,
+        section_id=section_id,
+        size=size,
+        direction=direction
+    )
+    
+    with patch("pecha_api.texts.texts_service.TextUtils.validate_text_exists", new_callable=AsyncMock, return_value=True), \
+        patch("pecha_api.texts.texts_service.SegmentUtils.validate_segment_exists", new_callable=AsyncMock, return_value=False):
+
+        with pytest.raises(HTTPException) as e:
+            await _validate_text_detail_request(text_id=text_id, text_details_request=text_details_request)
+        
+        assert e.value.status_code == 400
+        assert e.value.detail == ErrorConstants.TEXT_OR_TERM_NOT_FOUND_MESSAGE
