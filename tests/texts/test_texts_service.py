@@ -927,6 +927,112 @@ async def test_get_text_details_by_text_id_with_text_id_content_id_segment_id_su
         assert response.pagination_direction == PaginationDirection.NEXT
 
 @pytest.mark.asyncio
+async def test_get_text_details_by_text_id_with_text_id_content_id_segment_id_success():
+    text_id = "text_id_1"
+    content_id = "content_id_1"
+    segment_id = "segment_id_1"
+    mock_text_detail = TextDTO(
+        id=text_id,
+        title="text_title",
+        language="bo",
+        group_id="group_id_1",
+        type="version",
+        is_published=False,
+        created_date="created_date",
+        updated_date="updated_date",
+        published_date="published_date",
+        published_by="published_by",
+        categories=[],
+        views=0
+    )
+    mock_table_of_content = TableOfContent(
+        id=content_id,
+        text_id=text_id,
+        sections=[
+            Section(
+                id="section_id_1",
+                title="section_title",
+                section_number=1,
+                parent_id="parent_id_1",
+                segments=[
+                    TextSegment(
+                        segment_id="segment_id_1",
+                        segment_number=1
+                    ),
+                    TextSegment(
+                        segment_id="segment_id_2",
+                        segment_number=2
+                    ),
+                    TextSegment(
+                        segment_id="segment_id_3",
+                        segment_number=3
+                    )
+                ],
+                sections=[],
+                created_date="created_date",
+                updated_date="updated_date",
+                published_date="published_date"
+            )
+        ]
+    )
+    mock_mapped_table_of_content = DetailTableOfContent(
+        id=content_id,
+        text_id=text_id,
+        sections=[
+            DetailSection(
+                id="section_id_1",
+                title="section_title",
+                section_number=1,
+                parent_id="parent_id_1",
+                segments=[
+                    DetailTextSegment(
+                        segment_id="segment_id_1",
+                        segment_number=1,
+                        content="segment_content_1",
+                        translation=None
+                    )
+                ],
+                sections=[],
+                created_date="created_date",
+                updated_date="updated_date",
+                published_date="published_date"
+            )
+        ]
+    )
+
+    with patch("pecha_api.texts.texts_service._validate_text_detail_request", new_callable=AsyncMock, return_value=True), \
+        patch("pecha_api.texts.texts_service.TextUtils.get_text_detail_by_id", new_callable=AsyncMock, return_value=mock_text_detail), \
+        patch("pecha_api.texts.texts_service.get_table_of_content_by_content_id", new_callable=AsyncMock, return_value=mock_table_of_content), \
+        patch("pecha_api.texts.texts_service.SegmentUtils.get_mapped_segment_content_for_table_of_content", new_callable=AsyncMock, return_value=mock_mapped_table_of_content):
+
+        response = await get_text_details_by_text_id(
+            text_id=text_id,
+            text_details_request=TextDetailsRequest(
+                content_id=content_id,
+                segment_id=segment_id,
+                size=2,
+                direction=PaginationDirection.PREVIOUS
+            )
+        )
+
+        assert response is not None
+        assert response.text_detail is not None
+        assert isinstance(response.text_detail, TextDTO)
+        assert response.text_detail.id == mock_text_detail.id
+        assert response.content is not None
+        assert isinstance(response.content, DetailTableOfContent)
+        assert response.content.sections is not None
+        assert len(response.content.sections) == 1
+        assert response.content.sections[0] is not None
+        assert isinstance(response.content.sections[0], DetailSection)
+        section = response.content.sections[0]
+        assert section.segments is not None
+        assert len(section.segments) == 1
+        assert section.segments[0].segment_id == "segment_id_1"
+        assert response.pagination_direction == PaginationDirection.PREVIOUS
+
+
+@pytest.mark.asyncio
 async def test_get_text_details_by_text_id_with_segment_id_only_success():
     text_id = "text_id_1"
     segment_id = "segment_id_1"
