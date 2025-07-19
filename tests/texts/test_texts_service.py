@@ -292,6 +292,25 @@ async def test_create_new_text():
         assert response.published_date == published_date
         assert response.published_by == published_by
         assert response.categories == categories
+
+@pytest.mark.asyncio
+async def test_create_new_text_invalid_group_id():
+    with patch("pecha_api.texts.texts_service.validate_user_exists", return_value=True), \
+        patch("pecha_api.texts.texts_service.validate_group_exists", return_value=False):
+        with pytest.raises(HTTPException) as exc_info:
+            await create_new_text(
+                create_text_request=CreateTextRequest(
+                    title="བྱང་ཆུབ་སེམས་དཔའི་སྤྱོད་པ་ལ་འཇུག་པ།",
+                    language="bo",
+                    group_id="invalid_group_id",
+                    published_by="pecha",
+                    type=TextType.VERSION,
+                    categories=[]
+                ),
+                token="user"
+            )
+        assert exc_info.value.status_code == 404
+        assert exc_info.value.detail == ErrorConstants.GROUP_NOT_FOUND_MESSAGE
     
 @pytest.mark.asyncio
 async def test_create_new_text_invalid_user():
