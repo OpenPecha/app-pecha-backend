@@ -16,6 +16,7 @@ from pecha_api.texts.texts_service import (
     get_sheet,
     _validate_text_detail_request
 )
+from pecha_api.terms.terms_response_models import TermsModel
 from pecha_api.texts.texts_response_models import (
     CreateTextRequest,
     TextDTO,
@@ -1289,4 +1290,3 @@ async def test_get_text_by_text_id_or_collection_cache_data_is_not_none():
         assert response.total == 0
         assert response.skip == 0
         assert response.limit == 10
-        
