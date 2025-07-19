@@ -853,7 +853,24 @@ async def test_get_text_details_by_text_id_with_content_id_only_success():
                             segment_number=1
                         )
                     ], 
-                    sections=[],
+                    sections=[
+                        Section(
+                            id="section_id_2",
+                            title="section_title_2",
+                            section_number=2,
+                            parent_id="parent_id_2",
+                            segments=[
+                                TextSegment(
+                                    segment_id=f"1_segment_id_{i}",
+                                    segment_number=1
+                                )
+                            ],
+                            sections=[],
+                            created_date="created_date",
+                            updated_date="updated_date",
+                            published_date="published_date"
+                        )
+                    ],
                     created_date="created_date",
                     updated_date="updated_date",
                     published_date="published_date"
@@ -879,7 +896,26 @@ async def test_get_text_details_by_text_id_with_content_id_only_success():
                         translation=None
                     )
                 ],
-                sections=[],
+                sections=[
+                    DetailSection(
+                        id="section_id_2",
+                        title="section_title_2",
+                        section_number=2,
+                        parent_id="parent_id_2",
+                        segments=[
+                            DetailTextSegment(
+                                segment_id=f"1_segment_id_1",
+                                segment_number=1,
+                                content="segment_content_1",
+                                translation=None
+                            )
+                        ],
+                        sections=[],
+                        created_date="created_date",
+                        updated_date="updated_date",
+                        published_date="published_date"
+                    )
+                ],
                 created_date="created_date",
                 updated_date="updated_date",
                 published_date="published_date"
@@ -914,7 +950,8 @@ async def test_get_text_details_by_text_id_with_content_id_only_success():
         assert isinstance(response.content.sections[0], DetailSection)
         section = response.content.sections[0]
         assert section.segments is not None
-        assert len(section.segments) == 1
+        assert section.sections is not None
+        assert len(section.segments) + len(section.sections[0].segments) == 2
         assert section.segments[0].segment_id == "segment_id_1"
         assert response.pagination_direction == PaginationDirection.NEXT
 
