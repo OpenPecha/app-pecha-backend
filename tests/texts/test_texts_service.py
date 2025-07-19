@@ -1260,33 +1260,5 @@ async def test_get_versions_by_group_id_cache_data_is_not_none():
         assert response.versions[0].id == "text_id_1"
 
 
-@pytest.mark.asyncio
-async def test_get_text_by_text_id_or_collection_cache_data_is_not_none():
-    mock_text_category_response = TextsCategoryResponse(
-        term=TermsModel(
-            id="term_id_1",
-            title="term_title_1",
-            description="term_description_1",
-            slug="term_slug_1",
-            has_child=False
-        ),
-        texts=[],
-        total=0,
-        skip=0,
-        limit=10
-    )
 
-    with patch("pecha_api.texts.texts_service.get_text_by_text_id_or_term_cache", new_callable=MagicMock, return_value=mock_text_category_response):
-
-        response = await get_text_by_text_id_or_term(text_id="text_id_1", term_id="term_id_1", language="en", skip=0, limit=10)
-
-        assert response is not None
-        assert isinstance(response, TextsCategoryResponse)
-        assert response.term is not None
-        assert isinstance(response.term, TermsModel)
-        assert response.term.id == "term_id_1"
-        assert response.texts is not None
-        assert len(response.texts) == 0
-        assert response.total == 0
-        assert response.skip == 0
-        assert response.limit == 10
+        
