@@ -31,7 +31,9 @@ from pecha_api.texts.texts_response_models import (
     DetailTextSegment,
     Translation,
     UpdateTextRequest,
-    TextDTOResponse
+    TextDTOResponse,
+    TextVersionResponse,
+    TextsCategoryResponse
 )
 
 from pecha_api.texts.texts_enums import TextType, PaginationDirection
@@ -1056,3 +1058,234 @@ async def test_validate_text_detail_request_invalid_segment_id():
         
         assert e.value.status_code == 400
         assert e.value.detail == ErrorConstants.TEXT_OR_TERM_NOT_FOUND_MESSAGE
+
+
+@pytest.mark.asyncio
+async def test_get_versions_by_group_id_language_is_none():
+    text_detail = TextDTO(
+        id="id_1",
+        title="བྱང་ཆུབ་སེམས་དཔའི་སྤྱོད་པ་ལ་འཇུག་པ།",
+        group_id="group_id_1",
+        language="bo",
+        type="version",
+        is_published=True,
+        created_date="2025-03-20 09:26:16.571522",
+        updated_date="2025-03-20 09:26:16.571532",
+        published_date="2025-03-20 09:26:16.571536",
+        published_by="pecha",
+        categories=[],
+        views=0
+    )
+    texts_by_group_id = [
+        TextDTO(
+            id="text_id_1",
+            title="བྱང་ཆུབ་སེམས་དཔའི་སྤྱོད་པ་ལ་འཇུག་པ།",
+            group_id="group_id_1",
+            language="bo",
+            type="version",
+            is_published=True,
+            created_date="2025-03-20 09:26:16.571522",
+            updated_date="2025-03-20 09:26:16.571532",
+            published_date="2025-03-20 09:26:16.571536",
+            published_by="pecha",
+            categories=[],
+            views=0
+        ),
+        TextDTO(
+            id="text_id_2",
+            title="The Way of the Bodhisattva",
+            language="en",
+            group_id="group_id_1",
+            type="version",
+            is_published=True,
+            created_date="2025-03-20 09:28:28.076920",
+            updated_date="2025-03-20 09:28:28.076934",
+            published_date="2025-03-20 09:28:28.076938",
+            published_by="pecha",
+            categories=[],
+            views=0
+        ),
+        TextDTO(
+            id="text_id_3",
+            title="शबोधिचर्यावतार",
+            language="sa",
+            group_id="group_id_1",
+            type="version",
+            is_published=True,
+            created_date="2025-03-20 09:29:51.154697",
+            updated_date="2025-03-20 09:29:51.154708",
+            published_date="2025-03-20 09:29:51.154712",
+            published_by="pecha",
+            categories=[],
+            views=0
+        )
+    ]
+    mock_table_of_content = TableOfContent(
+            id="table_of_content_id",
+            text_id="text_id_1",
+            sections=[
+                Section(
+                    id="id_1",
+                    title="section_1",
+                    section_number=1,
+                    parent_id="id_1",
+                    segments=[],
+                    sections=[],
+                    created_date="2025-03-16 04:40:54.757652",
+                    updated_date="2025-03-16 04:40:54.757652",
+                    published_date="2025-03-16 04:40:54.757652"
+                )
+            ]
+        )
+    language = "en"
+    with patch('pecha_api.texts.texts_service.TextUtils.get_text_detail_by_id', new_callable=AsyncMock) as mock_text_detail, \
+        patch("pecha_api.texts.texts_service.get_text_versions_by_group_id_cache", new_callable=MagicMock, return_value=None),\
+        patch("pecha_api.texts.texts_service.set_text_versions_by_group_id_cache", new_callable=MagicMock, return_value=None),\
+        patch('pecha_api.texts.texts_service.get_texts_by_group_id', new_callable=AsyncMock) as mock_get_texts_by_group_id,\
+        patch('pecha_api.texts.texts_service.get_contents_by_id', new_callable=AsyncMock) as mock_get_contents_by_id:
+        mock_text_detail.return_value = text_detail
+        mock_get_texts_by_group_id.return_value = texts_by_group_id
+        mock_get_contents_by_id.return_value = [mock_table_of_content]
+        response = await get_text_versions_by_group_id(text_id="id_1",language=None, skip=0, limit=10)
+        assert response is not None
+        assert response.text is not None
+        assert isinstance(response.text, TextDTO)
+        assert response.text.type == "version"
+        assert response.text.language == language
+        assert response.text.id == "text_id_2"
+        assert response.versions is not None
+        assert len(response.versions) == 2
+        assert response.versions[0] is not None
+        assert isinstance(response.versions[0], TextVersion)
+        assert response.versions[0].id == "text_id_1"
+        for version in response.versions:
+            assert isinstance(version, TextVersion)
+            assert version.type == "version"
+        
+@pytest.mark.asyncio
+async def test_get_versions_by_group_id_cache_data_is_not_none():
+    text_detail = TextDTO(
+        id="id_1",
+        title="བྱང་ཆུབ་སེམས་དཔའི་སྤྱོད་པ་ལ་འཇུག་པ།",
+        group_id="group_id_1",
+        language="bo",
+        type="version",
+        is_published=True,
+        created_date="2025-03-20 09:26:16.571522",
+        updated_date="2025-03-20 09:26:16.571532",
+        published_date="2025-03-20 09:26:16.571536",
+        published_by="pecha",
+        categories=[],
+        views=0
+    )
+    texts_by_group_id = [
+        TextDTO(
+            id="text_id_1",
+            title="བྱང་ཆུབ་སེམས་དཔའི་སྤྱོད་པ་ལ་འཇུག་པ།",
+            group_id="group_id_1",
+            language="bo",
+            type="version",
+            is_published=True,
+            created_date="2025-03-20 09:26:16.571522",
+            updated_date="2025-03-20 09:26:16.571532",
+            published_date="2025-03-20 09:26:16.571536",
+            published_by="pecha",
+            categories=[],
+            views=0
+        ),
+        TextDTO(
+            id="text_id_2",
+            title="The Way of the Bodhisattva",
+            language="en",
+            group_id="group_id_1",
+            type="version",
+            is_published=True,
+            created_date="2025-03-20 09:28:28.076920",
+            updated_date="2025-03-20 09:28:28.076934",
+            published_date="2025-03-20 09:28:28.076938",
+            published_by="pecha",
+            categories=[],
+            views=0
+        ),
+        TextDTO(
+            id="text_id_3",
+            title="शबोधिचर्यावतार",
+            language="sa",
+            group_id="group_id_1",
+            type="version",
+            is_published=True,
+            created_date="2025-03-20 09:29:51.154697",
+            updated_date="2025-03-20 09:29:51.154708",
+            published_date="2025-03-20 09:29:51.154712",
+            published_by="pecha",
+            categories=[],
+            views=0
+        )
+    ]
+    cache_text_version = TextVersionResponse(
+        text=text_detail,
+        versions=[
+            TextVersion(
+                id="text_id_1",
+                title="བྱང་ཆུབ་སེམས་དཔའི་སྤྱོད་པ་ལ་འཇུག་པ།",
+                parent_id=None,
+                priority=None,
+                language="bo",
+                type="version",
+                group_id="group_id_1",
+                table_of_contents=[],
+                is_published=True,
+                created_date="2025-03-20 09:26:16.571522",
+                updated_date="2025-03-20 09:26:16.571532",
+                published_date="2025-03-20 09:26:16.571536",
+                published_by="pecha"
+            )
+        ]
+    )
+    language = "en"
+    with patch("pecha_api.texts.texts_service.get_text_versions_by_group_id_cache", new_callable=MagicMock, return_value=cache_text_version):
+
+        response = await get_text_versions_by_group_id(text_id="id_1",language=language, skip=0, limit=10)
+
+        assert response is not None
+        assert isinstance(response, TextVersionResponse)
+        assert response.text is not None
+        assert isinstance(response.text, TextDTO)
+        assert response.versions is not None
+        assert len(response.versions) == 1
+        assert response.text.id == "id_1"
+        assert response.versions[0] is not None
+        assert isinstance(response.versions[0], TextVersion)
+        assert response.versions[0].id == "text_id_1"
+
+
+@pytest.mark.asyncio
+async def test_get_text_by_text_id_or_collection_cache_data_is_not_none():
+    mock_text_category_response = TextsCategoryResponse(
+        term=TermsModel(
+            id="term_id_1",
+            title="term_title_1",
+            description="term_description_1",
+            slug="term_slug_1",
+            has_child=False
+        ),
+        texts=[],
+        total=0,
+        skip=0,
+        limit=10
+    )
+
+    with patch("pecha_api.texts.texts_service.get_text_by_text_id_or_term_cache", new_callable=MagicMock, return_value=mock_text_category_response):
+
+        response = await get_text_by_text_id_or_term(text_id="text_id_1", term_id="term_id_1", language="en", skip=0, limit=10)
+
+        assert response is not None
+        assert isinstance(response, TextsCategoryResponse)
+        assert response.term is not None
+        assert isinstance(response.term, TermsModel)
+        assert response.term.id == "term_id_1"
+        assert response.texts is not None
+        assert len(response.texts) == 0
+        assert response.total == 0
+        assert response.skip == 0
+        assert response.limit == 10
