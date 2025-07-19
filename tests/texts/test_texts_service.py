@@ -1289,3 +1289,4 @@ async def test_get_text_by_text_id_or_collection_cache_data_is_not_none():
         assert response.total == 0
         assert response.skip == 0
         assert response.limit == 10
+        
