@@ -36,14 +36,14 @@ def set_text_by_text_id_or_term_cache(text_id: str = None, collection_id: str = 
     hashed_key: str = Utils.generate_hash_key(payload = payload)
     set_cache(hash_key = hashed_key, value = data)
 
-def get_table_of_contents_by_text_id_cache(text_id: str = None) -> TableOfContentResponse:
-    payload = [text_id]
+def get_table_of_contents_by_text_id_cache(text_id: str = None, language: str = None, skip: int = None, limit: int = None) -> TableOfContentResponse:
+    payload = [text_id, language, skip, limit]
     hashed_key: str = Utils.generate_hash_key(payload = payload)
     cache_data: TableOfContentResponse = get_cache_data(hash_key = hashed_key)
     return cache_data
 
-def set_table_of_contents_by_text_id_cache(text_id: str = None, data: TableOfContentResponse = None):
-    payload = [text_id]
+def set_table_of_contents_by_text_id_cache(text_id: str = None, language: str = None, skip: int = None, limit: int = None, data: TableOfContentResponse = None):
+    payload = [text_id, language, skip, limit]
     hashed_key: str = Utils.generate_hash_key(payload = payload)
     set_cache(hash_key = hashed_key, value = data)
 

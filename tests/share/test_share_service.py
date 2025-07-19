@@ -112,7 +112,7 @@ def test_generate_short_url_payload_without_url():
         
         payload = _generate_short_url_payload_(share_request, og_description)
         
-        expected_url = "https://pecha-frontend-12552055234-4f99e0e.onrender.com/texts/text-details?segment_id=seg_123&contentId=content_456&text_id=text_789&contentIndex=1"
+        expected_url = "https://pecha-frontend-12552055234-4f99e0e.onrender.com/chapter?segment_id=seg_123&contentId=content_456&text_id=text_789&contentIndex=1"
         assert payload["url"] == expected_url
         assert payload["og_title"] == "PECHA"
         assert payload["og_description"] == "Test description"
@@ -127,5 +127,5 @@ def test_generate_url():
     
     result = _generate_url_(segment_id, content_id, text_id, content_index)
     
-    expected_url = "https://pecha-frontend-12552055234-4f99e0e.onrender.com/texts/text-details?segment_id=seg_123&contentId=content_456&text_id=text_789&contentIndex=2"
+    expected_url = "https://pecha-frontend-12552055234-4f99e0e.onrender.com/chapter?segment_id=seg_123&contentId=content_456&text_id=text_789&contentIndex=2"
     assert result == expected_url
