@@ -40,18 +40,19 @@ async def get_generated_image():
         )
 
 async def generate_short_url(share_request: ShareRequest) -> ShortUrlResponse:
+    print("my share request>>>>>>>>>>>>>>>>>>", share_request)
 
     og_description = DEFAULT_OG_DESCRIPTION
     if share_request.logo:
         _generate_logo_image_(share_request=share_request)
 
-    else:
+    elif share_request.segment_id is not None:
         await _generate_segment_content_image_(share_request=share_request)
         
     payload = _generate_short_url_payload_(share_request=share_request, og_description=og_description)
-    
+    print("my payload>>>>>>>>>>>>>>>>>>", payload)
     short_url: ShortUrlResponse = await get_short_url(payload=payload)
-
+    print("my short url>>>>>>>>>>>>>>>>>>", short_url)
     return short_url
 
 
@@ -88,6 +89,7 @@ async def _generate_segment_content_image_(share_request: ShareRequest):
 
 def _generate_short_url_payload_(share_request: ShareRequest, og_description: str) -> dict:
 
+    image_url = None
     if share_request.url is None:
         share_request.url = _generate_url_(
             segment_id=share_request.segment_id,
@@ -97,7 +99,9 @@ def _generate_short_url_payload_(share_request: ShareRequest, og_description: st
         )
 
     pecha_backend_endpoint = get("PECHA_BACKEND_ENDPOINT")
-    image_url = f"{pecha_backend_endpoint}/share/image?segment_id={share_request.segment_id}&language={share_request.language}&logo={share_request.logo}"
+    if share_request.segment_id is not None:
+        image_url = f"{pecha_backend_endpoint}/share/image?segment_id={share_request.segment_id}&language={share_request.language}&logo={share_request.logo}"
+    
     payload = {
         "url": share_request.url,
         "og_title": DEFAULT_OG_DESCRIPTION,
