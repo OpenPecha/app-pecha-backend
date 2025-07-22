@@ -62,9 +62,9 @@ class DetailSection(BaseModel):
     parent_id: Optional[str] = None
     segments: List[DetailTextSegment] = []
     sections: Optional[List["DetailSection"]] = None
-    created_date: str 
-    updated_date: str
-    published_date: str 
+    created_date: Optional[str] = None
+    updated_date: Optional[str] = None
+    published_date: Optional[str] = None
 
 class DetailTableOfContent(BaseModel):
     id: str
