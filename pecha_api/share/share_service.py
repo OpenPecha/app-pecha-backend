@@ -40,7 +40,6 @@ async def get_generated_image():
         )
 
 async def generate_short_url(share_request: ShareRequest) -> ShortUrlResponse:
-    print("my share request>>>>>>>>>>>>>>>>>>", share_request)
 
     og_description = DEFAULT_OG_DESCRIPTION
     if share_request.logo:
@@ -50,9 +49,9 @@ async def generate_short_url(share_request: ShareRequest) -> ShortUrlResponse:
         await _generate_segment_content_image_(share_request=share_request)
         
     payload = _generate_short_url_payload_(share_request=share_request, og_description=og_description)
-    print("my payload>>>>>>>>>>>>>>>>>>", payload)
+
     short_url: ShortUrlResponse = await get_short_url(payload=payload)
-    print("my short url>>>>>>>>>>>>>>>>>>", short_url)
+ 
     return short_url
 
 
