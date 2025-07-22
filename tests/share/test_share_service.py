@@ -125,7 +125,8 @@ def test_generate_url():
     text_id = "text_789"
     content_index = 2
     
-    result = _generate_url_(segment_id, content_id, text_id, content_index)
+    # Use correct positional argument order: content_id, text_id, content_index, segment_id
+    result = _generate_url_(content_id, text_id, content_index, segment_id)
     
     expected_url = "https://pecha-frontend-12552055234-4f99e0e.onrender.com/chapter?segment_id=seg_123&contentId=content_456&text_id=text_789&contentIndex=2"
     assert result == expected_url
