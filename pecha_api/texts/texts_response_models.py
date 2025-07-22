@@ -5,7 +5,7 @@ from pecha_api.collections.collections_response_models import CollectionModel
 
 from pydantic import BaseModel
 
-from .texts_enums import TextType
+from .texts_enums import TextType, PaginationDirection
 
 class CreateTextRequest(BaseModel):
     title: str
@@ -71,18 +71,13 @@ class DetailTableOfContent(BaseModel):
     text_id: str
     sections: List[DetailSection]
 
-class DetailTextMapping(BaseModel):
-    segment_id: Optional[str] = None
-    section_id: Optional[str] = None
-
 class DetailTableOfContentResponse(BaseModel):
     text_detail: TextDTO
-    mapping: DetailTextMapping
     content: DetailTableOfContent
-    skip: int
-    current_section: int
-    limit: int
-    total: int
+    size: int
+    pagination_direction: PaginationDirection
+    current_segment_position: int
+    total_segments: int
 
 class TextSegment(BaseModel):
     segment_id: str
@@ -108,13 +103,14 @@ class TableOfContentResponse(BaseModel):
     text_detail: TextDTO
     contents: List[TableOfContent]
 
+
 class TextDetailsRequest(BaseModel):
     content_id: Optional[str] = None
     version_id: Optional[str] = None
     segment_id: Optional[str] = None
     section_id: Optional[str] = None
-    skip: int = 0
-    limit: int = 1
+    size: int = 20
+    direction: PaginationDirection = PaginationDirection.NEXT
 
 # Text Version Response Models
 

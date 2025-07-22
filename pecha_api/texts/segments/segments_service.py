@@ -56,12 +56,7 @@ async def get_segments_details_by_ids(segment_ids: List[str]) -> Dict[str, Segme
     return segments
 
 async def get_segment_details_by_id(segment_id: str, text_details: bool = False) -> SegmentDTO:
-    cache_data: SegmentDTO = get_segment_details_by_id_cache(
-        segment_id = segment_id,
-        text_details = text_details
-    )
-    if False and cache_data is not None:
-        return cache_data
+    
     segment = await get_segment_by_id(segment_id=segment_id)
     if not segment:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=ErrorConstants.SEGMENT_NOT_FOUND_MESSAGE)
@@ -79,11 +74,6 @@ async def get_segment_details_by_id(segment_id: str, text_details: bool = False)
         mapping=mapping_responses,
         type=segment.type,
         text=text
-    )
-    set_segment_details_by_id_cache(
-        segment_id = segment_id,
-        text_details = text_details,
-        data = response
     )
     return response
 
@@ -110,9 +100,7 @@ async def get_translations_by_segment_id(segment_id: str) -> SegmentTranslations
     """
     Get translations for a given segment ID.
     """
-    cache_data: SegmentTranslationsResponse = get_segment_translations_by_id_cache(segment_id = segment_id)
-    if False and cache_data is not None:
-        return cache_data
+    
     is_valid_segment = await SegmentUtils.validate_segment_exists(segment_id=segment_id)
     if not is_valid_segment:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=ErrorConstants.SEGMENT_NOT_FOUND_MESSAGE)
@@ -126,21 +114,13 @@ async def get_translations_by_segment_id(segment_id: str) -> SegmentTranslations
         ),
         translations=translations
     )
-    set_segment_translations_by_id_cache(
-        segment_id = segment_id,
-        data = response
-    )
+    
     return response
 
 async def get_commentaries_by_segment_id(
         segment_id: str
 ) -> SegmentCommentariesResponse:
-    """"
-       Get commentaries for a given segment ID.
-    """
-    cache_data: SegmentCommentariesResponse = get_segment_commentaries_by_id_cache(segment_id = segment_id)
-    if False and cache_data is not None:
-        return cache_data
+    
     is_valid_segment = await SegmentUtils.validate_segment_exists(segment_id=segment_id)
     if not is_valid_segment:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=ErrorConstants.SEGMENT_NOT_FOUND_MESSAGE)
@@ -154,16 +134,11 @@ async def get_commentaries_by_segment_id(
         ),
         commentaries=commentaries
     )
-    set_segment_commentaries_by_id_cache(
-        segment_id = segment_id,
-        data = response
-    )
+    
     return response
 
 async def get_info_by_segment_id(segment_id: str) -> SegmentInfoResponse:
-    cache_data: SegmentInfoResponse = get_segment_info_by_id_cache(segment_id = segment_id)
-    if False and cache_data is not None:
-        return cache_data
+    
     is_valid_segment = await SegmentUtils.validate_segment_exists(segment_id=segment_id)
     if not is_valid_segment:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=ErrorConstants.SEGMENT_NOT_FOUND_MESSAGE)
@@ -190,9 +165,7 @@ async def get_info_by_segment_id(segment_id: str) -> SegmentInfoResponse:
     return response
 
 async def get_root_text_mapping_by_segment_id(segment_id: str) -> SegmentRootMappingResponse:
-    cache_data: SegmentRootMappingResponse = get_segment_root_mapping_by_id_cache(segment_id = segment_id)
-    if False and cache_data is not None:
-        return cache_data
+    
     is_valid_segment = await SegmentUtils.validate_segment_exists(segment_id=segment_id)
     if not is_valid_segment:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=ErrorConstants.SEGMENT_NOT_FOUND_MESSAGE)
@@ -204,10 +177,6 @@ async def get_root_text_mapping_by_segment_id(segment_id: str) -> SegmentRootMap
             content=segment.content
         ),
         segment_root_mapping=segment_root_mapping
-    )
-    set_segment_root_mapping_by_id_cache(
-        segment_id = segment_id,
-        data = response
     )
     return response
     

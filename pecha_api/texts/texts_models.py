@@ -41,7 +41,7 @@ class TableOfContent(Document):
     @classmethod
     async def get_table_of_content_by_content_id(cls, content_id: str, skip: int, limit: int) -> Optional["TableOfContent"]:
         contents = await cls.find_one(cls.id == UUID(content_id))
-        if contents:
+        if contents and skip is not None and limit is not None:
             contents.sections.sort(key=lambda section: section.section_number)
             if (skip * limit) > len(contents.sections):
                 return None
