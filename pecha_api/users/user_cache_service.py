@@ -12,6 +12,8 @@ async def get_user_info_cache(token: str) -> UserInfoResponse:
     payload = [token]
     hashed_key: str = Utils.generate_hash_key(payload = payload)
     cache_data: UserInfoResponse = await get_cache_data(hash_key = hashed_key)
+    if cache_data and isinstance(cache_data, dict):
+        cache_data = UserInfoResponse(**cache_data)
     return cache_data
 
 async def set_user_info_cache(token: str, data: UserInfoResponse):

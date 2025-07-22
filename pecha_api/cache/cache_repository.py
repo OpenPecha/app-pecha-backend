@@ -39,6 +39,7 @@ async def set_cache(hash_key: str, value: Any) -> bool:
         logging.error("An error occurred in set_cache", exc_info=True)
         return False
 
+
 async def get_cache_data(hash_key: str) -> Optional[Any]:
     """Get value from cache"""
     try:
@@ -47,7 +48,6 @@ async def get_cache_data(hash_key: str) -> Optional[Any]:
         value = await client.get(full_key)
         if value is None:
             return None
-
         try:
             return json.loads(value)
         except json.JSONDecodeError:

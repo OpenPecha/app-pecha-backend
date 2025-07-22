@@ -16,6 +16,8 @@ async def get_segment_details_by_id_cache(segment_id: str = None, text_details: 
     payload = [segment_id, text_details]
     hashed_key: str = Utils.generate_hash_key(payload = payload)
     cache_data: SegmentDTO = await get_cache_data(hash_key=hashed_key)
+    if cache_data and isinstance(cache_data, dict):
+        cache_data = SegmentDTO(**cache_data)
     return cache_data
 
 async def set_segment_details_by_id_cache(segment_id: str = None, text_details: bool = None, data: SegmentDTO = None):
@@ -27,6 +29,8 @@ async def get_segment_info_by_id_cache(segment_id: str = None) -> SegmentInfoRes
     payload = [segment_id]
     hashed_key: str = Utils.generate_hash_key(payload = payload)
     cache_data: SegmentInfoResponse = await get_cache_data(hash_key = hashed_key)
+    if cache_data and isinstance(cache_data, dict):
+        cache_data = SegmentInfoResponse(**cache_data)
     return cache_data
 
 async def set_segment_info_by_id_cache(segment_id: str = None, data: SegmentInfoResponse = None):
@@ -38,6 +42,8 @@ async def get_segment_root_mapping_by_id_cache(segment_id: str = None) -> Segmen
     payload = [segment_id]
     hashed_key: str = Utils.generate_hash_key(payload = payload)
     cache_data: SegmentRootMappingResponse = await get_cache_data(hash_key = hashed_key)
+    if cache_data and isinstance(cache_data, dict):
+        cache_data = SegmentRootMappingResponse(**cache_data)
     return cache_data
 
 async def set_segment_root_mapping_by_id_cache(segment_id: str = None, data: SegmentRootMappingResponse = None):
@@ -49,6 +55,8 @@ async def get_segment_translations_by_id_cache(segment_id: str = None) -> Segmen
     payload = [segment_id]
     hashed_key: str = Utils.generate_hash_key(payload = payload)
     cache_data: SegmentTranslationsResponse = await get_cache_data(hash_key = hashed_key)
+    if cache_data and isinstance(cache_data, dict):
+        cache_data = SegmentTranslationsResponse(**cache_data)
     return cache_data
 
 async def set_segment_translations_by_id_cache(segment_id: str = None, data: SegmentTranslationsResponse = None):
@@ -60,6 +68,8 @@ async def get_segment_commentaries_by_id_cache(segment_id: str = None) -> Segmen
     payload = [segment_id]
     hashed_key: str = Utils.generate_hash_key(payload = payload)
     cache_data: SegmentCommentariesResponse = await get_cache_data(hash_key = hashed_key)
+    if cache_data and isinstance(cache_data, dict):
+        cache_data = SegmentCommentariesResponse(**cache_data)
     return cache_data
 
 async def set_segment_commentaries_by_id_cache(segment_id: str = None, data: SegmentCommentariesResponse = None):

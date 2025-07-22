@@ -24,6 +24,8 @@ async def get_text_details_cache(text_id: str = None, content_id: str = None, ve
     payload = [text_id, content_id, version_id, skip, limit]
     hashed_key: str = Utils.generate_hash_key(payload = payload)
     cache_data: DetailTableOfContentResponse = await get_cache_data(hash_key =hashed_key)
+    if cache_data and isinstance(cache_data, dict):
+        cache_data = DetailTableOfContentResponse(**cache_data)
     return cache_data
 
 async def get_text_by_text_id_or_term_cache(text_id: str = None, term_id: str = None, language: str = None, skip: int = None, limit: int = None) -> TextsCategoryResponse | TextDTO:
@@ -31,6 +33,8 @@ async def get_text_by_text_id_or_term_cache(text_id: str = None, term_id: str = 
     payload = [text_id, term_id, language, skip, limit]
     hashed_key: str = Utils.generate_hash_key(payload = payload)
     cache_data: TextsCategoryResponse | TextDTO = await get_cache_data(hash_key = hashed_key)
+    if cache_data and isinstance(cache_data, dict):
+        cache_data = TextsCategoryResponse(**cache_data)
     return cache_data
 
 async def set_text_by_text_id_or_term_cache(text_id: str = None, term_id: str = None, language: str = None, skip: int = None, limit: int = None, data: TextsCategoryResponse = None):
@@ -44,6 +48,8 @@ async def get_table_of_contents_by_text_id_cache(text_id: str = None, language: 
     payload = [text_id, language, skip, limit]
     hashed_key: str = Utils.generate_hash_key(payload = payload)
     cache_data: TableOfContentResponse = await get_cache_data(hash_key = hashed_key)
+    if cache_data and isinstance(cache_data, dict):
+        cache_data = TableOfContentResponse(**cache_data)
     return cache_data
 
 async def set_table_of_contents_by_text_id_cache(text_id: str = None, language: str = None, skip: int = None, limit: int = None, data: TableOfContentResponse = None):
@@ -57,6 +63,8 @@ async def get_text_versions_by_group_id_cache(text_id: str = None, language: str
     payload = [text_id, language, skip, limit]
     hashed_key: str = Utils.generate_hash_key(payload = payload)
     cache_data: TextVersionResponse = await get_cache_data(hash_key = hashed_key)
+    if cache_data and isinstance(cache_data, dict):
+        cache_data = TextVersionResponse(**cache_data)
     return cache_data
 
 async def set_text_versions_by_group_id_cache(text_id: str = None, language: str = None, skip: int = None, limit: int = None, data: TextVersionResponse = None):

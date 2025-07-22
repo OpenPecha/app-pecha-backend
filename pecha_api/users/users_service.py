@@ -30,7 +30,9 @@ from .user_cache_service import (
 
 
 async def get_user_info(token: str) -> UserInfoResponse:
-    
+    cache_data = await get_user_info_cache(token=token)
+    if cache_data:
+        return cache_data
     current_user = validate_and_extract_user_details(token=token)
     user_info_response = generate_user_info_response(user=current_user)
     await set_user_info_cache(token=token, data=user_info_response)
