@@ -80,6 +80,8 @@ async def test_get_sheet_success():
             section_number=1,
             segments=[]
         ),
+        views=0,
+        is_published=True,
         skip=skip,
         limit=limit,
         total=1
@@ -122,6 +124,8 @@ async def test_get_sheet_with_custom_pagination():
             section_number=1,
             segments=[]
         ),
+        views=0,
+        is_published=True,
         skip=skip,
         limit=limit,
         total=1

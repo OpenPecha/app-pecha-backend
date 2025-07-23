@@ -11,14 +11,14 @@ from pecha_api.users.users_service import get_user_info, update_user_info, \
 from pecha_api.users.user_response_models import UserInfoRequest, SocialMediaProfile, PublisherInfoResponse
 from pecha_api.users.users_models import Users, SocialMediaAccount
 from pecha_api.users.users_enums import SocialProfile
-from unittest.mock import patch, MagicMock
+from unittest.mock import patch, MagicMock, AsyncMock
 from fastapi import HTTPException, UploadFile
 from pecha_api.users.users_service import upload_user_image
 import io
 import PIL.Image
 
 
-def test_get_user_info_success():
+async def test_get_user_info_success():
     token = "valid_token"
     user = Users(
         firstname="John",
@@ -34,17 +34,17 @@ def test_get_user_info_success():
     )
 
     with patch("pecha_api.users.users_service.validate_token", return_value={"email": "john.doe@example.com"}), \
-        patch("pecha_api.users.users_service.get_user_info_cache", return_value=None), \
-        patch("pecha_api.users.users_service.set_user_info_cache", return_value=None), \
+        patch("pecha_api.users.users_service.get_user_info_cache", new_callable=AsyncMock, return_value=None), \
+        patch("pecha_api.users.users_service.set_user_info_cache", new_callable=AsyncMock, return_value=None), \
             patch("pecha_api.users.users_service.get_user_by_email", return_value=user):
-        response = get_user_info(token)
+        response = await get_user_info(token)
         assert response.firstname == "John"
         assert response.lastname == "Doe"
         assert response.username == "johndoe"
         assert response.email == "john.doe@example.com"
 
 
-def test_get_user_info_with_social_accounts():
+async def test_get_user_info_with_social_accounts():
     token = "valid_token"
     user = Users(
         firstname="John",
@@ -63,10 +63,10 @@ def test_get_user_info_with_social_accounts():
     )
 
     with patch("pecha_api.users.users_service.validate_token", return_value={"email": "john.doe@example.com"}), \
-        patch("pecha_api.users.users_service.get_user_info_cache", return_value=None), \
-        patch("pecha_api.users.users_service.set_user_info_cache", return_value=None), \
+        patch("pecha_api.users.users_service.get_user_info_cache", new_callable=AsyncMock, return_value=None), \
+        patch("pecha_api.users.users_service.set_user_info_cache", new_callable=AsyncMock, return_value=None), \
             patch("pecha_api.users.users_service.get_user_by_email", return_value=user):
-        response = get_user_info(token)
+        response = await get_user_info(token)
         assert response.firstname == "John"
         assert response.lastname == "Doe"
         assert response.username == "johndoe"

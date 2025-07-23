@@ -445,9 +445,7 @@ async def _process_and_upload_sheet_segments(
         create_segment_request=create_segment_request_payload,
         token=token
     )
-
     segment_dict: Dict[str, str] = _generate_segment_dictionary_(new_segments=new_segments)
-    
     return segment_dict
 
 def _generate_sheet_table_of_content_(create_sheet_request: CreateSheetRequest, text_id: str, segment_dict: Dict[str, str]) -> TableOfContent:

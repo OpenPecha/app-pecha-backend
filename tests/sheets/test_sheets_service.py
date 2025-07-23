@@ -115,12 +115,13 @@ async def test_create_new_sheet_success():
         Source(
             position=3,
             type=SegmentType.IMAGE,
-            content="media_url"
+            content="image_url"
         )
     ]
     mock_create_sheet_request = CreateSheetRequest(
         title="sheet_title",
-        source=mock_source
+        source=mock_source,
+        is_published=True
     )
     mock_token = "valid_token"
     mock_user_details = type("User",(), {
@@ -144,6 +145,12 @@ async def test_create_new_sheet_success():
     mock_segment_response = SegmentResponse(
         segments=[
             SegmentDTO(
+                id="segment_id_1",
+                text_id="text_id",
+                content="source_segment_id",
+                type=SegmentType.SOURCE
+            ),
+            SegmentDTO(
                 id="segment_id_2",
                 text_id="text_id",
                 content="content",
@@ -152,7 +159,7 @@ async def test_create_new_sheet_success():
             SegmentDTO(
                 id="segment_id_3",
                 text_id="text_id",
-                content="media_url",
+                content="image_url",
                 type=SegmentType.IMAGE
             )
         ]
@@ -183,6 +190,7 @@ async def test_create_new_sheet_success():
     )
     with patch("pecha_api.sheets.sheets_service.create_new_group", new_callable=AsyncMock, return_value=mock_group_response), \
         patch("pecha_api.sheets.sheets_service.create_new_text", new_callable=AsyncMock, return_value=mock_text_response), \
+        patch("pecha_api.sheets.sheets_service._process_s3_image_url_", new_callable=MagicMock, return_value="image_url"), \
         patch("pecha_api.sheets.sheets_service.validate_and_extract_user_details", return_value=mock_user_details), \
         patch("pecha_api.sheets.sheets_service.create_new_segment", new_callable=AsyncMock, return_value=mock_segment_response), \
         patch("pecha_api.sheets.sheets_service.create_table_of_content", new_callable=AsyncMock, return_value=mock_table_of_content_response):
@@ -226,11 +234,17 @@ async def test_update_sheet_success():
         Source(
             position=3,
             type=SegmentType.IMAGE,
-            content="media_url"
+            content="image_url"
         )
     ]
     mock_segment_response = SegmentResponse(
         segments=[
+            SegmentDTO(
+                id="segment_id_1",
+                text_id="text_id",
+                content="source_segment_id",
+                type=SegmentType.SOURCE
+            ),
             SegmentDTO(
                 id="segment_id_2",
                 text_id="text_id",
@@ -240,7 +254,7 @@ async def test_update_sheet_success():
             SegmentDTO(
                 id="segment_id_3",
                 text_id="text_id",
-                content="media_url",
+                content="image_url",
                 type=SegmentType.IMAGE
             )
         ]
@@ -253,6 +267,7 @@ async def test_update_sheet_success():
     with patch("pecha_api.sheets.sheets_service.remove_segments_by_text_id", new_callable=AsyncMock), \
         patch("pecha_api.sheets.sheets_service.validate_user_exists", return_value=True), \
         patch("pecha_api.sheets.sheets_service.remove_table_of_content_by_text_id", new_callable=AsyncMock), \
+        patch("pecha_api.sheets.sheets_service._process_s3_image_url_", new_callable=MagicMock, return_value="image_url"), \
         patch("pecha_api.sheets.sheets_service.update_text_details", new_callable=AsyncMock), \
         patch("pecha_api.sheets.sheets_service.create_new_segment", new_callable=AsyncMock, return_value=mock_segment_response), \
         patch("pecha_api.sheets.sheets_service.create_table_of_content", new_callable=AsyncMock):
@@ -344,8 +359,6 @@ async def test_get_sheet_by_id_success():
         )
     }
     with patch("pecha_api.sheets.sheets_service.TextUtils.get_text_details_by_id", new_callable=AsyncMock, return_value=mock_sheet_details), \
-        patch("pecha_api.sheets.sheets_service.get_sheet_by_id_cache", new_callable=MagicMock, return_value=None), \
-        patch("pecha_api.sheets.sheets_service.set_sheet_by_id_cache", new_callable=MagicMock), \
         patch("pecha_api.sheets.sheets_service.fetch_user_by_email", new_callable=MagicMock, return_value=mock_user_details), \
         patch("pecha_api.sheets.sheets_service.get_segments_details_by_ids", new_callable=AsyncMock, return_value=segment_dict), \
         patch("pecha_api.sheets.sheets_service.get_table_of_content_by_sheet_id", new_callable=AsyncMock, return_value=mock_table_of_content_response):
@@ -364,9 +377,7 @@ async def test_get_sheet_by_id_success():
 @pytest.mark.asyncio
 async def test_get_sheet_by_id_invalid_sheet_id():
     sheet_id="invalid_sheet_id"
-    with patch("pecha_api.texts.texts_utils.TextUtils.validate_text_exists", new_callable=AsyncMock, return_value=False), \
-        patch("pecha_api.sheets.sheets_service.get_sheet_by_id_cache", new_callable=MagicMock, return_value=None),\
-        patch("pecha_api.sheets.sheets_service.set_sheet_by_id_cache", new_callable=MagicMock):
+    with patch("pecha_api.texts.texts_utils.TextUtils.validate_text_exists", new_callable=AsyncMock, return_value=False):
         with pytest.raises(HTTPException) as exc_info:
             await get_sheet_by_id(sheet_id=sheet_id, skip=0, limit=10)
         assert exc_info.value.status_code == status.HTTP_404_NOT_FOUND
@@ -402,7 +413,7 @@ async def test_delete_sheet_success():
     )
     with patch("pecha_api.sheets.sheets_service.validate_user_exists", return_value=True), \
         patch("pecha_api.sheets.sheets_service.TextUtils.get_text_details_by_id", new_callable=AsyncMock, return_value=text_details), \
-        patch("pecha_api.sheets.sheets_service.get_user_info", new_callable=MagicMock, return_value=mock_user_details), \
+        patch("pecha_api.sheets.sheets_service.get_user_info", new_callable=AsyncMock, return_value=mock_user_details), \
         patch("pecha_api.sheets.sheets_service.delete_group_by_group_id", new_callable=AsyncMock), \
         patch("pecha_api.sheets.sheets_service.remove_segments_by_text_id", new_callable=AsyncMock), \
         patch("pecha_api.sheets.sheets_service.remove_table_of_content_by_text_id", new_callable=AsyncMock), \
