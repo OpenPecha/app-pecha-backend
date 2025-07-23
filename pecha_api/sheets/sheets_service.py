@@ -385,11 +385,11 @@ async def _generate_sheet_section_(segments: List[TextSegment], segments_dict: D
                 )
             )
         else:
-            if segment_details.type == SegmentType.IMAGE:
-                segment_details.content = generate_presigned_upload_url(
-                    bucket_name=get("AWS_BUCKET_NAME"),
-                    s3_key=segment_details.content
-                )
+            # if segment_details.type == SegmentType.IMAGE:
+                # segment_details.content = generate_presigned_upload_url(
+                #     bucket_name=get("AWS_BUCKET_NAME"),
+                #     s3_key=segment_details.content
+                # )
             sheet_segments.append(
                 SheetSegment(
                     segment_id=segment.segment_id,
@@ -499,8 +499,8 @@ def _generate_segment_creation_request_payload_(create_sheet_request: CreateShee
     for source in create_sheet_request.source:
         if source.type == SegmentType.SOURCE:
             continue
-        # if source.type == SegmentType.IMAGE:
-        #     source.content = _process_s3_image_url_(url=source.content)
+        if source.type == SegmentType.IMAGE:
+            source.content = _process_s3_image_url_(url=source.content)
         create_segment_request.segments.append(
             CreateSegment(
                 content=source.content,
