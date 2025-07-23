@@ -14,7 +14,7 @@ from pecha_api.texts.texts_service import (
     remove_table_of_content_by_text_id,
     delete_text_by_text_id,
     get_sheet,
-    get_table_of_content_by_sheet_id
+    get_table_of_content_by_sheet_id,
     _validate_text_detail_request
 )
 from pecha_api.terms.terms_response_models import TermsModel
@@ -1317,7 +1317,6 @@ async def test_get_table_of_content_by_sheet_id_invalid_sheet_id():
         assert exc_info.value.status_code == 404
         assert exc_info.value.detail == ErrorConstants.TEXT_NOT_FOUND_MESSAGE
     
-=======
 
 @pytest.mark.asyncio
 async def test_validate_text_detail_request_success():
