@@ -104,6 +104,7 @@ async def test_get_text_by_text_id_or_term_cache_empty_cache():
     with patch("pecha_api.texts.texts_cache_service.get_cache_data", new_callable=AsyncMock, return_value=None):
         response = await get_text_by_text_id_or_term_cache(text_id="text_id", term_id="term_id", language="en", skip=0, limit=10)
 
+
         assert response is None
 
 @pytest.mark.asyncio
@@ -125,6 +126,7 @@ async def test_get_text_by_text_id_or_term_cache_for_text_by_text_id_or_term_res
     with patch("pecha_api.texts.texts_cache_service.get_cache_data", new_callable=AsyncMock, return_value=mock_cache_data):
 
         response = await get_text_by_text_id_or_term_cache(text_id="text_id", term_id="term_id", language="en", skip=0, limit=10)
+
 
         assert response is not None
         assert isinstance(response, TextDTO)

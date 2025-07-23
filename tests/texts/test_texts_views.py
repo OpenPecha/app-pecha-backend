@@ -93,7 +93,7 @@ async def test_get_text_by_text_id(mocker):
     """Test GET /texts with text_id parameter"""
     # Mock the service function
     mock_get_text = mocker.patch(
-        'pecha_api.texts.texts_views.get_text_by_text_id_or_term',
+        'pecha_api.texts.texts_views.get_text_by_text_id_or_collection',
         new_callable=AsyncMock,
         return_value=MOCK_TEXT_DTO
     )
@@ -114,28 +114,28 @@ async def test_get_text_by_text_id(mocker):
     assert response_data["language"] == MOCK_TEXT_DTO.language
     mock_get_text.assert_called_once_with(
         text_id="123e4567-e89b-12d3-a456-426614174000",
-        term_id=None,
+        collection_id=None,
         language="bo",
         skip=0,
         limit=10
     )
 
 @pytest.mark.asyncio
-async def test_get_text_by_term_id(mocker):
-    """Test GET /texts with term_id parameter"""
+async def test_get_text_by_collection_id(mocker):
+    """Test GET /texts with collection_id parameter"""
     # Mock the service function
     mock_get_text = mocker.patch(
-        'pecha_api.texts.texts_views.get_text_by_text_id_or_term',
+        'pecha_api.texts.texts_views.get_text_by_text_id_or_collection',
         new_callable=AsyncMock,
         return_value=MOCK_TEXT_DTO
     )
     
-    # The term ID that will be used in the request
-    test_term_id = "123e4567-e89b-12d3-a456-426614174001"
+    # The collection ID that will be used in the request
+    test_collection_id = "123e4567-e89b-12d3-a456-426614174001"
     
     # Make the request
     async with AsyncClient(transport=ASGITransport(app=api), base_url="http://test") as ac:
-        response = await ac.get(f"/texts?term_id={test_term_id}&language=bo&skip=0&limit=10")
+        response = await ac.get(f"/texts?collection_id={test_collection_id}&language=bo&skip=0&limit=10")
     
     # Assertions
     assert response.status_code == 200
@@ -147,7 +147,7 @@ async def test_get_text_by_term_id(mocker):
     # Remove the contents check as it's not part of the TextDTO model
     mock_get_text.assert_called_once_with(
         text_id=None,
-        term_id=test_term_id,
+        collection_id=test_collection_id,
         language="bo",
         skip=0,
         limit=10

@@ -3,7 +3,7 @@ from starlette import status
 
 from pecha_api.error_contants import ErrorConstants
 from .texts_repository import (
-    get_texts_by_term,
+    get_texts_by_collection,
     get_texts_by_group_id,
     create_text,
     create_table_of_content_detail,
@@ -49,10 +49,11 @@ from pecha_api.sheets.sheets_enum import (
 )
 
 from .texts_utils import TextUtils
+from pecha_api.users.users_service import validate_user_exists
+from pecha_api.collections.collections_service import get_collection
 from pecha_api.users.users_service import (
     validate_user_exists
 )
-from pecha_api.terms.terms_service import get_term
 from .segments.segments_utils import SegmentUtils
 
 from typing import List, Dict, Optional, Tuple, Set
@@ -61,9 +62,9 @@ from pecha_api.utils import Utils
 from .texts_enums import PaginationDirection
 
 
-async def get_text_by_text_id_or_term(
+async def get_text_by_text_id_or_collection(
         text_id: str,
-        term_id: str,
+        collection_id: str,
         language: str,
         skip: int,
         limit: int
@@ -73,7 +74,7 @@ async def get_text_by_text_id_or_term(
 
     cached_data: TextsCategoryResponse | TextDTO = await get_text_by_text_id_or_term_cache(
         text_id = text_id,
-        term_id = term_id,
+        collection_id = collection_id,
         language = language,
         skip = skip,
         limit = limit
@@ -82,11 +83,11 @@ async def get_text_by_text_id_or_term(
     if cached_data is not None:
         return cached_data
 
-    if term_id is not None:
-        term = await get_term(term_id=term_id, language=language)
-        texts = await _get_texts_by_term_id(term_id=term_id, language=language, skip=skip, limit=limit)
+    if collection_id is not None:
+        collection = await get_collection(collection_id=collection_id, language=language)
+        texts = await _get_texts_by_collection_id(collection_id=collection_id, language=language, skip=skip, limit=limit)
         response = TextsCategoryResponse(
-            term=term,
+            collection=collection,
             texts=texts,
             total=len(texts),
             skip=skip,
@@ -97,7 +98,7 @@ async def get_text_by_text_id_or_term(
     
     await set_text_by_text_id_or_term_cache(
         text_id = text_id,
-        term_id = term_id,
+        collection_id = collection_id,
         language = language,
         skip = skip,
         limit = limit,
@@ -349,8 +350,8 @@ async def _validate_text_detail_request(text_id: str, text_details_request: Text
     await TextUtils.validate_text_exists(text_id=text_id)
 
 
-async def _get_texts_by_term_id(term_id: str, language: str, skip: int, limit: int) -> List[TextDTO]:
-    texts = await get_texts_by_term(term_id=term_id, language=language, skip=skip, limit=limit)
+async def _get_texts_by_collection_id(collection_id: str, language: str, skip: int, limit: int) -> List[TextDTO]:
+    texts = await get_texts_by_collection(collection_id=collection_id, language=language, skip=skip, limit=limit)
     filter_text_base_on_group_id_type = await TextUtils.filter_text_base_on_group_id_type(texts=texts,
                                                                                           language=language)
     root_text = filter_text_base_on_group_id_type["root_text"]

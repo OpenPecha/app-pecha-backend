@@ -28,6 +28,7 @@ async def get_text_details_cache(text_id: str = None, content_id: str = None, ve
         cache_data = DetailTableOfContentResponse(**cache_data)
     return cache_data
 
+
 async def get_text_by_text_id_or_term_cache(text_id: str = None, term_id: str = None, language: str = None, skip: int = None, limit: int = None) -> TextsCategoryResponse | TextDTO:
     """Get text by text id or term cache asynchronously."""
     payload = [text_id, term_id, language, skip, limit]
@@ -36,6 +37,7 @@ async def get_text_by_text_id_or_term_cache(text_id: str = None, term_id: str = 
     if cache_data and isinstance(cache_data, dict):
         cache_data = TextsCategoryResponse(**cache_data)
     return cache_data
+
 
 async def set_text_by_text_id_or_term_cache(text_id: str = None, term_id: str = None, language: str = None, skip: int = None, limit: int = None, data: TextsCategoryResponse = None):
     """Set text by text id or term cache asynchronously."""

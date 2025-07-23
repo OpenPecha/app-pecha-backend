@@ -8,7 +8,7 @@ from .texts_service import (
     get_table_of_contents_by_text_id,
     get_text_versions_by_group_id,
     create_new_text,
-    get_text_by_text_id_or_term,
+    get_text_by_text_id_or_collection,
     get_text_details_by_text_id,
     create_table_of_content,
     get_text_details_by_text_id
@@ -34,14 +34,14 @@ text_router = APIRouter(
 @text_router.get("", status_code=status.HTTP_200_OK)
 async def get_text(
     text_id: Optional[str] = Query(default=None),
-    term_id: Optional[str] = Query(default=None),
+    collection_id: Optional[str] = Query(default=None),
     language: str = Query(default=None),
     skip: int = Query(default=0),
     limit: int = Query(default=10)
 ):
-    return await get_text_by_text_id_or_term(
+    return await get_text_by_text_id_or_collection(
         text_id=text_id,
-        term_id=term_id,
+        collection_id=collection_id,
         language=language,
         skip=skip,
         limit=limit
