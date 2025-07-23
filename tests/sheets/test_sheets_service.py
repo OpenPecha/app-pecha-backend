@@ -358,10 +358,11 @@ async def test_get_sheet_by_id_success():
             type=SegmentType.IMAGE,
         )
     }
-    with patch("pecha_api.sheets.sheets_service.TextUtils.get_text_details_by_id", new_callable=AsyncMock, return_value=mock_sheet_details), \
-        patch("pecha_api.sheets.sheets_service.fetch_user_by_email", new_callable=MagicMock, return_value=mock_user_details), \
+    with patch("pecha_api.sheets.sheets_service.fetch_user_by_email", new_callable=MagicMock, return_value=mock_user_details), \
         patch("pecha_api.sheets.sheets_service.get_segments_details_by_ids", new_callable=AsyncMock, return_value=segment_dict), \
-        patch("pecha_api.sheets.sheets_service.get_table_of_content_by_sheet_id", new_callable=AsyncMock, return_value=mock_table_of_content_response):
+        patch("pecha_api.sheets.sheets_service.get_table_of_content_by_sheet_id", new_callable=AsyncMock, return_value=mock_table_of_content_response), \
+        patch("pecha_api.sheets.sheets_service.generate_presigned_upload_url", new_callable=MagicMock, return_value="image_url"), \
+        patch("pecha_api.sheets.sheets_service.TextUtils.get_text_details_by_id", new_callable=AsyncMock, return_value=mock_sheet_details):
 
         response = await get_sheet_by_id(sheet_id=sheet_id, skip=0, limit=10)
 
@@ -382,6 +383,58 @@ async def test_get_sheet_by_id_invalid_sheet_id():
             await get_sheet_by_id(sheet_id=sheet_id, skip=0, limit=10)
         assert exc_info.value.status_code == status.HTTP_404_NOT_FOUND
         assert exc_info.value.detail == ErrorConstants.TEXT_NOT_FOUND_MESSAGE
+
+@pytest.mark.asyncio
+async def test_get_sheet_by_id_table_of_content_not_found():
+    sheet_id = "text_id"
+    mock_sheet_details = TextDTO(
+        id=sheet_id,
+        title="sheet_title",
+        language="language",
+        group_id="group_id",
+        type=TextType.SHEET,
+        is_published=True,
+        created_date="2021-01-01",
+        updated_date="2021-01-01",
+        published_date="2021-01-01",
+        published_by="test_user",
+        categories=[],
+        views=10
+    )
+    mock_user_details = UserInfoResponse(
+        firstname="firstname",
+        lastname="lastname",
+        username="username",
+        email="test_user@gmail.com",
+        educations=[],
+        followers=0,
+        following=0,
+        social_profiles=[]
+    )
+    
+    segment_dict = {
+        "segment_id_1": SegmentDTO(
+            id="segment_id_1",
+            text_id="text_id",
+            content="content",
+            type=SegmentType.CONTENT,
+        ),
+        "segment_id_2": SegmentDTO(
+            id="segment_id_2",
+            text_id="text_id",
+            content="content",
+            type=SegmentType.IMAGE,
+        )
+    }
+    with patch("pecha_api.sheets.sheets_service.TextUtils.get_text_details_by_id", new_callable=AsyncMock, return_value=mock_sheet_details), \
+        patch("pecha_api.sheets.sheets_service.fetch_user_by_email", new_callable=MagicMock, return_value=mock_user_details), \
+        patch("pecha_api.sheets.sheets_service.get_segments_details_by_ids", new_callable=AsyncMock, return_value=segment_dict), \
+        patch("pecha_api.sheets.sheets_service.get_table_of_content_by_sheet_id", new_callable=AsyncMock, return_value=None):
+
+        with pytest.raises(HTTPException) as exc_info:
+            await get_sheet_by_id(sheet_id=sheet_id, skip=0, limit=10)
+        assert exc_info.value.status_code == status.HTTP_404_NOT_FOUND
+        assert exc_info.value.detail == ErrorConstants.TABLE_OF_CONTENT_NOT_FOUND_MESSAGE
 
 @pytest.mark.asyncio
 async def test_delete_sheet_success():
@@ -608,3 +661,4 @@ def _generate_mock_sheets_response_():
             )
             for i in range(1,6)
         ]
+    

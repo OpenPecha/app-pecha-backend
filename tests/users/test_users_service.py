@@ -7,8 +7,9 @@ from pecha_api.image_utils import ImageUtils
 from pecha_api.utils import Utils
 from pecha_api.users.users_service import get_user_info, update_user_info, \
     validate_and_extract_user_details, verify_admin_access, get_social_profile, update_social_profiles, \
-    get_publisher_info_by_username
-from pecha_api.users.user_response_models import UserInfoRequest, SocialMediaProfile, PublisherInfoResponse
+    get_publisher_info_by_username, fetch_user_by_email, validate_user_exists
+from pecha_api.users.user_response_models import UserInfoRequest, SocialMediaProfile, PublisherInfoResponse, \
+    UserInfoResponse
 from pecha_api.users.users_models import Users, SocialMediaAccount
 from pecha_api.users.users_enums import SocialProfile
 from unittest.mock import patch, MagicMock, AsyncMock
@@ -528,3 +529,116 @@ def test_get_publisher_info_by_username_presigned_url_exception():
         
         assert response is None
         mock_logger.assert_called_once_with("Error getting publisher info by username: S3 connection error")
+
+
+@pytest.mark.asyncio
+async def test_get_user_info_cache_none_success():
+    mock_user = type('Users', (), {
+        "id": "user_id",
+        "firstname": "tenzin",
+        "lastname": "tenzin",
+        "username": "tenya",
+        "avatar_url": "images/profile_images/user_123.jpg",
+    })
+
+    mock_user_info_response = UserInfoResponse(
+        firstname="tenzin",
+        lastname="tenzin",
+        username="tenzin123",
+        email="tenzin@gmail.com",
+        educations=[],
+        followers=0,
+        following=0,
+        social_profiles=[]
+    )
+    token = "valid_token"
+
+    with patch("pecha_api.users.users_service.get_user_info_cache", new_callable=AsyncMock, return_value=None), \
+        patch("pecha_api.users.users_service.validate_and_extract_user_details", return_value=mock_user), \
+        patch("pecha_api.users.users_service.generate_user_info_response", return_value=mock_user_info_response), \
+        patch("pecha_api.users.users_service.set_user_info_cache", new_callable=AsyncMock, return_value=None):
+
+        response = await get_user_info(token)
+
+        assert response is not None
+        assert isinstance(response, UserInfoResponse)
+        assert response.firstname == "tenzin"
+        assert response.lastname == "tenzin"
+        assert response.username == "tenzin123"
+
+
+@pytest.mark.asyncio
+async def test_get_user_info_cache_not_none_success():
+
+    mock_user_info_response = UserInfoResponse(
+        firstname="tenzin",
+        lastname="tenzin",
+        username="tenzin123",
+        email="tenzin@gmail.com",
+        educations=[],
+        followers=0,
+        following=0,
+        social_profiles=[]
+    )
+    token = "valid_token"
+
+    with patch("pecha_api.users.users_service.get_user_info_cache", new_callable=AsyncMock, return_value=mock_user_info_response):
+
+        response = await get_user_info(token)
+
+        assert response is not None
+        assert isinstance(response, UserInfoResponse)
+        assert response.firstname == "tenzin"
+        assert response.lastname == "tenzin"
+        assert response.username == "tenzin123"
+
+
+@pytest.mark.asyncio
+async def test_fetch_user_by_email_success():
+    mock_user = type('Users', (), {
+        "id": "user_id",
+        "firstname": "tenzin",
+        "lastname": "tenzin",
+        "username": "tenya",
+        "avatar_url": "images/profile_images/user_123.jpg",
+    })
+
+    mock_user_info_response = UserInfoResponse(
+        firstname="tenzin",
+        lastname="tenzin",
+        username="tenzin123",
+        email="tenzin@gmail.com",
+        educations=[],
+        followers=0,
+        following=0,
+        social_profiles=[]
+    )
+    email = "tenzin@gmail.com"
+    with patch("pecha_api.users.users_service.get_user_by_email", return_value=mock_user), \
+        patch("pecha_api.users.users_service.generate_user_info_response", return_value=mock_user_info_response):
+
+        response = fetch_user_by_email(email)
+
+        assert response is not None
+        assert isinstance(response, UserInfoResponse)
+        assert response.firstname == "tenzin"
+        assert response.lastname == "tenzin"
+        assert response.username == "tenzin123"
+
+@pytest.mark.asyncio
+def test_validate_user_exists_success():
+    token = "valid_token"
+    with patch("pecha_api.users.users_service.validate_and_extract_user_details", return_value=True):
+
+        response = validate_user_exists(token)
+
+        assert response is True
+
+@pytest.mark.asyncio
+def test_validate_user_exists_false():
+    token = "invalid_token"
+    with patch("pecha_api.users.users_service.validate_and_extract_user_details", return_value=False):
+
+        response = validate_user_exists(token)
+
+        assert response is False
