@@ -51,9 +51,6 @@ from ...users.users_service import validate_user_exists
 
 async def get_segments_details_by_ids(segment_ids: List[str]) -> Dict[str, SegmentDTO]:
     segments: Dict[str, SegmentDTO] = await get_segments_by_ids(segment_ids=segment_ids)
-    for segment in segments.values():
-        if segment.type == SegmentType.IMAGE:
-            segment.content = generate_presigned_upload_url(bucket_name="bucket", s3_key="key")
     return segments
 
 async def get_segment_details_by_id(segment_id: str, text_details: bool = False) -> SegmentDTO:
