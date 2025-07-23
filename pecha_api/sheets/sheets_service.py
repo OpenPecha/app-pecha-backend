@@ -385,6 +385,11 @@ async def _generate_sheet_section_(segments: List[TextSegment], segments_dict: D
                 )
             )
         else:
+            if segment_details.type == SegmentType.IMAGE:
+                segment_details.content = generate_presigned_upload_url(
+                    bucket_name=get("AWS_BUCKET_NAME"),
+                    s3_key=segment_details.content
+                )
             sheet_segments.append(
                 SheetSegment(
                     segment_id=segment.segment_id,
