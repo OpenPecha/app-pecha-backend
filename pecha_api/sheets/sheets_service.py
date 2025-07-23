@@ -499,8 +499,8 @@ def _generate_segment_creation_request_payload_(create_sheet_request: CreateShee
     for source in create_sheet_request.source:
         if source.type == SegmentType.SOURCE:
             continue
-        if source.type == SegmentType.IMAGE:
-            source.content = _process_s3_image_url_(url=source.content)
+        # if source.type == SegmentType.IMAGE:
+        #     source.content = _process_s3_image_url_(url=source.content)
         create_segment_request.segments.append(
             CreateSegment(
                 content=source.content,
