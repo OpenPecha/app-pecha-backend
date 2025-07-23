@@ -501,6 +501,7 @@ def _generate_segment_creation_request_payload_(create_sheet_request: CreateShee
             continue
         if source.type == SegmentType.IMAGE:
             source.content = _process_s3_image_url_(url=source.content)
+        print("HERE -> ",source.content)
         create_segment_request.segments.append(
             CreateSegment(
                 content=source.content,
@@ -517,6 +518,7 @@ def _process_s3_image_url_(url: str) -> str:
             ENDING_INDEX = url.index(char)
             break
     trimmed_url = url[STARTING_INDEX:ENDING_INDEX]
+    print("HERE -> ",trimmed_url)
     return trimmed_url
 
 async def _create_sheet_text_(title: str, token: str, group_id: str) -> str:

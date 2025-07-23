@@ -502,7 +502,7 @@ def _get_trimmed_segment_dict_(segments_with_position:List[Tuple[str,int]], segm
         trimmed_segments_with_position = segments_with_position[segment_position : min(segment_position + size, total_segments)]
 
     else:
-        trimmed_segments_with_position = segments_with_position[max(0, segment_position - size) : segment_position + 1]
+        trimmed_segments_with_position = segments_with_position[max(0, segment_position - size + 1) : segment_position + 1]
     
     trimmed_segments_with_position = dict(trimmed_segments_with_position)
 
