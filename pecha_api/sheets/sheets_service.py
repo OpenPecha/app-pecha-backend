@@ -519,7 +519,7 @@ def _process_s3_image_url_(url: str) -> str:
                 break
         trimmed_url = url[STARTING_INDEX:ENDING_INDEX]
         return trimmed_url
-    except ValueError as e:
+    except ValueError:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=ErrorConstants.INVALID_S3_URL)
 
 async def _create_sheet_text_(title: str, token: str, group_id: str) -> str:
