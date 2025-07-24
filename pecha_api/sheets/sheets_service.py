@@ -510,14 +510,17 @@ def _generate_segment_creation_request_payload_(create_sheet_request: CreateShee
     return create_segment_request
 
 def _process_s3_image_url_(url: str) -> str:
-    STARTING_INDEX = 43
-    ENDING_INDEX = None
-    for char in url:
-        if char == "?":
-            ENDING_INDEX = url.index(char)
-            break
-    trimmed_url = url[STARTING_INDEX:ENDING_INDEX]
-    return trimmed_url
+    try:
+        STARTING_INDEX = 43
+        ENDING_INDEX = None
+        for char in url:
+            if char == "?":
+                ENDING_INDEX = url.index(char)
+                break
+        trimmed_url = url[STARTING_INDEX:ENDING_INDEX]
+        return trimmed_url
+    except ValueError as e:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=ErrorConstants.INVALID_S3_URL)
 
 async def _create_sheet_text_(title: str, token: str, group_id: str) -> str:
     user_details = validate_and_extract_user_details(token=token)

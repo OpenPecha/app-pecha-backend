@@ -23,3 +23,5 @@ class ErrorConstants:
 
     FORBIDDEN_ERROR_MESSAGE="Forbidden action"
 
+    INVALID_S3_URL="Invalid S3 URL"
+
