@@ -72,6 +72,7 @@ class SheetIdRequest(BaseModel):
 
 class SheetImageResponse(BaseModel):
     url: str
+    key: str
 
 class SheetIdResponse(BaseModel):
     sheet_id: str

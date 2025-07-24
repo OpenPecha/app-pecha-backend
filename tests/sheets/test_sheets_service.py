@@ -190,7 +190,6 @@ async def test_create_new_sheet_success():
     )
     with patch("pecha_api.sheets.sheets_service.create_new_group", new_callable=AsyncMock, return_value=mock_group_response), \
         patch("pecha_api.sheets.sheets_service.create_new_text", new_callable=AsyncMock, return_value=mock_text_response), \
-        patch("pecha_api.sheets.sheets_service._process_s3_image_url_", new_callable=MagicMock, return_value="image_url"), \
         patch("pecha_api.sheets.sheets_service.validate_and_extract_user_details", return_value=mock_user_details), \
         patch("pecha_api.sheets.sheets_service.create_new_segment", new_callable=AsyncMock, return_value=mock_segment_response), \
         patch("pecha_api.sheets.sheets_service.create_table_of_content", new_callable=AsyncMock, return_value=mock_table_of_content_response):
@@ -267,7 +266,6 @@ async def test_update_sheet_success():
     with patch("pecha_api.sheets.sheets_service.remove_segments_by_text_id", new_callable=AsyncMock), \
         patch("pecha_api.sheets.sheets_service.validate_user_exists", return_value=True), \
         patch("pecha_api.sheets.sheets_service.remove_table_of_content_by_text_id", new_callable=AsyncMock), \
-        patch("pecha_api.sheets.sheets_service._process_s3_image_url_", new_callable=MagicMock, return_value="image_url"), \
         patch("pecha_api.sheets.sheets_service.update_text_details", new_callable=AsyncMock), \
         patch("pecha_api.sheets.sheets_service.create_new_segment", new_callable=AsyncMock, return_value=mock_segment_response), \
         patch("pecha_api.sheets.sheets_service.create_table_of_content", new_callable=AsyncMock):

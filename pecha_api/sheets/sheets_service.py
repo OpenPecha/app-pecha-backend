@@ -281,7 +281,7 @@ def upload_sheet_image_request(sheet_id: Optional[str], file: UploadFile) -> She
         s3_key=upload_key
     )
     
-    return SheetImageResponse(url=presigned_url)
+    return SheetImageResponse(url=presigned_url, key=upload_key)
 
 
 async def _generate_sheet_detail_dto_(
@@ -499,8 +499,6 @@ def _generate_segment_creation_request_payload_(create_sheet_request: CreateShee
     for source in create_sheet_request.source:
         if source.type == SegmentType.SOURCE:
             continue
-        if source.type == SegmentType.IMAGE:
-            source.content = _process_s3_image_url_(url=source.content)
         create_segment_request.segments.append(
             CreateSegment(
                 content=source.content,
@@ -508,19 +506,6 @@ def _generate_segment_creation_request_payload_(create_sheet_request: CreateShee
             )
         )
     return create_segment_request
-
-def _process_s3_image_url_(url: str) -> str:
-    try:
-        STARTING_INDEX = 43
-        ENDING_INDEX = None
-        for char in url:
-            if char == "?":
-                ENDING_INDEX = url.index(char)
-                break
-        trimmed_url = url[STARTING_INDEX:ENDING_INDEX]
-        return trimmed_url
-    except ValueError:
-        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=ErrorConstants.INVALID_S3_URL)
 
 async def _create_sheet_text_(title: str, token: str, group_id: str) -> str:
     user_details = validate_and_extract_user_details(token=token)
