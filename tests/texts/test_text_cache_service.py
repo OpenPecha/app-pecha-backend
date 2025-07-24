@@ -136,7 +136,7 @@ async def test_set_text_details_cache_for_text_details_response():
         set_text_details_cache(text_id="text_id", content_id="content_id", version_id="version_id", skip=0, limit=10, data=mock_cache_data)
 
 @pytest.mark.asyncio
-async def test_get_text_by_text_id_or_term_cache_empty_cache():
+async def test_get_text_by_text_id_or_collection_cache_empty_cache():
     with patch("pecha_api.texts.texts_cache_service.get_cache_data", new_callable=AsyncMock, return_value=None):
         response = await get_text_by_text_id_or_collection_cache(text_id="text_id", collection_id="collection_id", language="en", skip=0, limit=10)
 
@@ -144,7 +144,7 @@ async def test_get_text_by_text_id_or_term_cache_empty_cache():
         assert response is None
 
 @pytest.mark.asyncio
-async def test_get_text_by_text_id_or_term_cache_for_text_by_text_id_or_term_response():
+async def test_get_text_by_text_id_or_collection_cache_for_text_by_text_id_or_collection_response():
     mock_cache_data = TextDTO(
         id="id_1",
         title="title_1",
@@ -169,7 +169,7 @@ async def test_get_text_by_text_id_or_term_cache_for_text_by_text_id_or_term_res
         assert response.id == "id_1"
 
 @pytest.mark.asyncio
-async def test_set_text_by_text_id_or_term_cache_for_text_by_text_id_or_term_response():
+async def test_set_text_by_text_id_or_collection_cache_for_text_by_text_id_or_collection_response():
     mock_cache_data = TextDTO(
         id="id_1",
         title="title_1",
@@ -185,7 +185,7 @@ async def test_set_text_by_text_id_or_term_cache_for_text_by_text_id_or_term_res
         views=0
     )
 
-    with patch("pecha_api.texts.texts_cache_service.set_text_by_text_id_or_term_cache", new_callable=AsyncMock):
+    with patch("pecha_api.texts.texts_cache_service.set_text_by_text_id_or_collection_cache", new_callable=AsyncMock):
         set_text_by_text_id_or_collection_cache(text_id="text_id", collection_id="collection_id", language="en", skip=0, limit=10, data=mock_cache_data)
 
 @pytest.mark.asyncio
@@ -304,7 +304,7 @@ async def test_set_text_versions_by_group_id_cache_for_text_versions_by_group_id
 
 
 @pytest.mark.asyncio
-async def test_set_text_by_text_id_or_term_cache_success():
+async def test_set_text_by_text_id_or_collection_cache_success():
     mock_data = TextsCategoryResponse(
         collection=CollectionModel(
             id="id_1",
