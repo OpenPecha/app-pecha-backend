@@ -29,8 +29,8 @@ async def get_text_details_cache(text_id: str = None, content_id: str = None, ve
     return cache_data
 
 
-async def get_text_by_text_id_or_term_cache(text_id: str = None, collection_id: str = None, language: str = None, skip: int = None, limit: int = None) -> TextsCategoryResponse | TextDTO:
-    """Get text by text id or term cache asynchronously."""
+async def get_text_by_text_id_or_collection_cache(text_id: str = None, collection_id: str = None, language: str = None, skip: int = None, limit: int = None) -> TextsCategoryResponse | TextDTO:
+    """Get text by text id or collection cache asynchronously."""
     payload = [text_id, collection_id, language, skip, limit]
     hashed_key: str = Utils.generate_hash_key(payload = payload)
     cache_data: TextsCategoryResponse | TextDTO = await get_cache_data(hash_key = hashed_key)
@@ -39,8 +39,8 @@ async def get_text_by_text_id_or_term_cache(text_id: str = None, collection_id: 
     return cache_data
 
 
-async def set_text_by_text_id_or_term_cache(text_id: str = None, collection_id: str = None, language: str = None, skip: int = None, limit: int = None, data: TextsCategoryResponse = None):
-    """Set text by text id or term cache asynchronously."""
+async def set_text_by_text_id_or_collection_cache(text_id: str = None, collection_id: str = None, language: str = None, skip: int = None, limit: int = None, data: TextsCategoryResponse = None):
+    """Set text by text id or collection cache asynchronously."""
     payload = [text_id, collection_id, language, skip, limit]
     hashed_key: str = Utils.generate_hash_key(payload = payload)
     await set_cache(hash_key = hashed_key, value = data)

@@ -4,8 +4,8 @@ from unittest.mock import patch, Mock, AsyncMock
 from pecha_api.texts.texts_cache_service import (
     get_text_details_cache,
     set_text_details_cache,
-    get_text_by_text_id_or_term_cache,
-    set_text_by_text_id_or_term_cache,
+    get_text_by_text_id_or_collection_cache,
+    set_text_by_text_id_or_collection_cache,
     get_table_of_contents_by_text_id_cache,
     set_table_of_contents_by_text_id_cache,
     get_text_versions_by_group_id_cache,
@@ -138,7 +138,7 @@ async def test_set_text_details_cache_for_text_details_response():
 @pytest.mark.asyncio
 async def test_get_text_by_text_id_or_term_cache_empty_cache():
     with patch("pecha_api.texts.texts_cache_service.get_cache_data", new_callable=AsyncMock, return_value=None):
-        response = await get_text_by_text_id_or_term_cache(text_id="text_id", collection_id="collection_id", language="en", skip=0, limit=10)
+        response = await get_text_by_text_id_or_collection_cache(text_id="text_id", collection_id="collection_id", language="en", skip=0, limit=10)
 
 
         assert response is None
@@ -161,7 +161,7 @@ async def test_get_text_by_text_id_or_term_cache_for_text_by_text_id_or_term_res
     )
     with patch("pecha_api.texts.texts_cache_service.get_cache_data", new_callable=AsyncMock, return_value=mock_cache_data):
 
-        response = await get_text_by_text_id_or_term_cache(text_id="text_id", collection_id="collection_id", language="en", skip=0, limit=10)
+        response = await get_text_by_text_id_or_collection_cache(text_id="text_id", collection_id="collection_id", language="en", skip=0, limit=10)
 
 
         assert response is not None
@@ -186,7 +186,7 @@ async def test_set_text_by_text_id_or_term_cache_for_text_by_text_id_or_term_res
     )
 
     with patch("pecha_api.texts.texts_cache_service.set_text_by_text_id_or_term_cache", new_callable=AsyncMock):
-        set_text_by_text_id_or_term_cache(text_id="text_id", collection_id="collection_id", language="en", skip=0, limit=10, data=mock_cache_data)
+        set_text_by_text_id_or_collection_cache(text_id="text_id", collection_id="collection_id", language="en", skip=0, limit=10, data=mock_cache_data)
 
 @pytest.mark.asyncio
 async def test_get_table_of_contents_by_text_id_cache_empty_cache():
@@ -322,7 +322,7 @@ async def test_set_text_by_text_id_or_term_cache_success():
 
     with patch("pecha_api.texts.texts_cache_service.set_cache", new_callable=AsyncMock):
 
-        response = await set_text_by_text_id_or_term_cache(text_id="text_id", collection_id="collection_id", language="en", skip=0, limit=10, data=mock_data)
+        response = await set_text_by_text_id_or_collection_cache(text_id="text_id", collection_id="collection_id", language="en", skip=0, limit=10, data=mock_data)
 
 @pytest.mark.asyncio
 async def test_set_table_of_contents_by_text_id_cache_success():

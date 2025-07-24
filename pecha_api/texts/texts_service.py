@@ -36,8 +36,8 @@ from .groups.groups_service import (
 from pecha_api.texts.texts_cache_service import (
     set_text_details_cache,
     get_text_details_cache,
-    get_text_by_text_id_or_term_cache,
-    set_text_by_text_id_or_term_cache,
+    get_text_by_text_id_or_collection_cache,
+    set_text_by_text_id_or_collection_cache,
     get_table_of_contents_by_text_id_cache,
     set_table_of_contents_by_text_id_cache,
     get_text_versions_by_group_id_cache,
@@ -72,7 +72,7 @@ async def get_text_by_text_id_or_collection(
     if language is None:
         language = get("DEFAULT_LANGUAGE")
 
-    cached_data: TextsCategoryResponse | TextDTO = await get_text_by_text_id_or_term_cache(
+    cached_data: TextsCategoryResponse | TextDTO = await get_text_by_text_id_or_collection_cache(
         text_id = text_id,
         collection_id = collection_id,
         language = language,
@@ -96,7 +96,7 @@ async def get_text_by_text_id_or_collection(
     else:
         response =await TextUtils.get_text_detail_by_id(text_id=text_id)
     
-    await set_text_by_text_id_or_term_cache(
+    await set_text_by_text_id_or_collection_cache(
         text_id = text_id,
         collection_id = collection_id,
         language = language,
