@@ -37,17 +37,15 @@ from .segments_response_models import (
 )
 
 from .segments_cache_service import (
-    get_segment_details_by_id_cache,
-    set_segment_details_by_id_cache,
-    get_segment_info_by_id_cache,
     set_segment_info_by_id_cache,
+    get_segment_info_by_id_cache,
     get_segment_root_mapping_by_id_cache,
-    set_segment_root_mapping_by_id_cache,
-    get_segment_translations_by_id_cache,
-    set_segment_translations_by_id_cache,
-    get_segment_commentaries_by_id_cache,
-    set_segment_commentaries_by_id_cache
+    set_segment_root_mapping_by_id_cache
 )
+
+from pecha_api.uploads.S3_utils import generate_presigned_upload_url
+
+from .segments_enum import SegmentType
 
 from ...users.users_service import validate_user_exists
 
@@ -142,6 +140,11 @@ async def get_info_by_segment_id(segment_id: str) -> SegmentInfoResponse:
     is_valid_segment = await SegmentUtils.validate_segment_exists(segment_id=segment_id)
     if not is_valid_segment:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=ErrorConstants.SEGMENT_NOT_FOUND_MESSAGE)
+    
+    cache_data = await get_segment_info_by_id_cache(segment_id=segment_id)
+    if cache_data:
+        return cache_data
+    
     mapped_segments = await get_related_mapped_segments(parent_segment_id=segment_id)
     counts = await SegmentUtils.get_count_of_each_commentary_and_version(mapped_segments)
     segment_root_mapping_count = await SegmentUtils.get_root_mapping_count(segment_id=segment_id)
@@ -158,7 +161,7 @@ async def get_info_by_segment_id(segment_id: str) -> SegmentInfoResponse:
             )
         )
     ) 
-    set_segment_info_by_id_cache(
+    await set_segment_info_by_id_cache(
         segment_id = segment_id,
         data = response
     )

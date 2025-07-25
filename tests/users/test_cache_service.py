@@ -16,9 +16,9 @@ from pecha_api.users.user_cache_service import (
 
 @pytest.mark.asyncio
 async def test_get_user_info_cache_empty_cache():
-    with patch("pecha_api.users.user_cache_service.get_cache_data", return_value=None):
+    with patch("pecha_api.users.user_cache_service.get_cache_data", new_callable=AsyncMock, return_value=None):
     
-        response = get_user_info_cache(token="token")
+        response = await get_user_info_cache(token="token")
 
         assert response is None
 
@@ -35,9 +35,9 @@ async def test_get_user_info_cache_success():
         following=1,
         social_profiles=[]
     )
-    with patch("pecha_api.users.user_cache_service.get_cache_data", return_value=mock_cache_data):
+    with patch("pecha_api.users.user_cache_service.get_cache_data", new_callable=AsyncMock, return_value=mock_cache_data):
 
-        response = get_user_info_cache(token="token")
+        response = await get_user_info_cache(token="token")
 
         assert response is not None
         assert isinstance(response, UserInfoResponse)
@@ -56,6 +56,6 @@ async def test_set_user_info_cache_success():
         following=1,
         social_profiles=[]
     )
-    with patch("pecha_api.users.user_cache_service.set_cache", new_callable=Mock):
+    with patch("pecha_api.users.user_cache_service.set_cache", new_callable=AsyncMock):
         
-        set_user_info_cache(token="token", data=mock_cache_data)
+        await set_user_info_cache(token="token", data=mock_cache_data)

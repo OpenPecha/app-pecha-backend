@@ -82,8 +82,8 @@ async def test_get_group_details_success():
         type="version"
     )
     with patch("pecha_api.texts.groups.groups_service.get_group_by_id", new_callable=AsyncMock) as mock_group_details, \
-        patch("pecha_api.texts.groups.groups_service.get_group_by_id_cache", new_callable=MagicMock, return_value=None), \
-        patch("pecha_api.texts.groups.groups_service.set_group_by_id_cache", new_callable=MagicMock):
+        patch("pecha_api.texts.groups.groups_service.get_group_by_id_cache", new_callable=AsyncMock, return_value=None), \
+        patch("pecha_api.texts.groups.groups_service.set_group_by_id_cache", new_callable=AsyncMock):
         mock_group_details.return_value = group_details
         response = await get_group_details(group_id=group_id)
         assert response is not None
@@ -95,8 +95,8 @@ async def test_get_group_details_success():
 async def test_get_group_details_invalid_group_id():
     group_id = "4d2f3498-3cc6-4bc6-9beb-37d2f7dc0163"
     with patch("pecha_api.texts.groups.groups_service.get_group_by_id", new_callable=AsyncMock) as mock_group_details,\
-        patch("pecha_api.texts.groups.groups_service.get_group_by_id_cache", new_callable=MagicMock, return_value=None), \
-        patch("pecha_api.texts.groups.groups_service.set_group_by_id_cache", new_callable=MagicMock):
+        patch("pecha_api.texts.groups.groups_service.get_group_by_id_cache", new_callable=AsyncMock, return_value=None), \
+        patch("pecha_api.texts.groups.groups_service.set_group_by_id_cache", new_callable=AsyncMock):
         mock_group_details.return_value = None
         with pytest.raises(HTTPException) as exc_info:
             await get_group_details(group_id=group_id)
@@ -107,8 +107,8 @@ async def test_get_group_details_invalid_group_id():
 async def test_get_group_details_invalid_uuid():
     group_id = "invalid_uuid"
     with patch("pecha_api.texts.groups.groups_service.get_group_by_id", new_callable=AsyncMock) as mock_group_details,\
-        patch("pecha_api.texts.groups.groups_service.get_group_by_id_cache", new_callable=MagicMock, return_value=None), \
-        patch("pecha_api.texts.groups.groups_service.set_group_by_id_cache", new_callable=MagicMock):
+        patch("pecha_api.texts.groups.groups_service.get_group_by_id_cache", new_callable=AsyncMock, return_value=None), \
+        patch("pecha_api.texts.groups.groups_service.set_group_by_id_cache", new_callable=AsyncMock):
         mock_group_details.return_value = None
         with pytest.raises(HTTPException) as exc_info:
             await get_group_details(group_id=group_id)
