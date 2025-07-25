@@ -36,8 +36,8 @@ from .groups.groups_service import (
 from pecha_api.texts.texts_cache_service import (
     set_text_details_cache,
     get_text_details_cache,
-    get_text_by_text_id_or_term_cache,
-    set_text_by_text_id_or_term_cache,
+    get_text_by_text_id_or_collection_cache,
+    set_text_by_text_id_or_collection_cache,
     get_table_of_contents_by_text_id_cache,
     set_table_of_contents_by_text_id_cache,
     get_text_versions_by_group_id_cache,
@@ -72,7 +72,7 @@ async def get_text_by_text_id_or_collection(
     if language is None:
         language = get("DEFAULT_LANGUAGE")
 
-    cached_data: TextsCategoryResponse | TextDTO = get_text_by_text_id_or_term_cache(
+    cached_data: TextsCategoryResponse | TextDTO = await get_text_by_text_id_or_collection_cache(
         text_id = text_id,
         collection_id = collection_id,
         language = language,
@@ -96,7 +96,7 @@ async def get_text_by_text_id_or_collection(
     else:
         response =await TextUtils.get_text_detail_by_id(text_id=text_id)
     
-    set_text_by_text_id_or_term_cache(
+    await set_text_by_text_id_or_collection_cache(
         text_id = text_id,
         collection_id = collection_id,
         language = language,
@@ -119,6 +119,18 @@ async def get_sheet(published_by: Optional[str] = None, is_published: Optional[b
         limit=limit
     )
     return sheets
+
+async def get_table_of_content_by_sheet_id(sheet_id: str) -> Optional[TableOfContent]:
+    table_of_content = None
+    is_valid_sheet: bool = await TextUtils.validate_text_exists(text_id=sheet_id)
+    if not is_valid_sheet:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=ErrorConstants.TEXT_NOT_FOUND_MESSAGE)
+    
+    table_of_contents: List[TableOfContent] = await get_contents_by_id(text_id=sheet_id)
+    if len(table_of_contents) > 0 and table_of_contents[0] is not None:
+        table_of_content: TableOfContent = table_of_contents[0]
+    
+    return table_of_content
 
 async def get_table_of_contents_by_text_id(text_id: str, language: str = None, skip: int = 0, limit: int = 10) -> TableOfContentResponse:
     
@@ -213,7 +225,7 @@ async def get_text_versions_by_group_id(text_id: str, language: str, skip: int, 
     if language is None:
         language = get("DEFAULT_LANGUAGE")
     
-    cached_data: TextVersionResponse = get_text_versions_by_group_id_cache(
+    cached_data: TextVersionResponse = await get_text_versions_by_group_id_cache(
         text_id = text_id,
         language = language,
         skip = skip,
@@ -238,7 +250,7 @@ async def get_text_versions_by_group_id(text_id: str, language: str, skip: int, 
         versions=list_of_version
     )
 
-    set_text_versions_by_group_id_cache(
+    await set_text_versions_by_group_id_cache(
         text_id = text_id,
         language = language,
         skip = skip,
@@ -491,7 +503,7 @@ def _get_trimmed_segment_dict_(segments_with_position:List[Tuple[str,int]], segm
         trimmed_segments_with_position = segments_with_position[segment_position : min(segment_position + size, total_segments)]
 
     else:
-        trimmed_segments_with_position = segments_with_position[max(0, segment_position - size) : segment_position + 1]
+        trimmed_segments_with_position = segments_with_position[max(0, segment_position - size + 1) : segment_position + 1]
     
     trimmed_segments_with_position = dict(trimmed_segments_with_position)
 

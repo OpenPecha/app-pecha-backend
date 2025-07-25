@@ -49,7 +49,8 @@ from pecha_api.texts.texts_service import (
     update_text_details,
     get_table_of_contents_by_text_id,
     delete_text_by_text_id,
-    get_sheet
+    get_sheet,
+    get_table_of_content_by_sheet_id
 )
 
 from pecha_api.users.users_service import (
@@ -86,13 +87,6 @@ from pecha_api.sheets.sheets_response_models import (
     SheetSegment,
     SheetDTOResponse,
     SheetDTO
-)
-from .sheets_cache_service import (
-    get_fetch_sheets_cache,
-    set_fetch_sheets_cache,
-    get_sheet_by_id_cache,
-    set_sheet_by_id_cache,
-    delete_sheet_by_id_cache
 )
 
 DEFAULT_SHEET_SECTION_NUMBER = 1
@@ -135,19 +129,13 @@ async def fetch_sheets(
 async def get_sheet_by_id(sheet_id: str, skip: int, limit: int) -> SheetDetailDTO:
     sheet_details: TextDTO = await TextUtils.get_text_details_by_id(text_id=sheet_id)
     user_details: UserInfoResponse = fetch_user_by_email(email=sheet_details.published_by)
-    sheet_table_of_content_response: TableOfContentResponse = await get_table_of_contents_by_text_id(
-        text_id=sheet_id,
-        skip=skip,
-        limit=limit
+    sheet_table_of_content: Optional[TableOfContent] = await get_table_of_content_by_sheet_id(
+        sheet_id=sheet_id
     )
-
-    sheet_table_of_content: Optional[TableOfContent] = (
-        sheet_table_of_content_response.contents[0]
-        if sheet_table_of_content_response.contents else None
-    )
+    if sheet_table_of_content is None:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=ErrorConstants.TABLE_OF_CONTENT_NOT_FOUND_MESSAGE)
 
     sections = sheet_table_of_content.sections if sheet_table_of_content else []
-
     sheet_dto: SheetDetailDTO = await _generate_sheet_detail_dto_(
         sheet_details=sheet_details,
         user_details=user_details,
@@ -180,7 +168,6 @@ async def _generate_sheet_detail_dto_(
             segments=sheet_sections[0].segments,
             segments_dict=segments_dict
         )
-
     return SheetDetailDTO(
         id=sheet_details.id,
         sheet_title=sheet_details.title,
@@ -255,7 +242,7 @@ async def delete_sheet_by_id(sheet_id: str, token: str):
     
     sheet_details: TextDTO = await TextUtils.get_text_details_by_id(text_id=sheet_id)
 
-    user_details: UserInfoResponse = get_user_info(token=token)
+    user_details: UserInfoResponse = await get_user_info(token=token)
 
     if user_details.email != sheet_details.published_by:
         raise HTTPException(
@@ -294,7 +281,7 @@ def upload_sheet_image_request(sheet_id: Optional[str], file: UploadFile) -> She
         s3_key=upload_key
     )
     
-    return SheetImageResponse(url=presigned_url)
+    return SheetImageResponse(url=presigned_url, key=upload_key)
 
 
 async def _generate_sheet_detail_dto_(
@@ -324,6 +311,7 @@ async def _generate_sheet_detail_dto_(
         id=sheet_details.id,
         sheet_title=sheet_details.title,
         created_date=sheet_details.created_date,
+        is_published=sheet_details.is_published,
         publisher=publisher,
         content=sheet_section,
         skip=skip,
@@ -397,6 +385,11 @@ async def _generate_sheet_section_(segments: List[TextSegment], segments_dict: D
                 )
             )
         else:
+            if segment_details.type == SegmentType.IMAGE:
+                segment_details.content = generate_presigned_upload_url(
+                    bucket_name=get("AWS_BUCKET_NAME"),
+                    s3_key=segment_details.content
+                )
             sheet_segments.append(
                 SheetSegment(
                     segment_id=segment.segment_id,
@@ -457,9 +450,7 @@ async def _process_and_upload_sheet_segments(
         create_segment_request=create_segment_request_payload,
         token=token
     )
-
     segment_dict: Dict[str, str] = _generate_segment_dictionary_(new_segments=new_segments)
-    
     return segment_dict
 
 def _generate_sheet_table_of_content_(create_sheet_request: CreateSheetRequest, text_id: str, segment_dict: Dict[str, str]) -> TableOfContent:
@@ -506,6 +497,8 @@ def _generate_segment_creation_request_payload_(create_sheet_request: CreateShee
         segments=[]
     )
     for source in create_sheet_request.source:
+        if source.type == SegmentType.SOURCE:
+            continue
         create_segment_request.segments.append(
             CreateSegment(
                 content=source.content,

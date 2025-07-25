@@ -14,6 +14,7 @@ from pecha_api.texts.texts_service import (
     remove_table_of_content_by_text_id,
     delete_text_by_text_id,
     get_sheet,
+    get_table_of_content_by_sheet_id,
     _validate_text_detail_request
 )
 from pecha_api.terms.terms_response_models import TermsModel
@@ -47,8 +48,8 @@ async def test_get_text_by_text_id_or_collection_without_collection_id_success()
     text_id = "efb26a06-f373-450b-ba57-e7a8d4dd5b64"
     collection_id = None
     with patch("pecha_api.texts.texts_service.TextUtils.get_text_detail_by_id", new_callable=AsyncMock) as mock_get_text_detail_by_id, \
-        patch("pecha_api.texts.texts_service.set_text_by_text_id_or_term_cache", new_callable=MagicMock, return_value=None), \
-        patch("pecha_api.texts.texts_service.get_text_by_text_id_or_term_cache", new_callable=MagicMock, return_value=None):
+        patch("pecha_api.texts.texts_service.set_text_by_text_id_or_collection_cache", new_callable=AsyncMock, return_value=None), \
+        patch("pecha_api.texts.texts_service.get_text_by_text_id_or_collection_cache", new_callable=AsyncMock, return_value=None):
         mock_get_text_detail_by_id.return_value = TextDTO(
             id=text_id,
             title="བྱང་ཆུབ་སེམས་དཔའི་སྤྱོད་པ་ལ་འཇུག་པ།",
@@ -72,9 +73,14 @@ async def test_get_text_by_text_id_or_collection_without_collection_id_success()
 
 @pytest.mark.asyncio
 async def test_get_text_by_collection_id():
-    mock_collection = AsyncMock(id="id_1", titles={"bo": "སྤྱོད་འཇུག"}, descriptions={
-        "bo": "དུས་རབས་ ༨ པའི་ནང་སློབ་དཔོན་ཞི་བ་ལྷས་མཛད་པའི་རྩ་བ་དང་དེའི་འགྲེལ་བ་སོགས།"}, slug="bodhicaryavatara",
-                          has_sub_child=False)
+    mock_collection = CollectionModel(
+        id="id_1",
+        title="སྤྱོད་འཇུག",
+        description="དུས་རབས་ ༨ པའི་ནང་སློབ་དཔོན་ཞི་བ་ལྷས་མཛད་པའི་རྩ་བ་དང་དེའི་འགྲེལ་བ་སོགས།",
+        language="bo",
+        slug="bodhicaryavatara",
+        has_child=False
+    )
     mock_texts_by_category = [
         TextDTO(
             id="a48c0814-ce56-4ada-af31-f74b179b52a9",
@@ -106,12 +112,13 @@ async def test_get_text_by_collection_id():
         )
     ]
 
-    with patch('pecha_api.texts.texts_service.get_texts_by_collection', new_callable=AsyncMock) as mock_get_texts_by_category, \
-            patch('pecha_api.collections.collections_service.get_collection_by_id', new_callable=AsyncMock) as mock_get_collection, \
+    with patch('pecha_api.texts.texts_service.get_collection', new_callable=AsyncMock, return_value=mock_collection), \
+            patch('pecha_api.texts.texts_service.get_texts_by_collection', new_callable=AsyncMock) as mock_get_texts_by_category, \
+            patch('pecha_api.texts.texts_service.get_text_by_text_id_or_collection_cache', new_callable=AsyncMock, return_value=None), \
+            patch('pecha_api.texts.texts_service.set_text_by_text_id_or_collection_cache', new_callable=AsyncMock, return_value=None), \
             patch('pecha_api.texts.texts_service.TextUtils.filter_text_base_on_group_id_type', new_callable=AsyncMock) as mock_filter_text_base_on_group_id_type:
         mock_filter_text_base_on_group_id_type.return_value = {"root_text": mock_texts_by_category[1], "commentary": [mock_texts_by_category[0]]}
         mock_get_texts_by_category.return_value = mock_texts_by_category
-        mock_get_collection.return_value = mock_collection
         response = await get_text_by_text_id_or_collection(text_id="", collection_id="id_1", language="bo", skip=0, limit=10)
         assert response is not None
         assert response.collection is not None
@@ -212,8 +219,8 @@ async def test_get_versions_by_group_id():
         )
     language = "en"
     with patch('pecha_api.texts.texts_service.TextUtils.get_text_detail_by_id', new_callable=AsyncMock) as mock_text_detail, \
-        patch("pecha_api.texts.texts_service.get_text_versions_by_group_id_cache", new_callable=MagicMock, return_value=None),\
-        patch("pecha_api.texts.texts_service.set_text_versions_by_group_id_cache", new_callable=MagicMock, return_value=None),\
+        patch("pecha_api.texts.texts_service.get_text_versions_by_group_id_cache", new_callable=AsyncMock, return_value=None),\
+        patch("pecha_api.texts.texts_service.set_text_versions_by_group_id_cache", new_callable=AsyncMock, return_value=None),\
         patch('pecha_api.texts.texts_service.get_texts_by_group_id', new_callable=AsyncMock) as mock_get_texts_by_group_id,\
         patch('pecha_api.texts.texts_service.get_contents_by_id', new_callable=AsyncMock) as mock_get_contents_by_id:
         mock_text_detail.return_value = text_detail
@@ -1265,6 +1272,55 @@ async def test_get_text_details_by_text_id_with_content_id_only_success():
         assert len(section.segments) + len(section.sections[0].segments) == 2
         assert section.segments[0].segment_id == "segment_id_1"
         assert response.pagination_direction == PaginationDirection.NEXT
+    
+
+@pytest.mark.asyncio
+async def test_get_table_of_content_by_sheet_id_success():
+    sheet_id = "sheet_id_1"
+    mock_table_of_contents = [
+        TableOfContent(
+            id="content_id_1",
+            text_id=sheet_id,
+            sections=[
+                Section(
+                    id="section_id_1",
+                    title="section_title",
+                    section_number=1,
+                    parent_id="parent_id_1",
+                    segments=[
+                        TextSegment(
+                            segment_id="segment_id_1",
+                            segment_number=1
+                        )
+                    ],
+                    sections=[],
+                    created_date="created_date",
+                    updated_date="updated_date",
+                    published_date="published_date"
+                )
+            ]
+        )
+    ]
+    with patch("pecha_api.texts.texts_service.TextUtils.validate_text_exists", new_callable=AsyncMock, return_value=True), \
+        patch("pecha_api.texts.texts_service.get_contents_by_id", new_callable=AsyncMock, return_value=mock_table_of_contents):
+    
+        response = await get_table_of_content_by_sheet_id(sheet_id=sheet_id)
+
+        assert response is not None
+        assert isinstance(response, TableOfContent)
+        assert response.id == "content_id_1"
+
+@pytest.mark.asyncio
+async def test_get_table_of_content_by_sheet_id_invalid_sheet_id():
+    sheet_id = "invalid_sheet_id"
+
+    with patch("pecha_api.texts.texts_service.TextUtils.validate_text_exists", new_callable=AsyncMock, return_value=False):
+        with pytest.raises(HTTPException) as exc_info:
+            await get_table_of_content_by_sheet_id(sheet_id=sheet_id)
+
+        assert exc_info.value.status_code == 404
+        assert exc_info.value.detail == ErrorConstants.TEXT_NOT_FOUND_MESSAGE
+    
 
 @pytest.mark.asyncio
 async def test_validate_text_detail_request_success():
@@ -1448,8 +1504,8 @@ async def test_get_versions_by_group_id_language_is_none():
         )
     language = "en"
     with patch('pecha_api.texts.texts_service.TextUtils.get_text_detail_by_id', new_callable=AsyncMock) as mock_text_detail, \
-        patch("pecha_api.texts.texts_service.get_text_versions_by_group_id_cache", new_callable=MagicMock, return_value=None),\
-        patch("pecha_api.texts.texts_service.set_text_versions_by_group_id_cache", new_callable=MagicMock, return_value=None),\
+        patch("pecha_api.texts.texts_service.get_text_versions_by_group_id_cache", new_callable=AsyncMock, return_value=None),\
+        patch("pecha_api.texts.texts_service.set_text_versions_by_group_id_cache", new_callable=AsyncMock, return_value=None),\
         patch('pecha_api.texts.texts_service.get_texts_by_group_id', new_callable=AsyncMock) as mock_get_texts_by_group_id,\
         patch('pecha_api.texts.texts_service.get_contents_by_id', new_callable=AsyncMock) as mock_get_contents_by_id:
         mock_text_detail.return_value = text_detail
@@ -1552,7 +1608,7 @@ async def test_get_versions_by_group_id_cache_data_is_not_none():
         ]
     )
     language = "en"
-    with patch("pecha_api.texts.texts_service.get_text_versions_by_group_id_cache", new_callable=MagicMock, return_value=cache_text_version):
+    with patch("pecha_api.texts.texts_service.get_text_versions_by_group_id_cache", new_callable=AsyncMock, return_value=cache_text_version):
 
         response = await get_text_versions_by_group_id(text_id="id_1",language=language, skip=0, limit=10)
 
@@ -1569,4 +1625,3 @@ async def test_get_versions_by_group_id_cache_data_is_not_none():
 
 
 
-        

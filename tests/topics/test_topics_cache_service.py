@@ -12,8 +12,8 @@ from pecha_api.topics.topics_response_models import (
 
 @pytest.mark.asyncio
 async def test_get_topics_cache_empty_cache():
-    with patch("pecha_api.topics.topics_cache_service.get_cache_data", return_value=None):
-        response = get_topics_cache(parent_id="parent_id", language="language", search="search", hierarchy=True, skip=0, limit=10)
+    with patch("pecha_api.topics.topics_cache_service.get_cache_data", new_callable=AsyncMock, return_value=None):
+        response = await get_topics_cache(parent_id="parent_id", language="language", search="search", hierarchy=True, skip=0, limit=10)
         assert response is None
 
 @pytest.mark.asyncio
@@ -25,8 +25,8 @@ async def test_get_topics_cache_success():
         skip=0, 
         limit=10
     )
-    with patch("pecha_api.topics.topics_cache_service.get_cache_data", return_value=mock_cache_data):
-        response = get_topics_cache(parent_id="parent_id", language="language", search="search", hierarchy=True, skip=0, limit=10)
+    with patch("pecha_api.topics.topics_cache_service.get_cache_data", new_callable=AsyncMock, return_value=mock_cache_data):
+        response = await get_topics_cache(parent_id="parent_id", language="language", search="search", hierarchy=True, skip=0, limit=10)
         assert response is not None
         assert isinstance(response, TopicsResponse)
         assert response.parent is None
@@ -44,8 +44,8 @@ async def test_set_topics_cache_success():
         skip=0, 
         limit=10
     )
-    with patch("pecha_api.topics.topics_cache_service.set_cache", new_callable=Mock):
+    with patch("pecha_api.topics.topics_cache_service.set_cache", new_callable=AsyncMock):
 
-        response = set_topics_cache(parent_id="parent_id", language="language", search="search", hierarchy=True, skip=0, limit=10, data=mock_cache_data)
+        response = await set_topics_cache(parent_id="parent_id", language="language", search="search", hierarchy=True, skip=0, limit=10, data=mock_cache_data)
         
         

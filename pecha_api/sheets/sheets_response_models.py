@@ -44,7 +44,7 @@ class SheetDetailDTO(BaseModel):
     publisher: Publisher
     content: Optional[SheetSection] = None
     views: int = 0
-    is_published: bool = False
+    is_published: bool
     skip: int
     limit: int
     total: int
@@ -72,6 +72,7 @@ class SheetIdRequest(BaseModel):
 
 class SheetImageResponse(BaseModel):
     url: str
+    key: str
 
 class SheetIdResponse(BaseModel):
     sheet_id: str

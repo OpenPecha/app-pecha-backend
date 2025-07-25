@@ -23,8 +23,8 @@ def get_db():
 
 
 @user_router.get("/info", status_code=status.HTTP_200_OK)
-def get_user_information(authentication_credential: Annotated[HTTPAuthorizationCredentials, Depends(oauth2_scheme)])  -> UserInfoResponse:
-    return get_user_info(token=authentication_credential.credentials)
+async def get_user_information(authentication_credential: Annotated[HTTPAuthorizationCredentials, Depends(oauth2_scheme)])  -> UserInfoResponse:
+    return await get_user_info(token=authentication_credential.credentials)
 
 
 @user_router.post("/info", status_code=status.HTTP_201_CREATED)
