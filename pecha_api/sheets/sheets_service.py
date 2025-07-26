@@ -94,12 +94,12 @@ import re
 DEFAULT_SHEET_SECTION_NUMBER = 1
 
 def _strip_html_tags_(html_content: str) -> str:
-    """Remove HTML tags from content and return clean text."""
+    #Remove HTML tags from content and return clean text.
     clean = re.compile('<.*?>')
     return re.sub(clean, '', html_content).strip()
 
 async def _generate_sheet_summary_(sheet_id: str, max_words: int = 30) -> str:
-    """Generate a summary from sheet content segments limited to max_words."""
+    # Generate a summary from sheet content segments limited to max_words.
     try:
         # Get sheet table of content
         sheet_table_of_content: Optional[TableOfContent] = await get_table_of_content_by_sheet_id(
