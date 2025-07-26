@@ -89,7 +89,62 @@ from pecha_api.sheets.sheets_response_models import (
     SheetDTO
 )
 
+import re
+
 DEFAULT_SHEET_SECTION_NUMBER = 1
+
+def _strip_html_tags_(html_content: str) -> str:
+    """Remove HTML tags from content and return clean text."""
+    clean = re.compile('<.*?>')
+    return re.sub(clean, '', html_content).strip()
+
+async def _generate_sheet_summary_(sheet_id: str, max_words: int = 30) -> str:
+    """Generate a summary from sheet content segments limited to max_words."""
+    try:
+        # Get sheet table of content
+        sheet_table_of_content: Optional[TableOfContent] = await get_table_of_content_by_sheet_id(
+            sheet_id=sheet_id
+        )
+        
+        if not sheet_table_of_content or not sheet_table_of_content.sections:
+            return ""
+        
+        # Get all segment IDs from the table of content
+        segment_ids = _get_all_segment_ids_in_table_of_content_(sheet_sections=sheet_table_of_content.sections)
+        
+        if not segment_ids:
+            return ""
+            
+        # Get segment details
+        segments_dict: Dict[str, SegmentDTO] = await get_segments_details_by_ids(segment_ids=segment_ids)
+        
+        # Extract content from segments of type "content"
+        content_texts = []
+        for segment_id in segment_ids:
+            if segment_id in segments_dict:
+                segment = segments_dict[segment_id]
+                if segment.type == SegmentType.CONTENT and segment.content:
+                    # Strip HTML tags and get clean text
+                    clean_text = _strip_html_tags_(segment.content)
+                    if clean_text:
+                        content_texts.append(clean_text)
+        
+        if not content_texts:
+            return ""
+            
+        # Combine all content texts
+        full_text = " ".join(content_texts)
+        
+        # Split into words and limit to max_words
+        words = full_text.split()
+        if len(words) <= max_words:
+            return " ".join(words)
+        else:
+            return " ".join(words[:max_words]) + "..."
+            
+    except Exception:
+        # Return empty string if any error occurs during summary generation
+        return ""
 
 async def fetch_sheets(
     token: Optional[str] = None,
@@ -121,7 +176,7 @@ async def fetch_sheets(
         )
     
 
-    sheets: SheetDTOResponse = _generate_sheet_dto_response_(sheets = sheets, skip = skip, limit = limit)
+    sheets: SheetDTOResponse = await _generate_sheet_dto_response_(sheets = sheets, skip = skip, limit = limit)
       
     return sheets
 
@@ -335,12 +390,12 @@ async def _fetch_user_sheets_(token: str, email: str, sort_by: SortBy, sort_orde
     )
     return sheets
 
-def _generate_sheet_dto_response_(sheets, skip: int, limit: int) -> SheetDTOResponse:
+async def _generate_sheet_dto_response_(sheets, skip: int, limit: int) -> SheetDTOResponse:
     sheets_dto = [
         SheetDTO(
             id = str(sheet.id),
             title = sheet.title,
-            summary = "summary",
+            summary = await _generate_sheet_summary_(str(sheet.id)),
             published_date = sheet.published_date,
             time_passed = Utils.time_passed(published_time=sheet.published_date, language=sheet.language),
             views = sheet.views,
