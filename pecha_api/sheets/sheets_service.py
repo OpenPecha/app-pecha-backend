@@ -385,7 +385,9 @@ async def _generate_sheet_section_(segments: List[TextSegment], segments_dict: D
                 )
             )
         else:
+            s3_key = None
             if segment_details.type == SegmentType.IMAGE:
+                s3_key = segment_details.content
                 segment_details.content = generate_presigned_upload_url(
                     bucket_name=get("AWS_BUCKET_NAME"),
                     s3_key=segment_details.content
@@ -395,7 +397,8 @@ async def _generate_sheet_section_(segments: List[TextSegment], segments_dict: D
                     segment_id=segment.segment_id,
                     segment_number=segment.segment_number,
                     content=segment_details.content,
-                    type=segment_details.type
+                    type=segment_details.type,
+                    key=s3_key
                 )
             )
 
