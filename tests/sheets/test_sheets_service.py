@@ -375,6 +375,7 @@ async def test_get_sheet_by_id_success():
         assert len(response.content.segments) == 2
         assert response.content.segments[0].type == SegmentType.SOURCE
         assert response.content.segments[0].content == "content"
+        assert response.content.segments[0].key is None
         assert response.content.segments[1].type == SegmentType.IMAGE
         assert response.content.segments[1].content == "image_url"
         assert response.content.segments[1].key == "image_key"
