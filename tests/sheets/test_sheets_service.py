@@ -371,7 +371,7 @@ async def test_get_sheet_by_id_success():
         assert response.publisher is not None
         assert isinstance(response.content, SheetSection)
         assert response.content is not None
-        assert response.content.segment is not None
+        assert response.content.segments is not None
         assert len(response.content.segments) == 2
         assert response.content.segments[0].type == SegmentType.SOURCE
         assert response.content.segments[0].content == "content"
