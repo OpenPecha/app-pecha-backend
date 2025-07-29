@@ -352,7 +352,7 @@ async def test_get_sheet_by_id_success():
         "segment_id_2": SegmentDTO(
             id="segment_id_2",
             text_id="text_id",
-            content="content",
+            content="image_key",
             type=SegmentType.IMAGE,
         )
     }
@@ -371,7 +371,10 @@ async def test_get_sheet_by_id_success():
         assert response.publisher is not None
         assert isinstance(response.content, SheetSection)
         assert response.content is not None
-        
+        assert response.content.segments[0].key is None
+        assert response.content.segments[1].content is not None
+        assert response.content.segments[1].content == "image_url"
+        assert response.content.segments[1].key == "image_key"
 
 @pytest.mark.asyncio
 async def test_get_sheet_by_id_invalid_sheet_id():
