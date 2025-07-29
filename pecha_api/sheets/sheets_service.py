@@ -88,6 +88,13 @@ from pecha_api.sheets.sheets_response_models import (
     SheetDTOResponse,
     SheetDTO
 )
+from pecha_api.texts.texts_cache_service import (
+    delete_text_details_by_id_cache,
+    get_table_of_content_by_sheet_id_cache
+)
+from pecha_api.texts.segments.segments_cache_service import (
+    delete_segments_details_by_ids_cache
+)
 
 DEFAULT_SHEET_SECTION_NUMBER = 1
 
@@ -211,6 +218,16 @@ async def update_sheet_by_id(
     is_valid_user = validate_user_exists(token=token)
     if not is_valid_user:
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail=ErrorConstants.TOKEN_ERROR_MESSAGE)
+
+    await delete_text_details_by_id_cache(text_id=sheet_id)
+    sheet_table_of_content: Optional[TableOfContent] = await get_table_of_content_by_sheet_id(sheet_id=sheet_id)
+    if sheet_table_of_content is not None:
+        await get_table_of_content_by_sheet_id_cache(sheet_id=sheet_id)
+    
+    sections = sheet_table_of_content.sections if sheet_table_of_content else []
+    segment_ids = _get_all_segment_ids_in_table_of_content_(sheet_sections=sections)
+    await delete_segments_details_by_ids_cache(segment_ids=segment_ids)
+    
 
     await remove_segments_by_text_id(text_id=sheet_id)
 
