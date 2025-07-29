@@ -40,7 +40,10 @@ from .segments_cache_service import (
     set_segment_info_by_id_cache,
     get_segment_info_by_id_cache,
     get_segment_root_mapping_by_id_cache,
-    set_segment_root_mapping_by_id_cache
+    set_segment_root_mapping_by_id_cache,
+    get_segments_details_by_ids_cache,
+    set_segments_details_by_ids_cache,
+    delete_segments_details_by_ids_cache
 )
 
 from pecha_api.uploads.S3_utils import generate_presigned_upload_url
@@ -50,7 +53,14 @@ from .segments_enum import SegmentType
 from ...users.users_service import validate_user_exists
 
 async def get_segments_details_by_ids(segment_ids: List[str]) -> Dict[str, SegmentDTO]:
+    cached_data: Dict[str, SegmentDTO] = await get_segments_details_by_ids_cache(segment_ids=segment_ids)
+    if cached_data is not None:
+        return cached_data
+    
     segments: Dict[str, SegmentDTO] = await get_segments_by_ids(segment_ids=segment_ids)
+    
+    await set_segments_details_by_ids_cache(segment_ids=segment_ids, data=segments)
+    
     return segments
 
 async def get_segment_details_by_id(segment_id: str, text_details: bool = False) -> SegmentDTO:

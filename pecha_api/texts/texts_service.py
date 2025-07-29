@@ -41,7 +41,10 @@ from pecha_api.texts.texts_cache_service import (
     get_table_of_contents_by_text_id_cache,
     set_table_of_contents_by_text_id_cache,
     get_text_versions_by_group_id_cache,
-    set_text_versions_by_group_id_cache
+    set_text_versions_by_group_id_cache,
+    get_table_of_content_by_sheet_id_cache,
+    set_table_of_content_by_sheet_id_cache,
+    delete_table_of_content_by_sheet_id_cache
 )
 from pecha_api.sheets.sheets_enum import (
     SortBy,
@@ -121,6 +124,10 @@ async def get_sheet(published_by: Optional[str] = None, is_published: Optional[b
     return sheets
 
 async def get_table_of_content_by_sheet_id(sheet_id: str) -> Optional[TableOfContent]:
+    cached_data: TableOfContent = await get_table_of_content_by_sheet_id_cache(sheet_id=sheet_id)
+    if cached_data is not None:
+        return cached_data
+    
     table_of_content = None
     is_valid_sheet: bool = await TextUtils.validate_text_exists(text_id=sheet_id)
     if not is_valid_sheet:
@@ -129,6 +136,8 @@ async def get_table_of_content_by_sheet_id(sheet_id: str) -> Optional[TableOfCon
     table_of_contents: List[TableOfContent] = await get_contents_by_id(text_id=sheet_id)
     if len(table_of_contents) > 0 and table_of_contents[0] is not None:
         table_of_content: TableOfContent = table_of_contents[0]
+    
+    await set_table_of_content_by_sheet_id_cache(sheet_id=sheet_id, data=table_of_content)
     
     return table_of_content
 

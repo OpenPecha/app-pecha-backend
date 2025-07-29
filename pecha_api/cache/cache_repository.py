@@ -79,16 +79,11 @@ async def exists_in_cache(hash_key: str) -> bool:
         logging.error("An error occurred in exists_in_cache", exc_info=True)
         return False
 
-
-async def clear_cache(pattern: str = "*") -> bool:
-    """Clear all keys matching pattern"""
+async def clear_cache(hash_key: str = None):
     try:
         client = get_client()
-        full_key = _build_key(pattern)
-        keys = await client.keys(full_key)
-        if keys:
-            return bool(await client.delete(*keys))
-        return True
+        full_key = _build_key(hash_key)
+        return bool(await client.delete(full_key))
     except Exception:
         logging.error("An error occurred in clear_cache", exc_info=True)
         return False

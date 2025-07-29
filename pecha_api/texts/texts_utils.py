@@ -22,7 +22,11 @@ from .groups.groups_service import (
 from .groups.groups_response_models import GroupDTO
 from .texts_repository import get_contents_by_id, get_texts_by_id
 
-
+from .texts_cache_service import (
+    get_text_details_by_id_cache,
+    set_text_details_by_id_cache,
+    delete_text_details_by_id_cache
+)
 
 
 
@@ -39,11 +43,15 @@ class TextUtils:
     
     @staticmethod
     async def get_text_details_by_id(text_id: str) -> TextDTO:
+        cached_data: TextDTO = await get_text_details_by_id_cache(text_id=text_id)
+        if cached_data is not None:
+            return cached_data
+        
         is_valid_text = await TextUtils.validate_text_exists(text_id=text_id)
         if not is_valid_text:
             raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=ErrorConstants.TEXT_NOT_FOUND_MESSAGE)
         text_detail = await get_texts_by_id(text_id=text_id)
-        return TextDTO(
+        response = TextDTO(
             id=str(text_detail.id),
             title=text_detail.title,
             language=text_detail.language,
@@ -57,6 +65,8 @@ class TextUtils:
             categories=text_detail.categories,
             views=text_detail.views
         )
+        await set_text_details_by_id_cache(text_id=text_id, data=response)
+        return response
     
     @staticmethod
     async def validate_text_exists(text_id: str):
