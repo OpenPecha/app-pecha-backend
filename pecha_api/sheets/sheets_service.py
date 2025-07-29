@@ -99,7 +99,7 @@ def _strip_html_tags_(html_content: str) -> str:
     return re.sub(clean, '', html_content).strip()
 
 async def _generate_sheet_summary_(sheet_id: str, max_words: int = 30) -> str:
-    # Generate a summary from sheet content segments limited to max_words.
+    # Generate a summary from the first content segment limited to max_words.
     try:
         # Get sheet table of content
         sheet_table_of_content: Optional[TableOfContent] = await get_table_of_content_by_sheet_id(
@@ -118,8 +118,7 @@ async def _generate_sheet_summary_(sheet_id: str, max_words: int = 30) -> str:
         # Get segment details
         segments_dict: Dict[str, SegmentDTO] = await get_segments_details_by_ids(segment_ids=segment_ids)
         
-        # Extract content from segments of type "content"
-        content_texts = []
+        # Find the first segment of type "CONTENT"
         for segment_id in segment_ids:
             if segment_id in segments_dict:
                 segment = segments_dict[segment_id]
@@ -127,20 +126,15 @@ async def _generate_sheet_summary_(sheet_id: str, max_words: int = 30) -> str:
                     # Strip HTML tags and get clean text
                     clean_text = _strip_html_tags_(segment.content)
                     if clean_text:
-                        content_texts.append(clean_text)
+                        # Split into words and limit to max_words
+                        words = clean_text.split()
+                        if len(words) <= max_words:
+                            return " ".join(words)
+                        else:
+                            return " ".join(words[:max_words]) + "..."
         
-        if not content_texts:
-            return ""
-            
-        # Combine all content texts
-        full_text = " ".join(content_texts)
-        
-        # Split into words and limit to max_words
-        words = full_text.split()
-        if len(words) <= max_words:
-            return " ".join(words)
-        else:
-            return " ".join(words[:max_words]) + "..."
+        # Return empty string if no content segment found
+        return ""
             
     except Exception:
         # Return empty string if any error occurs during summary generation
