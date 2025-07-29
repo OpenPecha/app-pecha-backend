@@ -67,10 +67,10 @@ from .texts_enums import PaginationDirection
 
 async def get_text_by_text_id_or_collection(
         text_id: str,
-        collection_id: str,
-        language: str,
-        skip: int,
-        limit: int
+        collection_id: Optional[str] = None,
+        language: Optional[str] = None,
+        skip: int = 0,
+        limit: int = 10
 ) -> TextsCategoryResponse | TextDTO:
     if language is None:
         language = get("DEFAULT_LANGUAGE")
@@ -298,7 +298,7 @@ async def create_new_text(
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail=ErrorConstants.TOKEN_ERROR_MESSAGE)
 
 
-async def create_table_of_content(table_of_content_request: TableOfContent, token: str) -> TableOfContent:
+async def create_table_of_content(table_of_content_request: TableOfContent, token: str):
     is_valid_user = validate_user_exists(token=token)
     if is_valid_user:
         await TextUtils.validate_text_exists(text_id=table_of_content_request.text_id)
