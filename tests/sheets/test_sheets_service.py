@@ -727,7 +727,7 @@ async def test_generate_sheet_summary_success():
     }
     
     with patch("pecha_api.sheets.sheets_service.get_table_of_content_by_sheet_id", new_callable=AsyncMock, return_value=mock_table_of_content), \
-         patch("pecha_api.sheets.sheets_service.get_segments_details_by_ids", new_callable=AsyncMock, return_value=mock_segments_dict):
+         patch("pecha_api.sheets.sheets_service.get_segments_by_ids", new_callable=AsyncMock, return_value=mock_segments_dict):
         
         result = await _generate_sheet_summary_(sheet_id)
         
@@ -763,7 +763,7 @@ async def test_generate_sheet_summary_with_html_tags():
     }
     
     with patch("pecha_api.sheets.sheets_service.get_table_of_content_by_sheet_id", new_callable=AsyncMock, return_value=mock_table_of_content), \
-         patch("pecha_api.sheets.sheets_service.get_segments_details_by_ids", new_callable=AsyncMock, return_value=mock_segments_dict):
+         patch("pecha_api.sheets.sheets_service.get_segments_by_ids", new_callable=AsyncMock, return_value=mock_segments_dict):
         
         result = await _generate_sheet_summary_(sheet_id)
         
@@ -802,7 +802,7 @@ async def test_generate_sheet_summary_exceeds_max_words():
     }
     
     with patch("pecha_api.sheets.sheets_service.get_table_of_content_by_sheet_id", new_callable=AsyncMock, return_value=mock_table_of_content), \
-         patch("pecha_api.sheets.sheets_service.get_segments_details_by_ids", new_callable=AsyncMock, return_value=mock_segments_dict):
+         patch("pecha_api.sheets.sheets_service.get_segments_by_ids", new_callable=AsyncMock, return_value=mock_segments_dict):
         
         result = await _generate_sheet_summary_(sheet_id)
         
@@ -844,7 +844,7 @@ async def test_generate_sheet_summary_custom_max_words():
     }
     
     with patch("pecha_api.sheets.sheets_service.get_table_of_content_by_sheet_id", new_callable=AsyncMock, return_value=mock_table_of_content), \
-         patch("pecha_api.sheets.sheets_service.get_segments_details_by_ids", new_callable=AsyncMock, return_value=mock_segments_dict):
+         patch("pecha_api.sheets.sheets_service.get_segments_by_ids", new_callable=AsyncMock, return_value=mock_segments_dict):
         
         result = await _generate_sheet_summary_(sheet_id, max_words=max_words)
         
@@ -939,7 +939,7 @@ async def test_generate_sheet_summary_no_content_segments():
     }
     
     with patch("pecha_api.sheets.sheets_service.get_table_of_content_by_sheet_id", new_callable=AsyncMock, return_value=mock_table_of_content), \
-         patch("pecha_api.sheets.sheets_service.get_segments_details_by_ids", new_callable=AsyncMock, return_value=mock_segments_dict):
+         patch("pecha_api.sheets.sheets_service.get_segments_by_ids", new_callable=AsyncMock, return_value=mock_segments_dict):
         
         result = await _generate_sheet_summary_(sheet_id)
         
@@ -981,7 +981,7 @@ async def test_generate_sheet_summary_empty_content():
     }
     
     with patch("pecha_api.sheets.sheets_service.get_table_of_content_by_sheet_id", new_callable=AsyncMock, return_value=mock_table_of_content), \
-         patch("pecha_api.sheets.sheets_service.get_segments_details_by_ids", new_callable=AsyncMock, return_value=mock_segments_dict):
+         patch("pecha_api.sheets.sheets_service.get_segments_by_ids", new_callable=AsyncMock, return_value=mock_segments_dict):
         
         result = await _generate_sheet_summary_(sheet_id)
         
@@ -1023,7 +1023,7 @@ async def test_generate_sheet_summary_segment_not_found():
     mock_segments_dict = {}
     
     with patch("pecha_api.sheets.sheets_service.get_table_of_content_by_sheet_id", new_callable=AsyncMock, return_value=mock_table_of_content), \
-         patch("pecha_api.sheets.sheets_service.get_segments_details_by_ids", new_callable=AsyncMock, return_value=mock_segments_dict):
+         patch("pecha_api.sheets.sheets_service.get_segments_by_ids", new_callable=AsyncMock, return_value=mock_segments_dict):
         
         result = await _generate_sheet_summary_(sheet_id)
         
