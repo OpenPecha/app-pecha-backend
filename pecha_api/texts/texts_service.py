@@ -137,7 +137,9 @@ async def get_table_of_content_by_sheet_id(sheet_id: str) -> Optional[TableOfCon
     if len(table_of_contents) > 0 and table_of_contents[0] is not None:
         table_of_content: TableOfContent = table_of_contents[0]
     
-    await set_table_of_content_by_sheet_id_cache(sheet_id=sheet_id, data=table_of_content)
+    if table_of_content is not None:
+        print(type(table_of_content))
+        await set_table_of_content_by_sheet_id_cache(sheet_id=sheet_id, data=table_of_content)
     
     return table_of_content
 
