@@ -3,7 +3,7 @@ from enum import Enum
 class CacheType(Enum):
     TEXT_DETAIL = "text_detail"
     TEXT_VERSIONS = "text_versions"
-    TEXTS_BY_COLLECTION = "texts_by_collection"
+    TEXTS_BY_ID_OR_COLLECTION = "texts_by_id_or_collection"
     TEXT_TABLE_OF_CONTENTS = "text_table_of_contents"
     DETAIL_TEXT_TABLE_OF_CONTENT = "detail_text_table_of_content"
 
@@ -17,3 +17,4 @@ class CacheType(Enum):
 
     SHEETS = "sheets"
     SHEET_DETAIL = "sheet_detail"
+    SHEET_TABLE_OF_CONTENT = "sheet_table_of_content"

@@ -18,6 +18,8 @@ from .segments_response_models import (
     SegmentRootMappingResponse
 )
 
+from pecha_api.cache.cache_enums import CacheType
+
 from fastapi import HTTPException
 from starlette import status
 
@@ -53,13 +55,13 @@ from .segments_enum import SegmentType
 from ...users.users_service import validate_user_exists
 
 async def get_segments_details_by_ids(segment_ids: List[str]) -> Dict[str, SegmentDTO]:
-    cached_data: Dict[str, SegmentDTO] = await get_segments_details_by_ids_cache(segment_ids=segment_ids)
+    cached_data: Dict[str, SegmentDTO] = await get_segments_details_by_ids_cache(segment_ids=segment_ids, cache_type=CacheType.SEGMENT_DETAIL)
     if cached_data is not None:
         return cached_data
     
     segments: Dict[str, SegmentDTO] = await get_segments_by_ids(segment_ids=segment_ids)
     
-    await set_segments_details_by_ids_cache(segment_ids=segment_ids, data=segments)
+    await set_segments_details_by_ids_cache(segment_ids=segment_ids, cache_type=CacheType.SEGMENT_DETAIL, data=segments)
     
     return segments
 
@@ -151,7 +153,7 @@ async def get_info_by_segment_id(segment_id: str) -> SegmentInfoResponse:
     if not is_valid_segment:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=ErrorConstants.SEGMENT_NOT_FOUND_MESSAGE)
     
-    cache_data = await get_segment_info_by_id_cache(segment_id=segment_id)
+    cache_data = await get_segment_info_by_id_cache(segment_id=segment_id, cache_type=CacheType.SEGMENT_INFO)
     if cache_data:
         return cache_data
     
@@ -173,6 +175,7 @@ async def get_info_by_segment_id(segment_id: str) -> SegmentInfoResponse:
     ) 
     await set_segment_info_by_id_cache(
         segment_id = segment_id,
+        cache_type = CacheType.SEGMENT_INFO,
         data = response
     )
     return response

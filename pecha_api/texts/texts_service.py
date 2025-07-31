@@ -50,6 +50,7 @@ from pecha_api.sheets.sheets_enum import (
     SortBy,
     SortOrder
 )
+from pecha_api.cache.cache_enums import CacheType
 
 from .texts_utils import TextUtils
 from pecha_api.users.users_service import validate_user_exists
@@ -80,7 +81,8 @@ async def get_text_by_text_id_or_collection(
         collection_id = collection_id,
         language = language,
         skip = skip,
-        limit = limit
+        limit = limit,
+        cache_type = CacheType.TEXTS_BY_ID_OR_COLLECTION
     )
 
     if cached_data is not None:
@@ -105,6 +107,7 @@ async def get_text_by_text_id_or_collection(
         language = language,
         skip = skip,
         limit = limit,
+        cache_type = CacheType.TEXTS_BY_ID_OR_COLLECTION,
         data = response
     )
 
@@ -124,7 +127,7 @@ async def get_sheet(published_by: Optional[str] = None, is_published: Optional[b
     return sheets
 
 async def get_table_of_content_by_sheet_id(sheet_id: str) -> Optional[TableOfContent]:
-    cached_data: TableOfContent = await get_table_of_content_by_sheet_id_cache(sheet_id=sheet_id)
+    cached_data: TableOfContent = await get_table_of_content_by_sheet_id_cache(sheet_id=sheet_id, cache_type=CacheType.SHEET_TABLE_OF_CONTENT)
     if cached_data is not None:
         return cached_data
     
@@ -139,7 +142,7 @@ async def get_table_of_content_by_sheet_id(sheet_id: str) -> Optional[TableOfCon
     
     if table_of_content is not None:
         print(type(table_of_content))
-        await set_table_of_content_by_sheet_id_cache(sheet_id=sheet_id, data=table_of_content)
+        await set_table_of_content_by_sheet_id_cache(sheet_id=sheet_id, cache_type=CacheType.SHEET_TABLE_OF_CONTENT, data=table_of_content)
     
     return table_of_content
 
@@ -240,7 +243,8 @@ async def get_text_versions_by_group_id(text_id: str, language: str, skip: int, 
         text_id = text_id,
         language = language,
         skip = skip,
-        limit = limit
+        limit = limit,
+        cache_type = CacheType.TEXT_VERSIONS
     )
     if cached_data is not None:
         return cached_data
@@ -266,6 +270,7 @@ async def get_text_versions_by_group_id(text_id: str, language: str, skip: int, 
         language = language,
         skip = skip,
         limit = limit,
+        cache_type = CacheType.TEXT_VERSIONS,
         data = response
     )
 

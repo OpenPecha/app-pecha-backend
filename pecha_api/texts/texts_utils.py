@@ -28,6 +28,7 @@ from .texts_cache_service import (
     delete_text_details_by_id_cache
 )
 
+from pecha_api.cache.cache_enums import CacheType
 
 
 class TextUtils:
@@ -43,7 +44,7 @@ class TextUtils:
     
     @staticmethod
     async def get_text_details_by_id(text_id: str) -> TextDTO:
-        cached_data: TextDTO = await get_text_details_by_id_cache(text_id=text_id)
+        cached_data: TextDTO = await get_text_details_by_id_cache(text_id=text_id, cache_type=CacheType.TEXT_DETAIL)
         if cached_data is not None:
             return cached_data
         
@@ -65,7 +66,7 @@ class TextUtils:
             categories=text_detail.categories,
             views=text_detail.views
         )
-        await set_text_details_by_id_cache(text_id=text_id, data=response)
+        await set_text_details_by_id_cache(text_id=text_id, cache_type=CacheType.TEXT_DETAIL, data=response)
         return response
     
     @staticmethod
