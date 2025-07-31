@@ -1,5 +1,6 @@
 import os
 import uuid
+import re
 from typing import Optional, Dict, List
 import hashlib
 from fastapi import UploadFile, HTTPException, status
@@ -90,8 +91,6 @@ from pecha_api.sheets.sheets_response_models import (
     SheetDTO
 )
 
-import re
-
 DEFAULT_SHEET_SECTION_NUMBER = 1
 
 def _strip_html_tags_(html_content: str) -> str:
@@ -134,10 +133,12 @@ def clean_text(content: str) -> str:
     if clean_text:
         # Split into words and limit to max_words
         words = clean_text.split()
-    if len(words) <= max_words:
-        return " ".join(words)
+        if len(words) <= max_words:
+            return " ".join(words)
+        else:
+            return " ".join(words[:max_words]) + "..."
     else:
-        return " ".join(words[:max_words]) + "..."
+        return ""
 
 async def fetch_sheets(
     token: Optional[str] = None,

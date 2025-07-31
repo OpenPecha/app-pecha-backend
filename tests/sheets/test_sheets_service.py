@@ -704,30 +704,16 @@ async def test_generate_sheet_summary_success():
         ]
     )
     
-    # Mock segments dictionary
-    mock_segments_dict = {
-        "content_segment_1": SegmentDTO(
-            id="content_segment_1",
-            text_id=sheet_id,
-            content="This is the first content segment.",
-            type=SegmentType.CONTENT
-        ),
-        "content_segment_2": SegmentDTO(
-            id="content_segment_2", 
-            text_id=sheet_id,
-            content="This is the second content segment.",
-            type=SegmentType.CONTENT
-        ),
-        "image_segment_1": SegmentDTO(
-            id="image_segment_1",
-            text_id=sheet_id,
-            content="image_url",
-            type=SegmentType.IMAGE
-        )
-    }
+    # Mock the first content segment that will be returned
+    mock_content_segment = SegmentDTO(
+        id="content_segment_1",
+        text_id=sheet_id,
+        content="This is the first content segment.",
+        type=SegmentType.CONTENT
+    )
     
     with patch("pecha_api.sheets.sheets_service.get_table_of_content_by_sheet_id", new_callable=AsyncMock, return_value=mock_table_of_content), \
-         patch("pecha_api.sheets.sheets_service.get_segments_by_ids", new_callable=AsyncMock, return_value=mock_segments_dict):
+         patch("pecha_api.sheets.sheets_service.get_sheet_first_content_by_ids", new_callable=AsyncMock, return_value=mock_content_segment):
         
         result = await _generate_sheet_summary_(sheet_id)
         
@@ -753,17 +739,15 @@ async def test_generate_sheet_summary_with_html_tags():
         ]
     )
     
-    mock_segments_dict = {
-        "content_segment_1": SegmentDTO(
-            id="content_segment_1",
-            text_id=sheet_id,
-            content="<p>This is <strong>bold text</strong> with <em>italics</em> and <a href='#'>links</a>.</p>",
-            type=SegmentType.CONTENT
-        )
-    }
+    mock_content_segment = SegmentDTO(
+        id="content_segment_1",
+        text_id=sheet_id,
+        content="<p>This is <strong>bold text</strong> with <em>italics</em> and <a href='#'>links</a>.</p>",
+        type=SegmentType.CONTENT
+    )
     
     with patch("pecha_api.sheets.sheets_service.get_table_of_content_by_sheet_id", new_callable=AsyncMock, return_value=mock_table_of_content), \
-         patch("pecha_api.sheets.sheets_service.get_segments_by_ids", new_callable=AsyncMock, return_value=mock_segments_dict):
+         patch("pecha_api.sheets.sheets_service.get_sheet_first_content_by_ids", new_callable=AsyncMock, return_value=mock_content_segment):
         
         result = await _generate_sheet_summary_(sheet_id)
         
@@ -792,17 +776,15 @@ async def test_generate_sheet_summary_exceeds_max_words():
         ]
     )
     
-    mock_segments_dict = {
-        "content_segment_1": SegmentDTO(
-            id="content_segment_1",
-            text_id=sheet_id,
-            content=long_content,
-            type=SegmentType.CONTENT
-        )
-    }
+    mock_content_segment = SegmentDTO(
+        id="content_segment_1",
+        text_id=sheet_id,
+        content=long_content,
+        type=SegmentType.CONTENT
+    )
     
     with patch("pecha_api.sheets.sheets_service.get_table_of_content_by_sheet_id", new_callable=AsyncMock, return_value=mock_table_of_content), \
-         patch("pecha_api.sheets.sheets_service.get_segments_by_ids", new_callable=AsyncMock, return_value=mock_segments_dict):
+         patch("pecha_api.sheets.sheets_service.get_sheet_first_content_by_ids", new_callable=AsyncMock, return_value=mock_content_segment):
         
         result = await _generate_sheet_summary_(sheet_id)
         
@@ -817,9 +799,8 @@ async def test_generate_sheet_summary_exceeds_max_words():
 
 @pytest.mark.asyncio
 async def test_generate_sheet_summary_custom_max_words():
-    #Test with custom max_words parameter
+    #Test with limited content (less than default 30 words)
     sheet_id = "test_sheet_id"
-    max_words = 5
     
     mock_table_of_content = TableOfContent(
         text_id=sheet_id,
@@ -834,21 +815,19 @@ async def test_generate_sheet_summary_custom_max_words():
         ]
     )
     
-    mock_segments_dict = {
-        "content_segment_1": SegmentDTO(
-            id="content_segment_1",
-            text_id=sheet_id,
-            content="This is a test content with more than five words here.",
-            type=SegmentType.CONTENT
-        )
-    }
+    mock_content_segment = SegmentDTO(
+        id="content_segment_1",
+        text_id=sheet_id,
+        content="This is a test content with only a few words.",
+        type=SegmentType.CONTENT
+    )
     
     with patch("pecha_api.sheets.sheets_service.get_table_of_content_by_sheet_id", new_callable=AsyncMock, return_value=mock_table_of_content), \
-         patch("pecha_api.sheets.sheets_service.get_segments_by_ids", new_callable=AsyncMock, return_value=mock_segments_dict):
+         patch("pecha_api.sheets.sheets_service.get_sheet_first_content_by_ids", new_callable=AsyncMock, return_value=mock_content_segment):
         
-        result = await _generate_sheet_summary_(sheet_id, max_words=max_words)
+        result = await _generate_sheet_summary_(sheet_id)
         
-        expected = "This is a test content..."
+        expected = "This is a test content with only a few words."
         assert result == expected
 
 
@@ -923,23 +902,8 @@ async def test_generate_sheet_summary_no_content_segments():
         ]
     )
     
-    mock_segments_dict = {
-        "image_segment_1": SegmentDTO(
-            id="image_segment_1",
-            text_id=sheet_id,
-            content="image_url",
-            type=SegmentType.IMAGE
-        ),
-        "source_segment_1": SegmentDTO(
-            id="source_segment_1",
-            text_id=sheet_id,
-            content="source_text_id",
-            type=SegmentType.SOURCE
-        )
-    }
-    
     with patch("pecha_api.sheets.sheets_service.get_table_of_content_by_sheet_id", new_callable=AsyncMock, return_value=mock_table_of_content), \
-         patch("pecha_api.sheets.sheets_service.get_segments_by_ids", new_callable=AsyncMock, return_value=mock_segments_dict):
+         patch("pecha_api.sheets.sheets_service.get_sheet_first_content_by_ids", new_callable=AsyncMock, return_value=None):
         
         result = await _generate_sheet_summary_(sheet_id)
         
@@ -965,23 +929,15 @@ async def test_generate_sheet_summary_empty_content():
         ]
     )
     
-    mock_segments_dict = {
-        "content_segment_1": SegmentDTO(
-            id="content_segment_1",
-            text_id=sheet_id,
-            content="",  # Empty string instead of None
-            type=SegmentType.CONTENT
-        ),
-        "content_segment_2": SegmentDTO(
-            id="content_segment_2",
-            text_id=sheet_id,
-            content="   ",  # Whitespace only content
-            type=SegmentType.CONTENT
-        )
-    }
+    mock_content_segment = SegmentDTO(
+        id="content_segment_1",
+        text_id=sheet_id,
+        content="",  # Empty string instead of None
+        type=SegmentType.CONTENT
+    )
     
     with patch("pecha_api.sheets.sheets_service.get_table_of_content_by_sheet_id", new_callable=AsyncMock, return_value=mock_table_of_content), \
-         patch("pecha_api.sheets.sheets_service.get_segments_by_ids", new_callable=AsyncMock, return_value=mock_segments_dict):
+         patch("pecha_api.sheets.sheets_service.get_sheet_first_content_by_ids", new_callable=AsyncMock, return_value=mock_content_segment):
         
         result = await _generate_sheet_summary_(sheet_id)
         
@@ -1019,11 +975,8 @@ async def test_generate_sheet_summary_segment_not_found():
         ]
     )
     
-    # Empty segments dictionary - segment not found
-    mock_segments_dict = {}
-    
     with patch("pecha_api.sheets.sheets_service.get_table_of_content_by_sheet_id", new_callable=AsyncMock, return_value=mock_table_of_content), \
-         patch("pecha_api.sheets.sheets_service.get_segments_by_ids", new_callable=AsyncMock, return_value=mock_segments_dict):
+         patch("pecha_api.sheets.sheets_service.get_sheet_first_content_by_ids", new_callable=AsyncMock, return_value=None):
         
         result = await _generate_sheet_summary_(sheet_id)
         
