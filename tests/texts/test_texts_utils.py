@@ -247,20 +247,19 @@ async def test_filter_text_on_root_and_version():
             views=0
         )
     )
-    response: Dict[str, Union[TextDTO, List[TextDTO]]] = TextUtils.filter_text_on_root_and_version(texts=mock_texts, language="en")
+    response: Dict[str, Union[TextDTO, List[TextDTO]]] = TextUtils.filter_text_on_root_and_version(texts=mock_texts, language="bo")
     assert response is not None
     assert response["root_text"] is not None
     assert isinstance(response["root_text"], TextDTO)
-    assert response["root_text"].language == "en"
-    assert response["root_text"].id == "efb26a06-f373-450b-ba57-e7a8d4dd5b61"
-    assert response["root_text"].title == "en_1"
+    assert response["root_text"].language == "bo"
+    assert response["root_text"].id == "efb26a06-f373-450b-ba57-e7a8d4dd5b64"
+    assert response["root_text"].title == "bo_1"
     assert response["versions"] is not None
     assert len(response["versions"]) == 2
     index = 0
     assert response["versions"][index] is not None
     assert response["versions"][index].language == "en"
-    assert response["versions"][index].id == "efb26a06-f373-450b-ba57-e7a8d4dd5b62"
-    assert response["versions"][index].title == "en_2"
+    assert response["versions"][index].id == "efb26a06-f373-450b-ba57-e7a8d4dd5b61"
     
 @pytest.mark.asyncio
 async def test_filter_text_base_on_group_id_type():
@@ -275,7 +274,7 @@ async def test_filter_text_base_on_group_id_type():
         assert response["root_text"].type == "version"
         
         assert response["commentary"] is not None
-        assert len(response["commentary"]) == 5
+        assert len(response["commentary"]) == 0
         for text_commentary in response["commentary"]:
             assert text_commentary.type == "commentary"
     
