@@ -18,15 +18,15 @@ from pecha_api.cache.cache_enums import CacheType
 
 from typing import Optional
 
-async def set_text_details_cache(text_id: str = None, content_id: str = None, version_id: str = None, skip: int = None, limit: int = None, data: DetailTableOfContentResponse = None):
+async def set_text_details_cache(text_id: str = None, content_id: str = None, version_id: str = None, skip: int = None, limit: int = None, data: DetailTableOfContentResponse = None, cache_type: CacheType = None):
     """Set text details cache asynchronously."""
-    payload = [text_id, content_id, version_id, skip, limit]
+    payload = [text_id, content_id, version_id, skip, limit, cache_type]
     hashed_key: str = Utils.generate_hash_key(payload = payload)
     await set_cache(hash_key =hashed_key, value = data)
 
-async def get_text_details_cache(text_id: str = None, content_id: str = None, version_id: str = None, skip: int = None, limit: int = None) -> DetailTableOfContentResponse:
+async def get_text_details_cache(text_id: str = None, content_id: str = None, version_id: str = None, skip: int = None, limit: int = None, cache_type: CacheType = None) -> DetailTableOfContentResponse:
     """Get text details cache asynchronously."""
-    payload = [text_id, content_id, version_id, skip, limit]
+    payload = [text_id, content_id, version_id, skip, limit, cache_type]
     hashed_key: str = Utils.generate_hash_key(payload = payload)
     cache_data: DetailTableOfContentResponse = await get_cache_data(hash_key =hashed_key)
     if cache_data and isinstance(cache_data, dict):
@@ -50,18 +50,18 @@ async def set_text_by_text_id_or_collection_cache(text_id: str = None, collectio
     hashed_key: str = Utils.generate_hash_key(payload = payload)
     await set_cache(hash_key = hashed_key, value = data)
 
-async def get_table_of_contents_by_text_id_cache(text_id: str = None, language: str = None, skip: int = None, limit: int = None) -> TableOfContentResponse:
+async def get_table_of_contents_by_text_id_cache(text_id: str = None, language: str = None, skip: int = None, limit: int = None, cache_type: CacheType = None) -> TableOfContentResponse:
     """Get table of contents by text id cache asynchronously."""
-    payload = [text_id, language, skip, limit]
+    payload = [text_id, language, skip, limit, cache_type]
     hashed_key: str = Utils.generate_hash_key(payload = payload)
     cache_data: TableOfContentResponse = await get_cache_data(hash_key = hashed_key)
     if cache_data and isinstance(cache_data, dict):
         cache_data = TableOfContentResponse(**cache_data)
     return cache_data
 
-async def set_table_of_contents_by_text_id_cache(text_id: str = None, language: str = None, skip: int = None, limit: int = None, data: TableOfContentResponse = None):
+async def set_table_of_contents_by_text_id_cache(text_id: str = None, language: str = None, skip: int = None, limit: int = None, data: TableOfContentResponse = None, cache_type: CacheType = None):
     """Set table of contents by text id cache asynchronously."""
-    payload = [text_id, language, skip, limit]
+    payload = [text_id, language, skip, limit, cache_type]
     hashed_key: str = Utils.generate_hash_key(payload = payload)
     await set_cache(hash_key = hashed_key, value = data)
 
@@ -78,8 +78,8 @@ async def set_table_of_content_by_sheet_id_cache(sheet_id: str = None, cache_typ
     hashed_key: str = Utils.generate_hash_key(payload = payload)
     await set_cache(hash_key = hashed_key, value = data)
     
-async def delete_table_of_content_by_sheet_id_cache(sheet_id: str = None):
-    payload = [sheet_id]
+async def delete_table_of_content_by_sheet_id_cache(sheet_id: str = None, cache_type: CacheType = None):
+    payload = [sheet_id, cache_type]
     hashed_key: str = Utils.generate_hash_key(payload = payload)
     await clear_cache(hash_key = hashed_key)
 
@@ -111,7 +111,7 @@ async def get_text_details_by_id_cache(text_id: str = None, cache_type: CacheTyp
         cache_data = TextDTO(**cache_data)
     return cache_data
 
-async def delete_text_details_by_id_cache(text_id: str = None):
-    payload = [text_id]
+async def delete_text_details_by_id_cache(text_id: str = None, cache_type: CacheType = None):
+    payload = [text_id, cache_type]
     hashed_key: str = Utils.generate_hash_key(payload = payload)
     await clear_cache(hash_key = hashed_key)

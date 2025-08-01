@@ -93,6 +93,8 @@ from pecha_api.texts.segments.segments_cache_service import (
     delete_segments_details_by_ids_cache
 )
 
+from pecha_api.cache.cache_enums import CacheType
+
 DEFAULT_SHEET_SECTION_NUMBER = 1
 
 async def fetch_sheets(
@@ -216,10 +218,10 @@ async def update_sheet_by_id(
     if not is_valid_user:
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail=ErrorConstants.TOKEN_ERROR_MESSAGE)
 
-    await delete_text_details_by_id_cache(text_id=sheet_id)
+    await delete_text_details_by_id_cache(text_id=sheet_id, cache_type=CacheType.TEXT_DETAIL)
     sheet_table_of_content: Optional[TableOfContent] = await get_table_of_content_by_sheet_id(sheet_id=sheet_id)
     if sheet_table_of_content is not None:
-        await delete_table_of_content_by_sheet_id_cache(sheet_id=sheet_id)
+        await delete_table_of_content_by_sheet_id_cache(sheet_id=sheet_id, cache_type=CacheType.TEXT_TABLE_OF_CONTENTS)
     
     sections = sheet_table_of_content.sections if sheet_table_of_content else []
     segment_ids = _get_all_segment_ids_in_table_of_content_(sheet_sections=sections)
