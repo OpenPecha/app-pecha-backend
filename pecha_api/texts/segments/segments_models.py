@@ -61,7 +61,14 @@ class Segment(Document):
     async def get_segments_by_ids(cls, segment_ids: List[str]) -> List["Segment"]:
         segment_ids = [uuid.UUID(segment_id) for segment_id in segment_ids]
         return await cls.find({"_id": {"$in": segment_ids}}).to_list(length=len(segment_ids))
-    
+    @classmethod
+    async def get_first_segment_by_ids_and_type(cls, segment_ids: List[str], segment_type: SegmentType) -> Optional["Segment"]:
+        """Get the first segment matching the IDs and type - optimized for single result"""
+        if not segment_ids:
+            return None
+        segment_uuid_ids = [uuid.UUID(segment_id) for segment_id in segment_ids]
+        return await cls.find_one({"_id": {"$in": segment_uuid_ids}, "type": segment_type})
+
     @classmethod
     async def get_related_mapped_segments(cls, parent_segment_id: str) -> List["Segment"]:
         # Find segments where:

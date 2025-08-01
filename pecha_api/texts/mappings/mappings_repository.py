@@ -22,12 +22,9 @@ async def update_mappings(segments: List[Segment]) -> List[Segment]:
 
 async def get_sheet_first_content_by_ids(segment_ids: List[str], segment_type: SegmentType) -> Optional[Segment]:
    
-    # Get all segments by their IDs
-    segments = await Segment.get_segments_by_ids(segment_ids=segment_ids)
-    
-    # Filter segments by type and return the first match
-    for segment in segments:
-        if segment.type == segment_type:
-            return segment
-    
-    return None
+    # NEW: Efficient - filters at database level
+    segment = await Segment.get_first_segment_by_ids_and_type(
+        segment_ids=segment_ids, 
+        segment_type=segment_type
+    )
+    return segment
