@@ -18,3 +18,6 @@ class CacheType(Enum):
     SHEETS = "sheets"
     SHEET_DETAIL = "sheet_detail"
     SHEET_TABLE_OF_CONTENT = "sheet_table_of_content"
+
+    USER_INFO = "user_info"
+    
