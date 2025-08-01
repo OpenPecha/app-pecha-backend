@@ -137,7 +137,7 @@ class TextVersionResponse(BaseModel):
 
 
 class TextsCategoryResponse(BaseModel):
-    collection: CollectionModel
+    collection: Optional[CollectionModel]
     texts : List[TextDTO]
     total: int
     skip: int
