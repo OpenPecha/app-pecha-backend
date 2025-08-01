@@ -55,13 +55,13 @@ from .segments_enum import SegmentType
 from ...users.users_service import validate_user_exists
 
 async def get_segments_details_by_ids(segment_ids: List[str]) -> Dict[str, SegmentDTO]:
-    cached_data: Dict[str, SegmentDTO] = await get_segments_details_by_ids_cache(segment_ids=segment_ids, cache_type=CacheType.SEGMENT_DETAIL)
+    cached_data: Dict[str, SegmentDTO] = await get_segments_details_by_ids_cache(segment_ids=segment_ids, cache_type=CacheType.SEGMENTS_DETAILS)
     if cached_data is not None:
         return cached_data
     
     segments: Dict[str, SegmentDTO] = await get_segments_by_ids(segment_ids=segment_ids)
     
-    await set_segments_details_by_ids_cache(segment_ids=segment_ids, cache_type=CacheType.SEGMENT_DETAIL, data=segments)
+    await set_segments_details_by_ids_cache(segment_ids=segment_ids, cache_type=CacheType.SEGMENTS_DETAILS, data=segments)
     
     return segments
 

@@ -23,6 +23,7 @@ from pecha_api.texts.texts_response_models import (
 )
 from pecha_api.collections.collections_response_models import CollectionModel
 
+from pecha_api.cache.cache_enums import CacheType
 
 @pytest.mark.asyncio
 async def test_get_text_details_cache_empty_cache():
@@ -322,7 +323,7 @@ async def test_set_text_by_text_id_or_collection_cache_success():
 
     with patch("pecha_api.texts.texts_cache_service.set_cache", new_callable=AsyncMock):
 
-        response = await set_text_by_text_id_or_collection_cache(text_id="text_id", collection_id="collection_id", language="en", skip=0, limit=10, data=mock_data)
+        await set_text_by_text_id_or_collection_cache(text_id="text_id", collection_id="collection_id", language="en", skip=0, limit=10, data=mock_data)
 
 @pytest.mark.asyncio
 async def test_set_table_of_contents_by_text_id_cache_success():

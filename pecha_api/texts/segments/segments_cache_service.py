@@ -94,7 +94,7 @@ async def set_segments_details_by_ids_cache(segment_ids: List[str] = None, cache
     hashed_key: str = Utils.generate_hash_key(payload = payload)
     await set_cache(hash_key = hashed_key, value = data)
 
-async def delete_segments_details_by_ids_cache(segment_ids: List[str] = None):
-    payload = list(segment_ids)
+async def delete_segments_details_by_ids_cache(segment_ids: List[str] = None, cache_type: CacheType = None):
+    payload = list(segment_ids) + [cache_type]
     hashed_key: str = Utils.generate_hash_key(payload = payload)
     await clear_cache(hash_key = hashed_key)
