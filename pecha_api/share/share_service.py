@@ -23,7 +23,7 @@ IMAGE_PATH = "pecha_api/share/static/img/output.png"
 MEDIA_TYPE = "image/png"
 DEFAULT_OG_TITLE = "PECHA"
 DEFAULT_OG_DESCRIPTION = "PECHA"
-PECHA_FRONTEND_ENDPOINT = "https://pecha-frontend-12552055234-4f99e0e.onrender.com/chapter"
+PECHA_FRONTEND_ENDPOINT = "https://webuddhist.com/chapter"
 
 async def get_generated_image():
     try:    
