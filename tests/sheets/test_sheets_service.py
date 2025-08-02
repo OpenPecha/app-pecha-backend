@@ -2,9 +2,7 @@ import io
 import pytest
 from unittest.mock import patch, MagicMock, AsyncMock
 from fastapi import UploadFile, HTTPException, status
-from pecha_api.config import get
 from pecha_api.error_contants import ErrorConstants
-from pecha_api.sheets.sheets_response_models import SheetIdRequest
 from pecha_api.image_utils import ImageUtils
 
 from pecha_api.sheets.sheets_response_models import (
@@ -14,9 +12,9 @@ from pecha_api.sheets.sheets_response_models import (
     SheetDetailDTO,
     SheetSection,
     SheetDTO,
-    Publisher,
     SheetDTOResponse,
-    SheetDTO
+    SheetDTO,
+    Publisher
 )
 from pecha_api.texts.segments.segments_enum import SegmentType
 from pecha_api.texts.segments.segments_response_models import (
@@ -30,8 +28,6 @@ from pecha_api.texts.texts_response_models import (
     TextSegment,
     TextDTO,
     TextSegment,
-    TableOfContentResponse,
-    TextDTOResponse,
     TextDTO
 )
 from pecha_api.texts.texts_enums import TextType
@@ -66,6 +62,13 @@ from pecha_api.texts.groups.groups_enums import GroupType
 from pecha_api.users.users_models import Users
 from pecha_api.sheets.sheets_enum import SortBy, SortOrder
 import hashlib
+
+from pecha_api.texts.segments.segments_response_models import (
+    SegmentDTO, 
+    SegmentResponse
+)
+from pecha_api.users.user_response_models import UserInfoResponse
+from pecha_api.texts.texts_enums import TextType
 
 
 def test_validate_and_compress_image_success():
@@ -288,6 +291,10 @@ async def test_update_sheet_success():
     with patch("pecha_api.sheets.sheets_service.remove_segments_by_text_id", new_callable=AsyncMock), \
         patch("pecha_api.sheets.sheets_service.validate_user_exists", return_value=True), \
         patch("pecha_api.sheets.sheets_service.remove_table_of_content_by_text_id", new_callable=AsyncMock), \
+        patch("pecha_api.sheets.sheets_service.delete_text_details_by_id_cache", new_callable=AsyncMock), \
+        patch("pecha_api.sheets.sheets_service.get_table_of_content_by_sheet_id", new_callable=AsyncMock), \
+        patch("pecha_api.sheets.sheets_service.delete_table_of_content_by_sheet_id_cache", new_callable=AsyncMock), \
+        patch("pecha_api.sheets.sheets_service.delete_segments_details_by_ids_cache", new_callable=AsyncMock), \
         patch("pecha_api.sheets.sheets_service.update_text_details", new_callable=AsyncMock), \
         patch("pecha_api.sheets.sheets_service.create_new_segment", new_callable=AsyncMock, return_value=mock_segment_response), \
         patch("pecha_api.sheets.sheets_service.create_table_of_content", new_callable=AsyncMock):

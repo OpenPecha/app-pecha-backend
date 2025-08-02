@@ -65,7 +65,7 @@ async def test_get_text_by_text_id_or_collection_without_collection_id_success()
             views=0
         )
 
-        response = await get_text_by_text_id_or_collection(text_id=text_id, collection_id=collection_id, language=None, skip=0, limit=10)
+        response = await get_text_by_text_id_or_collection(text_id=text_id, collection_id=collection_id)
 
         assert response is not None
         assert isinstance(response, TextDTO)

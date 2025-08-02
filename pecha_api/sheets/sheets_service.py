@@ -40,15 +40,13 @@ from pecha_api.texts.groups.groups_service import (
 
 from pecha_api.texts.texts_response_models import (
     CreateTextRequest,
-    UpdateTextRequest,
-    TextDTOResponse
+    UpdateTextRequest
 )
 from pecha_api.texts.texts_service import (
     create_new_text,
     create_table_of_content,
     remove_table_of_content_by_text_id,
     update_text_details,
-    get_table_of_contents_by_text_id,
     delete_text_by_text_id,
     get_sheet,
     get_table_of_content_by_sheet_id
@@ -62,7 +60,6 @@ from pecha_api.texts.texts_enums import TextType
 from pecha_api.texts.texts_response_models import (
     TextDTO,
     TableOfContent,
-    TableOfContentResponse,
     Section,
     TextSegment
 )
@@ -90,6 +87,15 @@ from pecha_api.sheets.sheets_response_models import (
     SheetDTOResponse,
     SheetDTO
 )
+from pecha_api.texts.texts_cache_service import (
+    delete_text_details_by_id_cache,
+    delete_table_of_content_by_sheet_id_cache
+)
+from pecha_api.texts.segments.segments_cache_service import (
+    delete_segments_details_by_ids_cache
+)
+
+from pecha_api.cache.cache_enums import CacheType
 
 DEFAULT_SHEET_SECTION_NUMBER = 1
 
@@ -261,6 +267,11 @@ async def update_sheet_by_id(
     if not is_valid_user:
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail=ErrorConstants.TOKEN_ERROR_MESSAGE)
 
+    await delete_text_details_by_id_cache(text_id=sheet_id, cache_type=CacheType.TEXT_DETAIL)
+    sheet_table_of_content: Optional[TableOfContent] = await _delete_sheet_table_of_content_cache_(sheet_id=sheet_id)
+    
+    await _delete_sheet_segments_cache_(sheet_table_of_content=sheet_table_of_content)
+
     await remove_segments_by_text_id(text_id=sheet_id)
 
     await remove_table_of_content_by_text_id(text_id=sheet_id)
@@ -278,10 +289,18 @@ async def update_sheet_by_id(
         segment_dict=sheet_segments,
         token=token
     )
-    # delete_sheet_by_id_cache(
-    #     sheet_id=sheet_id
-    # )
     return SheetIdResponse(sheet_id=sheet_id)
+
+async def _delete_sheet_table_of_content_cache_(sheet_id: str) -> Optional[TableOfContent]:
+    sheet_table_of_content: Optional[TableOfContent] = await get_table_of_content_by_sheet_id(sheet_id=sheet_id)
+    if sheet_table_of_content is not None:
+        await delete_table_of_content_by_sheet_id_cache(sheet_id=sheet_id, cache_type=CacheType.SHEET_TABLE_OF_CONTENT)
+    return sheet_table_of_content
+
+async def _delete_sheet_segments_cache_(sheet_table_of_content: Optional[TableOfContent]):
+    sections = sheet_table_of_content.sections if sheet_table_of_content else []
+    segment_ids = _get_all_segment_ids_in_table_of_content_(sheet_sections=sections)
+    await delete_segments_details_by_ids_cache(segment_ids=segment_ids, cache_type=CacheType.SEGMENTS_DETAILS)
 
 async def delete_sheet_by_id(sheet_id: str, token: str):
     is_valid_user = validate_user_exists(token=token)

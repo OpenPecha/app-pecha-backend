@@ -28,14 +28,16 @@ from .user_cache_service import (
     set_user_info_cache
 )
 
+from pecha_api.cache.cache_enums import CacheType
+
 
 async def get_user_info(token: str) -> UserInfoResponse:
-    cache_data = await get_user_info_cache(token=token)
+    cache_data = await get_user_info_cache(token=token, cache_type=CacheType.USER_INFO)
     if cache_data:
         return cache_data
     current_user = validate_and_extract_user_details(token=token)
     user_info_response = generate_user_info_response(user=current_user)
-    await set_user_info_cache(token=token, data=user_info_response)
+    await set_user_info_cache(token=token, data=user_info_response, cache_type=CacheType.USER_INFO)
     return user_info_response
 
 def fetch_user_by_email(email: str) -> Optional[UserInfoResponse]:
