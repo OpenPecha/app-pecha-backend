@@ -29,7 +29,7 @@ from pecha_api.cache.cache_enums import CacheType
 async def test_get_text_details_cache_empty_cache():
     with patch("pecha_api.texts.texts_cache_service.get_cache_data", new_callable=AsyncMock, return_value=None):
         
-        response = await get_text_details_cache(text_id="text_id", content_id="content_id", version_id="version_id", skip=0, limit=10)
+        response = await get_text_details_cache(text_id="text_id", content_id="content_id", version_id="version_id", skip=0, limit=10, cache_type=CacheType.TEXT_DETAIL)
 
         assert response is None
 
@@ -64,7 +64,7 @@ async def test_set_text_details_cache_success():
 
     with patch("pecha_api.texts.texts_cache_service.set_cache", new_callable=AsyncMock):
 
-        await set_text_details_cache(text_id="text_id", content_id="content_id", version_id="version_id", skip=0, limit=10, data=mock_text_detail)
+        await set_text_details_cache(text_id="text_id", content_id="content_id", version_id="version_id", skip=0, limit=10, data=mock_text_detail, cache_type=CacheType.TEXT_DETAIL)
 
 
 @pytest.mark.asyncio
@@ -96,7 +96,7 @@ async def test_get_text_details_cache_for_text_details_response():
         ]
     )
     with patch("pecha_api.texts.texts_cache_service.get_cache_data", new_callable=AsyncMock, return_value=mock_cache_data):
-        response = await get_text_details_cache(text_id="text_id", content_id="content_id", version_id="version_id", skip=0, limit=10)
+        response = await get_text_details_cache(text_id="text_id", content_id="content_id", version_id="version_id", skip=0, limit=10, cache_type=CacheType.TEXT_DETAIL)
 
         assert response is not None
         assert isinstance(response, DetailTableOfContent)
@@ -134,12 +134,12 @@ async def test_set_text_details_cache_for_text_details_response():
         ]
     )
     with patch("pecha_api.texts.texts_cache_service.set_cache", new_callable=AsyncMock):
-        set_text_details_cache(text_id="text_id", content_id="content_id", version_id="version_id", skip=0, limit=10, data=mock_cache_data)
+        set_text_details_cache(text_id="text_id", content_id="content_id", version_id="version_id", skip=0, limit=10, data=mock_cache_data, cache_type=CacheType.TEXT_DETAIL)
 
 @pytest.mark.asyncio
 async def test_get_text_by_text_id_or_collection_cache_empty_cache():
     with patch("pecha_api.texts.texts_cache_service.get_cache_data", new_callable=AsyncMock, return_value=None):
-        response = await get_text_by_text_id_or_collection_cache(text_id="text_id", collection_id="collection_id", language="en", skip=0, limit=10)
+        response = await get_text_by_text_id_or_collection_cache(text_id="text_id", collection_id="collection_id", language="en", skip=0, limit=10, cache_type=CacheType.TEXTS_BY_ID_OR_COLLECTION)
 
 
         assert response is None
@@ -162,7 +162,7 @@ async def test_get_text_by_text_id_or_collection_cache_for_text_by_text_id_or_co
     )
     with patch("pecha_api.texts.texts_cache_service.get_cache_data", new_callable=AsyncMock, return_value=mock_cache_data):
 
-        response = await get_text_by_text_id_or_collection_cache(text_id="text_id", collection_id="collection_id", language="en", skip=0, limit=10)
+        response = await get_text_by_text_id_or_collection_cache(text_id="text_id", collection_id="collection_id", language="en", skip=0, limit=10, cache_type=CacheType.TEXTS_BY_ID_OR_COLLECTION)
 
 
         assert response is not None
@@ -187,12 +187,12 @@ async def test_set_text_by_text_id_or_collection_cache_for_text_by_text_id_or_co
     )
 
     with patch("pecha_api.texts.texts_cache_service.set_text_by_text_id_or_collection_cache", new_callable=AsyncMock):
-        set_text_by_text_id_or_collection_cache(text_id="text_id", collection_id="collection_id", language="en", skip=0, limit=10, data=mock_cache_data)
+        set_text_by_text_id_or_collection_cache(text_id="text_id", collection_id="collection_id", language="en", skip=0, limit=10, data=mock_cache_data, cache_type=CacheType.TEXTS_BY_ID_OR_COLLECTION)
 
 @pytest.mark.asyncio
 async def test_get_table_of_contents_by_text_id_cache_empty_cache():
     with patch("pecha_api.texts.texts_cache_service.get_cache_data", new_callable=AsyncMock, return_value=None):
-        response = await get_table_of_contents_by_text_id_cache(text_id="text_id")
+        response = await get_table_of_contents_by_text_id_cache(text_id="text_id", language="en", skip=0, limit=10, cache_type=CacheType.TEXT_TABLE_OF_CONTENTS)
 
         assert response is None
 
@@ -218,7 +218,7 @@ async def test_get_table_of_contents_by_text_id_cache_for_table_of_contents_by_t
 
     with patch("pecha_api.texts.texts_cache_service.get_cache_data", new_callable=AsyncMock, return_value=mock_cache_data):
 
-        response = await get_table_of_contents_by_text_id_cache(text_id="text_id")
+        response = await get_table_of_contents_by_text_id_cache(text_id="text_id", language="en", skip=0, limit=10, cache_type=CacheType.TEXT_TABLE_OF_CONTENTS)
         
         assert response is not None
         assert isinstance(response, TableOfContent)
@@ -247,12 +247,12 @@ async def test_set_table_of_contents_by_text_id_cache_for_table_of_contents_by_t
             ]
         )
     with patch("pecha_api.texts.texts_cache_service.set_cache", new_callable=AsyncMock):
-        set_table_of_contents_by_text_id_cache(text_id="text_id", data=mock_cache_data)
+        set_table_of_contents_by_text_id_cache(text_id="text_id", data=mock_cache_data, language="en", skip=0, limit=10, cache_type=CacheType.TEXT_TABLE_OF_CONTENTS)
 
 @pytest.mark.asyncio
 async def test_get_text_versions_by_group_id_cache_empty_cache():
     with patch("pecha_api.texts.texts_cache_service.get_cache_data", new_callable=AsyncMock, return_value=None):
-        response = await get_text_versions_by_group_id_cache(text_id="text_id", language="en", skip=0, limit=10)
+        response = await get_text_versions_by_group_id_cache(text_id="text_id", language="en", skip=0, limit=10, cache_type=CacheType.TEXT_VERSIONS)
 
         assert response is None
 
@@ -276,7 +276,7 @@ async def test_get_text_versions_by_group_id_cache_for_text_versions_by_group_id
         versions=[]
     )
     with patch("pecha_api.texts.texts_cache_service.get_cache_data", new_callable=AsyncMock, return_value=mock_cache_data):
-        response = await get_text_versions_by_group_id_cache(text_id="text_id", language="en", skip=0, limit=10)
+        response = await get_text_versions_by_group_id_cache(text_id="text_id", language="en", skip=0, limit=10, cache_type=CacheType.TEXT_VERSIONS)
 
         assert response is not None
         assert isinstance(response, TextVersionResponse)
@@ -301,7 +301,7 @@ async def test_set_text_versions_by_group_id_cache_for_text_versions_by_group_id
         versions=[]
     )
     with patch("pecha_api.texts.texts_cache_service.set_cache", new_callable=AsyncMock):
-        set_text_versions_by_group_id_cache(text_id="text_id", language="en", skip=0, limit=10, data=mock_cache_data)
+        set_text_versions_by_group_id_cache(text_id="text_id", language="en", skip=0, limit=10, data=mock_cache_data, cache_type=CacheType.TEXT_VERSIONS)
 
 
 @pytest.mark.asyncio
@@ -323,7 +323,7 @@ async def test_set_text_by_text_id_or_collection_cache_success():
 
     with patch("pecha_api.texts.texts_cache_service.set_cache", new_callable=AsyncMock):
 
-        await set_text_by_text_id_or_collection_cache(text_id="text_id", collection_id="collection_id", language="en", skip=0, limit=10, data=mock_data)
+        await set_text_by_text_id_or_collection_cache(text_id="text_id", collection_id="collection_id", language="en", skip=0, limit=10, data=mock_data, cache_type=CacheType.TEXTS_BY_ID_OR_COLLECTION)
 
 @pytest.mark.asyncio
 async def test_set_table_of_contents_by_text_id_cache_success():
@@ -347,7 +347,7 @@ async def test_set_table_of_contents_by_text_id_cache_success():
     
     with patch("pecha_api.texts.texts_cache_service.set_cache", new_callable=AsyncMock):
 
-        await set_table_of_contents_by_text_id_cache(text_id="text_id", language="en", skip=0, limit=10, data=mock_cache_data)
+        await set_table_of_contents_by_text_id_cache(text_id="text_id", language="en", skip=0, limit=10, data=mock_cache_data, cache_type=CacheType.TEXT_TABLE_OF_CONTENTS)
 
 @pytest.mark.asyncio
 async def test_set_text_versions_by_group_id_cache_success():
@@ -371,5 +371,5 @@ async def test_set_text_versions_by_group_id_cache_success():
 
     with patch("pecha_api.texts.texts_cache_service.set_cache", new_callable=AsyncMock):
 
-        await set_text_versions_by_group_id_cache(text_id="text_id", language="en", skip=0, limit=10, data=mock_cache_data)
+        await set_text_versions_by_group_id_cache(text_id="text_id", language="en", skip=0, limit=10, data=mock_cache_data, cache_type=CacheType.TEXT_VERSIONS)
 
