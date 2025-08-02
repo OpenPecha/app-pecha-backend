@@ -1,5 +1,6 @@
 import os
 import uuid
+import re
 from typing import Optional, Dict, List
 import hashlib
 from fastapi import UploadFile, HTTPException, status
@@ -62,6 +63,7 @@ from pecha_api.texts.texts_response_models import (
     Section,
     TextSegment
 )
+from pecha_api.texts.mappings.mappings_repository import get_sheet_first_content_by_ids
 
 from pecha_api.texts.segments.segments_models import SegmentType
 from pecha_api.texts.segments.segments_response_models import (
@@ -97,6 +99,53 @@ from pecha_api.cache.cache_enums import CacheType
 
 DEFAULT_SHEET_SECTION_NUMBER = 1
 
+def _strip_html_tags_(html_content: str) -> str:
+    #Remove HTML tags from content and return clean text.
+    clean = re.compile('<.*?>')
+    return re.sub(clean, '', html_content).strip()
+
+async def _generate_sheet_summary_(sheet_id: str) -> str:
+    # Generate a summary from the first content segment limited to max_words.
+    try:
+        # Get sheet table of content
+        sheet_table_of_content: Optional[TableOfContent] = await get_table_of_content_by_sheet_id(
+            sheet_id=sheet_id
+        )
+        
+        if not sheet_table_of_content or not sheet_table_of_content.sections:
+            return ""
+        
+        # Get all segment IDs from the table of content
+        segment_ids = _get_all_segment_ids_in_table_of_content_(sheet_sections=sheet_table_of_content.sections)
+        
+        if not segment_ids:
+            return ""
+            
+        content_segment = await _get_sheet_first_content_details_by_type_(segment_ids=segment_ids, segment_type=SegmentType.CONTENT)    
+
+        if content_segment: # not NONE
+            content = content_segment.content
+            return clean_text(content)
+        # Return empty string if no content segment found
+        return ""
+            
+    except Exception:
+        # Return empty string if any error occurs during summary generation
+        return ""
+
+def clean_text(content: str) -> str:
+    max_words = 30
+    clean_text = _strip_html_tags_(content)
+    if clean_text:
+        # Split into words and limit to max_words
+        words = clean_text.split()
+        if len(words) <= max_words:
+            return " ".join(words)
+        else:
+            return " ".join(words[:max_words]) + "..."
+    else:
+        return ""
+
 async def fetch_sheets(
     token: Optional[str] = None,
     language: Optional[str] = None,
@@ -127,7 +176,7 @@ async def fetch_sheets(
         )
     
 
-    sheets: SheetDTOResponse = _generate_sheet_dto_response_(sheets = sheets, skip = skip, limit = limit)
+    sheets: SheetDTOResponse = await _generate_sheet_dto_response_(sheets = sheets, skip = skip, limit = limit)
       
     return sheets
 
@@ -354,12 +403,12 @@ async def _fetch_user_sheets_(token: str, email: str, sort_by: SortBy, sort_orde
     )
     return sheets
 
-def _generate_sheet_dto_response_(sheets, skip: int, limit: int) -> SheetDTOResponse:
+async def _generate_sheet_dto_response_(sheets, skip: int, limit: int) -> SheetDTOResponse:
     sheets_dto = [
         SheetDTO(
             id = str(sheet.id),
             title = sheet.title,
-            summary = "summary",
+            summary = await _generate_sheet_summary_(str(sheet.id)),
             published_date = sheet.published_date,
             time_passed = Utils.time_passed(published_time=sheet.published_date, language=sheet.language),
             views = sheet.views,
@@ -426,6 +475,11 @@ async def _generate_sheet_section_(segments: List[TextSegment], segments_dict: D
         segments=sheet_segments
     )
 
+async def _get_sheet_first_content_details_by_type_(segment_ids: List[str], segment_type: SegmentType) -> Optional[str]:
+    
+    # Get detailed firt segment information of type segment_type
+    segments_detail = await get_sheet_first_content_by_ids(segment_ids=segment_ids, segment_type=segment_type)
+    return segments_detail
 
 def _get_all_segment_ids_in_table_of_content_(sheet_sections: Section) -> List[str]:
     segment_ids = []
