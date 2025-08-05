@@ -145,7 +145,7 @@ async def invalidate_text_related_cache(text_id: str) -> bool:
 
 
 async def invalidate_multiple_cache_keys(hash_keys: List[str]) -> bool:
-    Invalidate multiple cache entries by their hash keys
+    #Invalidate multiple cache entries by their hash keys
     try:
         client = get_client()
         
