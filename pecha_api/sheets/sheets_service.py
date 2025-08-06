@@ -98,7 +98,7 @@ from pecha_api.texts.segments.segments_cache_service import (
 from pecha_api.cache.cache_enums import CacheType
 from pecha_api.cache.cache_repository import update_cache
 from pecha_api.utils import Utils
-    import logging
+import logging
 
 DEFAULT_SHEET_SECTION_NUMBER = 1
 
