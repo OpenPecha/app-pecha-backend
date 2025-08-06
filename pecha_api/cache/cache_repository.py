@@ -120,7 +120,7 @@ async def update_cache(hash_key: str, value: Any) -> bool:
 
 
 async def invalidate_text_related_cache(text_id: str) -> bool:
-    Invalidate all cache entries related to a specific text_id
+    #Invalidate all cache entries related to a specific text_id
     try:
         client = get_client()
         prefix = config.get("CACHE_PREFIX")
