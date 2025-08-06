@@ -9,7 +9,9 @@ from pecha_api.texts.texts_cache_service import (
     get_table_of_contents_by_text_id_cache,
     set_table_of_contents_by_text_id_cache,
     get_text_versions_by_group_id_cache,
-    set_text_versions_by_group_id_cache
+    set_text_versions_by_group_id_cache,
+    update_text_details_cache,
+    invalidate_text_cache_on_update
 )
 from pecha_api.texts.texts_response_models import (
     DetailTableOfContent,
@@ -372,4 +374,178 @@ async def test_set_text_versions_by_group_id_cache_success():
     with patch("pecha_api.texts.texts_cache_service.set_cache", new_callable=AsyncMock):
 
         await set_text_versions_by_group_id_cache(text_id="text_id", language="en", skip=0, limit=10, data=mock_cache_data, cache_type=CacheType.TEXT_VERSIONS)
+
+@pytest.mark.asyncio
+async def test_update_text_details_cache_success():
+    #Test successful update of text details cache
+    updated_text_data = TextDTO(
+        id="text_id_1",
+        title="Updated Title",
+        language="en",
+        group_id="group_id_1",
+        type="root_text",
+        is_published=True,
+        created_date="2025-03-16 04:40:54.757652",
+        updated_date="2025-03-16 05:40:54.757652",
+        published_date="2025-03-16 04:40:54.757652",
+        published_by="user_1",
+        categories=["category_1"],
+        views=10
+    )
+
+    with patch("pecha_api.texts.texts_cache_service.update_cache", new_callable=AsyncMock, return_value=True) as mock_update_cache, \
+         patch("pecha_api.texts.texts_cache_service.Utils.generate_hash_key", return_value="test_hash_key"):
+        
+        result = await update_text_details_cache(text_id="text_id_1", updated_text_data=updated_text_data)
+        
+        assert result is True
+        assert mock_update_cache.call_count == 2  # Called for both cache types
+
+@pytest.mark.asyncio
+async def test_update_text_details_cache_partial_success():
+    #Test partial success scenario where only one cache type updates successfully
+    updated_text_data = TextDTO(
+        id="text_id_1",
+        title="Updated Title",
+        language="en",
+        group_id="group_id_1",
+        type="root_text",
+        is_published=True,
+        created_date="2025-03-16 04:40:54.757652",
+        updated_date="2025-03-16 05:40:54.757652",
+        published_date="2025-03-16 04:40:54.757652",
+        published_by="user_1",
+        categories=["category_1"],
+        views=10
+    )
+
+    with patch("pecha_api.texts.texts_cache_service.update_cache", new_callable=AsyncMock, side_effect=[True, False]) as mock_update_cache, \
+         patch("pecha_api.texts.texts_cache_service.Utils.generate_hash_key", return_value="test_hash_key"):
+        
+        result = await update_text_details_cache(text_id="text_id_1", updated_text_data=updated_text_data)
+        
+        assert result is True
+        assert mock_update_cache.call_count == 2
+
+@pytest.mark.asyncio
+async def test_update_text_details_cache_all_updates_fail():
+    #Test scenario where all cache updates fail and fallback to invalidation
+    updated_text_data = TextDTO(
+        id="text_id_1",
+        title="Updated Title",
+        language="en",
+        group_id="group_id_1",
+        type="root_text",
+        is_published=True,
+        created_date="2025-03-16 04:40:54.757652",
+        updated_date="2025-03-16 05:40:54.757652",
+        published_date="2025-03-16 04:40:54.757652",
+        published_by="user_1",
+        categories=["category_1"],
+        views=10
+    )
+
+    with patch("pecha_api.texts.texts_cache_service.update_cache", new_callable=AsyncMock, return_value=False) as mock_update_cache, \
+         patch("pecha_api.texts.texts_cache_service.invalidate_text_related_cache", new_callable=AsyncMock) as mock_invalidate, \
+         patch("pecha_api.texts.texts_cache_service.Utils.generate_hash_key", return_value="test_hash_key"):
+        
+        result = await update_text_details_cache(text_id="text_id_1", updated_text_data=updated_text_data)
+        
+        assert result is True
+        assert mock_update_cache.call_count == 2
+        mock_invalidate.assert_called_once_with(text_id="text_id_1")
+
+@pytest.mark.asyncio
+async def test_update_text_details_cache_exception_handling():
+    #Test exception handling in update_text_details_cache
+    updated_text_data = TextDTO(
+        id="text_id_1",
+        title="Updated Title",
+        language="en",
+        group_id="group_id_1",
+        type="root_text",
+        is_published=True,
+        created_date="2025-03-16 04:40:54.757652",
+        updated_date="2025-03-16 05:40:54.757652",
+        published_date="2025-03-16 04:40:54.757652",
+        published_by="user_1",
+        categories=["category_1"],
+        views=10
+    )
+
+    with patch("pecha_api.texts.texts_cache_service.update_cache", new_callable=AsyncMock, side_effect=Exception("Cache error")) as mock_update_cache, \
+         patch("pecha_api.texts.texts_cache_service.invalidate_text_related_cache", new_callable=AsyncMock) as mock_invalidate, \
+         patch("pecha_api.texts.texts_cache_service.Utils.generate_hash_key", return_value="test_hash_key"), \
+         patch("pecha_api.texts.texts_cache_service.logging.error") as mock_log:
+        
+        result = await update_text_details_cache(text_id="text_id_1", updated_text_data=updated_text_data)
+        
+        assert result is False
+        mock_invalidate.assert_called_once_with(text_id="text_id_1")
+        mock_log.assert_called_once()
+
+@pytest.mark.asyncio
+async def test_invalidate_text_cache_on_update_success():
+    #Test successful invalidation of all text-related cache entries
+    with patch("pecha_api.texts.texts_cache_service.invalidate_multiple_cache_keys", new_callable=AsyncMock) as mock_invalidate_multiple, \
+         patch("pecha_api.texts.texts_cache_service.invalidate_text_related_cache", new_callable=AsyncMock) as mock_invalidate_text, \
+         patch("pecha_api.texts.texts_cache_service.Utils.generate_hash_key", return_value="test_hash_key"):
+        
+        result = await invalidate_text_cache_on_update(text_id="text_id_1")
+        
+        assert result is True
+        mock_invalidate_multiple.assert_called_once()
+        mock_invalidate_text.assert_called_once_with(text_id="text_id_1")
+        
+        # Verify that hash keys are generated for all cache types
+        args, kwargs = mock_invalidate_multiple.call_args
+        assert "hash_keys" in kwargs
+        assert len(kwargs["hash_keys"]) == 4  # Four different cache types
+
+@pytest.mark.asyncio
+async def test_invalidate_text_cache_on_update_exception_handling():
+    #Test exception handling in invalidate_text_cache_on_update
+    with patch("pecha_api.texts.texts_cache_service.invalidate_multiple_cache_keys", new_callable=AsyncMock, side_effect=Exception("Invalidation error")) as mock_invalidate_multiple, \
+         patch("pecha_api.texts.texts_cache_service.Utils.generate_hash_key", return_value="test_hash_key"), \
+         patch("pecha_api.texts.texts_cache_service.logging.error") as mock_log:
+        
+        result = await invalidate_text_cache_on_update(text_id="text_id_1")
+        
+        assert result is False
+        mock_log.assert_called_once()
+
+@pytest.mark.asyncio
+async def test_invalidate_text_cache_on_update_hash_key_generation():
+    #Test that correct hash keys are generated for different cache types
+    def mock_generate_hash_key(payload):
+        # Find the CacheType in the payload (it's at different indices)
+        cache_type = None
+        for item in payload:
+            if hasattr(item, 'value'):  # CacheType enum has .value attribute
+                cache_type = item
+                break
+        if cache_type:
+            return f"hash_{cache_type.value}"
+        return "hash_unknown"
+    
+    with patch("pecha_api.texts.texts_cache_service.invalidate_multiple_cache_keys", new_callable=AsyncMock) as mock_invalidate_multiple, \
+         patch("pecha_api.texts.texts_cache_service.invalidate_text_related_cache", new_callable=AsyncMock), \
+         patch("pecha_api.texts.texts_cache_service.Utils.generate_hash_key", side_effect=mock_generate_hash_key) as mock_hash:
+        
+        result = await invalidate_text_cache_on_update(text_id="text_id_1")
+        
+        assert result is True
+        
+        # Verify hash key generation calls
+        assert mock_hash.call_count == 4
+        
+        # Verify the correct cache types are used
+        args, kwargs = mock_invalidate_multiple.call_args
+        expected_hash_keys = [
+            "hash_text_detail",
+            "hash_texts_by_id_or_collection", 
+            "hash_text_table_of_contents",
+            "hash_text_versions"
+        ]
+        assert kwargs["hash_keys"] == expected_hash_keys
 
