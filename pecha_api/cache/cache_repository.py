@@ -126,7 +126,7 @@ async def invalidate_text_related_cache(text_id: str) -> bool:
         prefix = config.get("CACHE_PREFIX")
         
         # Pattern to match all cache keys that might contain this text_id
-        pattern = f"{prefix}*{text_id}*"
+        pattern = f"{prefix}{text_id}"
         
         # Get all matching keys
         keys = await client.keys(pattern)
