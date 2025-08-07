@@ -18,7 +18,6 @@ from .texts_response_models import (
     TableOfContent
 )
 from pecha_api.cache.cache_enums import CacheType
-from .texts_service import get_table_of_content_by_sheet_id
 
 from typing import Optional
 import logging
@@ -149,12 +148,17 @@ async def update_text_details_cache(text_id: str, updated_text_data: TextDTO, ca
         
         # For sheets, also try to update table of content cache
         if is_sheet:
-            updated_table_of_content = await get_table_of_content_by_sheet_id(sheet_id=text_id)
-            if updated_table_of_content:
-                toc_payload = [text_id, CacheType.SHEET_TABLE_OF_CONTENT]
-                toc_hash_key = Utils.generate_hash_key(payload=toc_payload)
-                is_toc_updated = await update_cache(hash_key=toc_hash_key, value=updated_table_of_content)
-                update_results.append(is_toc_updated)
+            try:
+                from .texts_service import get_table_of_content_by_sheet_id
+                updated_table_of_content = await get_table_of_content_by_sheet_id(sheet_id=text_id)
+                if updated_table_of_content:
+                    toc_payload = [text_id, CacheType.SHEET_TABLE_OF_CONTENT]
+                    toc_hash_key = Utils.generate_hash_key(payload=toc_payload)
+                    is_toc_updated = await update_cache(hash_key=toc_hash_key, value=updated_table_of_content)
+                    update_results.append(is_toc_updated)
+            except Exception as e:
+                logging.warning(f"Could not update table of content cache for sheet {text_id}: {str(e)}")
+        
         # If direct updates failed, fallback to invalidation to ensure cache consistency
         if not any(update_results):
             await invalidate_text_cache_on_update(text_id=text_id, cache_type=cache_type)
