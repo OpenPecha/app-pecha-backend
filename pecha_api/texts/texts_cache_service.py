@@ -172,7 +172,7 @@ async def update_text_details_cache(text_id: str, updated_text_data: TextDTO, ca
 
 
 async def invalidate_text_cache_on_update(text_id: str, cache_type: CacheType = CacheType.TEXT_DETAIL) -> bool:
-    """Invalidate all cache entries related to a text when it's updated. Handles both text and sheet instances."""
+    #Invalidate all cache entries related to a text when it's updated. Handles both text and sheet instances.
     try:
         # Generate hash keys for all possible cache entries related to this text/sheet
         cache_keys_to_invalidate = []
