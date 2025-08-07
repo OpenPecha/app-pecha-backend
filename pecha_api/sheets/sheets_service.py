@@ -14,6 +14,7 @@ from ..uploads.S3_utils import upload_bytes, generate_presigned_upload_url
 from pecha_api.image_utils import ImageUtils
 from pecha_api.utils import Utils
 from pecha_api.texts.texts_utils import TextUtils
+from pecha_api.texts.texts_cache_service import update_text_details_cache
 
 from pecha_api.users.users_models import Users
 
@@ -292,9 +293,10 @@ async def update_sheet_by_id(
         segment_dict=sheet_segments,
         token=token
     )
+    sheet_details: TextDTO = await TextUtils.get_text_details_by_id(text_id=sheet_id)
     
     # Update cache with new sheet data after successful update
-    await _update_sheet_cache_after_update_(sheet_id=sheet_id)
+    await update_text_details_cache(sheet_id=sheet_id, updated_text_data=sheet_details, cache_type=CacheType.SHEET_DETAIL)
     
     return SheetIdResponse(sheet_id=sheet_id)
 
@@ -501,57 +503,6 @@ async def _update_text_details_(sheet_id: str, update_sheet_request: CreateSheet
         is_published=update_sheet_request.is_published
     )
     await update_text_details(text_id=sheet_id, update_text_request=update_text_request)
-
-
-async def _update_sheet_cache_after_update_(sheet_id: str) -> bool:
-    #Update cached sheet data after successful sheet update
-    
-    try:
-        # Get the updated sheet data
-        updated_sheet_data: TextDTO = await TextUtils.get_text_details_by_id(text_id=sheet_id)
-        
-        # Update TEXT_DETAIL cache
-        sheet_detail_payload = [sheet_id, CacheType.SHEET_DETAIL]
-        sheet_detail_hash_key = Utils.generate_hash_key(payload=sheet_detail_payload)
-        
-        # Update TEXTS_BY_ID_OR_COLLECTION cache  
-        sheet_by_id_payload = [sheet_id, None, None, None, None, CacheType.TEXTS_BY_ID_OR_COLLECTION]
-        sheet_by_id_hash_key = Utils.generate_hash_key(payload=sheet_by_id_payload)
-        
-        # Update SHEETS cache
-        sheets_payload = [None, None, None, None, None, None, CacheType.SHEETS]
-        sheets_hash_key = Utils.generate_hash_key(payload=sheets_payload)
-        
-        # Try to update existing cache entries
-        update_results = []
-        
-        # Update text detail cache
-        is_sheet_detail_updated = await update_cache(hash_key=sheet_detail_hash_key, value=updated_sheet_data)
-        update_results.append(is_sheet_detail_updated)
-        
-        # Update texts by id cache
-        is_sheet_by_id_updated = await update_cache(hash_key=sheet_by_id_hash_key, value=updated_sheet_data)
-        update_results.append(is_sheet_by_id_updated)
-        
-        # Update table of content cache if it exists
-        try:
-            updated_table_of_content = await get_table_of_content_by_sheet_id(sheet_id=sheet_id)
-            if updated_table_of_content:
-                toc_payload = [sheet_id, CacheType.SHEET_TABLE_OF_CONTENT]
-                toc_hash_key = Utils.generate_hash_key(payload=toc_payload)
-                is_toc_updated = await update_cache(hash_key=toc_hash_key, value=updated_table_of_content)
-                update_results.append(is_toc_updated)
-        except Exception as e:
-            logging.warning(f"Could not update table of content cache for sheet {sheet_id}: {str(e)}")
-        
-        # If any updates succeeded, consider it a success
-        if any(update_results):
-            return True
-        else:
-            return False
-            
-    except Exception as e:
-        return False
 
 
 async def _generate_and_upload_sheet_table_of_content(
