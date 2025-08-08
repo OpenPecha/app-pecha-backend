@@ -1,5 +1,6 @@
 import io
 import pytest
+import uuid
 from unittest.mock import patch, MagicMock, AsyncMock
 from fastapi import UploadFile, HTTPException, status
 from pecha_api.error_contants import ErrorConstants
@@ -244,6 +245,9 @@ async def test_create_sheet_invalid_token():
 
 @pytest.mark.asyncio
 async def test_update_sheet_success():
+    # Use proper UUID format for sheet_id
+    sheet_id = str(uuid.uuid4())
+    
     mock_source = [
         Source(
             position=1,
@@ -265,19 +269,19 @@ async def test_update_sheet_success():
         segments=[
             SegmentDTO(
                 id="segment_id_1",
-                text_id="text_id",
+                text_id=sheet_id,
                 content="source_segment_id",
                 type=SegmentType.SOURCE
             ),
             SegmentDTO(
                 id="segment_id_2",
-                text_id="text_id",
+                text_id=sheet_id,
                 content="content",
                 type=SegmentType.CONTENT
             ),
             SegmentDTO(
                 id="segment_id_3",
-                text_id="text_id",
+                text_id=sheet_id,
                 content="image_url",
                 type=SegmentType.IMAGE
             )
@@ -288,6 +292,23 @@ async def test_update_sheet_success():
         source=mock_source,
         is_published=True
     )
+    
+    # Add mock for TextUtils.get_text_details_by_id which is called at the end of update_sheet_by_id
+    mock_text_details = TextDTO(
+        id=sheet_id,
+        title="updated_sheet_title",
+        language="language",
+        group_id="group_id",
+        type=TextType.SHEET,
+        is_published=True,
+        created_date="2021-01-01",
+        updated_date="2021-01-01",
+        published_date="2021-01-01",
+        published_by="test_user",
+        categories=[],
+        views=10
+    )
+    
     with patch("pecha_api.sheets.sheets_service.remove_segments_by_text_id", new_callable=AsyncMock), \
         patch("pecha_api.sheets.sheets_service.validate_user_exists", return_value=True), \
         patch("pecha_api.sheets.sheets_service.remove_table_of_content_by_text_id", new_callable=AsyncMock), \
@@ -297,27 +318,32 @@ async def test_update_sheet_success():
         patch("pecha_api.sheets.sheets_service.delete_segments_details_by_ids_cache", new_callable=AsyncMock), \
         patch("pecha_api.sheets.sheets_service.update_text_details", new_callable=AsyncMock), \
         patch("pecha_api.sheets.sheets_service.create_new_segment", new_callable=AsyncMock, return_value=mock_segment_response), \
-        patch("pecha_api.sheets.sheets_service.create_table_of_content", new_callable=AsyncMock):
+        patch("pecha_api.sheets.sheets_service.create_table_of_content", new_callable=AsyncMock), \
+        patch("pecha_api.sheets.sheets_service.TextUtils.get_text_details_by_id", new_callable=AsyncMock, return_value=mock_text_details), \
+        patch("pecha_api.sheets.sheets_service.update_text_details_cache", new_callable=AsyncMock):
 
         response = await update_sheet_by_id(
-            sheet_id="text_id",
+            sheet_id=sheet_id,
             update_sheet_request=mock_update_sheet_request,
             token="valid_token"
         )
 
         assert response is not None
         assert isinstance(response, SheetIdResponse)
-        assert response.sheet_id == "text_id"
+        assert response.sheet_id == sheet_id
 
 @pytest.mark.asyncio
 async def test_update_sheet_invalid_token():
+    # Use proper UUID format for sheet_id
+    sheet_id = str(uuid.uuid4())
+    
     mock_update_sheet_request = CreateSheetRequest(
         title="updated_sheet_title",
         source=[]
     )
     with pytest.raises(HTTPException) as exc_info:
         await update_sheet_by_id(
-            sheet_id="text_id",
+            sheet_id=sheet_id,
             update_sheet_request=mock_update_sheet_request,
             token="invalid_token"
         )

@@ -474,6 +474,7 @@ async def test_update_text_details_cache_exception_handling():
     )
 
     with patch("pecha_api.texts.texts_cache_service.update_cache", new_callable=AsyncMock, side_effect=Exception("Cache error")) as mock_update_cache, \
+         patch("pecha_api.texts.texts_cache_service.invalidate_multiple_cache_keys", new_callable=AsyncMock) as mock_invalidate_multiple, \
          patch("pecha_api.texts.texts_cache_service.invalidate_text_related_cache", new_callable=AsyncMock) as mock_invalidate, \
          patch("pecha_api.texts.texts_cache_service.Utils.generate_hash_key", return_value="test_hash_key"), \
          patch("pecha_api.texts.texts_cache_service.logging.error") as mock_log:
@@ -482,6 +483,7 @@ async def test_update_text_details_cache_exception_handling():
         
         assert result is False
         mock_invalidate.assert_called_once_with(text_id="text_id_1")
+        # Only one error call from update_text_details_cache since invalidate_text_cache_on_update succeeds
         mock_log.assert_called_once()
 
 @pytest.mark.asyncio
