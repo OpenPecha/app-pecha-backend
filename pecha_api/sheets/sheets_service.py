@@ -296,7 +296,7 @@ async def update_sheet_by_id(
     sheet_details: TextDTO = await TextUtils.get_text_details_by_id(text_id=sheet_id)
     
     # Update cache with new sheet data after successful update
-    await update_text_details_cache(sheet_id=sheet_id, updated_text_data=sheet_details, cache_type=CacheType.SHEET_DETAIL)
+    await update_text_details_cache(text_id=sheet_id, updated_text_data=sheet_details, cache_type=CacheType.SHEET_DETAIL)
     
     return SheetIdResponse(sheet_id=sheet_id)
 

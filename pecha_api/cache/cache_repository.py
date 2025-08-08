@@ -90,7 +90,7 @@ async def clear_cache(hash_key: str = None):
 
 
 async def update_cache(hash_key: str, value: Any) -> bool:
-    #Update existing cache entry with new value, maintaining original TTL if possible
+    #Update existing cache entry with new value, resetting TTL to default timeout
     try:
         client = get_client()
         full_key = _build_key(hash_key)
@@ -100,20 +100,13 @@ async def update_cache(hash_key: str, value: Any) -> bool:
             logging.warning(f"Cache key {hash_key} does not exist, cannot update")
             return False
         
-        # Get current TTL
-        ttl = await client.ttl(full_key)
-        if ttl == -1:  # Key exists but has no expiry
-            ttl = config.get_int("CACHE_DEFAULT_TIMEOUT")
-        elif ttl == -2:  # Key does not exist
-            logging.warning(f"Cache key {hash_key} expired during update")
-            return False
-        
         # Serialize value
         if not isinstance(value, (str, bytes)):
             value = json.dumps(value, default=pydantic_encoder)
         
-        # Update with remaining TTL
-        return bool(await client.setex(full_key, ttl, value))
+        # Update with default TTL (reset TTL)
+        timeout = config.get_int("CACHE_DEFAULT_TIMEOUT")
+        return bool(await client.setex(full_key, timeout, value))
     except Exception:
         logging.error("An error occurred in update_cache", exc_info=True)
         return False
