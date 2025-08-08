@@ -56,7 +56,8 @@ from pecha_api.sheets.sheets_service import (
     _generate_segment_dictionary_,
     _generate_segment_creation_request_payload_,
     _create_sheet_text_,
-    _create_sheet_group_
+    _create_sheet_group_,
+    clean_text
 )
 
 from pecha_api.texts.groups.groups_enums import GroupType
@@ -1639,3 +1640,499 @@ async def test_generate_sheet_detail_dto_with_views():
         assert result.views == 0  # The imported function version uses default value
         assert result.publisher.name == "Test User"
         assert result.total == 1 
+
+# Test cases for clean_text function
+def test_clean_text_success():
+    #Test clean_text with content under max words#
+    content = "This is a test content with less than thirty words total."
+    result = clean_text(content)
+    assert result == "This is a test content with less than thirty words total."
+
+def test_clean_text_exceeds_max_words():
+    #Test clean_text with content exceeding max words#
+    content = " ".join([f"word{i}" for i in range(1, 35)])  # 34 words
+    result = clean_text(content)
+    words = result.split()
+    assert len(words) == 30
+    assert result.endswith("...")
+
+def test_clean_text_with_html():
+    #Test clean_text with HTML content#
+    content = "<p>This is <strong>bold</strong> text with <em>italics</em>.</p>"
+    result = clean_text(content)
+    assert result == "This is bold text with italics."
+
+def test_clean_text_empty_content():
+    #Test clean_text with empty content#
+    result = clean_text("")
+    assert result == ""
+
+def test_clean_text_whitespace_only():
+    #Test clean_text with whitespace only content#
+    result = clean_text("   ")
+    assert result == ""
+
+
+# Test cases for _delete_sheet_table_of_content_cache_ function
+@pytest.mark.asyncio
+async def test_delete_sheet_table_of_content_cache_success():
+    #Test _delete_sheet_table_of_content_cache_ with valid table of content#
+    sheet_id = "test_sheet_id"
+    mock_table_of_content = TableOfContent(
+        text_id=sheet_id,
+        sections=[]
+    )
+    
+    with patch("pecha_api.sheets.sheets_service.get_table_of_content_by_sheet_id", new_callable=AsyncMock, return_value=mock_table_of_content), \
+         patch("pecha_api.sheets.sheets_service.delete_table_of_content_by_sheet_id_cache", new_callable=AsyncMock) as mock_delete_cache:
+        
+        from pecha_api.sheets.sheets_service import _delete_sheet_table_of_content_cache_
+        result = await _delete_sheet_table_of_content_cache_(sheet_id=sheet_id)
+        
+        assert result == mock_table_of_content
+        mock_delete_cache.assert_called_once()
+
+@pytest.mark.asyncio
+async def test_delete_sheet_table_of_content_cache_no_content():
+    #Test _delete_sheet_table_of_content_cache_ with no table of content#
+    sheet_id = "test_sheet_id"
+    
+    with patch("pecha_api.sheets.sheets_service.get_table_of_content_by_sheet_id", new_callable=AsyncMock, return_value=None), \
+         patch("pecha_api.sheets.sheets_service.delete_table_of_content_by_sheet_id_cache", new_callable=AsyncMock) as mock_delete_cache:
+        
+        from pecha_api.sheets.sheets_service import _delete_sheet_table_of_content_cache_
+        result = await _delete_sheet_table_of_content_cache_(sheet_id=sheet_id)
+        
+        assert result is None
+        mock_delete_cache.assert_not_called()
+
+
+# Test cases for _delete_sheet_segments_cache_ function
+@pytest.mark.asyncio
+async def test_delete_sheet_segments_cache_with_content():
+    #Test _delete_sheet_segments_cache_ with valid table of content#
+    mock_table_of_content = TableOfContent(
+        text_id="test_id",
+        sections=[
+            Section(
+                id="section_1",
+                section_number=1,
+                segments=[
+                    TextSegment(segment_id="seg_1", segment_number=1),
+                    TextSegment(segment_id="seg_2", segment_number=2)
+                ]
+            )
+        ]
+    )
+    
+    with patch("pecha_api.sheets.sheets_service.delete_segments_details_by_ids_cache", new_callable=AsyncMock) as mock_delete_cache:
+        from pecha_api.sheets.sheets_service import _delete_sheet_segments_cache_
+        await _delete_sheet_segments_cache_(sheet_table_of_content=mock_table_of_content)
+        
+        mock_delete_cache.assert_called_once()
+        call_args = mock_delete_cache.call_args
+        assert "seg_1" in call_args[1]['segment_ids']
+        assert "seg_2" in call_args[1]['segment_ids']
+
+@pytest.mark.asyncio
+async def test_delete_sheet_segments_cache_no_content():
+    #Test _delete_sheet_segments_cache_ with None table of content#
+    with patch("pecha_api.sheets.sheets_service.delete_segments_details_by_ids_cache", new_callable=AsyncMock) as mock_delete_cache:
+        from pecha_api.sheets.sheets_service import _delete_sheet_segments_cache_
+        await _delete_sheet_segments_cache_(sheet_table_of_content=None)
+        
+        mock_delete_cache.assert_called_once()
+        call_args = mock_delete_cache.call_args
+        assert call_args[1]['segment_ids'] == []
+
+
+# Test cases for delete_sheet_by_id unauthorized access
+@pytest.mark.asyncio
+async def test_delete_sheet_forbidden_access():
+    #Test delete_sheet_by_id when user tries to delete another user's sheet#
+    sheet_id = "test_sheet_id"
+    token = "valid_token"
+    
+    text_details = TextDTO(
+        id=sheet_id,
+        title="sheet_title",
+        language="language",
+        group_id="group_id",
+        type=TextType.SHEET,
+        is_published=True,
+        created_date="2021-01-01",
+        updated_date="2021-01-01",
+        published_date="2021-01-01",
+        published_by="owner@gmail.com",  # Different user
+        categories=[],
+        views=10
+    )
+    
+    current_user_details = UserInfoResponse(
+        firstname="Current",
+        lastname="User",
+        username="currentuser",
+        email="current@gmail.com",  # Different email
+        educations=[],
+        followers=0,
+        following=0,
+        social_profiles=[]
+    )
+    
+    with patch("pecha_api.sheets.sheets_service.validate_user_exists", return_value=True), \
+         patch("pecha_api.sheets.sheets_service.TextUtils.get_text_details_by_id", new_callable=AsyncMock, return_value=text_details), \
+         patch("pecha_api.sheets.sheets_service.get_user_info", new_callable=AsyncMock, return_value=current_user_details):
+        
+        with pytest.raises(HTTPException) as exc_info:
+            await delete_sheet_by_id(sheet_id=sheet_id, token=token)
+        
+        assert exc_info.value.status_code == status.HTTP_403_FORBIDDEN
+        assert exc_info.value.detail == ErrorConstants.FORBIDDEN_ERROR_MESSAGE
+
+
+# Test cases for _get_sheet_first_content_details_by_type_ function
+@pytest.mark.asyncio
+async def test_get_sheet_first_content_details_by_type_success():
+    #Test _get_sheet_first_content_details_by_type_ with valid segment IDs#
+    segment_ids = ["seg_1", "seg_2", "seg_3"]
+    mock_segment = SegmentDTO(
+        id="seg_1",
+        text_id="text_id",
+        content="first content",
+        type=SegmentType.CONTENT
+    )
+    
+    with patch("pecha_api.sheets.sheets_service.get_sheet_first_content_by_ids", new_callable=AsyncMock, return_value=mock_segment):
+        from pecha_api.sheets.sheets_service import _get_sheet_first_content_details_by_type_
+        result = await _get_sheet_first_content_details_by_type_(
+            segment_ids=segment_ids, 
+            segment_type=SegmentType.CONTENT
+        )
+        
+        assert result == mock_segment
+
+@pytest.mark.asyncio
+async def test_get_sheet_first_content_details_by_type_no_result():
+    #Test _get_sheet_first_content_details_by_type_ with no matching segments#
+    segment_ids = ["seg_1", "seg_2", "seg_3"]
+    
+    with patch("pecha_api.sheets.sheets_service.get_sheet_first_content_by_ids", new_callable=AsyncMock, return_value=None):
+        from pecha_api.sheets.sheets_service import _get_sheet_first_content_details_by_type_
+        result = await _get_sheet_first_content_details_by_type_(
+            segment_ids=segment_ids, 
+            segment_type=SegmentType.CONTENT
+        )
+        
+        assert result is None
+
+
+# Test cases for _get_all_segment_ids_in_table_of_content_ edge cases
+def test_get_all_segment_ids_empty_segments():
+    #Test _get_all_segment_ids_in_table_of_content_ with sections containing no segments#
+    sheet_sections = [
+        Section(
+            id="section_1",
+            section_number=1,
+            segments=[]
+        ),
+        Section(
+            id="section_2", 
+            section_number=2,
+            segments=[]
+        )
+    ]
+    
+    result = _get_all_segment_ids_in_table_of_content_(sheet_sections=sheet_sections)
+    assert result == []
+
+def test_get_all_segment_ids_multiple_sections():
+    #Test _get_all_segment_ids_in_table_of_content_ with multiple sections#
+    sheet_sections = [
+        Section(
+            id="section_1",
+            section_number=1,
+            segments=[
+                TextSegment(segment_id="seg_1", segment_number=1),
+                TextSegment(segment_id="seg_2", segment_number=2)
+            ]
+        ),
+        Section(
+            id="section_2",
+            section_number=2, 
+            segments=[
+                TextSegment(segment_id="seg_3", segment_number=1),
+                TextSegment(segment_id="seg_4", segment_number=2)
+            ]
+        )
+    ]
+    
+    result = _get_all_segment_ids_in_table_of_content_(sheet_sections=sheet_sections)
+    assert result == ["seg_1", "seg_2", "seg_3", "seg_4"]
+
+
+# Test cases for fetch_sheets with specific parameters
+@pytest.mark.asyncio
+async def test_fetch_sheets_with_sort_parameters():
+    #Test fetch_sheets with sorting parameters#
+    mock_user = UserInfoResponse(
+        firstname="Test",
+        lastname="User", 
+        username="testuser",
+        email="test@example.com",
+        educations=[],
+        followers=0,
+        following=0,
+        social_profiles=[]
+    )
+    mock_sheets = _generate_mock_sheets_response_()
+    
+    with patch("pecha_api.sheets.sheets_service.get_sheet", new_callable=AsyncMock, return_value=mock_sheets) as mock_get_sheet, \
+         patch("pecha_api.sheets.sheets_service.Utils.time_passed", return_value="1 day ago"), \
+         patch("pecha_api.sheets.sheets_service.fetch_user_by_email", return_value=mock_user):
+        
+        result = await fetch_sheets(
+            token="valid_token",
+            language="en",
+            email=None,
+            sort_by=SortBy.CREATED_DATE,
+            sort_order=SortOrder.ASC,
+            skip=5,
+            limit=20
+        )
+        
+        # Verify get_sheet was called with correct parameters
+        mock_get_sheet.assert_called_once_with(
+            is_published=True,
+            sort_by=SortBy.CREATED_DATE,
+            sort_order=SortOrder.ASC,
+            skip=5,
+            limit=20
+        )
+        
+        assert isinstance(result, SheetDTOResponse)
+        assert result.skip == 5
+        assert result.limit == 20
+
+
+# Additional test for upload_sheet_image_request error handling
+def test_upload_sheet_image_request_validation_error():
+    #Test upload_sheet_image_request when image validation fails#
+    file_content = io.BytesIO(b"invalid_image_data")
+    mock_file = MagicMock(spec=UploadFile)
+    mock_file.filename = "test.jpg"
+    mock_file.file = file_content
+    mock_file.content_type = "image/jpeg"
+    
+    with patch("pecha_api.sheets.sheets_service.ImageUtils.validate_and_compress_image", side_effect=HTTPException(status_code=400, detail="Invalid image")):
+        with pytest.raises(HTTPException) as exc_info:
+            upload_sheet_image_request(sheet_id="test_id", file=mock_file)
+        
+        assert exc_info.value.status_code == 400
+        assert exc_info.value.detail == "Invalid image"
+
+
+# Test case for _generate_sheet_detail_dto_ with different publisher name scenarios
+@pytest.mark.asyncio
+async def test_generate_sheet_detail_dto_empty_publisher_name():
+    #Test _generate_sheet_detail_dto_ with empty publisher first/last name#
+    sheet_details = TextDTO(
+        id="sheet_id",
+        title="Test Sheet",
+        language="en",
+        group_id="group_id",
+        type=TextType.SHEET,
+        is_published=True,
+        created_date="2021-01-01",
+        updated_date="2021-01-01",
+        published_date="2021-01-01", 
+        published_by="test@example.com",
+        categories=[],
+        views=50
+    )
+    
+    user_details = UserInfoResponse(
+        firstname="",  # Empty first name
+        lastname="",   # Empty last name
+        username="testuser",
+        email="test@example.com",
+        educations=[],
+        followers=0,
+        following=0,
+        social_profiles=[]
+    )
+    
+    sheet_sections = []
+    
+    with patch("pecha_api.sheets.sheets_service.get_segments_details_by_ids", new_callable=AsyncMock, return_value={}):
+        result = await _generate_sheet_detail_dto_(
+            sheet_details=sheet_details,
+            user_details=user_details,
+            sheet_sections=sheet_sections,
+            skip=0,
+            limit=10
+        )
+        
+        assert isinstance(result, SheetDetailDTO)
+        assert result.id == "sheet_id"
+        assert result.publisher.name == " "  # Empty first and last name results in a space character
+
+
+# Test case for _generate_sheet_section_ with SOURCE segment error handling
+@pytest.mark.asyncio
+async def test_generate_sheet_section_source_segment_error():
+    #Test _generate_sheet_section_ when source text details cannot be retrieved#
+    segments = [
+        TextSegment(segment_id="source_segment", segment_number=1)
+    ]
+    
+    segments_dict = {
+        "source_segment": SegmentDTO(
+            id="source_segment",
+            text_id="invalid_text_id",
+            content="source_content",
+            type=SegmentType.SOURCE
+        )
+    }
+    
+    with patch("pecha_api.sheets.sheets_service.TextUtils.get_text_details_by_id", new_callable=AsyncMock, side_effect=HTTPException(status_code=404, detail="Text not found")):
+        
+        with pytest.raises(HTTPException):
+            await _generate_sheet_section_(segments=segments, segments_dict=segments_dict)
+
+
+# Test case for create_new_sheet with invalid token in internal function
+@pytest.mark.asyncio
+async def test_create_new_sheet_group_creation_error():
+    #Test create_new_sheet when group creation fails#
+    mock_create_sheet_request = CreateSheetRequest(
+        title="Test Sheet",
+        source=[],
+        is_published=True
+    )
+    
+    with patch("pecha_api.sheets.sheets_service.create_new_group", new_callable=AsyncMock, side_effect=HTTPException(status_code=401, detail="Unauthorized")):
+        
+        with pytest.raises(HTTPException) as exc_info:
+            await create_new_sheet(
+                create_sheet_request=mock_create_sheet_request,
+                token="invalid_token"
+            )
+        
+        assert exc_info.value.status_code == 401
+
+
+# Test case for update_sheet_by_id cache deletion error handling
+@pytest.mark.asyncio
+async def test_update_sheet_cache_deletion_error():
+    #Test update_sheet_by_id when cache deletion fails - should propagate the error#
+    sheet_id = str(uuid.uuid4())
+    mock_update_request = CreateSheetRequest(
+        title="Updated Title",
+        source=[
+            Source(position=1, type=SegmentType.CONTENT, content="test content")
+        ],
+        is_published=True
+    )
+    
+    with patch("pecha_api.sheets.sheets_service.validate_user_exists", return_value=True), \
+         patch("pecha_api.sheets.sheets_service.delete_text_details_by_id_cache", new_callable=AsyncMock, side_effect=Exception("Cache error")):
+        
+        # Should propagate the cache error since there's no error handling in the function
+        with pytest.raises(Exception) as exc_info:
+            await update_sheet_by_id(
+                sheet_id=sheet_id,
+                update_sheet_request=mock_update_request,
+                token="valid_token"
+            )
+        
+        assert str(exc_info.value) == "Cache error"
+
+
+# Test case for _generate_segment_dictionary_ with mixed segment types
+def test_generate_segment_dictionary_mixed_types():
+    #Test _generate_segment_dictionary_ with mixed segment types including SOURCE#
+    segments_response = SegmentResponse(
+        segments=[
+            SegmentDTO(
+                id="content_seg",
+                text_id="text_id",
+                content="content text",
+                type=SegmentType.CONTENT
+            ),
+            SegmentDTO(
+                id="source_seg",
+                text_id="text_id", 
+                content="source_id",
+                type=SegmentType.SOURCE
+            ),
+            SegmentDTO(
+                id="image_seg",
+                text_id="text_id",
+                content="image_url",
+                type=SegmentType.IMAGE
+            )
+        ]
+    )
+    
+    result = _generate_segment_dictionary_(new_segments=segments_response)
+    
+    # Should only contain non-SOURCE segments
+    content_hash = hashlib.sha256("content text".encode()).hexdigest()
+    image_hash = hashlib.sha256("image_url".encode()).hexdigest()
+    source_hash = hashlib.sha256("source_id".encode()).hexdigest()
+    
+    assert content_hash in result
+    assert image_hash in result
+    assert source_hash not in result
+    assert result[content_hash] == "content_seg"
+    assert result[image_hash] == "image_seg"
+
+
+# Test case for _generate_segment_creation_request_payload_ with only SOURCE segments
+def test_generate_segment_creation_request_payload_only_sources():
+    #Test _generate_segment_creation_request_payload_ with only SOURCE type segments#
+    create_request = CreateSheetRequest(
+        title="Test Sheet",
+        source=[
+            Source(position=1, type=SegmentType.SOURCE, content="source_id_1"),
+            Source(position=2, type=SegmentType.SOURCE, content="source_id_2")
+        ],
+        is_published=True
+    )
+    
+    result = _generate_segment_creation_request_payload_(
+        create_sheet_request=create_request,
+        text_id="test_text_id"
+    )
+    
+    assert isinstance(result, CreateSegmentRequest)
+    assert result.text_id == "test_text_id"
+    assert len(result.segments) == 0  # Should exclude all SOURCE segments
+
+
+# Test case for _create_sheet_text_ with invalid token
+@pytest.mark.asyncio
+async def test_create_sheet_text_invalid_token():
+    #Test _create_sheet_text_ with invalid token#
+    with patch("pecha_api.sheets.sheets_service.validate_and_extract_user_details", side_effect=HTTPException(status_code=401, detail="Invalid token")):
+        
+        with pytest.raises(HTTPException) as exc_info:
+            await _create_sheet_text_(
+                title="Test Sheet",
+                token="invalid_token", 
+                group_id="group_id"
+            )
+        
+        assert exc_info.value.status_code == 401
+
+
+# Test case for _create_sheet_group_ with invalid token
+@pytest.mark.asyncio
+async def test_create_sheet_group_invalid_token():
+    #Test _create_sheet_group_ with invalid token#
+    with patch("pecha_api.sheets.sheets_service.create_new_group", new_callable=AsyncMock, side_effect=HTTPException(status_code=401, detail="Invalid token")):
+        
+        with pytest.raises(HTTPException) as exc_info:
+            await _create_sheet_group_(token="invalid_token")
+        
+        assert exc_info.value.status_code == 401
