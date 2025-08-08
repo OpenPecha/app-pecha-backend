@@ -34,7 +34,7 @@ DEFAULTS = dict(
     CACHE_PORT=6379,
     CACHE_DB=0,
     CACHE_PREFIX="pecha:",
-    CACHE_DEFAULT_TIMEOUT=30, # 30 seconds in seconds
+    CACHE_DEFAULT_TIMEOUT=3000000, # 30 seconds in seconds
     CACHE_CONNECTION_STRING="redis://localhost:6379",
 
     SHORT_URL_GENERATION_ENDPOINT="https://url-shortening-14682653622-b69c6fd.onrender.com/api/v1",

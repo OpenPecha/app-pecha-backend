@@ -44,7 +44,9 @@ from pecha_api.texts.texts_cache_service import (
     set_text_versions_by_group_id_cache,
     get_table_of_content_by_sheet_id_cache,
     set_table_of_content_by_sheet_id_cache,
-    delete_table_of_content_by_sheet_id_cache
+    delete_table_of_content_by_sheet_id_cache,
+    update_text_details_cache,
+    invalidate_text_cache_on_update
 )
 from pecha_api.sheets.sheets_enum import (
     SortBy,
@@ -64,6 +66,8 @@ from typing import List, Dict, Optional, Tuple, Set
 from pecha_api.config import get
 from pecha_api.utils import Utils
 from .texts_enums import PaginationDirection
+
+import logging
 
 
 async def get_text_by_text_id_or_collection(
@@ -443,7 +447,20 @@ async def update_text_details(text_id: str, update_text_request: UpdateTextReque
     text_details.updated_date = Utils.get_utc_date_time()
     text_details.title = update_text_request.title
     text_details.is_published = update_text_request.is_published
-    return await update_text_details_by_id(text_id=text_id, update_text_request=update_text_request)
+    
+    # Update the text details in the database
+    updated_text = await update_text_details_by_id(text_id=text_id, update_text_request=update_text_request)
+    
+    # Update the cache with the new text details
+    try:
+        await update_text_details_cache(text_id=text_id, updated_text_data=updated_text)
+    except Exception as e:
+        # If cache update fails, log the error but don't fail the entire operation
+        # Fallback to cache invalidation to ensure consistency
+        logging.error(f"Failed to update cache for text_id {text_id}: {str(e)}")
+        await invalidate_text_cache_on_update(text_id=text_id)
+    
+    return updated_text
 
 async def delete_text_by_text_id(text_id: str):
     is_valid_text = await TextUtils.validate_text_exists(text_id=text_id)

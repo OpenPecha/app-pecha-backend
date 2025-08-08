@@ -14,6 +14,7 @@ from ..uploads.S3_utils import upload_bytes, generate_presigned_upload_url
 from pecha_api.image_utils import ImageUtils
 from pecha_api.utils import Utils
 from pecha_api.texts.texts_utils import TextUtils
+from pecha_api.texts.texts_cache_service import update_text_details_cache
 
 from pecha_api.users.users_models import Users
 
@@ -96,6 +97,9 @@ from pecha_api.texts.segments.segments_cache_service import (
 )
 
 from pecha_api.cache.cache_enums import CacheType
+from pecha_api.cache.cache_repository import update_cache
+from pecha_api.utils import Utils
+import logging
 
 DEFAULT_SHEET_SECTION_NUMBER = 1
 
@@ -289,6 +293,11 @@ async def update_sheet_by_id(
         segment_dict=sheet_segments,
         token=token
     )
+    sheet_details: TextDTO = await TextUtils.get_text_details_by_id(text_id=sheet_id)
+    
+    # Update cache with new sheet data after successful update
+    await update_text_details_cache(text_id=sheet_id, updated_text_data=sheet_details, cache_type=CacheType.SHEET_DETAIL)
+    
     return SheetIdResponse(sheet_id=sheet_id)
 
 async def _delete_sheet_table_of_content_cache_(sheet_id: str) -> Optional[TableOfContent]:
