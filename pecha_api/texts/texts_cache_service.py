@@ -7,7 +7,8 @@ from pecha_api.cache.cache_repository import (
     clear_cache,
     update_cache,
     invalidate_text_related_cache,
-    invalidate_multiple_cache_keys
+    invalidate_multiple_cache_keys,
+    get_cache_timeout_config_key
 )
 from .texts_response_models import (
     DetailTableOfContentResponse,
@@ -26,7 +27,7 @@ async def set_text_details_cache(text_id: str = None, content_id: str = None, ve
     """Set text details cache asynchronously."""
     payload = [text_id, content_id, version_id, skip, limit, cache_type]
     hashed_key: str = Utils.generate_hash_key(payload = payload)
-    await set_cache(hash_key =hashed_key, value = data)
+    await set_cache(hash_key=hashed_key, value=data, cache_time_out=cache_timeout_key)
 
 async def get_text_details_cache(text_id: str = None, content_id: str = None, version_id: str = None, skip: int = None, limit: int = None, cache_type: CacheType = None) -> DetailTableOfContentResponse:
     """Get text details cache asynchronously."""
@@ -49,10 +50,11 @@ async def get_text_by_text_id_or_collection_cache(text_id: str = None, collectio
 
 
 async def set_text_by_text_id_or_collection_cache(text_id: str = None, collection_id: str = None, language: str = None, skip: int = None, limit: int = None, cache_type: CacheType = None, data: TextsCategoryResponse = None):
-    """Set text by text id or collection cache asynchronously."""
+    """Set text by text_id or collection cache asynchronously."""
     payload = [text_id, collection_id, language, skip, limit, cache_type]
     hashed_key: str = Utils.generate_hash_key(payload = payload)
-    await set_cache(hash_key = hashed_key, value = data)
+    cache_timeout_key = get_cache_timeout_config_key(cache_type)
+    await set_cache(hash_key=hashed_key, value=data, cache_time_out=cache_timeout_key)
 
 async def get_table_of_contents_by_text_id_cache(text_id: str = None, language: str = None, skip: int = None, limit: int = None, cache_type: CacheType = None) -> TableOfContentResponse:
     """Get table of contents by text id cache asynchronously."""
@@ -64,10 +66,11 @@ async def get_table_of_contents_by_text_id_cache(text_id: str = None, language: 
     return cache_data
 
 async def set_table_of_contents_by_text_id_cache(text_id: str = None, language: str = None, skip: int = None, limit: int = None, data: TableOfContentResponse = None, cache_type: CacheType = None):
-    """Set table of contents by text id cache asynchronously."""
+    """Set table of contents by text_id cache asynchronously."""
     payload = [text_id, language, skip, limit, cache_type]
     hashed_key: str = Utils.generate_hash_key(payload = payload)
-    await set_cache(hash_key = hashed_key, value = data)
+    cache_timeout_key = get_cache_timeout_config_key(cache_type)
+    await set_cache(hash_key=hashed_key, value=data, cache_time_out=cache_timeout_key)
 
 async def get_table_of_content_by_sheet_id_cache(sheet_id: str = None, cache_type: CacheType = None) -> Optional[TableOfContent]:
     payload = [sheet_id, cache_type]
@@ -78,9 +81,11 @@ async def get_table_of_content_by_sheet_id_cache(sheet_id: str = None, cache_typ
     return cache_data
 
 async def set_table_of_content_by_sheet_id_cache(sheet_id: str = None, cache_type: CacheType = None, data: TableOfContent = None):
+    #Set table of content by sheet id cache asynchronously.
     payload = [sheet_id, cache_type]
     hashed_key: str = Utils.generate_hash_key(payload = payload)
-    await set_cache(hash_key = hashed_key, value = data)
+    cache_time_out = config.get_int("CACHE_SHEET_TIMEOUT")
+    await set_cache(hash_key=hashed_key, value=data, cache_time_out=cache_time_out)
     
 async def delete_table_of_content_by_sheet_id_cache(sheet_id: str = None, cache_type: CacheType = None):
     payload = [sheet_id, cache_type]
@@ -88,7 +93,7 @@ async def delete_table_of_content_by_sheet_id_cache(sheet_id: str = None, cache_
     await clear_cache(hash_key = hashed_key)
 
 async def get_text_versions_by_group_id_cache(text_id: str = None, language: str = None, skip: int = None, limit: int = None, cache_type: CacheType = None) -> TextVersionResponse:
-    """Get text versions by group id cache asynchronously."""
+    #Get text versions by group_id cache asynchronously.
     payload = [text_id, language, skip, limit, cache_type]
     hashed_key: str = Utils.generate_hash_key(payload = payload)
     cache_data: TextVersionResponse = await get_cache_data(hash_key = hashed_key)
@@ -96,16 +101,19 @@ async def get_text_versions_by_group_id_cache(text_id: str = None, language: str
         cache_data = TextVersionResponse(**cache_data)
     return cache_data
 
-async def set_text_versions_by_group_id_cache(text_id: str = None, language: str = None, skip: int = None, limit: int = None, cache_type: CacheType = None, data: TextVersionResponse = None):
-    """Set text versions by group id cache asynchronously."""
+async def set_text_versions_by_group_id_cache(text_id: str = None, language: str = None, skip: int = None, limit: int = None, data: TextVersionResponse = None, cache_type: CacheType = None):
+    #Set text versions by group_id cache asynchronously.
     payload = [text_id, language, skip, limit, cache_type]
     hashed_key: str = Utils.generate_hash_key(payload = payload)
-    await set_cache(hash_key = hashed_key, value = data)
+    cache_time_out = config.get_int("CACHE_TEXT_VERSIONS_TIMEOUT")
+    await set_cache(hash_key=hashed_key, value=data, cache_time_out=cache_time_out)
 
 async def set_text_details_by_id_cache(text_id: str = None, cache_type: CacheType = None, data: TextDTO = None):
+    """Set text details by id cache asynchronously."""
     payload = [text_id, cache_type]
     hashed_key: str = Utils.generate_hash_key(payload = payload)
-    await set_cache(hash_key = hashed_key, value = data)
+    cache_time_out = config.get_int("CACHE_TEXT_DETAIL_TIMEOUT")
+    await set_cache(hash_key=hashed_key, value=data, cache_time_out=cache_time_out)
 
 async def get_text_details_by_id_cache(text_id: str = None, cache_type: CacheType = None) -> TextDTO:
     payload = [text_id, cache_type]
@@ -139,11 +147,11 @@ async def update_text_details_cache(text_id: str, updated_text_data: TextDTO, ca
         update_results = []
         
         # Update primary cache (text detail or sheet detail)
-        is_primary_cache_updated = await update_cache(hash_key=primary_cache_hash_key, value=updated_text_data)
+        is_primary_cache_updated = await update_cache(hash_key=primary_cache_hash_key, value=updated_text_data, cache_type=cache_type)
         update_results.append(is_primary_cache_updated)
         
         # Update texts by id cache
-        is_texts_by_id_updated = await update_cache(hash_key=texts_by_id_hash_key, value=updated_text_data)
+        is_texts_by_id_updated = await update_cache(hash_key=texts_by_id_hash_key, value=updated_text_data, cache_type=CacheType.TEXTS_BY_ID_OR_COLLECTION)
         update_results.append(is_texts_by_id_updated)
         
         # For sheets, also try to update table of content cache
@@ -154,7 +162,7 @@ async def update_text_details_cache(text_id: str, updated_text_data: TextDTO, ca
                 if updated_table_of_content:
                     toc_payload = [text_id, CacheType.SHEET_TABLE_OF_CONTENT]
                     toc_hash_key = Utils.generate_hash_key(payload=toc_payload)
-                    is_toc_updated = await update_cache(hash_key=toc_hash_key, value=updated_table_of_content)
+                    is_toc_updated = await update_cache(hash_key=toc_hash_key, value=updated_table_of_content, cache_type=CacheType.SHEET_TABLE_OF_CONTENT)
                     update_results.append(is_toc_updated)
             except Exception as e:
                 logging.warning(f"Could not update table of content cache for sheet {text_id}: {str(e)}")
