@@ -27,57 +27,13 @@ def _build_key(key: str) -> str:
     return f"{prefix}{key}"
 
 
-def _get_cache_timeout(cache_type: Optional[CacheType] = None) -> int:
-    """Get cache timeout based on cache type"""
-    if cache_type is None:
-        return config.get_int("CACHE_DEFAULT_TIMEOUT")
-    
-    # Map cache types to their specific timeout configurations
-    timeout_mapping = {
-        # Text-related cache types
-        CacheType.TEXT_DETAIL: "CACHE_TEXT_TIMEOUT",
-        CacheType.TEXT_VERSIONS: "CACHE_TEXT_TIMEOUT", 
-        CacheType.TEXTS_BY_ID_OR_COLLECTION: "CACHE_TEXT_TIMEOUT",
-        CacheType.TEXT_TABLE_OF_CONTENTS: "CACHE_TEXT_TIMEOUT",
-        CacheType.DETAIL_TEXT_TABLE_OF_CONTENT: "CACHE_TEXT_TIMEOUT",
-        
-        # Sheet-related cache types  
-        CacheType.SHEETS: "CACHE_SHEET_TIMEOUT",
-        CacheType.SHEET_DETAIL: "CACHE_SHEET_TIMEOUT",
-        CacheType.SHEET_TABLE_OF_CONTENT: "CACHE_SHEET_TIMEOUT",
-        
-        # User-related cache types
-        CacheType.USER_INFO: "CACHE_USER_TIMEOUT",
-        
-        # Topic-related cache types
-        CacheType.TOPICS: "CACHE_TOPIC_TIMEOUT",
-        
-        # Collection-related cache types
-        CacheType.COLLECTIONS: "CACHE_COLLECTION_TIMEOUT",
-        CacheType.COLLECTION_DETAIL: "CACHE_COLLECTION_TIMEOUT",
-        
-        # Segment-related cache types
-        CacheType.SEGMENT_DETAIL: "CACHE_SEGMENT_TIMEOUT",
-        CacheType.SEGMENTS_DETAILS: "CACHE_SEGMENT_TIMEOUT",
-        CacheType.SEGMENT_INFO: "CACHE_SEGMENT_TIMEOUT",
-        CacheType.SEGMENT_ROOT_TEXT: "CACHE_SEGMENT_TIMEOUT",
-        CacheType.SEGMENT_TRANSLATIONS: "CACHE_SEGMENT_TIMEOUT",
-        CacheType.SEGMENT_COMMENTARIES: "CACHE_SEGMENT_TIMEOUT",
-        
-        # Group-related cache types
-        CacheType.GROUP_DETAIL: "CACHE_GROUP_TIMEOUT",
-    }
-    
-    config_key = timeout_mapping.get(cache_type, "CACHE_DEFAULT_TIMEOUT")
-    return config.get_int(config_key)
 
-
-async def set_cache(hash_key: str, value: Any, cache_type: Optional[CacheType] = None) -> bool:
-    """Set value in cache with type-specific timeout"""
+async def set_cache(hash_key: str, value: Any, cache_time_out: str = "CACHE_DEFAULT_TIMEOUT") -> bool:
+    #Set value in cache with type-specific timeout
     try:
         client = get_client()
         full_key = _build_key(hash_key)
-        timeout = _get_cache_timeout(cache_type)
+        timeout = config.get_int(cache_time_out)
         if not isinstance(value, (str, bytes)):
             value = json.dumps(value, default=pydantic_encoder)
         return bool(await client.setex(full_key, timeout, value))
@@ -135,7 +91,7 @@ async def clear_cache(hash_key: str = None):
         return False
 
 
-async def update_cache(hash_key: str, value: Any, cache_type: Optional[CacheType] = None) -> bool:
+async def update_cache(hash_key: str, value: Any, cache_time_out: str = "CACHE_DEFAULT_TIMEOUT") -> bool:
     """Update existing cache entry with new value, resetting TTL to type-specific timeout"""
     try:
         client = get_client()
@@ -150,8 +106,7 @@ async def update_cache(hash_key: str, value: Any, cache_type: Optional[CacheType
         if not isinstance(value, (str, bytes)):
             value = json.dumps(value, default=pydantic_encoder)
         
-        # Update with type-specific TTL (reset TTL)
-        timeout = _get_cache_timeout(cache_type)
+        timeout = config.get_int(cache_time_out)
         return bool(await client.setex(full_key, timeout, value))
     except Exception:
         logging.error("An error occurred in update_cache", exc_info=True)
