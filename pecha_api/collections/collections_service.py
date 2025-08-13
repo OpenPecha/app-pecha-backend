@@ -8,6 +8,14 @@ from ..config import get
 from ..collections.collections_response_models import CollectionModel, CollectionsResponse, Pagination, CreateCollectionRequest, UpdateCollectionRequest
 from .collections_repository import get_child_count, get_collections_by_parent, create_collection, update_collection_titles, delete_collection, \
     get_collection_by_id
+from .collections_cache_service import (
+    get_collections_cache,
+    set_collections_cache,
+    get_collection_detail_cache,
+    set_collection_detail_cache,
+    delete_collection_cache
+)
+from pecha_api.cache.cache_enums import CacheType
 from ..users.users_service import verify_admin_access
 from fastapi import HTTPException
 
@@ -15,6 +23,20 @@ from fastapi import HTTPException
 async def get_all_collections(language: str, parent_id: Optional[str], skip: int, limit: int) -> CollectionsResponse:
     if language is None:
         language = get("DEFAULT_LANGUAGE")
+    
+    # Try to get from cache first
+    cached_data = await get_collections_cache(
+        parent_id=parent_id,
+        language=language,
+        skip=skip,
+        limit=limit,
+        cache_type=CacheType.COLLECTIONS
+    )
+    
+    if cached_data:
+        return cached_data
+    
+    # If not in cache, fetch from database
     total = await get_child_count(parent_id=parent_id)
     parent_collection = await get_collection(collection_id=parent_id,language=language)
     collections = await get_collections_by_parent(
@@ -36,6 +58,17 @@ async def get_all_collections(language: str, parent_id: Optional[str], skip: int
     pagination = Pagination(total=total, skip=skip, limit=limit)
 
     collection_response = CollectionsResponse(parent=parent_collection, pagination=pagination, collections=collection_list)
+    
+    # Cache the result
+    await set_collections_cache(
+        parent_id=parent_id,
+        language=language,
+        skip=skip,
+        limit=limit,
+        data=collection_response,
+        cache_type=CacheType.COLLECTIONS
+    )
+    
     return collection_response
 
 
@@ -58,9 +91,23 @@ async def create_new_collection(create_collection_request: CreateCollectionReque
     raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail=ErrorConstants.ADMIN_ERROR_MESSAGE)
 
 async def get_collection(collection_id: str,language: str) -> Optional[CollectionModel]:
+    if collection_id is None:
+        return None
+        
+    # Try to get from cache first
+    cached_data = await get_collection_detail_cache(
+        collection_id=collection_id,
+        language=language,
+        cache_type=CacheType.COLLECTION_DETAIL
+    )
+    
+    if cached_data:
+        return cached_data
+    
+    # If not in cache, fetch from database
     selected_collection = await get_collection_by_id(collection_id=collection_id)
     if selected_collection:
-        return CollectionModel(
+        collection_model = CollectionModel(
             id=collection_id,
             title=Utils.get_value_from_dict(values=selected_collection.titles, language=language),
             description=Utils.get_value_from_dict(values=selected_collection.descriptions, language=language),
@@ -68,6 +115,16 @@ async def get_collection(collection_id: str,language: str) -> Optional[Collectio
             language=language,
             slug=selected_collection.slug
         )
+        
+        # Cache the result
+        await set_collection_detail_cache(
+            collection_id=collection_id,
+            language=language,
+            data=collection_model,
+            cache_type=CacheType.COLLECTION_DETAIL
+        )
+        
+        return collection_model
     return None
 
 async def update_existing_collection(collection_id: str, update_collection_request: UpdateCollectionRequest, token: str,
