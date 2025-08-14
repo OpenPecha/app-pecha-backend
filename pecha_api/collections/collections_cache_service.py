@@ -4,9 +4,8 @@ from pecha_api.cache.cache_repository import (
     get_cache_data,
     set_cache,
     clear_cache,
-    get_cache_timeout_config_key
 )
-from pecha_api.config import config
+from pecha_api import config
 from .collections_response_models import (
     CollectionsResponse,
     CollectionModel

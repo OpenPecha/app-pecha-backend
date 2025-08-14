@@ -9,6 +9,7 @@ from .topics_response_models import (
     CreateTopicRequest
 )
 from pecha_api.cache.cache_enums import CacheType
+from pecha_api import config
 
 
 async def get_topics_cache(parent_id: str = None, language: str = None, search: str = None, hierarchy: bool = None, skip: int = None, limit: int = None, cache_type: CacheType = None) -> TopicsResponse:
@@ -24,4 +25,5 @@ async def set_topics_cache(parent_id: str = None, language: str = None, search: 
     """Set topics cache asynchronously."""
     payload = [parent_id, language, search, hierarchy, skip, limit, cache_type]
     hashed_key: str = Utils.generate_hash_key(payload = payload)
-    await set_cache(hash_key = hashed_key, value = data)
+    cache_time_out = config.get_int("CACHE_TOPIC_TIMEOUT")
+    await set_cache(hash_key=hashed_key, value=data, cache_time_out=cache_time_out)

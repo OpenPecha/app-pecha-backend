@@ -8,7 +8,6 @@ from pecha_api.cache.cache_repository import (
     update_cache,
     invalidate_text_related_cache,
     invalidate_multiple_cache_keys,
-    get_cache_timeout_config_key
 )
 from .texts_response_models import (
     DetailTableOfContentResponse,
