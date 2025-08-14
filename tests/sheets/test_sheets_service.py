@@ -1198,6 +1198,7 @@ async def test_generate_sheet_dto_response():
         assert result.limit == 10
         assert result.total == 5
         assert all(sheet.summary == "Test summary" for sheet in result.sheets)
+        assert all(sheet.is_published is True for sheet in result.sheets)
 
 
 # Test cases for _create_publisher_object_ function
