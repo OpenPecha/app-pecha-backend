@@ -148,11 +148,12 @@ async def update_text_details_cache(text_id: str, updated_text_data: TextDTO, ca
         update_results = []
         
         # Update primary cache (text detail or sheet detail)
-        is_primary_cache_updated = await update_cache(hash_key=primary_cache_hash_key, value=updated_text_data, cache_type=cache_type)
+        cache_time_out = config.get_int("CACHE_TEXT_TIMEOUT")
+        is_primary_cache_updated = await update_cache(hash_key=primary_cache_hash_key, value=updated_text_data, cache_time_out=cache_time_out)
         update_results.append(is_primary_cache_updated)
         
         # Update texts by id cache
-        is_texts_by_id_updated = await update_cache(hash_key=texts_by_id_hash_key, value=updated_text_data, cache_type=CacheType.TEXTS_BY_ID_OR_COLLECTION)
+        is_texts_by_id_updated = await update_cache(hash_key=texts_by_id_hash_key, value=updated_text_data, cache_time_out=cache_time_out)
         update_results.append(is_texts_by_id_updated)
         
         # For sheets, also try to update table of content cache
@@ -163,7 +164,7 @@ async def update_text_details_cache(text_id: str, updated_text_data: TextDTO, ca
                 if updated_table_of_content:
                     toc_payload = [text_id, CacheType.SHEET_TABLE_OF_CONTENT]
                     toc_hash_key = Utils.generate_hash_key(payload=toc_payload)
-                    is_toc_updated = await update_cache(hash_key=toc_hash_key, value=updated_table_of_content, cache_type=CacheType.SHEET_TABLE_OF_CONTENT)
+                    is_toc_updated = await update_cache(hash_key=toc_hash_key, value=updated_table_of_content, cache_time_out=cache_time_out)
                     update_results.append(is_toc_updated)
             except Exception as e:
                 logging.warning(f"Could not update table of content cache for sheet {text_id}: {str(e)}")

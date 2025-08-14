@@ -90,7 +90,7 @@ async def clear_cache(hash_key: str = None):
         return False
 
 
-async def update_cache(hash_key: str, value: Any, cache_time_out: str = "CACHE_DEFAULT_TIMEOUT") -> bool:
+async def update_cache(hash_key: str, value: Any, cache_time_out: int) -> bool:
     """Update existing cache entry with new value, resetting TTL to type-specific timeout"""
     try:
         client = get_client()
@@ -104,9 +104,8 @@ async def update_cache(hash_key: str, value: Any, cache_time_out: str = "CACHE_D
         # Serialize value
         if not isinstance(value, (str, bytes)):
             value = json.dumps(value, default=pydantic_encoder)
-        
-        timeout = config.get_int(cache_time_out)
-        return bool(await client.setex(full_key, timeout, value))
+
+        return bool(await client.setex(full_key, cache_time_out, value))
     except Exception:
         logging.error("An error occurred in update_cache", exc_info=True)
         return False
