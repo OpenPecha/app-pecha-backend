@@ -27,7 +27,7 @@ async def get_segment_details_by_id_cache(segment_id: str = None, text_details: 
 async def set_segment_details_by_id_cache(segment_id: str = None, text_details: bool = None, cache_type: CacheType = None, data: SegmentDTO = None):
     payload = [segment_id, text_details, cache_type]
     hashed_key: str = Utils.generate_hash_key(payload = payload)
-    cache_time_out = config.get_int("CACHE_SEGMENT_TIMEOUT")
+    cache_time_out = config.get_int("CACHE_TEXT_TIMEOUT")
     await set_cache(hash_key=hashed_key, value=data, cache_time_out=cache_time_out)
 
 async def get_segment_info_by_id_cache(segment_id: str = None, cache_type: CacheType = None) -> SegmentInfoResponse:
@@ -41,7 +41,7 @@ async def get_segment_info_by_id_cache(segment_id: str = None, cache_type: Cache
 async def set_segment_info_by_id_cache(segment_id: str = None, cache_type: CacheType = None, data: SegmentInfoResponse = None):
     payload = [segment_id, cache_type]
     hashed_key: str = Utils.generate_hash_key(payload = payload)
-    cache_time_out = config.get_int("CACHE_SEGMENT_TIMEOUT")
+    cache_time_out = config.get_int("CACHE_TEXT_TIMEOUT")
     await set_cache(hash_key=hashed_key, value=data, cache_time_out=cache_time_out)
 
 async def get_segment_root_mapping_by_id_cache(segment_id: str = None) -> SegmentRootMappingResponse:
@@ -55,7 +55,7 @@ async def get_segment_root_mapping_by_id_cache(segment_id: str = None) -> Segmen
 async def set_segment_root_mapping_by_id_cache(segment_id: str = None, cache_type: CacheType = None, data: SegmentRootMappingResponse = None):
     payload = [segment_id, cache_type]
     hashed_key: str = Utils.generate_hash_key(payload = payload)
-    cache_time_out = config.get_int("CACHE_SEGMENT_TIMEOUT")
+    cache_time_out = config.get_int("CACHE_TEXT_TIMEOUT")
     await set_cache(hash_key=hashed_key, value=data, cache_time_out=cache_time_out)
 
 async def get_segment_translations_by_id_cache(segment_id: str = None) -> SegmentTranslationsResponse:
@@ -69,7 +69,7 @@ async def get_segment_translations_by_id_cache(segment_id: str = None) -> Segmen
 async def set_segment_translations_by_id_cache(segment_id: str = None, cache_type: CacheType = None, data: SegmentTranslationsResponse = None):
     payload = [segment_id, cache_type]
     hashed_key: str = Utils.generate_hash_key(payload = payload)
-    cache_time_out = config.get_int("CACHE_SEGMENT_TIMEOUT")
+    cache_time_out = config.get_int("CACHE_TEXT_TIMEOUT")
     await set_cache(hash_key=hashed_key, value=data, cache_time_out=cache_time_out)
 
 async def get_segment_commentaries_by_id_cache(segment_id: str = None) -> SegmentCommentariesResponse:
@@ -83,7 +83,7 @@ async def get_segment_commentaries_by_id_cache(segment_id: str = None) -> Segmen
 async def set_segment_commentaries_by_id_cache(segment_id: str = None, cache_type: CacheType = None, data: SegmentCommentariesResponse = None):
     payload = [segment_id, cache_type]
     hashed_key: str = Utils.generate_hash_key(payload = payload)
-    cache_time_out = config.get_int("CACHE_SEGMENT_TIMEOUT")
+    cache_time_out = config.get_int("CACHE_TEXT_TIMEOUT")
     await set_cache(hash_key=hashed_key, value=data, cache_time_out=cache_time_out)
 
 
@@ -98,7 +98,7 @@ async def get_segments_details_by_ids_cache(segment_ids: List[str] = None, cache
 async def set_segments_details_by_ids_cache(segment_ids: List[str] = None, cache_type: CacheType = None, data: Dict[str, SegmentDTO] = None):
     payload = list(segment_ids) + [cache_type]
     hashed_key: str = Utils.generate_hash_key(payload = payload)
-    cache_time_out = config.get_int("CACHE_SEGMENT_TIMEOUT")
+    cache_time_out = config.get_int("CACHE_TEXT_TIMEOUT")
     await set_cache(hash_key=hashed_key, value=data, cache_time_out=cache_time_out)
 
 async def delete_segments_details_by_ids_cache(segment_ids: List[str] = None, cache_type: CacheType = None):
