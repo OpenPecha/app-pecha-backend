@@ -112,47 +112,32 @@ async def update_cache(hash_key: str, value: Any, cache_time_out: str = "CACHE_D
         return False
 
 
-async def invalidate_cache_entries(text_id: Optional[str] = None, hash_keys: Optional[List[str]] = None) -> bool:
+async def _delete_cache_keys(keys_to_delete: List[str], operation_type: str) -> bool:
+    """Delete a list of full keys and log the operation."""
     try:
         client = get_client()
-        
+        if keys_to_delete:
+            deleted_count = await client.delete(*keys_to_delete)
+            logging.info(f"Invalidated {deleted_count} cache entries for {operation_type}")
+            return deleted_count > 0
+        logging.info(f"No cache entries found for {operation_type}")
+        return True
+    except Exception:
+        logging.error(f"An error occurred while invalidating cache for {operation_type}", exc_info=True)
+        return False
+
+
+async def invalidate_cache_entries(text_id: Optional[str] = None, hash_keys: Optional[List[str]] = None) -> bool:
+    try:
         # Validate input parameters
         if text_id and hash_keys:
             raise ValueError("Cannot specify both text_id and hash_keys. Use one or the other.")
         if not text_id and not hash_keys:
             raise ValueError("Must specify either text_id or hash_keys.")
         
-        keys_to_delete = []
-        
         if text_id:
-            # Pattern-based invalidation for text_id
-            prefix = config.get("CACHE_PREFIX")
-            pattern = f"{prefix}{text_id}"
-            keys_to_delete = await client.keys(pattern)
-            operation_type = f"text_id: {text_id}"
-        else:
-            # Specific hash keys invalidation
-            if not hash_keys:
-                return True
-            
-            # Build full keys
-            full_keys = [_build_key(key) for key in hash_keys]
-            
-            # Filter out non-existent keys
-            for key in full_keys:
-                if await client.exists(key):
-                    keys_to_delete.append(key)
-            
-            operation_type = f"{len(hash_keys)} hash keys"
-        
-        if keys_to_delete:
-            deleted_count = await client.delete(*keys_to_delete)
-            logging.info(f"Invalidated {deleted_count} cache entries for {operation_type}")
-            return deleted_count > 0
-        
-        logging.info(f"No cache entries found for {operation_type}")
-        return True
-        
+            return await invalidate_text_related_cache(text_id)
+        return await invalidate_multiple_cache_keys(hash_keys or [])
     except Exception:
         error_context = f"text_id: {text_id}" if text_id else "multiple cache keys"
         logging.error(f"An error occurred while invalidating cache for {error_context}", exc_info=True)
@@ -161,9 +146,36 @@ async def invalidate_cache_entries(text_id: Optional[str] = None, hash_keys: Opt
 
 async def invalidate_text_related_cache(text_id: str) -> bool:
     """Invalidate all cache entries related to a specific text_id"""
-    return await invalidate_cache_entries(text_id=text_id)
+    try:
+        client = get_client()
+        prefix = config.get("CACHE_PREFIX")
+        pattern = f"{prefix}{text_id}"
+        keys_to_delete = await client.keys(pattern)
+        operation_type = f"text_id: {text_id}"
+        return await _delete_cache_keys(keys_to_delete, operation_type)
+    except Exception:
+        logging.error(f"An error occurred while invalidating cache for text_id: {text_id}", exc_info=True)
+        return False
 
 
 async def invalidate_multiple_cache_keys(hash_keys: List[str]) -> bool:
     """Invalidate multiple cache entries by their hash keys"""
-    return await invalidate_cache_entries(hash_keys=hash_keys)
+    try:
+        if not hash_keys:
+            return True
+        client = get_client()
+        
+        # Build full keys
+        full_keys = [_build_key(key) for key in hash_keys]
+        
+        # Filter out non-existent keys
+        keys_to_delete: List[str] = []
+        for key in full_keys:
+            if await client.exists(key):
+                keys_to_delete.append(key)
+        
+        operation_type = f"{len(hash_keys)} hash keys"
+        return await _delete_cache_keys(keys_to_delete, operation_type)
+    except Exception:
+        logging.error("An error occurred while invalidating multiple cache keys", exc_info=True)
+        return False
