@@ -1,3 +1,4 @@
+from pecha_api import config
 from pecha_api.cache.cache_repository import (
     get_cache_data,
     set_cache,

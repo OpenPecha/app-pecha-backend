@@ -21,6 +21,7 @@ from pecha_api.cache.cache_enums import CacheType
 
 from typing import Optional
 import logging
+from pecha_api import config
 
 async def set_text_details_cache(text_id: str = None, content_id: str = None, version_id: str = None, skip: int = None, limit: int = None, data: DetailTableOfContentResponse = None, cache_type: CacheType = None):
     #Set text details cache asynchronously.
