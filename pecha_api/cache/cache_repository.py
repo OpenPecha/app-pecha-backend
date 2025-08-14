@@ -28,15 +28,14 @@ def _build_key(key: str) -> str:
 
 
 
-async def set_cache(hash_key: str, value: Any, cache_time_out: str = "CACHE_DEFAULT_TIMEOUT") -> bool:
+async def set_cache(hash_key: str, value: Any, cache_time_out: int) -> bool:
     #Set value in cache with type-specific timeout
     try:
         client = get_client()
         full_key = _build_key(hash_key)
-        timeout = config.get_int(cache_time_out)
         if not isinstance(value, (str, bytes)):
             value = json.dumps(value, default=pydantic_encoder)
-        return bool(await client.setex(full_key, timeout, value))
+        return bool(await client.setex(full_key, cache_time_out, value))
     except Exception:
         logging.error("An error occurred in set_cache", exc_info=True)
         return False
