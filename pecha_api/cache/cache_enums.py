@@ -24,3 +24,7 @@ class CacheType(Enum):
 
     TOPICS = "topics"
     
+    # Collection-specific cache types
+    COLLECTIONS = "collections"
+    COLLECTION_DETAIL = "collection_detail"
+    

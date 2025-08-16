@@ -1,6 +1,7 @@
+from pecha_api import config
 from pecha_api.cache.cache_repository import (
     get_cache_data,
-    set_cache
+    set_cache,
 )
 from pecha_api.utils import Utils
 from .user_response_models import (
@@ -21,4 +22,5 @@ async def set_user_info_cache(token: str, data: UserInfoResponse, cache_type: Ca
     """Set user info cache asynchronously."""
     payload = [token, cache_type]
     hashed_key: str = Utils.generate_hash_key(payload = payload)
-    await set_cache(hash_key = hashed_key, value = data)
+    cache_time_out = config.get_int("CACHE_TEXT_TIMEOUT")
+    await set_cache(hash_key=hashed_key, value=data, cache_time_out=cache_time_out)
