@@ -58,6 +58,7 @@ class SheetDTO(BaseModel):
     published_date: str
     time_passed: str
     views: int
+    is_published: bool
     likes: Optional[List[str]] = []
     publisher: Publisher
     language: Optional[str] = None
