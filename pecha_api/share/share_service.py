@@ -100,7 +100,7 @@ def _generate_short_url_payload_(share_request: ShareRequest, og_description: st
     if share_request.segment_id is not None:
         image_url = f"{pecha_backend_endpoint}/share/image?segment_id={share_request.segment_id}&language={share_request.language}&logo={share_request.logo}"
     else:
-        image_url = f"{pecha_backend_endpoint}/share/image?language={share_request.language}&logo={share_request.logo}"
+        image_url = f"{pecha_backend_endpoint}/share/image?text_id={share_request.text_id}&language={share_request.language}&logo={share_request.logo}"
     
     payload = {
         "url": share_request.url,
