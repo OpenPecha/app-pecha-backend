@@ -40,13 +40,12 @@ async def get_generated_image():
         )
 
 async def generate_short_url(share_request: ShareRequest) -> ShortUrlResponse:
-
     og_description = DEFAULT_OG_DESCRIPTION
     if share_request.logo:
         _generate_logo_image_(share_request=share_request)
 
-    elif share_request.segment_id is not None:
-        await _generate_segment_content_image_(share_request=share_request)
+    
+    await _generate_segment_content_image_(share_request=share_request)
         
     payload = _generate_short_url_payload_(share_request=share_request, og_description=og_description)
 
@@ -65,16 +64,22 @@ def _generate_logo_image_(share_request: ShareRequest):
 
 async def _generate_segment_content_image_(share_request: ShareRequest):
 
-    await SegmentUtils.validate_segment_exists(segment_id=share_request.segment_id)
+    segment_text = "PECHA"
+    reference_text = "PECHA"
+    language = "bo"
+    
+    # If segment_id is provided, get the segment details
+    if share_request.segment_id is not None:
+        await SegmentUtils.validate_segment_exists(segment_id=share_request.segment_id)
 
-    segment = await get_segment_details_by_id(segment_id=share_request.segment_id)
+        segment = await get_segment_details_by_id(segment_id=share_request.segment_id)
 
-    text_id = segment.text_id
-    text_detail = await TextUtils.get_text_detail_by_id(text_id=text_id)
+        text_id = segment.text_id
+        text_detail = await TextUtils.get_text_detail_by_id(text_id=text_id)
 
-    segment_text = segment.content
-    reference_text = text_detail.title
-    language = text_detail.language
+        segment_text = segment.content
+        reference_text = text_detail.title
+        language = text_detail.language
 
     generate_segment_image(
         text=segment_text, 
@@ -100,6 +105,8 @@ def _generate_short_url_payload_(share_request: ShareRequest, og_description: st
     pecha_backend_endpoint = get("PECHA_BACKEND_ENDPOINT")
     if share_request.segment_id is not None:
         image_url = f"{pecha_backend_endpoint}/share/image?segment_id={share_request.segment_id}&language={share_request.language}&logo={share_request.logo}"
+    else:
+        image_url = f"{pecha_backend_endpoint}/share/image?language={share_request.language}&logo={share_request.logo}"
     
     payload = {
         "url": share_request.url,

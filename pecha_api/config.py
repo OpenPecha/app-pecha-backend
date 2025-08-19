@@ -37,8 +37,8 @@ DEFAULTS = dict(
     CACHE_DEFAULT_TIMEOUT=3000000, # 30 seconds in seconds
     CACHE_CONNECTION_STRING="redis://localhost:6379",
 
-    SHORT_URL_GENERATION_ENDPOINT="https://url-shortening-14682653622-b69c6fd.onrender.com/api/v1",
-    PECHA_BACKEND_ENDPOINT="https://pecha-backend-12341825340-1fb0112.onrender.com/api/v1",
+    SHORT_URL_GENERATION_ENDPOINT="https://pech.as/api/v1",
+    PECHA_BACKEND_ENDPOINT="http://127.0.0.1:8000/api/v1",
 
     # Search configuration
     ELASTICSEARCH_URL= None,
