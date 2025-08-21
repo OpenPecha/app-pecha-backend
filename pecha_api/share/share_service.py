@@ -64,7 +64,7 @@ def _generate_logo_image_(share_request: ShareRequest):
 
 async def _generate_segment_content_image_(share_request: ShareRequest):
 
-    segment_text = "PECHA"
+    segment_text = get("SITE_NAME")
     text_detail = await TextUtils.get_text_detail_by_id(text_id=share_request.text_id)
     reference_text = text_detail.title
     language = text_detail.language
