@@ -262,7 +262,7 @@ async def test_generate_segment_content_image_without_segment():
         await _generate_segment_content_image_(share_request)
         
         mock_generate_image.assert_called_once_with(
-            text="PECHA",
+            text="Pecha",
             ref_str="Test Title",
             lang="en",
             text_color=TextColor.BLACK,
@@ -288,7 +288,7 @@ def test_generate_short_url_payload_with_provided_url():
         payload = _generate_short_url_payload_(share_request, og_description)
         
         assert payload["url"] == "https://pecha.io/share/123"
-        assert payload["og_title"] == "PECHA"
+        assert payload["og_title"] == "Pecha"
         assert payload["og_description"] == "Test description"
         assert payload["og_image"] == "https://backend.example.com/share/image?segment_id=seg_123&language=en&logo=True"
         assert payload["tags"] == "tag1,tag2"
@@ -313,7 +313,7 @@ def test_generate_short_url_payload_without_url():
         
         expected_url = "https://webuddhist.com/chapter?segment_id=seg_123&contentId=content_456&text_id=text_789&contentIndex=1"
         assert payload["url"] == expected_url
-        assert payload["og_title"] == "PECHA"
+        assert payload["og_title"] == "Pecha"
         assert payload["og_description"] == "Test description"
         assert payload["og_image"] == "https://backend.example.com/share/image?segment_id=seg_123&language=en&logo=False"
         assert payload["tags"] == "tag1"
@@ -337,7 +337,7 @@ def test_generate_short_url_payload_without_segment_id():
         
         expected_url = "https://webuddhist.com/chapter?contentId=content_456&text_id=text_789&contentIndex=1"
         assert payload["url"] == expected_url
-        assert payload["og_title"] == "PECHA"
+        assert payload["og_title"] == "Pecha"
         assert payload["og_description"] == "Test description"
         assert payload["og_image"] == "https://backend.example.com/share/image?text_id=text_789&language=en&logo=False"
         assert payload["tags"] == "tag1"

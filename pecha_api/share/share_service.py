@@ -21,8 +21,8 @@ from pecha_api.error_contants import ErrorConstants
 LOGO_PATH = "pecha_api/share/static/img/pecha-logo.png"
 IMAGE_PATH = "pecha_api/share/static/img/output.png"
 MEDIA_TYPE = "image/png"
-DEFAULT_OG_TITLE = "PECHA"
-DEFAULT_OG_DESCRIPTION = "PECHA"
+DEFAULT_OG_TITLE = get("SITE_NAME")
+DEFAULT_OG_DESCRIPTION = get("SITE_NAME")
 PECHA_FRONTEND_ENDPOINT = "https://webuddhist.com/chapter"
 
 async def get_generated_image():
