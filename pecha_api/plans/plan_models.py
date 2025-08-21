@@ -1,15 +1,15 @@
-from sqlalchemy import Column, Integer, String, DateTime, Boolean, UUID, ForeignKey
+from sqlalchemy import Column, Integer, String, DateTime, Boolean, UUID, Text, Index, text
 from ..db.database import Base
-from _datetime import datetime
 from uuid import uuid4
 import _datetime
+from _datetime import datetime
 from sqlalchemy.orm import relationship
 
 
 class Author(Base):
     __tablename__ = "authors"
 
-    id = Column(BigInteger, primary_key=True, autoincrement=True)
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid4)
     name = Column(String(200), nullable=False)
     bio = Column(Text, nullable=True)
     image_url = Column(String(255), nullable=True)
