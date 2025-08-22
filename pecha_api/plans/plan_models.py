@@ -22,3 +22,35 @@ class Author(Base):
     __table_args__ = (
         Index("idx_authors_verified", "is_verified", postgresql_where=text("is_verified = TRUE")),
     )
+
+
+class Plan(Base):
+    __tablename__ = "plans"
+
+    id = Column(BigInteger, primary_key=True, autoincrement=True)
+    title = Column(String(255), nullable=False)
+    description = Column(Text, nullable=True)
+    author_id = Column(UUID(as_uuid=True), nullable=True)  # Reference to authors table
+    language = Column(String(10), default='en')
+    
+    # Note: difficulty_level enum type would need to be defined separately
+    # difficulty_level = Column(Enum('difficulty_level'), nullable=True)
+    
+    tags = Column(JSONB, nullable=True)  # ['meditation', 'compassion', 'sutra_study', 'dealing_with_loss']
+    featured = Column(Boolean, default=False)
+    is_active = Column(Boolean, default=True)
+    
+    # Content metadata
+    image_url = Column(String(255), nullable=True)
+    
+    created_at = Column(DateTime, default=datetime.now(_datetime.timezone.utc))
+    updated_at = Column(DateTime, default=datetime.now(_datetime.timezone.utc))
+
+    __table_args__ = (
+        # Indexes for plan discovery
+        Index("idx_plans_discovery", "tags", "is_active"),
+        Index("idx_plans_featured", "featured", postgresql_where=text("featured = TRUE")),
+        Index("idx_plans_search", text("to_tsvector('english', title || ' ' || COALESCE(description, ''))"), postgresql_using="gin"),
+        Index("idx_plans_tags", "tags", postgresql_using="gin"),
+    )
+
