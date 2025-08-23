@@ -27,7 +27,7 @@ class Author(Base):
 class Plan(Base):
     __tablename__ = "plans"
 
-    id = Column(BigInteger, primary_key=True, autoincrement=True)
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid4)
     title = Column(String(255), nullable=False)
     description = Column(Text, nullable=True)
     author_id = Column(UUID(as_uuid=True), nullable=True)  # Reference to authors table
