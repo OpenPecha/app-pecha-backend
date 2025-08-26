@@ -11,7 +11,8 @@ from pecha_api.plans.plan_items.plan_items_models import PlanItem
 from pecha_api.plans.plan_tasks.plan_tasks_models import PlanTask
 from pecha_api.plans.user_plans.user_plan_progress import UserPlanProgress
 from pecha_api.plans.user_task.user_task_completion import UserTaskCompletion
-from pecha_api.plans.plan_reviews.plan_reviews import PlanReview
+from pecha_api.plans.plan_reviews.plan_reviews import PlanReview    
+from pecha_api.plans.plan_favorite.favorites import Favorite
 
 # this is the Alembic Config object, which provides
 # access to the values within the .ini file in use.
