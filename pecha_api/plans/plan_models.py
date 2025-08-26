@@ -1,9 +1,10 @@
-from sqlalchemy import Column, Integer, String, DateTime, Boolean, UUID, Text, Index, text
+from sqlalchemy import Column, String, DateTime, Boolean, UUID, Text, Index, text
 from ..db.database import Base
 from uuid import uuid4
 import _datetime
 from _datetime import datetime
 from sqlalchemy.orm import relationship
+from sqlalchemy.dialects.postgresql import JSONB
 
 
 class Author(Base):
