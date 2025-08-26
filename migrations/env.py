@@ -10,6 +10,7 @@ from pecha_api.plans.plan_models import Author, Plan
 from pecha_api.plans.plan_items.plan_items_models import PlanItem
 from pecha_api.plans.plan_tasks.plan_tasks_models import PlanTask
 from pecha_api.user_plans.user_plan_progress import UserPlanProgress
+from pecha_api.user_task.user_task_completion import UserTaskCompletion
 
 # this is the Alembic Config object, which provides
 # access to the values within the .ini file in use.
