@@ -5,8 +5,8 @@ from _datetime import datetime
 import _datetime
 from sqlalchemy.orm import relationship
 
-from ..db.database import Base
-from ..plans.plan_enums import UserPlanStatus
+from ...db.database import Base
+from ...plans.plan_enums import UserPlanStatus
 
 
 class UserPlanProgress(Base):

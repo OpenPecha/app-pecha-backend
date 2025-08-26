@@ -4,7 +4,7 @@ from _datetime import datetime
 import _datetime
 from sqlalchemy.orm import relationship
 
-from ..db.database import Base
+from ...db.database import Base
 
 
 class UserTaskCompletion(Base):
