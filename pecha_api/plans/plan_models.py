@@ -35,10 +35,7 @@ class Plan(Base):
     author_id = Column(UUID(as_uuid=True), nullable=True)  # Reference to authors table
     language = Column(String(10), default='en')
     
-    # Note: difficulty_level enum type would need to be defined separately
-    # difficulty_level = Column(Enum('difficulty_level'), nullable=True)
-    
-    tags = Column(JSONB, nullable=True)  # ['meditation', 'compassion', 'sutra_study', 'dealing_with_loss']
+    tags = Column(JSONB, nullable=True)
     featured = Column(Boolean, default=False)
     is_active = Column(Boolean, default=True)
     
