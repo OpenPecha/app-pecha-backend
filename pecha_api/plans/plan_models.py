@@ -14,9 +14,10 @@ class Author(Base):
     name = Column(String(200), nullable=False)
     bio = Column(Text, nullable=True)
     image_url = Column(String(255), nullable=True)
-    email = Column(String(255), nullable=True)
+    email = Column(String(255), nullable=False)
+    password = Column(String(255), nullable=False)
     is_verified = Column(Boolean, default=False)
-    is_active = Column(Boolean, default=True)
+    is_active = Column(Boolean, default=False)
     created_at = Column(DateTime, default=datetime.now(_datetime.timezone.utc))
     updated_at = Column(DateTime, default=datetime.now(_datetime.timezone.utc))
 
