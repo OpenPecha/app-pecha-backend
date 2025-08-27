@@ -1,4 +1,4 @@
-from sqlalchemy import Column, String, DateTime, Boolean, UUID, Text, Index, text
+from sqlalchemy import Column, String, DateTime, Boolean, UUID, Text, Index, text, ForeignKey
 from ..db.database import Base
 from uuid import uuid4
 import _datetime
@@ -33,7 +33,7 @@ class Plan(Base):
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid4)
     title = Column(String(255), nullable=False)
     description = Column(Text, nullable=True)
-    author_id = Column(UUID(as_uuid=True), nullable=True)  # Reference to authors table
+    author_id = Column(UUID(as_uuid=True), ForeignKey('authors.id', ondelete='SET NULL'), nullable=True)
     language = Column(String(10), default='en')
     
     tags = Column(JSONB, nullable=True)
@@ -45,6 +45,8 @@ class Plan(Base):
     
     created_at = Column(DateTime, default=datetime.now(_datetime.timezone.utc))
     updated_at = Column(DateTime, default=datetime.now(_datetime.timezone.utc))
+
+    author = relationship("Author", backref="plans", passive_deletes=True)
 
     __table_args__ = (
         # Indexes for plan discovery
