@@ -3,7 +3,7 @@ from typing import Optional
 from pydantic import BaseModel
 
 
-class CreateUserRequest(BaseModel):
+class CreateAuthorRequest(BaseModel):
     firstname: str
     lastname: str
     email: str

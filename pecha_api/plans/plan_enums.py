@@ -27,4 +27,4 @@ class UserPlanStatus(str, Enum):
     completed = "completed"
     abandoned = "abandoned"
 
-
+    
