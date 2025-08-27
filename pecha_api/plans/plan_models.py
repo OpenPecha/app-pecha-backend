@@ -11,7 +11,8 @@ class Author(Base):
     __tablename__ = "authors"
 
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid4)
-    name = Column(String(200), nullable=False)
+    first_name = Column(String(200), nullable=False)
+    last_name = Column(String(200), nullable=False)
     bio = Column(Text, nullable=True)
     image_url = Column(String(255), nullable=True)
     email = Column(String(255), nullable=False)
