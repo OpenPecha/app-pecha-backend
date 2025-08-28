@@ -15,7 +15,7 @@ class Author(Base):
     last_name = Column(String(200), nullable=False)
     bio = Column(Text, nullable=True)
     image_url = Column(String(255), nullable=True)
-    email = Column(String(255), nullable=False)
+    email = Column(String(255), nullable=False, unique=True, index=True)
     password = Column(String(255), nullable=False)
     is_verified = Column(Boolean, default=False)
     is_active = Column(Boolean, default=False)
