@@ -5,6 +5,7 @@ from ...db import database
 from .plan_auth_enum import PlanRegistrationSource
 from .plan_auth_model import CreateAuthorRequest
 from starlette import status
+from .plan_auth_services import register_author
 
 
 plan_auth_router = APIRouter(
@@ -15,8 +16,6 @@ plan_auth_router = APIRouter(
 
 @plan_auth_router.post("/register", status_code=status.HTTP_201_CREATED)
 def register_user(create_user_request: CreateAuthorRequest):
-    registration_source = PlanRegistrationSource.EMAIL
     return register_author(
-        create_user_request=create_user_request,
-        registration_source=registration_source
+        create_user_request=create_user_request
     )
