@@ -4,7 +4,7 @@ from pydantic import BaseModel
 
 
 class CreateAuthorRequest(BaseModel):
-    firstname: str
-    lastname: str
+    first_name: str
+    last_name: str
     email: str
     password: str
