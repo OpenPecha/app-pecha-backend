@@ -14,7 +14,7 @@ plan_auth_router = APIRouter(
 )
 
 
-@plan_auth_router.post("/register", status_code=status.HTTP_201_CREATED)
+@plan_auth_router.post("/register", status_code=status.HTTP_202_ACCEPTED)
 def register_user(create_user_request: CreateAuthorRequest):
     return register_author(
         create_user_request=create_user_request
