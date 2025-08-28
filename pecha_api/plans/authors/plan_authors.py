@@ -13,6 +13,6 @@ def save_author(db: Session, author: Author):
         return author
     except IntegrityError as e:
         db.rollback()
-        print(f"Integrity error: {e}")
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User not found")
+        print(f"Integrity error: {e.orig}")
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=f"{e.orig}")
 
