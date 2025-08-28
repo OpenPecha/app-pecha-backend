@@ -5,7 +5,7 @@ from fastapi import HTTPException
 from starlette import status
 
 
-def save_user(db: Session, author: Author):
+def save_author(db: Session, author: Author):
     try:
         db.add(author)
         db.commit()
