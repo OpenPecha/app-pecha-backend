@@ -28,15 +28,15 @@ def _create_user(create_user_request: CreateAuthorRequest) -> AuthorDetails:
     new_author.password = hashed_password
     with SessionLocal() as db_session:
         saved_author = save_author(db=db_session, author=new_author)
-        _send_verification_email(email=saved_author.email)
-        return AuthorDetails(
-            id=saved_author.id,
-            first_name=saved_author.first_name,
-            last_name=saved_author.last_name,
-            email=saved_author.email,
-            created_at=saved_author.created_at,
-            updated_at=saved_author.updated_at
-        )
+    _send_verification_email(email=saved_author.email)
+    return AuthorDetails(
+        id=saved_author.id,
+        first_name=saved_author.first_name,
+        last_name=saved_author.last_name,
+        email=saved_author.email,
+        created_at=saved_author.created_at,
+        updated_at=saved_author.updated_at
+    )
 
 def _validate_password(password: str):
     if not password:
@@ -94,7 +94,7 @@ def verify_author_email(token: str) -> dict:
         if not email:
             raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid token payload")
         with SessionLocal() as db_session:
-            author = get_author_by_email(db=db_session, email=email)
+            author = get_author_by_email(db=db_session, email=email) # need validation for author
             if author.is_verified:
                 return {"message": "Email already verified"}
             author.is_verified = True
