@@ -108,5 +108,8 @@ def verify_author_email(token: str) -> dict:
             return {"message": EMAIL_VERIFIED_SUCCESS}
     except jwt.ExpiredSignatureError:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=TOKEN_EXPIRED)
+    except HTTPException as e:
+        # Re-raise expected HTTP errors (type/payload validation) without masking
+        raise e
     except Exception:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=TOKEN_INVALID)
