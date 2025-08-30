@@ -9,10 +9,8 @@ from datetime import datetime, timedelta, timezone
 from jose import jwt
 from pecha_api.config import get
 from pecha_api.notification.email_provider import send_email
-from pecha_api.auth.auth_repository import get_hashed_password, verify_password, create_access_token, create_refresh_token, \
-    generate_token_data
-from pecha_api.plans.plan_auth.plan_auth_model import AuthorLoginResponse
-from plan_auth_model import TokenResponse, AuthorInfo
+from pecha_api.auth.auth_repository import get_hashed_password
+
 
 
 def register_author(create_user_request: CreateAuthorRequest) -> AuthorResponse:
@@ -104,47 +102,3 @@ def verify_author_email(token: str) -> dict:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Verification token expired")
     except Exception:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid verification token")
-
-
-def authenticate_author(email: str, password: str):
-    with SessionLocal() as db_session:
-        author = get_author_by_email(db=db_session, email=email)
-        check_verified_author(author=author)
-        if not verify_password(
-                plain_password=password,
-                hashed_password=author.password
-        ):
-            raise HTTPException(
-                status_code=status.HTTP_401_UNAUTHORIZED,
-                detail='Invalid email or password'
-            )
-        return author
-
-def check_verified_author(author: Author) -> bool:
-    if not author.is_verified:
-        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail='Author not verified')
-    elif not author.is_active:
-        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail='Author not active')    
-    
-
-def authenticate_and_generate_tokens(email: str, password: str):
-    author = authenticate_author(email=email, password=password)
-    return generate_token_author(author)
-
-def generate_token_author(author: Author):
-    data = generate_token_data(author)
-    access_token = create_access_token(data)
-    refresh_token = create_refresh_token(data)
-
-    token_response = TokenResponse(
-        access_token=access_token,
-        refresh_token=refresh_token,
-        token_type="Bearer"
-    )
-    return AuthorLoginResponse(
-        user=AuthorInfo(
-            name=author.firstname + " " + author.lastname,
-            avatar_url=author.avatar_url
-        ),
-        auth=token_response
-    )
