@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Verify Your Email</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f9f9f9;
+            color: #333;
+            margin: 0;
+            padding: 0;
+        }
+        .container {
+            width: 100%;
+            max-width: 600px;
+            margin: 20px auto;
+            background-color: #fff;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+        }
+        h2 {
+            color: #4CAF50;
+            text-align: center;
+        }
+        p {
+            font-size: 16px;
+            line-height: 1.5;
+        }
+        .button {
+            background-color: #4CAF50;
+            color: white;
+            padding: 10px 20px;
+            font-size: 16px;
+            text-decoration: none;
+            border-radius: 4px;
+            display: inline-block;
+            text-align: center;
+        }
+        .footer {
+            font-size: 12px;
+            text-align: center;
+            color: #888;
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h2>Verify Your Email</h2>
+    <p>Hello,</p>
+    <p>Thanks for signing up for Pecha. Please confirm your email address by clicking the button below:</p>
+    <p style="text-align: center;">
+        <a href="{{verify_link}}" class="button">Verify Email</a>
+    </p>
+    <p>
+        If the button does not work, copy and paste this link into your browser:
+        <a href="{{verify_link}}" target="_blank" rel="noopener noreferrer">{{verify_link}}</a>
+    </p>
+    <p>This link expires in 24 hours.</p>
+
+    <div class="footer">
+        <p>If you have any questions, please contact us at support@pecha.org</p>
+    </div>
+</div>
+
+</body>
+</html>
