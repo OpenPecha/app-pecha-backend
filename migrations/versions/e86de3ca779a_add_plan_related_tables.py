@@ -18,3 +18,12 @@ branch_labels: Union[str, Sequence[str], None] = None
 depends_on: Union[str, Sequence[str], None] = None
 
 
+def upgrade() -> None:
+    # This revision intentionally contains no schema changes.
+    pass
+
+
+def downgrade() -> None:
+    # This revision intentionally contains no schema changes.
+    pass
+
