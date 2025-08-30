@@ -66,7 +66,7 @@ MOCK_UPDATE_REQUEST = UpdateCollectionRequest(
 @pytest.mark.asyncio
 async def test_read_collections_success():
     # Test successful retrieval of collections
-    with patch("pecha_api.collections.collections_views.get_all_collections", 
+    with patch("pecha_api.collections.collections_views.get_all_collections",
                new_callable=AsyncMock, return_value=MOCK_COLLECTIONS_RESPONSE):
         
         response = client.get("/collections")
@@ -82,7 +82,7 @@ async def test_read_collections_success():
 @pytest.mark.asyncio
 async def test_read_collections_with_filters():
     # Test reading collections with query parameters
-    with patch("pecha_api.collections.collections_views.get_all_collections", 
+    with patch("pecha_api.collections.collections_views.get_all_collections",
                new_callable=AsyncMock, return_value=MOCK_COLLECTIONS_RESPONSE):
         
         response = client.get("/collections", params={
@@ -98,7 +98,7 @@ async def test_read_collections_with_filters():
 @pytest.mark.asyncio
 async def test_read_collections_service_error():
     # Test handling of service errors
-    with patch("pecha_api.collections.collections_views.get_all_collections", 
+    with patch("pecha_api.collections.collections_views.get_all_collections",
                new_callable=AsyncMock, side_effect=HTTPException(
                    status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
                    detail="Internal server error"
@@ -114,10 +114,10 @@ async def test_read_collections_service_error():
 @pytest.mark.asyncio
 async def test_create_collection_success():
     # Test successful collection creation
-    with patch("pecha_api.collections.collections_views.create_new_collection", 
+    with patch("pecha_api.collections.collections_views.create_new_collection",
                new_callable=AsyncMock, return_value=MOCK_COLLECTION):
         
-        response = client.post("/collections", 
+        response = client.post("/collections",
                              json=MOCK_CREATE_REQUEST.model_dump(),
                              headers={"Authorization": f"Bearer {VALID_TOKEN}"},
                              params={"language": "en"})
@@ -132,7 +132,7 @@ async def test_create_collection_success():
 @pytest.mark.asyncio
 async def test_create_collection_without_auth():
     # Test collection creation without authentication
-    response = client.post("/collections", 
+    response = client.post("/collections",
                          json=MOCK_CREATE_REQUEST.model_dump())
     
     assert response.status_code == status.HTTP_403_FORBIDDEN
@@ -148,7 +148,7 @@ async def test_create_collection_invalid_data():
         "parent_id": None
     }
     
-    response = client.post("/collections", 
+    response = client.post("/collections",
                          json=invalid_data,
                          headers={"Authorization": f"Bearer {VALID_TOKEN}"})
     
@@ -169,10 +169,10 @@ async def test_update_collection_success():
         has_child=False
     )
     
-    with patch("pecha_api.collections.collections_views.update_existing_collection", 
+    with patch("pecha_api.collections.collections_views.update_existing_collection",
                new_callable=AsyncMock, return_value=updated_collection):
         
-        response = client.put(f"/collections/{COLLECTION_ID}", 
+        response = client.put(f"/collections/{COLLECTION_ID}",
                             json=MOCK_UPDATE_REQUEST.model_dump(),
                             headers={"Authorization": f"Bearer {VALID_TOKEN}"},
                             params={"language": "en"})
@@ -186,7 +186,7 @@ async def test_update_collection_success():
 @pytest.mark.asyncio
 async def test_update_collection_without_auth():
     # Test collection update without authentication
-    response = client.put(f"/collections/{COLLECTION_ID}", 
+    response = client.put(f"/collections/{COLLECTION_ID}",
                         json=MOCK_UPDATE_REQUEST.model_dump())
     
     assert response.status_code == status.HTTP_403_FORBIDDEN
@@ -199,7 +199,7 @@ async def test_update_collection_invalid_data():
         "descriptions": {}
     }
     
-    response = client.put(f"/collections/{COLLECTION_ID}", 
+    response = client.put(f"/collections/{COLLECTION_ID}",
                         json=invalid_data,
                         headers={"Authorization": f"Bearer {VALID_TOKEN}"})
     
@@ -211,10 +211,10 @@ async def test_update_collection_invalid_data():
 @pytest.mark.asyncio
 async def test_delete_collection_success():
     # Test successful collection deletion
-    with patch("pecha_api.collections.collections_views.delete_existing_collection", 
+    with patch("pecha_api.collections.collections_views.delete_existing_collection",
                new_callable=AsyncMock, return_value=COLLECTION_ID):
         
-        response = client.delete(f"/collections/{COLLECTION_ID}", 
+        response = client.delete(f"/collections/{COLLECTION_ID}",
                                headers={"Authorization": f"Bearer {VALID_TOKEN}"})
         
         assert response.status_code == status.HTTP_204_NO_CONTENT
@@ -231,13 +231,13 @@ async def test_delete_collection_without_auth():
 @pytest.mark.asyncio
 async def test_delete_collection_invalid_token():
     # Test collection deletion with invalid token - patch where views imports it
-    with patch("pecha_api.collections.collections_views.delete_existing_collection", 
+    with patch("pecha_api.collections.collections_views.delete_existing_collection",
                new_callable=AsyncMock, side_effect=HTTPException(
                    status_code=status.HTTP_403_FORBIDDEN,
                    detail="Admin access required"
                )):
         
-        response = client.delete(f"/collections/{COLLECTION_ID}", 
+        response = client.delete(f"/collections/{COLLECTION_ID}",
                                headers={"Authorization": f"Bearer {INVALID_TOKEN}"})
         
         assert response.status_code == status.HTTP_403_FORBIDDEN
@@ -246,13 +246,13 @@ async def test_delete_collection_invalid_token():
 @pytest.mark.asyncio
 async def test_delete_collection_not_found():
     # Test deleting non-existent collection - patch where views imports it
-    with patch("pecha_api.collections.collections_views.delete_existing_collection", 
+    with patch("pecha_api.collections.collections_views.delete_existing_collection",
                new_callable=AsyncMock, side_effect=HTTPException(
                    status_code=status.HTTP_404_NOT_FOUND,
                    detail="Collection not found"
                )):
         
-        response = client.delete(f"/collections/{COLLECTION_ID}", 
+        response = client.delete(f"/collections/{COLLECTION_ID}",
                                headers={"Authorization": f"Bearer {VALID_TOKEN}"})
         
         assert response.status_code == status.HTTP_404_NOT_FOUND
@@ -261,13 +261,13 @@ async def test_delete_collection_not_found():
 @pytest.mark.asyncio
 async def test_delete_collection_with_children():
     # Test deleting collection that has children - patch where views imports it
-    with patch("pecha_api.collections.collections_views.delete_existing_collection", 
+    with patch("pecha_api.collections.collections_views.delete_existing_collection",
                new_callable=AsyncMock, side_effect=HTTPException(
                    status_code=status.HTTP_400_BAD_REQUEST,
                    detail="Cannot delete collection with children"
                )):
         
-        response = client.delete(f"/collections/{COLLECTION_ID}", 
+        response = client.delete(f"/collections/{COLLECTION_ID}",
                                headers={"Authorization": f"Bearer {VALID_TOKEN}"})
         
         assert response.status_code == status.HTTP_400_BAD_REQUEST
