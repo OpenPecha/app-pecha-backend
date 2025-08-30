@@ -1,3 +1,4 @@
+import os
 import pytest
 from fastapi import HTTPException
 from sqlalchemy import create_engine
@@ -5,11 +6,16 @@ from sqlalchemy.orm import sessionmaker
 from starlette import status
 
 from pecha_api.auth.auth_enums import RegistrationSource
-from pecha_api.users.users_models import Base, Users, SocialMediaAccount
+from pecha_api.users.users_models import Base, Users, SocialMediaAccount, PasswordReset
 from pecha_api.users.users_repository import save_user, get_user_by_email, get_user_by_username, \
     get_user_social_account, update_user
 
-DATABASE_URL = "sqlite:///./test.db"
+DATABASE_URL = os.getenv("TEST_DATABASE_URL")
+if not DATABASE_URL:
+    pytest.skip(
+        "Set TEST_DATABASE_URL to a PostgreSQL database URL to run these tests.",
+        allow_module_level=True,
+    )
 
 engine = create_engine(DATABASE_URL)
 TestingSessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
@@ -17,11 +23,18 @@ TestingSessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engin
 
 @pytest.fixture(scope="module")
 def db():
-    Base.metadata.create_all(bind=engine)
+    # Create only the users-related tables to avoid touching unrelated metadata
+    Base.metadata.create_all(
+        bind=engine,
+        tables=[Users.__table__, SocialMediaAccount.__table__, PasswordReset.__table__],
+    )
     db = TestingSessionLocal()
     yield db
     db.close()
-    Base.metadata.drop_all(bind=engine)
+    Base.metadata.drop_all(
+        bind=engine,
+        tables=[Users.__table__, SocialMediaAccount.__table__, PasswordReset.__table__],
+    )
 
 
 def test_save_user(db):
