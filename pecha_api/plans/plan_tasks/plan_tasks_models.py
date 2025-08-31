@@ -1,9 +1,9 @@
-from sqlalchemy import Column, Integer, DateTime, Boolean, Text, ForeignKey, Index, UUID
+from sqlalchemy import Column, Integer, DateTime, Boolean, Text, ForeignKey, Index, UUID,String
 from sqlalchemy import Enum as SQLEnum
 from sqlalchemy.orm import relationship
 from uuid import uuid4
 from ...db.database import Base
-from ..plan_enums import ContentType
+from ..plan_enums import ContentType, ContentTypeEnum
 from _datetime import datetime
 import _datetime
 
@@ -15,17 +15,23 @@ class PlanTask(Base):
     plan_item_id = Column(UUID(as_uuid=True), ForeignKey('plan_items.id', ondelete='CASCADE'), nullable=False)
 
     title = Column(Text, nullable=True)
-    content_type = Column(SQLEnum(ContentType, name="content_type", native_enum=True), nullable=False)
+    content_type = Column(SQLEnum(ContentTypeEnum, native_enum=True), nullable=False)
     content = Column(Text, nullable=True)
 
     display_order = Column(Integer, nullable=False)
     estimated_time = Column(Integer, nullable=True)  # minutes
     is_required = Column(Boolean, default=True)
 
-    created_at = Column(DateTime, default=datetime.now(_datetime.timezone.utc))
-    updated_at = Column(DateTime, default=datetime.now(_datetime.timezone.utc))
+    created_at = Column(DateTime(timezone=True), default=datetime.now(_datetime.timezone.utc),nullable=False)
+    created_by = Column(String(255), nullable=False)
+    updated_at = Column(DateTime(timezone=True), default=datetime.now(_datetime.timezone.utc))
+    updated_by = Column(String(255))
+
+    deleted_at = Column(DateTime(timezone=True))
+    deleted_by = Column(String(255))
 
     plan_item = relationship("PlanItem", backref="tasks")
+    user_completions = relationship("UserTaskCompletion", back_populates="task", cascade="all, delete-orphan")
 
     __table_args__ = (
         Index("idx_tasks_plan_item_order", "plan_item_id", "display_order"),
