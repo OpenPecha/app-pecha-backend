@@ -1,6 +1,7 @@
 import os
 
 DEFAULTS = dict(
+    SITE_NAME="Pecha",
     ACCESS_TOKEN_EXPIRE_MINUTES=30,
     APP_NAME="Pecha Backend",
     AWS_ACCESS_KEY="",
@@ -44,8 +45,8 @@ DEFAULTS = dict(
     CACHE_TOPIC_TIMEOUT=1800,       # 30 minutes for topics (not frequently changed)
     CACHE_SHEET_TIMEOUT=60,         # 1 minute for sheets (frequently edited by users)
 
-    SHORT_URL_GENERATION_ENDPOINT="https://url-shortening-14682653622-b69c6fd.onrender.com/api/v1",
-    PECHA_BACKEND_ENDPOINT="https://pecha-backend-12341825340-1fb0112.onrender.com/api/v1",
+    SHORT_URL_GENERATION_ENDPOINT="https://pech.as/api/v1",
+    PECHA_BACKEND_ENDPOINT="http://127.0.0.1:8000/api/v1",
 
     # Search configuration
     ELASTICSEARCH_URL= None,

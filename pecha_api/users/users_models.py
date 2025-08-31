@@ -46,4 +46,4 @@ class PasswordReset(Base):
     id = Column(Integer, primary_key=True, index=True)
     email = Column(String, ForeignKey("users.email", ondelete="CASCADE"), nullable=False)
     reset_token = Column(String(255), nullable=False, unique=True, index=True)
-    token_expiry = Column(DateTime, nullable=False)
+    token_expiry = Column(DateTime(timezone=True), nullable=False)

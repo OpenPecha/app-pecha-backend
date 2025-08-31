@@ -1,4 +1,4 @@
-from sqlalchemy import Column, Integer, DateTime, BigInteger, ForeignKey, Index, UniqueConstraint, UUID
+from sqlalchemy import Column, Integer, DateTime, BigInteger, ForeignKey, Index, UniqueConstraint, UUID, String
 from sqlalchemy.orm import relationship
 from uuid import uuid4
 from ...db.database import Base
@@ -13,10 +13,13 @@ class PlanItem(Base):
     plan_id = Column(UUID(as_uuid=True), ForeignKey('plans.id', ondelete='CASCADE'), nullable=False)
     day_number = Column(Integer, nullable=False)
 
-    created_at = Column(DateTime, default=datetime.now(_datetime.timezone.utc))
-    updated_at = Column(DateTime, default=datetime.now(_datetime.timezone.utc))
+    created_at = Column(DateTime(timezone=True), default=datetime.now(_datetime.timezone.utc),nullable=False)
+    created_by = Column(String(255), nullable=False)
+    updated_at = Column(DateTime(timezone=True), default=datetime.now(_datetime.timezone.utc))
+    updated_by = Column(String(255))
 
     plan = relationship("Plan", backref="plan_items")
+    tasks = relationship("PlanTask", back_populates="plan_item", cascade="all, delete-orphan")
 
     __table_args__ = (
         UniqueConstraint("plan_id", "day_number", name="uq_plan_items_plan_day"),
