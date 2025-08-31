@@ -14,8 +14,8 @@ class UserTaskCompletion(Base):
     user_id = Column(UUID(as_uuid=True), ForeignKey('users.id', ondelete='CASCADE'), nullable=False)
     task_id = Column(UUID(as_uuid=True), ForeignKey('plan_tasks.id', ondelete='CASCADE'), nullable=False)
 
-    completed_at = Column(DateTime, nullable=False, default=datetime.now(_datetime.timezone.utc))
-    created_at = Column(DateTime, default=datetime.now(_datetime.timezone.utc))
+    completed_at = Column(DateTime(timezone=True), nullable=False, default=datetime.now(_datetime.timezone.utc))
+    created_at = Column(DateTime(timezone=True), default=datetime.now(_datetime.timezone.utc),nullable=False)
 
     user = relationship("Users", backref="completed_tasks")
     task = relationship("PlanTask", backref="completions")

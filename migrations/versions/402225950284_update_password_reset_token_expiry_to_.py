@@ -13,7 +13,7 @@ from sqlalchemy.dialects import postgresql
 
 # revision identifiers, used by Alembic.
 revision: str = '402225950284'
-down_revision: Union[str, None] = '6d6e2057a835'
+down_revision: Union[str, None] = 'f6722f4e0490'
 branch_labels: Union[str, Sequence[str], None] = None
 depends_on: Union[str, Sequence[str], None] = None
 
