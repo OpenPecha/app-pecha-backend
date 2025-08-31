@@ -21,7 +21,7 @@ class UserPlanProgress(Base):
     streak_count = Column(Integer, default=0)
     longest_streak = Column(Integer, default=0)
 
-    status = Column(SQLEnum(UserPlanStatusEnum, name="user_plan_status", native_enum=True), default='ACTIVE')
+    status = Column(UserPlanStatusEnum, default='ACTIVE')
     is_completed = Column(Boolean, default=False)
     completed_at = Column(DateTime(timezone=True), nullable=True)
 

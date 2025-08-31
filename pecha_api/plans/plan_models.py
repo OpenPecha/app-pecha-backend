@@ -42,12 +42,12 @@ class Plan(Base):
     title = Column(String(255), nullable=False)
     description = Column(Text, nullable=True)
     author_id = Column(UUID(as_uuid=True), ForeignKey('authors.id', ondelete='RESTRICT'), nullable=False)
-    language = Column(SQLEnum(LanguageCodeEnum, native_enum=True),nullable=False, default='en')
-    difficulty_level =  Column(SQLEnum(DifficultyLevelEnum, native_enum=True), default='BEGINNER')
+    language = Column(LanguageCodeEnum, nullable=False, default='en')
+    difficulty_level = Column(DifficultyLevelEnum, default='BEGINNER')
 
     tags = Column(JSONB, server_default=text("'[]'::jsonb"), nullable=False)
     featured = Column(Boolean, default=False,nullable=False)
-    status = Column(SQLEnum(PlanStatusEnum, native_enum=True),nullable=False, default='DRAFT')
+    status = Column(PlanStatusEnum, nullable=False, default='DRAFT')
     # Content metadata
     image_url = Column(String(255), nullable=True)
     

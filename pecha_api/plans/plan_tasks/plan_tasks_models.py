@@ -15,7 +15,7 @@ class PlanTask(Base):
     plan_item_id = Column(UUID(as_uuid=True), ForeignKey('plan_items.id', ondelete='CASCADE'), nullable=False)
 
     title = Column(Text, nullable=True)
-    content_type = Column(SQLEnum(ContentTypeEnum, native_enum=True), nullable=False)
+    content_type = Column(ContentTypeEnum, nullable=False)
     content = Column(Text, nullable=True)
 
     display_order = Column(Integer, nullable=False)

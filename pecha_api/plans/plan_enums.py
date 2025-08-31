@@ -32,11 +32,11 @@ class LanguageCode(enum.Enum):
     ZH = "zh"
 
 # SQLAlchemy enum types
-DifficultyLevelEnum = Enum(DifficultyLevel, name="difficulty_level")
-ContentTypeEnum = Enum(ContentType, name="content_type")
-UserPlanStatusEnum = Enum(UserPlanStatus, name="user_plan_status")
-PlanStatusEnum = Enum(PlanStatus, name="plan_status")
-LanguageCodeEnum = Enum(LanguageCode, name="language_code")
+DifficultyLevelEnum = Enum(DifficultyLevel)
+ContentTypeEnum = Enum(ContentType)
+UserPlanStatusEnum = Enum(UserPlanStatus)
+PlanStatusEnum = Enum(PlanStatus)
+LanguageCodeEnum = Enum(LanguageCode)
 
 
 
