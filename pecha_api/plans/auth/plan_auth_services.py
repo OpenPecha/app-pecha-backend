@@ -1,6 +1,6 @@
 from .plan_auth_enums import AuthorStatus
 from .plan_auth_model import CreateAuthorRequest, AuthorResponse, AuthorDetails
-from pecha_api.plans.plan_models import Author
+from pecha_api.plans.plans_models import Author
 from pecha_api.db.database import SessionLocal
 from pecha_api.plans.authors.plan_authors_repository import save_author, get_author_by_email, update_author
 from pecha_api.auth.auth_repository import get_hashed_password

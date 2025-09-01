@@ -7,7 +7,7 @@ import _datetime
 
 
 class PlanReview(Base):
-    __tablename__ = "plan_reviews"
+    __tablename__ = "reviews"
 
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid4)
     plan_id = Column(UUID(as_uuid=True), ForeignKey('plans.id', ondelete='CASCADE'), nullable=False)
@@ -28,7 +28,7 @@ class PlanReview(Base):
     deleted_by = Column(String(255))
 
     plan = relationship("Plan", backref="reviews")
-    user = relationship("Users", backref="plan_reviews")
+    user = relationship("Users", backref="reviews")
 
     __table_args__ = (
         UniqueConstraint("user_id", "plan_id", name="uq_plan_reviews_user_plan"),

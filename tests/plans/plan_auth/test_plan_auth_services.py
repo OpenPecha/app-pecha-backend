@@ -6,13 +6,13 @@ from fastapi import HTTPException
 from starlette import status
 from jose import jwt
 
-from pecha_api.plans.plan_auth.plan_auth_services import (
+from pecha_api.plans.auth.plan_auth_services import (
     register_author,
     _validate_password,
     _generate_author_verification_token,
     verify_author_email,
 )
-from pecha_api.plans.plan_auth.plan_auth_model import CreateAuthorRequest
+from pecha_api.plans.auth.plan_auth_model import CreateAuthorRequest
 from pecha_api.plans.response_message import (
     PASSWORD_EMPTY,
     PASSWORD_LENGTH_INVALID,
@@ -48,10 +48,10 @@ def test_register_author_success():
     saved_author.created_at = datetime.now(timezone.utc)
     saved_author.updated_at = datetime.now(timezone.utc)
 
-    with patch("pecha_api.plans.plan_auth.plan_auth_services.SessionLocal") as mock_session_local, \
-        patch("pecha_api.plans.plan_auth.plan_auth_services.save_author") as mock_save_author, \
-        patch("pecha_api.plans.plan_auth.plan_auth_services.get_hashed_password") as mock_get_hashed_password, \
-        patch("pecha_api.plans.plan_auth.plan_auth_services._send_verification_email") as mock_send_email:
+    with patch("pecha_api.plans.auth.plan_auth_services.SessionLocal") as mock_session_local, \
+        patch("pecha_api.plans.auth.plan_auth_services.save_author") as mock_save_author, \
+        patch("pecha_api.plans.auth.plan_auth_services.get_hashed_password") as mock_get_hashed_password, \
+        patch("pecha_api.plans.auth.plan_auth_services._send_verification_email") as mock_send_email:
         _mock_session_local(mock_session_local)
 
         mock_save_author.return_value = saved_author
@@ -118,7 +118,7 @@ def test__generate_author_verification_token_and_decode():
         }
         return mapping[key]
 
-    with patch("pecha_api.plans.plan_auth.plan_auth_services.get", side_effect=fake_get):
+    with patch("pecha_api.plans.auth.plan_auth_services.get", side_effect=fake_get):
         token = _generate_author_verification_token(email)
         assert isinstance(token, str) and len(token) > 0
 
@@ -145,11 +145,11 @@ def test_verify_author_email_success():
     author = MagicMock()
     author.is_verified = False
 
-    with patch("pecha_api.plans.plan_auth.plan_auth_services.get", return_value="x"), \
-        patch("pecha_api.plans.plan_auth.plan_auth_services.jwt.decode", return_value=payload) as mock_decode, \
-        patch("pecha_api.plans.plan_auth.plan_auth_services.SessionLocal") as mock_session_local, \
-        patch("pecha_api.plans.plan_auth.plan_auth_services.get_author_by_email") as mock_get_author_by_email, \
-        patch("pecha_api.plans.plan_auth.plan_auth_services.update_author") as mock_update_author:
+    with patch("pecha_api.plans.auth.plan_auth_services.get", return_value="x"), \
+        patch("pecha_api.plans.auth.plan_auth_services.jwt.decode", return_value=payload) as mock_decode, \
+        patch("pecha_api.plans.auth.plan_auth_services.SessionLocal") as mock_session_local, \
+        patch("pecha_api.plans.auth.plan_auth_services.get_author_by_email") as mock_get_author_by_email, \
+        patch("pecha_api.plans.auth.plan_auth_services.update_author") as mock_update_author:
         _mock_session_local(mock_session_local)
         mock_get_author_by_email.return_value = author
 
@@ -171,11 +171,11 @@ def test_verify_author_email_already_verified():
     author = MagicMock()
     author.is_verified = True
 
-    with patch("pecha_api.plans.plan_auth.plan_auth_services.get", return_value="x"), \
-        patch("pecha_api.plans.plan_auth.plan_auth_services.jwt.decode", return_value=payload), \
-        patch("pecha_api.plans.plan_auth.plan_auth_services.SessionLocal") as mock_session_local, \
-        patch("pecha_api.plans.plan_auth.plan_auth_services.get_author_by_email") as mock_get_author_by_email, \
-        patch("pecha_api.plans.plan_auth.plan_auth_services.update_author") as mock_update_author:
+    with patch("pecha_api.plans.auth.plan_auth_services.get", return_value="x"), \
+        patch("pecha_api.plans.auth.plan_auth_services.jwt.decode", return_value=payload), \
+        patch("pecha_api.plans.auth.plan_auth_services.SessionLocal") as mock_session_local, \
+        patch("pecha_api.plans.auth.plan_auth_services.get_author_by_email") as mock_get_author_by_email, \
+        patch("pecha_api.plans.auth.plan_auth_services.update_author") as mock_update_author:
         _mock_session_local(mock_session_local)
         mock_get_author_by_email.return_value = author
 
@@ -192,8 +192,8 @@ def test_verify_author_email_invalid_type():
         "typ": "wrong_type",
     }
 
-    with patch("pecha_api.plans.plan_auth.plan_auth_services.get", return_value="x"), \
-        patch("pecha_api.plans.plan_auth.plan_auth_services.jwt.decode", return_value=payload):
+    with patch("pecha_api.plans.auth.plan_auth_services.get", return_value="x"), \
+        patch("pecha_api.plans.auth.plan_auth_services.jwt.decode", return_value=payload):
         try:
             verify_author_email(token)
         except HTTPException as e:
@@ -207,8 +207,8 @@ def test_verify_author_email_missing_email():
         "typ": "author_email_verification",
     }
 
-    with patch("pecha_api.plans.plan_auth.plan_auth_services.get", return_value="x"), \
-        patch("pecha_api.plans.plan_auth.plan_auth_services.jwt.decode", return_value=payload):
+    with patch("pecha_api.plans.auth.plan_auth_services.get", return_value="x"), \
+        patch("pecha_api.plans.auth.plan_auth_services.jwt.decode", return_value=payload):
         try:
             verify_author_email(token)
         except HTTPException as e:
@@ -219,8 +219,8 @@ def test_verify_author_email_missing_email():
 def test_verify_author_email_expired_token():
     token = "expired_token"
 
-    with patch("pecha_api.plans.plan_auth.plan_auth_services.get", return_value="x"), \
-        patch("pecha_api.plans.plan_auth.plan_auth_services.jwt.decode") as mock_decode:
+    with patch("pecha_api.plans.auth.plan_auth_services.get", return_value="x"), \
+        patch("pecha_api.plans.auth.plan_auth_services.jwt.decode") as mock_decode:
         mock_decode.side_effect = jwt.ExpiredSignatureError
 
         try:
@@ -233,8 +233,8 @@ def test_verify_author_email_expired_token():
 def test_verify_author_email_invalid_token():
     token = "invalid_token"
 
-    with patch("pecha_api.plans.plan_auth.plan_auth_services.get", return_value="x"), \
-        patch("pecha_api.plans.plan_auth.plan_auth_services.jwt.decode") as mock_decode:
+    with patch("pecha_api.plans.auth.plan_auth_services.get", return_value="x"), \
+        patch("pecha_api.plans.auth.plan_auth_services.jwt.decode") as mock_decode:
         mock_decode.side_effect = Exception("invalid")
 
         try:
@@ -245,12 +245,12 @@ def test_verify_author_email_invalid_token():
 
 
 def test_send_verification_email_sends_email():
-    from pecha_api.plans.plan_auth.plan_auth_services import _send_verification_email
+    from pecha_api.plans.auth.plan_auth_services import _send_verification_email
 
-    with patch("pecha_api.plans.plan_auth.plan_auth_services._generate_author_verification_token", return_value="tok"), \
-        patch("pecha_api.plans.plan_auth.plan_auth_services.get", side_effect=lambda k: "http://backend" if k == "PECHA_BACKEND_ENDPOINT" else "x"), \
-        patch("pecha_api.plans.plan_auth.plan_auth_services.Template.render") as mock_render, \
-        patch("pecha_api.plans.plan_auth.plan_auth_services.send_email") as mock_send_email:
+    with patch("pecha_api.plans.auth.plan_auth_services._generate_author_verification_token", return_value="tok"), \
+        patch("pecha_api.plans.auth.plan_auth_services.get", side_effect=lambda k: "http://backend" if k == "PECHA_BACKEND_ENDPOINT" else "x"), \
+        patch("pecha_api.plans.auth.plan_auth_services.Template.render") as mock_render, \
+        patch("pecha_api.plans.auth.plan_auth_services.send_email") as mock_send_email:
         mock_render.return_value = "rendered_html"
 
         _send_verification_email("john.doe@example.com")

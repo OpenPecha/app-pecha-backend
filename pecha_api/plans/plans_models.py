@@ -5,8 +5,7 @@ import _datetime
 from _datetime import datetime
 from sqlalchemy.orm import relationship
 from sqlalchemy.dialects.postgresql import JSONB
-from .plan_enums import LanguageCodeEnum, DifficultyLevelEnum, PlanStatusEnum, DifficultyLevel, PlanStatus, LanguageCode
-from sqlalchemy import Enum as SQLEnum
+from .plans_enums import LanguageCodeEnum, DifficultyLevelEnum, PlanStatusEnum
 
 class Author(Base):
     __tablename__ = "authors"

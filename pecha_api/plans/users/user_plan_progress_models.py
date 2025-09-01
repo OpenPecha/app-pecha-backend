@@ -1,12 +1,11 @@
 from sqlalchemy import Column, DateTime, Boolean, Integer, Index, UniqueConstraint, UUID, ForeignKey
-from sqlalchemy import Enum as SQLEnum
 from uuid import uuid4
 from _datetime import datetime
 import _datetime
 from sqlalchemy.orm import relationship
 
 from ...db.database import Base
-from ...plans.plan_enums import UserPlanStatus, UserPlanStatusEnum
+from ...plans.plans_enums import  UserPlanStatusEnum
 
 
 class UserPlanProgress(Base):

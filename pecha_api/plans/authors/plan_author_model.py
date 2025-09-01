@@ -3,8 +3,6 @@ from pecha_api.db.database import Base
 from uuid import uuid4
 import _datetime
 from _datetime import datetime
-from sqlalchemy.orm import relationship
-from sqlalchemy.dialects.postgresql import JSONB
 
 class Author(Base):
     __tablename__ = "authors"

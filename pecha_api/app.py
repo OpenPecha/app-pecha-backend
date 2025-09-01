@@ -17,7 +17,7 @@ from pecha_api.texts.segments import segments_views
 from pecha_api.texts.groups import groups_views
 from pecha_api.share import share_views
 from pecha_api.search import search_views
-from pecha_api.plans.plan_auth import plan_auth_views
+from pecha_api.plans.auth import plan_auth_views
 import uvicorn
 
 
