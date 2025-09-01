@@ -3,6 +3,8 @@ from datetime import datetime
 from uuid import UUID
 from pydantic import BaseModel
 
+from pecha_api.plans.plan_enums import AuthorStatus
+
 
 class CreateAuthorRequest(BaseModel):
     first_name: str
@@ -11,12 +13,12 @@ class CreateAuthorRequest(BaseModel):
     password: str
 
 class AuthorDetails(BaseModel):
-    id: UUID
     first_name: str
     last_name: str
     email: str
-    created_at: datetime
-    updated_at: datetime
+    status: AuthorStatus
+    message: str
+
 
 class AuthorResponse(BaseModel):
     author: AuthorDetails

@@ -1,3 +1,4 @@
+from .plan_auth_enums import AuthorStatus
 from .plan_auth_model import CreateAuthorRequest, AuthorResponse, AuthorDetails
 from pecha_api.plans.plan_models import Author
 from pecha_api.db.database import SessionLocal
@@ -19,9 +20,8 @@ from pecha_api.plans.response_message import (
     TOKEN_EXPIRED,
     TOKEN_INVALID,
     EMAIL_ALREADY_VERIFIED,
-    EMAIL_VERIFIED_SUCCESS,
+    EMAIL_VERIFIED_SUCCESS, REGISTRATION_MESSAGE,
 )
-from pecha_api.auth.auth_repository import get_hashed_password
 
 
 
@@ -33,6 +33,7 @@ def register_author(create_user_request: CreateAuthorRequest) -> AuthorResponse:
 
 def _create_user(create_user_request: CreateAuthorRequest) -> AuthorDetails:
     new_author = Author(**create_user_request.model_dump())
+    new_author.created_by = create_user_request.email
     _validate_password(new_author.password)
     hashed_password = get_hashed_password(new_author.password)
     new_author.password = hashed_password
@@ -40,12 +41,11 @@ def _create_user(create_user_request: CreateAuthorRequest) -> AuthorDetails:
         saved_author = save_author(db=db_session, author=new_author)
     _send_verification_email(email=saved_author.email)
     return AuthorDetails(
-        id=saved_author.id,
         first_name=saved_author.first_name,
         last_name=saved_author.last_name,
         email=saved_author.email,
-        created_at=saved_author.created_at,
-        updated_at=saved_author.updated_at
+        status=AuthorStatus.PENDING_VERIFICATION,
+        message=REGISTRATION_MESSAGE
     )
 
 def _validate_password(password: str):
@@ -73,7 +73,7 @@ def _generate_author_verification_token(email: str) -> str:
 def _send_verification_email(email: str) -> None:
     token = _generate_author_verification_token(email=email)
     backend_endpoint = get("PECHA_BACKEND_ENDPOINT")
-    verify_link = f"{backend_endpoint}/plan-auth/verify-email?token={token}"
+    verify_link = f"{backend_endpoint}/plan/verify-email?token={token}"
 
     template_path = Path(__file__).parent / "templates" / "verify_email_template.html"
     with open(template_path, "r") as f:
