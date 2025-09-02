@@ -1,7 +1,7 @@
 from .plan_auth_model import CreateAuthorRequest, AuthorResponse, AuthorDetails
-from pecha_api.plans.plan_models import Author
+from pecha_api.plans.authors.plan_author_model import Author
 from pecha_api.db.database import SessionLocal
-from pecha_api.plans.authors.plan_authors import save_author, get_author_by_email, update_author
+from pecha_api.plans.authors.plan_authors_repository import save_author, get_author_by_email, update_author
 from pecha_api.auth.auth_repository import get_hashed_password
 from fastapi import HTTPException
 from starlette import status
@@ -9,6 +9,20 @@ from datetime import datetime, timedelta, timezone
 from jose import jwt
 from pecha_api.config import get
 from pecha_api.notification.email_provider import send_email
+from jinja2 import Template
+from pathlib import Path
+from pecha_api.plans.response_message import (
+    PASSWORD_EMPTY,
+    PASSWORD_LENGTH_INVALID,
+    TOKEN_TYPE_INVALID,
+    TOKEN_PAYLOAD_INVALID,
+    TOKEN_EXPIRED,
+    TOKEN_INVALID,
+    EMAIL_ALREADY_VERIFIED,
+    EMAIL_VERIFIED_SUCCESS,
+)
+from pecha_api.auth.auth_repository import get_hashed_password
+
 from pecha_api.auth.auth_repository import get_hashed_password, verify_password, create_access_token, create_refresh_token, \
     generate_token_data
 from pecha_api.plans.plan_auth.plan_auth_model import AuthorLoginResponse
@@ -41,10 +55,10 @@ def _create_user(create_user_request: CreateAuthorRequest) -> AuthorDetails:
 
 def _validate_password(password: str):
     if not password:
-        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Password cannot be empty")
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=PASSWORD_EMPTY)
     if len(password) < 8 or len(password) > 20:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST,
-                            detail="Password must be between 8 and 20 characters")
+                            detail=PASSWORD_LENGTH_INVALID)
 
 
 def _generate_author_verification_token(email: str) -> str:
@@ -66,14 +80,10 @@ def _send_verification_email(email: str) -> None:
     backend_endpoint = get("PECHA_BACKEND_ENDPOINT")
     verify_link = f"{backend_endpoint}/plan-auth/verify-email?token={token}"
 
-    html_content = f"""
-        <div>
-            <p>Welcome to Pecha!</p>
-            <p>Please verify your email address by clicking the link below:</p>
-            <p><a href=\"{verify_link}\">Verify Email</a></p>
-            <p>This link expires in 24 hours.</p>
-        </div>
-    """
+    template_path = Path(__file__).parent / "templates" / "verify_email_template.html"
+    with open(template_path, "r") as f:
+        template = Template(f.read())
+    html_content = template.render(verify_link=verify_link)
     send_email(
         to_email=email,
         subject="Verify your Pecha account",
@@ -90,20 +100,24 @@ def verify_author_email(token: str) -> dict:
             audience=get("JWT_AUD")
         )
         if payload.get("typ") != "author_email_verification":
-            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid token type")
+            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=TOKEN_TYPE_INVALID)
         email = payload.get("email")
         if not email:
-            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid token payload")
+            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=TOKEN_PAYLOAD_INVALID)
         with SessionLocal() as db_session:
             author = get_author_by_email(db=db_session, email=email) # need validation for author
             if author.is_verified:
-                return {"message": "Email already verified"}
+                return {"message": EMAIL_ALREADY_VERIFIED}
             author.is_verified = True
             update_author(db=db_session, author=author)
-            return {"message": "Email verified successfully"}
+            return {"message": EMAIL_VERIFIED_SUCCESS}
     except jwt.ExpiredSignatureError:
-        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Verification token expired")
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=TOKEN_EXPIRED)
+    except HTTPException as e:
+        # Re-raise expected HTTP errors (type/payload validation) without masking
+        raise e
     except Exception:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=TOKEN_INVALID)
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid verification token")
 
 

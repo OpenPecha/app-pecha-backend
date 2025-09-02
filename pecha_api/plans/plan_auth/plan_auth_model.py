@@ -19,20 +19,3 @@ class AuthorDetails(BaseModel):
 
 class AuthorResponse(BaseModel):
     author: AuthorDetails
-
-class TokenResponse(BaseModel):
-    access_token: str
-    refresh_token: str
-    token_type: str
-
-class AuthorInfo(BaseModel):
-    name: str
-    avatar_url: Optional[str] = None
-
-class AuthorLoginRequest(BaseModel):
-    email: str
-    password: str
-
-class AuthorLoginResponse(BaseModel):
-    author: AuthorDetails
-    auth: TokenResponse

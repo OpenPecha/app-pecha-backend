@@ -1,4 +1,4 @@
-from sqlalchemy import Column, Integer, DateTime, Boolean, Text, ForeignKey, Index, UniqueConstraint, UUID, CheckConstraint, text
+from sqlalchemy import Column, Integer, DateTime, Boolean, Text, ForeignKey, Index, UniqueConstraint, UUID, CheckConstraint, text,String
 from sqlalchemy.orm import relationship
 from uuid import uuid4
 from ...db.database import Base
@@ -17,9 +17,15 @@ class PlanReview(Base):
     review_text = Column(Text, nullable=True)
 
     is_approved = Column(Boolean, default=False)
+    approved_by = Column(String(255))
 
-    created_at = Column(DateTime, default=datetime.now(_datetime.timezone.utc))
-    updated_at = Column(DateTime, default=datetime.now(_datetime.timezone.utc))
+    created_at = Column(DateTime(timezone=True), default=datetime.now(_datetime.timezone.utc))
+    created_by = Column(String(255), nullable=False)
+    updated_at = Column(DateTime(timezone=True), default=datetime.now(_datetime.timezone.utc))
+    updated_by = Column(String(255))
+
+    deleted_at = Column(DateTime(timezone=True))
+    deleted_by = Column(String(255))
 
     plan = relationship("Plan", backref="reviews")
     user = relationship("Users", backref="plan_reviews")
