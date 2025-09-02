@@ -15,6 +15,7 @@ from pecha_api.plans.plan_auth.plan_auth_model import AuthorLoginResponse
 from plan_auth_model import TokenResponse, AuthorInfo
 
 
+
 def register_author(create_user_request: CreateAuthorRequest) -> AuthorResponse:
     registered_user = _create_user(
         create_user_request=create_user_request
@@ -143,8 +144,8 @@ def generate_token_author(author: Author):
     )
     return AuthorLoginResponse(
         user=AuthorInfo(
-            name=author.firstname + " " + author.lastname,
-            avatar_url=author.avatar_url
+            name=author.first_name + " " + author.last_name,
+            image_url=author.image_url
         ),
         auth=token_response
     )
