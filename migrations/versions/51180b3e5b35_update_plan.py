@@ -1,7 +1,7 @@
 """update plan
 
 Revision ID: 51180b3e5b35
-Revises: 76755f0340df
+Revises: ed014f60334e
 Create Date: 2025-08-27 14:40:42.560509
 
 """
@@ -13,7 +13,7 @@ import sqlalchemy as sa
 
 # revision identifiers, used by Alembic.
 revision: str = '51180b3e5b35'
-down_revision: Union[str, None] = '76755f0340df'
+down_revision: Union[str, None] = 'ed014f60334e'
 branch_labels: Union[str, Sequence[str], None] = None
 depends_on: Union[str, Sequence[str], None] = None
 
