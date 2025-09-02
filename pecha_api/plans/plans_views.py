@@ -1,7 +1,10 @@
 from fastapi import APIRouter, Query, Path
+from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
+from fastapi import APIRouter, Depends
 from typing import Optional
 from uuid import UUID
 from starlette import status
+from typing import Annotated
 
 from plans.plans_response_models import PlansResponse, PlanDTO, CreatePlanRequest, PlanWithDays, UpdatePlanRequest, \
     PlanStatusUpdate
@@ -18,6 +21,7 @@ plans_router = APIRouter(
 
 @plans_router.get("", status_code=status.HTTP_200_OK, response_model=PlansResponse)
 async def get_plans(
+        authentication_credential: Annotated[HTTPAuthorizationCredentials, Depends(oauth2_scheme)],
         search: Optional[str] = Query(None, description="Search by plan title"),
         sort_by: str = Query("title", enum=["title", "total_days", "status"]),
         sort_order: str = Query("asc", enum=["asc", "desc"]),
@@ -25,6 +29,7 @@ async def get_plans(
         limit: int = Query(20, ge=1, le=50)
 ):
     return await get_filtered_plans(
+        token=authentication_credential.credentials,
         search=search,
         sort_by=sort_by,
         sort_order=sort_order,
@@ -34,34 +39,50 @@ async def get_plans(
 
 
 @plans_router.post("", status_code=status.HTTP_201_CREATED, response_model=PlanDTO)
-async def create_plan(create_plan_request: CreatePlanRequest):
-    return create_new_plan(create_plan_request=create_plan_request)
+async def create_plan(authentication_credential: Annotated[HTTPAuthorizationCredentials, Depends(oauth2_scheme)],
+                      create_plan_request: CreatePlanRequest):
+    return create_new_plan(
+        token=authentication_credential.credentials,
+        create_plan_request=create_plan_request
+    )
 
 
 @plans_router.get("/{plan_id}", status_code=status.HTTP_200_OK, response_model=PlanWithDays)
-async def get_plan_details(plan_id: UUID):
-    return get_details_plan(plan_id=plan_id)
+async def get_plan_details(authentication_credential: Annotated[HTTPAuthorizationCredentials, Depends(oauth2_scheme)],
+                           plan_id: UUID):
+    return get_details_plan(
+        token=authentication_credential.credentials,
+        plan_id=plan_id
+    )
 
 
 @plans_router.put("/{plan_id}", status_code=status.HTTP_200_OK, response_model=PlanDTO)
-async def update_plan(plan_id: UUID, update_plan_request: UpdatePlanRequest = None):
+async def update_plan(authentication_credential: Annotated[HTTPAuthorizationCredentials, Depends(oauth2_scheme)],
+                      plan_id: UUID, update_plan_request: UpdatePlanRequest = None):
     return update_plan_details(
+        token=authentication_credential.credentials,
         plan_id=plan_id,
         update_plan_request=update_plan_request
     )
 
 
 @plans_router.delete("/{plan_id}", status_code=status.HTTP_204_NO_CONTENT)
-async def delete_plan(plan_id: UUID):
-    return delete_selected_plan(plan_id=plan_id)
+async def delete_plan(authentication_credential: Annotated[HTTPAuthorizationCredentials, Depends(oauth2_scheme)],
+                      plan_id: UUID):
+    return delete_selected_plan(
+        token=authentication_credential.credentials,
+        plan_id=plan_id
+    )
 
 
 @plans_router.patch("/{plan_id}/status", response_model=PlanDTO)
 async def update_plan_status(
-        plan_id: UUID = Path(...),
+        authentication_credential: Annotated[HTTPAuthorizationCredentials, Depends(oauth2_scheme)],
+        plan_id: UUID,
         plan_status_update: PlanStatusUpdate = None
 ):
     return update_selected_plan_status(
+        token=authentication_credential.credentials,
         plan_id=plan_id,
         plan_status_update=plan_status_update
     )

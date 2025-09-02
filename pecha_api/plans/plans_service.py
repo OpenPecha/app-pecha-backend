@@ -72,7 +72,7 @@ DUMMY_DAYS = [
 ]
 
 
-def get_filtered_plans(search: Optional[str], sort_by: str, sort_order: str, skip: int, limit: int) -> PlansResponse:
+def get_filtered_plans(token: str,search: Optional[str], sort_by: str, sort_order: str, skip: int, limit: int) -> PlansResponse:
     # Dummy data for development
     filtered_plans = DUMMY_PLANS
     if search:
@@ -98,7 +98,7 @@ def get_filtered_plans(search: Optional[str], sort_by: str, sort_order: str, ski
     )
 
 
-def create_new_plan(create_plan_request: CreatePlanRequest) -> PlanDTO:
+def create_new_plan(token:str,create_plan_request: CreatePlanRequest) -> PlanDTO:
     """Create a new plan"""
     new_plan = PlanDTO(
         id=uuid4(),
@@ -114,7 +114,7 @@ def create_new_plan(create_plan_request: CreatePlanRequest) -> PlanDTO:
     DUMMY_PLANS.append(new_plan)
     return new_plan
 
-def get_details_plan(plan_id: UUID) -> PlanWithDays:
+def get_details_plan(token:str,plan_id: UUID) -> PlanWithDays:
     """Get plan details with days listing"""
     # Find plan by ID
     plan = next((p for p in DUMMY_PLANS if p.id == plan_id), None)
@@ -127,7 +127,7 @@ def get_details_plan(plan_id: UUID) -> PlanWithDays:
         description=plan.description,
         days=DUMMY_DAYS
     )
-def update_plan_details(plan_id: UUID, update_plan_request: UpdatePlanRequest) -> PlanDTO:
+def update_plan_details(token:str,plan_id: UUID, update_plan_request: UpdatePlanRequest) -> PlanDTO:
     """Update plan metadata"""
     # Find plan by ID
     plan = next((p for p in DUMMY_PLANS if p.id == plan_id), None)
@@ -145,7 +145,7 @@ def update_plan_details(plan_id: UUID, update_plan_request: UpdatePlanRequest) -
         plan.image_url = update_plan_request.image_url
     return plan
 
-def update_selected_plan_status(plan_id: UUID, plan_status_update: PlanStatusUpdate) -> PlanDTO:
+def update_selected_plan_status(token:str,plan_id: UUID, plan_status_update: PlanStatusUpdate) -> PlanDTO:
     """Update plan status"""
     # Find plan by ID
     plan = next((p for p in DUMMY_PLANS if p.id == plan_id), None)
@@ -164,7 +164,7 @@ def update_selected_plan_status(plan_id: UUID, plan_status_update: PlanStatusUpd
     plan.status = plan_status_update.status
     return plan
 
-def delete_selected_plan(plan_id: UUID):
+def delete_selected_plan(token:str,plan_id: UUID):
     """Delete plan"""
     # Find and remove plan
     global DUMMY_PLANS
