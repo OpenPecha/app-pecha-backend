@@ -25,8 +25,7 @@ from pecha_api.auth.auth_repository import get_hashed_password
 
 from pecha_api.auth.auth_repository import get_hashed_password, verify_password, create_access_token, create_refresh_token, \
     generate_token_data
-from pecha_api.plans.plan_auth.plan_auth_model import AuthorLoginResponse
-from pecha_api.plans.plan_auth.plan_auth_model import TokenResponse, AuthorInfo
+from pecha_api.plans.plan_auth.plan_auth_model import TokenResponse, AuthorLoginResponse, AuthorInfo
 
 
 
