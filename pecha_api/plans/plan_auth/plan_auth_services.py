@@ -1,4 +1,4 @@
-from .plan_auth_model import CreateAuthorRequest, AuthorResponse, AuthorDetails
+from .plan_auth_model import CreateAuthorRequest, AuthorResponse, AuthorDetails, TokenPayload
 from pecha_api.plans.authors.plan_author_model import Author
 from pecha_api.db.database import SessionLocal
 from pecha_api.plans.authors.plan_authors_repository import save_author, get_author_by_email, update_author
@@ -59,14 +59,14 @@ def _validate_password(password: str):
 def _generate_author_verification_token(email: str) -> str:
     expires_delta = timedelta(hours=24)
     expire = datetime.now(timezone.utc) + expires_delta
-    payload = {
-        "email": email,
-        "iss": get("JWT_ISSUER"),
-        "aud": get("JWT_AUD"),
-        "iat": datetime.now(timezone.utc),
-        "exp": expire,
-        "typ": "author_email_verification"
-    }
+    payload = TokenPayload(
+        email=email,
+        iss=get("JWT_ISSUER"),
+        aud=get("JWT_AUD"),
+        iat=datetime.now(timezone.utc),
+        exp=expire,
+        typ="author_email_verification"
+    )
     return jwt.encode(payload, get("JWT_SECRET_KEY"), algorithm=get("JWT_ALGORITHM"))
 
 
