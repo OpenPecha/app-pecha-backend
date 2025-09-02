@@ -6,7 +6,7 @@ import _datetime
 from sqlalchemy.orm import relationship
 
 from ...db.database import Base
-from ...plans.plan_enums import UserPlanStatus
+from ...plans.plan_enums import UserPlanStatus, UserPlanStatusEnum
 
 
 class UserPlanProgress(Base):
@@ -16,17 +16,17 @@ class UserPlanProgress(Base):
     user_id = Column(UUID(as_uuid=True), ForeignKey('users.id', ondelete='CASCADE'), nullable=False)
     plan_id = Column(UUID(as_uuid=True), ForeignKey('plans.id', ondelete='CASCADE'), nullable=False)
 
-    started_at = Column(DateTime, nullable=False, default=datetime.now(_datetime.timezone.utc))
+    started_at = Column(DateTime(timezone=True), nullable=False, default=datetime.now(_datetime.timezone.utc))
 
     streak_count = Column(Integer, default=0)
     longest_streak = Column(Integer, default=0)
 
-    status = Column(SQLEnum(UserPlanStatus, name="user_plan_status", native_enum=True), default=UserPlanStatus.active)
+    status = Column(UserPlanStatusEnum, default='ACTIVE')
     is_completed = Column(Boolean, default=False)
-    completed_at = Column(DateTime, nullable=True)
+    completed_at = Column(DateTime(timezone=True), nullable=True)
 
-    created_at = Column(DateTime, default=datetime.now(_datetime.timezone.utc))
-    updated_at = Column(DateTime, default=datetime.now(_datetime.timezone.utc))
+    created_at = Column(DateTime(timezone=True), default=datetime.now(_datetime.timezone.utc),nullable=False)
+    updated_at = Column(DateTime(timezone=True), default=datetime.now(_datetime.timezone.utc))
 
     user = relationship("Users", backref="plan_progress")
     plan = relationship("Plan", backref="user_progress")
