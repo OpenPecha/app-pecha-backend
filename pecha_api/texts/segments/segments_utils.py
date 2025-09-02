@@ -5,7 +5,6 @@ from fastapi import HTTPException
 from starlette import status
 
 from pecha_api.error_contants import ErrorConstants
-from pecha_api.texts.groups.groups_service import get_group_details
 from .segments_response_models import SegmentDTO
 from .segments_repository import (
     check_segment_exists,

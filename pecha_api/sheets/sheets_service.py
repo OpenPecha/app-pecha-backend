@@ -421,6 +421,7 @@ async def _generate_sheet_dto_response_(sheets, skip: int, limit: int) -> SheetD
             published_date = sheet.published_date,
             time_passed = Utils.time_passed(published_time=sheet.published_date, language=sheet.language),
             views = sheet.views,
+            is_published = sheet.is_published,
             likes = sheet.likes or [],
             publisher = _create_publisher_object_(published_by=sheet.published_by),
             language = sheet.language
