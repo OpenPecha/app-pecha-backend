@@ -1,6 +1,6 @@
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
-from pecha_api.plans.plan_models import Author
+from ..authors.plan_author_model import Author
 from fastapi import HTTPException
 from starlette import status
 from uuid import UUID
