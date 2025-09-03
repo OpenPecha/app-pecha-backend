@@ -7,6 +7,13 @@ from pecha_api.plans.plan_response_model import (
     PlanRequest,
     PlanResponse,
 )
+
+from ..plans.plan_response_model import CreatePlanRequest, CreatePlanResponse
+from ..plans.plan_models import Plan
+from ..db.database import SessionLocal
+from ..plans.plan_repository import save_plan
+
+
 from typing import Optional
 
 
@@ -90,3 +97,18 @@ def get_plan_list(difficulty_level: Optional[str] = None, tags: Optional[list[st
         limit=limit,
     )
     return response
+
+
+def create_new_plan(create_plan_request: CreatePlanRequest) -> CreatePlanResponse:
+    new_plan = Plan(**create_plan_request.model_dump())
+    with SessionLocal() as db_session:
+        saved_plan = save_plan(db=db_session, plan=new_plan)
+    return CreatePlanResponse(
+        id=saved_plan.id,
+        title=saved_plan.title,
+        description=saved_plan.description,
+        total_days=saved_plan.total_days,
+        status=saved_plan.status,
+        subscription_count=saved_plan.subscription_count)
+
+  

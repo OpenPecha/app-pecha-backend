@@ -37,3 +37,23 @@ class PlanResponse(BaseModel):
     total: int
     skip: int
     limit: int
+
+class CreatePlanRequest(BaseModel):
+    title: str
+    description: str
+    difficulty_level: str
+    total_days: int
+    tags: list[str]
+    image_url: str
+
+class CreatePlanResponse(BaseModel):
+    id: UUID
+    title: str
+    description: str
+    total_days: int
+    status: str
+    subscription_count: int
+
+class ResponseMessage(BaseModel):
+    error: str
+    message: str
