@@ -106,7 +106,6 @@ def verify_author_email(token: str) -> dict:
             if author.is_verified:
                 return {"message": EMAIL_ALREADY_VERIFIED}
             author.is_verified = True
-            print(">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>author is verified")
             update_author(db=db_session, author=author)
             return {"message": EMAIL_VERIFIED_SUCCESS}
     except jwt.ExpiredSignatureError:
