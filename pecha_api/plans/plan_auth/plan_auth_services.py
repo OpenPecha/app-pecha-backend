@@ -59,6 +59,8 @@ def _validate_password(password: str):
 def _generate_author_verification_token(email: str) -> str:
     expires_delta = timedelta(hours=24)
     expire = datetime.now(timezone.utc) + expires_delta
+    iss = get("JWT_ISSUER")
+    aud = get("JWT_AUD")
     payload = TokenPayload(
         email=email,
         iss=get("JWT_ISSUER"),
@@ -67,7 +69,7 @@ def _generate_author_verification_token(email: str) -> str:
         exp=expire,
         typ="author_email_verification"
     )
-    return jwt.encode(payload, get("JWT_SECRET_KEY"), algorithm=get("JWT_ALGORITHM"))
+    return jwt.encode(payload.model_dump(), get("JWT_SECRET_KEY"), algorithm=get("JWT_ALGORITHM"))
 
 
 def _send_verification_email(email: str) -> None:
