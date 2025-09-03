@@ -20,6 +20,8 @@ from pecha_api.plans.response_message import (
     TOKEN_INVALID,
     EMAIL_ALREADY_VERIFIED,
     EMAIL_VERIFIED_SUCCESS,
+    EMAIL_VERIFICATION_PENDING_STATUS,
+    EMAIL_VERIFICATION_PENDING_MESSAGE,
 )
 from pecha_api.auth.auth_repository import get_hashed_password
 
@@ -40,12 +42,11 @@ def _create_user(create_user_request: CreateAuthorRequest) -> AuthorDetails:
         saved_author = save_author(db=db_session, author=new_author)
     _send_verification_email(email=saved_author.email)
     return AuthorDetails(
-        id=saved_author.id,
         first_name=saved_author.first_name,
         last_name=saved_author.last_name,
         email=saved_author.email,
-        created_at=saved_author.created_at,
-        updated_at=saved_author.updated_at
+        status=EMAIL_VERIFICATION_PENDING_STATUS,
+        message=EMAIL_VERIFICATION_PENDING_MESSAGE
     )
 
 def _validate_password(password: str):
@@ -59,8 +60,7 @@ def _validate_password(password: str):
 def _generate_author_verification_token(email: str) -> str:
     expires_delta = timedelta(hours=24)
     expire = datetime.now(timezone.utc) + expires_delta
-    iss = get("JWT_ISSUER")
-    aud = get("JWT_AUD")
+
     payload = TokenPayload(
         email=email,
         iss=get("JWT_ISSUER"),
@@ -106,6 +106,7 @@ def verify_author_email(token: str) -> dict:
             if author.is_verified:
                 return {"message": EMAIL_ALREADY_VERIFIED}
             author.is_verified = True
+            print(">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>author is verified")
             update_author(db=db_session, author=author)
             return {"message": EMAIL_VERIFIED_SUCCESS}
     except jwt.ExpiredSignatureError:

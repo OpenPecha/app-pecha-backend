@@ -11,12 +11,11 @@ class CreateAuthorRequest(BaseModel):
     password: str
 
 class AuthorDetails(BaseModel):
-    id: UUID
     first_name: str
     last_name: str
     email: str
-    created_at: datetime
-    updated_at: datetime
+    status: str
+    message: str
 
 class AuthorResponse(BaseModel):
     author: AuthorDetails
