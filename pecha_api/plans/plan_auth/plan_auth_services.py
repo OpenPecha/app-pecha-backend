@@ -1,4 +1,4 @@
-from .plan_auth_model import CreateAuthorRequest, AuthorResponse, AuthorDetails
+from .plan_auth_model import CreateAuthorRequest, AuthorResponse, AuthorDetails, TokenPayload
 from pecha_api.plans.authors.plan_author_model import Author
 from pecha_api.db.database import SessionLocal
 from pecha_api.plans.authors.plan_authors_repository import save_author, get_author_by_email, update_author
@@ -59,21 +59,23 @@ def _validate_password(password: str):
 def _generate_author_verification_token(email: str) -> str:
     expires_delta = timedelta(hours=24)
     expire = datetime.now(timezone.utc) + expires_delta
-    payload = {
-        "email": email,
-        "iss": get("JWT_ISSUER"),
-        "aud": get("JWT_AUD"),
-        "iat": datetime.now(timezone.utc),
-        "exp": expire,
-        "typ": "author_email_verification"
-    }
-    return jwt.encode(payload, get("JWT_SECRET_KEY"), algorithm=get("JWT_ALGORITHM"))
+    iss = get("JWT_ISSUER")
+    aud = get("JWT_AUD")
+    payload = TokenPayload(
+        email=email,
+        iss=get("JWT_ISSUER"),
+        aud=get("JWT_AUD"),
+        iat=datetime.now(timezone.utc),
+        exp=expire,
+        typ="author_email_verification"
+    )
+    return jwt.encode(payload.model_dump(), get("JWT_SECRET_KEY"), algorithm=get("JWT_ALGORITHM"))
 
 
 def _send_verification_email(email: str) -> None:
     token = _generate_author_verification_token(email=email)
-    backend_endpoint = get("PECHA_BACKEND_ENDPOINT")
-    verify_link = f"{backend_endpoint}/plan-auth/verify-email?token={token}"
+    frontend_endpoint = get("BASE_URL")
+    verify_link = f"{frontend_endpoint}/plan-auth/verify-email?token={token}"
 
     template_path = Path(__file__).parent / "templates" / "verify_email_template.html"
     with open(template_path, "r") as f:

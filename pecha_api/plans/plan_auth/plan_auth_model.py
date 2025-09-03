@@ -20,3 +20,11 @@ class AuthorDetails(BaseModel):
 
 class AuthorResponse(BaseModel):
     author: AuthorDetails
+
+class TokenPayload(BaseModel):
+    email: str
+    iss: str
+    aud: str
+    iat: datetime
+    exp: datetime
+    typ: str
