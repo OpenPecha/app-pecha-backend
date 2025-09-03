@@ -11,6 +11,6 @@ TOKEN_INVALID = "Invalid verification token"
 
 EMAIL_ALREADY_VERIFIED = "Email already verified"
 EMAIL_VERIFIED_SUCCESS = "Email verified successfully"
-EMAIL_VERIFICATION_PENDING_STATUS = "EMAIL_VERIFICATION_PENDING"
+EMAIL_VERIFICATION_PENDING_STATUS = "EMAIL VERIFICATION PENDING"
 EMAIL_VERIFICATION_PENDING_MESSAGE = "Registration successful. Please check your email to verify your account."
 
