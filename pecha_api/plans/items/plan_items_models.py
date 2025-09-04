@@ -1,4 +1,4 @@
-from sqlalchemy import Column, Integer, DateTime, BigInteger, ForeignKey, Index, UniqueConstraint, UUID, String
+from sqlalchemy import Column, Integer, DateTime, ForeignKey, Index, UniqueConstraint, UUID, String
 from sqlalchemy.orm import relationship
 from uuid import uuid4
 from ...db.database import Base
@@ -7,7 +7,7 @@ import _datetime
 
 
 class PlanItem(Base):
-    __tablename__ = "plan_items"
+    __tablename__ = "items"
 
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid4)
     plan_id = Column(UUID(as_uuid=True), ForeignKey('plans.id', ondelete='CASCADE'), nullable=False)
@@ -18,7 +18,7 @@ class PlanItem(Base):
     updated_at = Column(DateTime(timezone=True), default=datetime.now(_datetime.timezone.utc))
     updated_by = Column(String(255))
 
-    plan = relationship("Plan", backref="plan_items")
+    plan = relationship("Plan", backref="items")
     tasks = relationship("PlanTask", back_populates="plan_item", cascade="all, delete-orphan")
 
     __table_args__ = (

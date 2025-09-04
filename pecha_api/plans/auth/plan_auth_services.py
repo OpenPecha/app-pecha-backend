@@ -1,3 +1,4 @@
+from .plan_auth_enums import AuthorStatus
 from .plan_auth_model import CreateAuthorRequest, AuthorResponse, AuthorDetails, TokenPayload
 from pecha_api.plans.authors.plan_author_model import Author
 from pecha_api.db.database import SessionLocal
@@ -19,12 +20,8 @@ from pecha_api.plans.response_message import (
     TOKEN_EXPIRED,
     TOKEN_INVALID,
     EMAIL_ALREADY_VERIFIED,
-    EMAIL_VERIFIED_SUCCESS,
-    EMAIL_VERIFICATION_PENDING_STATUS,
-    EMAIL_VERIFICATION_PENDING_MESSAGE,
+    EMAIL_VERIFIED_SUCCESS, REGISTRATION_MESSAGE,
 )
-from pecha_api.auth.auth_repository import get_hashed_password
-
 
 
 def register_author(create_user_request: CreateAuthorRequest) -> AuthorResponse:
@@ -35,6 +32,7 @@ def register_author(create_user_request: CreateAuthorRequest) -> AuthorResponse:
 
 def _create_user(create_user_request: CreateAuthorRequest) -> AuthorDetails:
     new_author = Author(**create_user_request.model_dump())
+    new_author.created_by = create_user_request.email
     _validate_password(new_author.password)
     hashed_password = get_hashed_password(new_author.password)
     new_author.password = hashed_password
@@ -45,8 +43,8 @@ def _create_user(create_user_request: CreateAuthorRequest) -> AuthorDetails:
         first_name=saved_author.first_name,
         last_name=saved_author.last_name,
         email=saved_author.email,
-        status=EMAIL_VERIFICATION_PENDING_STATUS,
-        message=EMAIL_VERIFICATION_PENDING_MESSAGE
+        status=AuthorStatus.PENDING_VERIFICATION,
+        message=REGISTRATION_MESSAGE
     )
 
 def _validate_password(password: str):
@@ -74,8 +72,8 @@ def _generate_author_verification_token(email: str) -> str:
 
 def _send_verification_email(email: str) -> None:
     token = _generate_author_verification_token(email=email)
-    frontend_endpoint = get("BASE_URL")
-    verify_link = f"{frontend_endpoint}/plan-auth/verify-email?token={token}"
+    backend_endpoint = get("PECHA_BACKEND_ENDPOINT")
+    verify_link = f"{backend_endpoint}/plan/verify-email?token={token}"
 
     template_path = Path(__file__).parent / "templates" / "verify_email_template.html"
     with open(template_path, "r") as f:
@@ -110,8 +108,3 @@ def verify_author_email(token: str) -> dict:
             return {"message": EMAIL_VERIFIED_SUCCESS}
     except jwt.ExpiredSignatureError:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=TOKEN_EXPIRED)
-    except HTTPException as e:
-        # Re-raise expected HTTP errors (type/payload validation) without masking
-        raise e
-    except Exception:
-        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=TOKEN_INVALID)

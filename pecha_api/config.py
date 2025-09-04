@@ -22,7 +22,6 @@ DEFAULTS = dict(
     JWT_ISSUER="https://pecha.org",
     JWT_SECRET_KEY="",
     MAX_FILE_SIZE_MB=1,
-
     MONGO_CONNECTION_STRING="mongodb://admin:pechaAdmin@localhost:27017/pecha?authSource=admin",
 
     MONGO_DATABASE_NAME="pecha",

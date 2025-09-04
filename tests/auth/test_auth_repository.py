@@ -176,7 +176,8 @@ def test_generate_token_data_success():
     user = Users(
         email="test@example.com",
         firstname="John",
-        lastname="Doe"
+        lastname="Doe",
+        registration_source="email"
     )
     token_data = generate_token_data(user)
 
@@ -189,22 +190,30 @@ def test_generate_token_data_success():
 
 
 def test_generate_token_data_missing_email():
+    # Create a valid user first, then modify the email to None
     user = Users(
-        email=None,
+        email="test@example.com",
         firstname="John",
-        lastname="Doe"
+        lastname="Doe",
+        registration_source="email"
     )
+    # Simulate missing email by setting it to None after creation
+    user.email = None
     token_data = generate_token_data(user)
 
     assert token_data is None
 
 
 def test_generate_token_data_missing_firstname():
+    # Create a valid user first, then modify the firstname to None
     user = Users(
         email="test@example.com",
-        firstname=None,
-        lastname="Doe"
+        firstname="John",
+        lastname="Doe",
+        registration_source="email"
     )
+    # Simulate missing firstname by setting it to None after creation
+    user.firstname = None
     token_data = generate_token_data(user)
 
     assert token_data is None
@@ -214,7 +223,8 @@ def test_generate_token_data_missing_lastname():
     user = Users(
         email="test@example.com",
         firstname="John",
-        lastname=None
+        lastname=None,
+        registration_source="email"
     )
     token_data = generate_token_data(user)
 
@@ -222,7 +232,17 @@ def test_generate_token_data_missing_lastname():
 
 
 def test_generate_token_data_all_fields_missing():
-    user = Users(email=None, firstname=None, lastname=None)
+    # Create a valid user first, then modify fields to None
+    user = Users(
+        email="test@example.com",
+        firstname="John",
+        lastname="Doe",
+        registration_source="email"
+    )
+    # Simulate missing fields by setting them to None after creation
+    user.email = None
+    user.firstname = None
+    user.lastname = None
     token_data = generate_token_data(user)
 
     assert token_data is None

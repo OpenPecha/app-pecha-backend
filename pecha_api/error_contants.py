@@ -25,3 +25,5 @@ class ErrorConstants:
 
     INVALID_S3_URL="Invalid S3 URL"
 
+    PLAN_NOT_FOUND ="Plan not found"
+

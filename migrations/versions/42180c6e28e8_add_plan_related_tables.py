@@ -71,7 +71,7 @@ def upgrade() -> None:
     sa.PrimaryKeyConstraint('id')
     )
     op.create_index('idx_favorites_user_plan', 'favorites', ['user_id', 'plan_id'], unique=False)
-    op.create_table('plan_items',
+    op.create_table('items',
     sa.Column('id', sa.UUID(), nullable=False),
     sa.Column('plan_id', sa.UUID(), nullable=False),
     sa.Column('day_number', sa.Integer(), nullable=False),
@@ -83,8 +83,8 @@ def upgrade() -> None:
     sa.PrimaryKeyConstraint('id'),
     sa.UniqueConstraint('plan_id', 'day_number', name='uq_plan_items_plan_day')
     )
-    op.create_index('idx_plan_items_plan_day', 'plan_items', ['plan_id', 'day_number'], unique=False)
-    op.create_table('plan_reviews',
+    op.create_index('idx_plan_items_plan_day', 'items', ['plan_id', 'day_number'], unique=False)
+    op.create_table('reviews',
     sa.Column('id', sa.UUID(), nullable=False),
     sa.Column('plan_id', sa.UUID(), nullable=False),
     sa.Column('user_id', sa.UUID(), nullable=False),
@@ -104,8 +104,8 @@ def upgrade() -> None:
     sa.PrimaryKeyConstraint('id'),
     sa.UniqueConstraint('user_id', 'plan_id', name='uq_plan_reviews_user_plan')
     )
-    op.create_index('idx_plan_reviews_plan_approved', 'plan_reviews', ['plan_id', 'is_approved'], unique=False, postgresql_where=sa.text('is_approved = TRUE'))
-    op.create_index('idx_plan_reviews_rating', 'plan_reviews', ['plan_id', 'rating'], unique=False)
+    op.create_index('idx_plan_reviews_plan_approved', 'reviews', ['plan_id', 'is_approved'], unique=False, postgresql_where=sa.text('is_approved = TRUE'))
+    op.create_index('idx_plan_reviews_rating', 'reviews', ['plan_id', 'rating'], unique=False)
     op.create_table('user_plan_progress',
     sa.Column('id', sa.UUID(), nullable=False),
     sa.Column('user_id', sa.UUID(), nullable=False),
@@ -125,7 +125,7 @@ def upgrade() -> None:
     )
     op.create_index('idx_user_progress_plan', 'user_plan_progress', ['plan_id'], unique=False)
     op.create_index('idx_user_progress_user_status', 'user_plan_progress', ['user_id', 'status'], unique=False)
-    op.create_table('plan_tasks',
+    op.create_table('tasks',
     sa.Column('id', sa.UUID(), nullable=False),
     sa.Column('plan_item_id', sa.UUID(), nullable=False),
     sa.Column('title', sa.Text(), nullable=True),
@@ -140,18 +140,18 @@ def upgrade() -> None:
     sa.Column('updated_by', sa.String(length=255), nullable=True),
     sa.Column('deleted_at', sa.DateTime(timezone=True), nullable=True),
     sa.Column('deleted_by', sa.String(length=255), nullable=True),
-    sa.ForeignKeyConstraint(['plan_item_id'], ['plan_items.id'], ondelete='CASCADE'),
+    sa.ForeignKeyConstraint(['plan_item_id'], ['items.id'], ondelete='CASCADE'),
     sa.PrimaryKeyConstraint('id')
     )
-    op.create_index('idx_tasks_content_type', 'plan_tasks', ['content_type'], unique=False)
-    op.create_index('idx_tasks_plan_item_order', 'plan_tasks', ['plan_item_id', 'display_order'], unique=False)
+    op.create_index('idx_tasks_content_type', 'tasks', ['content_type'], unique=False)
+    op.create_index('idx_tasks_plan_item_order', 'tasks', ['plan_item_id', 'display_order'], unique=False)
     op.create_table('user_task_completion',
     sa.Column('id', sa.UUID(), nullable=False),
     sa.Column('user_id', sa.UUID(), nullable=False),
     sa.Column('task_id', sa.UUID(), nullable=False),
     sa.Column('completed_at', sa.DateTime(timezone=True), nullable=False),
     sa.Column('created_at', sa.DateTime(timezone=True), nullable=False),
-    sa.ForeignKeyConstraint(['task_id'], ['plan_tasks.id'], ondelete='CASCADE'),
+    sa.ForeignKeyConstraint(['task_id'], ['tasks.id'], ondelete='CASCADE'),
     sa.ForeignKeyConstraint(['user_id'], ['users.id'], ondelete='CASCADE'),
     sa.PrimaryKeyConstraint('id'),
     sa.UniqueConstraint('user_id', 'task_id', name='uq_user_task_completion')
@@ -166,17 +166,17 @@ def downgrade() -> None:
     op.drop_index('idx_user_completion_user_task', table_name='user_task_completion')
     op.drop_index('idx_user_completion_completed_at', table_name='user_task_completion')
     op.drop_table('user_task_completion')
-    op.drop_index('idx_tasks_plan_item_order', table_name='plan_tasks')
-    op.drop_index('idx_tasks_content_type', table_name='plan_tasks')
-    op.drop_table('plan_tasks')
+    op.drop_index('idx_tasks_plan_item_order', table_name='tasks')
+    op.drop_index('idx_tasks_content_type', table_name='tasks')
+    op.drop_table('tasks')
     op.drop_index('idx_user_progress_user_status', table_name='user_plan_progress')
     op.drop_index('idx_user_progress_plan', table_name='user_plan_progress')
     op.drop_table('user_plan_progress')
-    op.drop_index('idx_plan_reviews_rating', table_name='plan_reviews')
-    op.drop_index('idx_plan_reviews_plan_approved', table_name='plan_reviews', postgresql_where=sa.text('is_approved = TRUE'))
-    op.drop_table('plan_reviews')
-    op.drop_index('idx_plan_items_plan_day', table_name='plan_items')
-    op.drop_table('plan_items')
+    op.drop_index('idx_plan_reviews_rating', table_name='reviews')
+    op.drop_index('idx_plan_reviews_plan_approved', table_name='reviews', postgresql_where=sa.text('is_approved = TRUE'))
+    op.drop_table('reviews')
+    op.drop_index('idx_plan_items_plan_day', table_name='items')
+    op.drop_table('items')
     op.drop_index('idx_favorites_user_plan', table_name='favorites')
     op.drop_table('favorites')
     op.drop_index('idx_plans_tags', table_name='plans', postgresql_using='gin')

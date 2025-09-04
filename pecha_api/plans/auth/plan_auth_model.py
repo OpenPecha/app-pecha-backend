@@ -1,7 +1,7 @@
-from typing import Optional
-from datetime import datetime
-from uuid import UUID
 from pydantic import BaseModel
+from datetime import datetime
+
+from pecha_api.plans.auth.plan_auth_enums import AuthorStatus
 
 
 class CreateAuthorRequest(BaseModel):
@@ -14,7 +14,7 @@ class AuthorDetails(BaseModel):
     first_name: str
     last_name: str
     email: str
-    status: str
+    status: AuthorStatus
     message: str
 
 class AuthorResponse(BaseModel):

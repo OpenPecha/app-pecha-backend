@@ -4,12 +4,9 @@ from fastapi.testclient import TestClient
 from starlette import status
 
 from pecha_api.app import api
-from pecha_api.plans.plan_auth.plan_auth_model import CreateAuthorRequest, AuthorResponse
-from pecha_api.plans.plan_auth.plan_auth_model import AuthorDetails
-from pecha_api.plans.response_message import (
-    EMAIL_VERIFICATION_PENDING_STATUS,
-    EMAIL_VERIFICATION_PENDING_MESSAGE,
-)
+from pecha_api.plans.auth.plan_auth_model import CreateAuthorRequest, AuthorResponse
+from pecha_api.plans.auth.plan_auth_model import AuthorDetails
+from pecha_api.plans.auth.plan_auth_enums import AuthorStatus
 
 
 client = TestClient(api)
@@ -27,12 +24,12 @@ def test_register_user_success():
         first_name="John",
         last_name="Doe",
         email="john.doe@example.com",
-        status=EMAIL_VERIFICATION_PENDING_STATUS,
-        message=EMAIL_VERIFICATION_PENDING_MESSAGE,
+        status=AuthorStatus.PENDING_VERIFICATION,
+        message="Registration successful"
     )
     mock_response = AuthorResponse(author=author_details)
 
-    with patch("pecha_api.plans.plan_auth.plan_auth_views.register_author", return_value=mock_response) as mock_register:
+    with patch("pecha_api.plans.auth.plan_auth_views.register_author", return_value=mock_response) as mock_register:
         response = client.post("/plan-auth/register", json=request_payload)
 
         assert response.status_code == status.HTTP_202_ACCEPTED
@@ -49,7 +46,7 @@ def test_register_user_validation_error_400():
         "password": "short",
     }
 
-    with patch("pecha_api.plans.plan_auth.plan_auth_views.register_author") as mock_register:
+    with patch("pecha_api.plans.auth.plan_auth_views.register_author") as mock_register:
         # Let FastAPI validate via model; here we simulate service raising HTTPException from password validation
         from fastapi import HTTPException
         mock_register.side_effect = HTTPException(status_code=400, detail="Password must be between 8 and 20 characters")
@@ -62,7 +59,7 @@ def test_register_user_validation_error_400():
 
 def test_verify_email_success():
     token = "valid_token"
-    with patch("pecha_api.plans.plan_auth.plan_auth_views.verify_author_email", return_value={"message": "ok"}) as mock_verify:
+    with patch("pecha_api.plans.auth.plan_auth_views.verify_author_email", return_value={"message": "ok"}) as mock_verify:
         response = client.get(f"/plan-auth/verify-email?token={token}")
 
         assert response.status_code == status.HTTP_200_OK
