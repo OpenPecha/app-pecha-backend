@@ -1,4 +1,6 @@
 from sqlalchemy import Column, String, DateTime, Boolean, UUID, Text, Index, text
+from sqlalchemy.orm import relationship
+
 from pecha_api.db.database import Base
 from uuid import uuid4
 import _datetime
@@ -16,8 +18,13 @@ class Author(Base):
     password = Column(String(255), nullable=False)
     is_verified = Column(Boolean, default=False)
     is_active = Column(Boolean, default=False)
-    created_at = Column(DateTime, default=datetime.now(_datetime.timezone.utc))
-    updated_at = Column(DateTime, default=datetime.now(_datetime.timezone.utc))
+    created_at = Column(DateTime(timezone=True), default=datetime.now(_datetime.timezone.utc),nullable=False)
+    created_by = Column(String(255), nullable=False)
+    updated_at = Column(DateTime(timezone=True), default=datetime.now(_datetime.timezone.utc))
+    updated_by = Column(String(255))
+    deleted_at = Column(DateTime(timezone=True))
+    deleted_by = Column(String(255))
+
 
     __table_args__ = (
         Index("idx_authors_verified", "is_verified", postgresql_where=text("is_verified = TRUE")),

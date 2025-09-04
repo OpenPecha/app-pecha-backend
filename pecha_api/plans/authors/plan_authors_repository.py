@@ -1,6 +1,5 @@
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
-from pecha_api.plans.plans_models import Author
 from fastapi import HTTPException
 from starlette import status
 from uuid import UUID
@@ -8,6 +7,7 @@ from pecha_api.plans.response_message import (
     AUTHOR_NOT_FOUND,
     AUTHOR_UPDATE_INVALID,
 )
+from pecha_api.plans.authors.plan_author_model import Author
 
 
 def save_author(db: Session, author: Author):

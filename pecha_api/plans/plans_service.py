@@ -2,9 +2,10 @@ from typing import Optional
 
 from starlette import status
 
-from error_contants import ErrorConstants
-from plans.plans_enums import PlanStatus, ContentType
-from plans.plans_response_models import PlansResponse, PlanDTO, CreatePlanRequest, TaskDTO, PlanDayDTO, PlanWithDays, \
+from pecha_api.error_contants import ErrorConstants
+from pecha_api.plans.authors.plan_author_service import validate_and_extract_author_details
+from pecha_api.plans.plans_enums import PlanStatus, ContentType
+from pecha_api.plans.plans_response_models import PlansResponse, PlanDTO, CreatePlanRequest, TaskDTO, PlanDayDTO, PlanWithDays, \
     UpdatePlanRequest, PlanStatusUpdate
 from uuid import uuid4, UUID
 from fastapi import HTTPException
@@ -72,7 +73,8 @@ DUMMY_DAYS = [
 ]
 
 
-def get_filtered_plans(token: str,search: Optional[str], sort_by: str, sort_order: str, skip: int, limit: int) -> PlansResponse:
+async def get_filtered_plans(token: str,search: Optional[str], sort_by: str, sort_order: str, skip: int, limit: int) -> PlansResponse:
+   # current_author = validate_and_extract_author_details(token=token)
     # Dummy data for development
     filtered_plans = DUMMY_PLANS
     if search:
@@ -98,7 +100,8 @@ def get_filtered_plans(token: str,search: Optional[str], sort_by: str, sort_orde
     )
 
 
-def create_new_plan(token:str,create_plan_request: CreatePlanRequest) -> PlanDTO:
+async def create_new_plan(token:str,create_plan_request: CreatePlanRequest) -> PlanDTO:
+    #  current_author = validate_and_extract_author_details(token=token)
     """Create a new plan"""
     new_plan = PlanDTO(
         id=uuid4(),
@@ -114,7 +117,8 @@ def create_new_plan(token:str,create_plan_request: CreatePlanRequest) -> PlanDTO
     DUMMY_PLANS.append(new_plan)
     return new_plan
 
-def get_details_plan(token:str,plan_id: UUID) -> PlanWithDays:
+async def get_details_plan(token:str,plan_id: UUID) -> PlanWithDays:
+    #  current_author = validate_and_extract_author_details(token=token)
     """Get plan details with days listing"""
     # Find plan by ID
     plan = next((p for p in DUMMY_PLANS if p.id == plan_id), None)
@@ -127,9 +131,10 @@ def get_details_plan(token:str,plan_id: UUID) -> PlanWithDays:
         description=plan.description,
         days=DUMMY_DAYS
     )
-def update_plan_details(token:str,plan_id: UUID, update_plan_request: UpdatePlanRequest) -> PlanDTO:
+async def update_plan_details(token:str,plan_id: UUID, update_plan_request: UpdatePlanRequest) -> PlanDTO:
     """Update plan metadata"""
     # Find plan by ID
+    #   current_author = validate_and_extract_author_details(token=token)
     plan = next((p for p in DUMMY_PLANS if p.id == plan_id), None)
     if not plan:
         raise HTTPException(status_code=404, detail="Plan not found")
@@ -145,9 +150,10 @@ def update_plan_details(token:str,plan_id: UUID, update_plan_request: UpdatePlan
         plan.image_url = update_plan_request.image_url
     return plan
 
-def update_selected_plan_status(token:str,plan_id: UUID, plan_status_update: PlanStatusUpdate) -> PlanDTO:
+async def update_selected_plan_status(token:str,plan_id: UUID, plan_status_update: PlanStatusUpdate) -> PlanDTO:
     """Update plan status"""
     # Find plan by ID
+   # current_author = validate_and_extract_author_details(token=token)
     plan = next((p for p in DUMMY_PLANS if p.id == plan_id), None)
     if not plan:
         raise HTTPException(status_code=404, detail="Plan not found")
@@ -164,9 +170,10 @@ def update_selected_plan_status(token:str,plan_id: UUID, plan_status_update: Pla
     plan.status = plan_status_update.status
     return plan
 
-def delete_selected_plan(token:str,plan_id: UUID):
+async def delete_selected_plan(token:str,plan_id: UUID):
     """Delete plan"""
     # Find and remove plan
+    #  current_author = validate_and_extract_author_details(token=token)
     global DUMMY_PLANS
     DUMMY_PLANS = [p for p in DUMMY_PLANS if p.id != plan_id]
     # In real implementation, check if plan exists and handle foreign key constraints

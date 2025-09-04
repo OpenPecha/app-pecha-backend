@@ -23,6 +23,7 @@ from pecha_api.plans.response_message import (
     EMAIL_ALREADY_VERIFIED,
     EMAIL_VERIFIED_SUCCESS,
 )
+from pecha_api.plans.auth.plan_auth_enums import AuthorStatus
 
 
 def _mock_session_local(mock_session_local):
@@ -45,8 +46,10 @@ def test_register_author_success():
     saved_author.first_name = create_request.first_name
     saved_author.last_name = create_request.last_name
     saved_author.email = create_request.email
+    saved_author.status = AuthorStatus.PENDING_VERIFICATION
+    saved_author.is_verified = False
     saved_author.created_at = datetime.now(timezone.utc)
-    saved_author.updated_at = datetime.now(timezone.utc)
+    saved_author.created_by = create_request.email
 
     with patch("pecha_api.plans.auth.plan_auth_services.SessionLocal") as mock_session_local, \
         patch("pecha_api.plans.auth.plan_auth_services.save_author") as mock_save_author, \
@@ -64,12 +67,10 @@ def test_register_author_success():
         mock_send_email.assert_called_once_with(email=create_request.email)
 
         assert response is not None
-        assert response.author.id == saved_author.id
         assert response.author.first_name == saved_author.first_name
         assert response.author.last_name == saved_author.last_name
         assert response.author.email == saved_author.email
-        assert response.author.created_at == saved_author.created_at
-        assert response.author.updated_at == saved_author.updated_at
+        assert response.author.status == saved_author.status
 
 
 def test__validate_password_empty_password():

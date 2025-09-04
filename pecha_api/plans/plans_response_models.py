@@ -1,6 +1,6 @@
 from pydantic import BaseModel
 from typing import Optional, List
-from plans.plans_enums import DifficultyLevel, PlanStatus,ContentType
+from pecha_api.plans.plans_enums import DifficultyLevel, PlanStatus,ContentType
 from uuid import UUID
 
 # Request/Response Models

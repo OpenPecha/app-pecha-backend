@@ -1,4 +1,5 @@
 import logging
+from typing import Dict, Any
 
 from jose import jwt
 import requests
@@ -49,6 +50,11 @@ def _generate_token(data: dict, expires_delta: timedelta):
     encoded_jwt = jwt.encode(to_encode, get("JWT_SECRET_KEY"), algorithm=get("JWT_ALGORITHM"))
     return encoded_jwt
 
+def validate_token(token: str) -> Dict[str, Any]:
+    if get("DOMAIN_NAME") in jwt.get_unverified_claims(token=token)["iss"]:
+        return verify_auth0_token(token)
+    else:
+        return decode_backend_token(token)
 
 def generate_token_data(user: Users):
     if not all([user.email, user.firstname, user.lastname]):

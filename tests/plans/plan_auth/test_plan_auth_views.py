@@ -6,6 +6,7 @@ from starlette import status
 from pecha_api.app import api
 from pecha_api.plans.auth.plan_auth_model import CreateAuthorRequest, AuthorResponse
 from pecha_api.plans.auth.plan_auth_model import AuthorDetails
+from pecha_api.plans.auth.plan_auth_enums import AuthorStatus
 
 
 client = TestClient(api)
@@ -20,12 +21,11 @@ def test_register_user_success():
     }
 
     author_details = AuthorDetails(
-        id="123e4567-e89b-12d3-a456-426614174000",
         first_name="John",
         last_name="Doe",
         email="john.doe@example.com",
-        created_at="2025-01-01T00:00:00+00:00",
-        updated_at="2025-01-01T00:00:00+00:00",
+        status=AuthorStatus.PENDING_VERIFICATION,
+        message="Registration successful"
     )
     mock_response = AuthorResponse(author=author_details)
 
