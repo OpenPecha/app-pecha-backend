@@ -22,6 +22,8 @@ from pecha_api.plans.response_message import (
     TOKEN_INVALID,
     EMAIL_ALREADY_VERIFIED,
     EMAIL_VERIFIED_SUCCESS,
+    EMAIL_VERIFICATION_PENDING_STATUS,
+    EMAIL_VERIFICATION_PENDING_MESSAGE,
 )
 
 
@@ -64,12 +66,11 @@ def test_register_author_success():
         mock_send_email.assert_called_once_with(email=create_request.email)
 
         assert response is not None
-        assert response.author.id == saved_author.id
         assert response.author.first_name == saved_author.first_name
         assert response.author.last_name == saved_author.last_name
         assert response.author.email == saved_author.email
-        assert response.author.created_at == saved_author.created_at
-        assert response.author.updated_at == saved_author.updated_at
+        assert response.author.status == EMAIL_VERIFICATION_PENDING_STATUS
+        assert response.author.message == EMAIL_VERIFICATION_PENDING_MESSAGE
 
 
 def test__validate_password_empty_password():
@@ -248,7 +249,7 @@ def test_send_verification_email_sends_email():
     from pecha_api.plans.plan_auth.plan_auth_services import _send_verification_email
 
     with patch("pecha_api.plans.plan_auth.plan_auth_services._generate_author_verification_token", return_value="tok"), \
-        patch("pecha_api.plans.plan_auth.plan_auth_services.get", side_effect=lambda k: "http://backend" if k == "PECHA_BACKEND_ENDPOINT" else "x"), \
+        patch("pecha_api.plans.plan_auth.plan_auth_services.get", side_effect=lambda k: "http://backend" if k == "BASE_URL" else "x"), \
         patch("pecha_api.plans.plan_auth.plan_auth_services.Template.render") as mock_render, \
         patch("pecha_api.plans.plan_auth.plan_auth_services.send_email") as mock_send_email:
         mock_render.return_value = "rendered_html"
