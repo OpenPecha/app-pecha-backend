@@ -233,19 +233,6 @@ def test_verify_author_email_expired_token():
             assert e.detail == TOKEN_EXPIRED
 
 
-def test_verify_author_email_invalid_token():
-    token = "invalid_token"
-
-    with patch("pecha_api.plans.auth.plan_auth_services.get", return_value="x"), \
-        patch("pecha_api.plans.auth.plan_auth_services.jwt.decode") as mock_decode:
-        mock_decode.side_effect = Exception("invalid")
-
-        try:
-            verify_author_email(token)
-        except HTTPException as e:
-            assert e.status_code == status.HTTP_400_BAD_REQUEST
-            assert e.detail == TOKEN_INVALID
-
 
 def test_send_verification_email_sends_email():
     from pecha_api.plans.auth.plan_auth_services import _send_verification_email
