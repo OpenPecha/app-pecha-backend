@@ -1,8 +1,8 @@
-"""add plan related tables
+"""add_plan_related_tables
 
-Revision ID: 42180c6e28e8
+Revision ID: ed014f60334e
 Revises: 402225950284
-Create Date: 2025-09-02 17:10:40.745498
+Create Date: 2025-08-31 20:14:59.803768
 
 """
 from typing import Sequence, Union
@@ -12,7 +12,7 @@ import sqlalchemy as sa
 from sqlalchemy.dialects import postgresql
 
 # revision identifiers, used by Alembic.
-revision: str = '42180c6e28e8'
+revision: str = 'ed014f60334e'
 down_revision: Union[str, None] = '402225950284'
 branch_labels: Union[str, Sequence[str], None] = None
 depends_on: Union[str, Sequence[str], None] = None
@@ -30,8 +30,12 @@ def upgrade() -> None:
     sa.Column('password', sa.String(length=255), nullable=False),
     sa.Column('is_verified', sa.Boolean(), nullable=True),
     sa.Column('is_active', sa.Boolean(), nullable=True),
-    sa.Column('created_at', sa.DateTime(), nullable=True),
-    sa.Column('updated_at', sa.DateTime(), nullable=True),
+    sa.Column('created_at', sa.DateTime(timezone=True), nullable=False),
+    sa.Column('created_by', sa.String(length=255), nullable=False),
+    sa.Column('updated_at', sa.DateTime(timezone=True), nullable=True),
+    sa.Column('updated_by', sa.String(length=255), nullable=True),
+    sa.Column('deleted_at', sa.DateTime(timezone=True), nullable=True),
+    sa.Column('deleted_by', sa.String(length=255), nullable=True),
     sa.PrimaryKeyConstraint('id')
     )
     op.create_index('idx_authors_verified', 'authors', ['is_verified'], unique=False, postgresql_where=sa.text('is_verified = TRUE'))
