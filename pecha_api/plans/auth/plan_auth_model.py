@@ -28,7 +28,7 @@ class TokenResponse(BaseModel):
 
 class AuthorInfo(BaseModel):
     name: str
-    avatar_url: Optional[str] = None
+    image_url: Optional[str] = None
 
 
 class AuthorLoginResponse(BaseModel):

@@ -331,9 +331,10 @@ def test_generate_token_author_builds_response():
     author = MagicMock()
     author.first_name = "John"
     author.last_name = "Doe"
-    author.avatar_url = "img.png"
+    author.email = "john.doe@example.com"
+    author.image_url = "img.png"
 
-    with patch("pecha_api.plans.auth.plan_auth_services.generate_token_data", return_value={"sub": "123"}), \
+    with patch("pecha_api.plans.auth.plan_auth_services.generate_author_token_data", return_value={"sub": "123"}), \
         patch("pecha_api.plans.auth.plan_auth_services.create_access_token", return_value="access"), \
         patch("pecha_api.plans.auth.plan_auth_services.create_refresh_token", return_value="refresh"):
         result = generate_token_author(author)
@@ -344,4 +345,4 @@ def test_generate_token_author_builds_response():
         assert result.auth.access_token == "access"
         assert result.auth.refresh_token == "refresh"
         assert result.user.name == "John Doe"
-        assert result.user.avatar_url == "img.png"
+        assert result.user.image_url == "img.png"

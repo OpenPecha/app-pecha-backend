@@ -145,8 +145,20 @@ def authenticate_and_generate_tokens(email: str, password: str):
     author = authenticate_author(email=email, password=password)
     return generate_token_author(author)
 
+def generate_author_token_data(author: Author):
+    if not all([author.email, author.first_name, author.last_name]):
+        return None
+    data = {
+        "email": author.email,
+        "name": author.first_name + " " + author.last_name,
+        "iss": get("JWT_ISSUER"),
+        "aud": get("JWT_AUD"),
+        "iat": datetime.now(timezone.utc)
+    }
+    return data
+
 def generate_token_author(author: Author):
-    data = generate_token_data(author)
+    data = generate_author_token_data(author)
     access_token = create_access_token(data)
     refresh_token = create_refresh_token(data)
 
@@ -158,7 +170,7 @@ def generate_token_author(author: Author):
     return AuthorLoginResponse(
         user=AuthorInfo(
             name=author.first_name + " " + author.last_name,
-            avatar_url=author.avatar_url
+            image_url=author.image_url
         ),
         auth=token_response
     )
