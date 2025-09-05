@@ -22,16 +22,12 @@ from pecha_api.plans.response_message import (
     EMAIL_ALREADY_VERIFIED,
     EMAIL_VERIFIED_SUCCESS, REGISTRATION_MESSAGE,
 )
-<<<<<<< HEAD:pecha_api/plans/plan_auth/plan_auth_services.py
+
 from pecha_api.auth.auth_repository import get_hashed_password
 
 from pecha_api.auth.auth_repository import get_hashed_password, verify_password, create_access_token, create_refresh_token, \
     generate_token_data
-from pecha_api.plans.plan_auth.plan_auth_model import TokenResponse, AuthorLoginResponse, AuthorInfo
-
-=======
->>>>>>> 4c74737b4589a67d39512f69e1c9c494c36fc08e:pecha_api/plans/auth/plan_auth_services.py
-
+from .plan_auth_model import TokenResponse, AuthorLoginResponse, AuthorInfo
 
 def register_author(create_user_request: CreateAuthorRequest) -> AuthorResponse:
     registered_user = _create_user(
@@ -117,13 +113,11 @@ def verify_author_email(token: str) -> dict:
             return {"message": EMAIL_VERIFIED_SUCCESS}
     except jwt.ExpiredSignatureError:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=TOKEN_EXPIRED)
-<<<<<<< HEAD:pecha_api/plans/plan_auth/plan_auth_services.py
     except HTTPException as e:
         # Re-raise expected HTTP errors (type/payload validation) without masking
         raise e
     except Exception:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=TOKEN_INVALID)
-        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid verification token")
 
 
 def authenticate_author(email: str, password: str):
@@ -168,5 +162,3 @@ def generate_token_author(author: Author):
         ),
         auth=token_response
     )
-=======
->>>>>>> 4c74737b4589a67d39512f69e1c9c494c36fc08e:pecha_api/plans/auth/plan_auth_services.py
