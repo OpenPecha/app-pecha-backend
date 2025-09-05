@@ -25,9 +25,8 @@ from pecha_api.plans.response_message import (
 
 from pecha_api.auth.auth_repository import get_hashed_password
 
-from pecha_api.auth.auth_repository import get_hashed_password, verify_password, create_access_token, create_refresh_token, \
-    generate_token_data
-from .plan_auth_model import TokenResponse, AuthorLoginResponse, AuthorInfo
+from pecha_api.auth.auth_repository import get_hashed_password, verify_password, create_access_token, create_refresh_token
+from .plan_auth_models import TokenResponse, AuthorLoginResponse, AuthorInfo
 
 def register_author(create_user_request: CreateAuthorRequest) -> AuthorDetails:
     registered_user = _create_user(

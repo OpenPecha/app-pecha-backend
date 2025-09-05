@@ -261,7 +261,7 @@ from pecha_api.plans.auth.plan_auth_services import (
     authenticate_and_generate_tokens,
     generate_token_author,
 )
-from pecha_api.plans.auth.plan_auth_model import AuthorInfo, TokenResponse, AuthorLoginResponse
+from pecha_api.plans.auth.plan_auth_models import AuthorInfo, TokenResponse, AuthorLoginResponse
 
 
 def test_authenticate_author_success():

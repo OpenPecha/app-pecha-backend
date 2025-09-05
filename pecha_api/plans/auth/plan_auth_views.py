@@ -1,8 +1,7 @@
 from fastapi import APIRouter, Depends
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 
-from .plan_auth_models import CreateAuthorRequest, AuthorDetails, AuthorVerificationResponse
-from .plan_auth_model import CreateAuthorRequest, AuthorResponse, AuthorLoginRequest, AuthorLoginResponse
+from .plan_auth_models import CreateAuthorRequest, AuthorDetails, AuthorVerificationResponse, AuthorLoginRequest, AuthorLoginResponse
 from starlette import status
 from .plan_auth_services import register_author, verify_author_email
 from typing import Annotated
