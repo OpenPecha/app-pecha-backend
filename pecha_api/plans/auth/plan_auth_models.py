@@ -27,3 +27,8 @@ class TokenPayload(BaseModel):
     iat: datetime
     exp: datetime
     typ: str
+
+class AuthorVerificationResponse(BaseModel):
+    email: str
+    status: AuthorStatus
+    message: str
