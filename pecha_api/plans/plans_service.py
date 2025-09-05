@@ -1,10 +1,15 @@
 from typing import Optional
 
+from sqlalchemy.orm.attributes import create_proxied_attribute
 from starlette import status
+from pecha_api.plans.plans_models import Plan
+from pecha_api.db.database import SessionLocal
+from pecha_api.plans.plans_repository import save_plan
+from pecha_api.users.users_service import validate_and_extract_user_details
 
 from pecha_api.error_contants import ErrorConstants
 from pecha_api.plans.authors.plan_author_service import validate_and_extract_author_details
-from pecha_api.plans.plans_enums import PlanStatus, ContentType
+from pecha_api.plans.plans_enums import LanguageCode, PlanStatus, ContentType
 from pecha_api.plans.plans_response_models import PlansResponse, PlanDTO, CreatePlanRequest, TaskDTO, PlanDayDTO, PlanWithDays, \
     UpdatePlanRequest, PlanStatusUpdate
 from uuid import uuid4, UUID
@@ -100,22 +105,35 @@ async def get_filtered_plans(token: str,search: Optional[str], sort_by: str, sor
     )
 
 
-async def create_new_plan(token:str,create_plan_request: CreatePlanRequest) -> PlanDTO:
-    #  current_author = validate_and_extract_author_details(token=token)
-    """Create a new plan"""
-    new_plan = PlanDTO(
-        id=uuid4(),
+async def create_new_plan(token: str, create_plan_request: CreatePlanRequest) -> PlanDTO:
+
+    current_author = validate_and_extract_user_details(token=token)
+    new_plan_model = Plan(
         title=create_plan_request.title,
         description=create_plan_request.description,
         image_url=create_plan_request.image_url,
-        total_days=create_plan_request.total_days,
-        status=PlanStatus.DRAFT,
+        author_id=current_author.id,
+        difficulty_level=create_plan_request.difficulty_level,
+        tags=create_plan_request.tags or [],
+        status=PlanStatus.DRAFT.value,
+        featured=False,
+        language=LanguageCode(create_plan_request.language or LanguageCode.EN.value),
+        created_by=current_author.email
+    )
+    
+    # Save to database
+    with SessionLocal() as db_session:
+        saved_plan = save_plan(db=db_session, plan=new_plan_model)
+    
+    return PlanDTO(
+        id=saved_plan.id,
+        title=saved_plan.title,
+        description=saved_plan.description,
+        image_url=saved_plan.image_url,
+        total_days=0,  # This will be updated when plan items are added
+        status=PlanStatus(saved_plan.status.value),
         subscription_count=0
     )
-
-    # In real implementation, save to database
-    DUMMY_PLANS.append(new_plan)
-    return new_plan
 
 async def get_details_plan(token:str,plan_id: UUID) -> PlanWithDays:
     #  current_author = validate_and_extract_author_details(token=token)

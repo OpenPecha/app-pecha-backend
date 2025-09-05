@@ -9,6 +9,7 @@ class CreatePlanRequest(BaseModel):
     description: str
     difficulty_level: DifficultyLevel
     total_days: int
+    language: Optional[str] = "en"
     image_url: Optional[str] = None
     tags: Optional[List[str]] = []
 
