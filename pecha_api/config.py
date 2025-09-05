@@ -8,7 +8,7 @@ DEFAULTS = dict(
     AWS_SECRET_KEY="",
     AWS_REGION="eu-central-1",
     AWS_BUCKET_NAME="app-pecha-backend",
-    BASE_URL="https://pech.org",
+    BASE_URL="https://webuddhist.com/",
     CLIENT_ID="",
     COMPRESSED_QUALITY=80,
     DATABASE_URL="postgresql://admin:pechaAdmin@localhost:5434/pecha",
@@ -22,7 +22,6 @@ DEFAULTS = dict(
     JWT_ISSUER="https://pecha.org",
     JWT_SECRET_KEY="",
     MAX_FILE_SIZE_MB=1,
-
     MONGO_CONNECTION_STRING="mongodb://admin:pechaAdmin@localhost:27017/pecha?authSource=admin",
 
     MONGO_DATABASE_NAME="pecha",

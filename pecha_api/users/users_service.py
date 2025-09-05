@@ -13,7 +13,7 @@ from pecha_api.error_contants import ErrorConstants
 from .user_response_models import UserInfoRequest, UserInfoResponse, SocialMediaProfile, PublisherInfoResponse
 from .users_enums import SocialProfile
 from .users_models import Users, SocialMediaAccount
-from ..auth.auth_repository import verify_auth0_token, decode_backend_token
+from ..auth.auth_repository import verify_auth0_token, decode_backend_token, validate_token
 from .users_repository import get_user_by_email, update_user, get_user_by_username
 from ..uploads.S3_utils import delete_file, upload_bytes, generate_presigned_upload_url
 from ..db.database import SessionLocal
@@ -188,12 +188,6 @@ def get_social_profile(value: str) -> SocialProfile:
         return SocialProfile(value.lower().replace("_","."))
     except ValueError:
         raise ValueError(f"'{value}' is not a valid SocialProfile")
-
-def validate_token(token: str) -> Dict[str, Any]:
-    if get("DOMAIN_NAME") in jwt.get_unverified_claims(token=token)["iss"]:
-        return verify_auth0_token(token)
-    else:
-        return decode_backend_token(token)
 
 
 def get_publisher_info_by_username(username: str) -> Optional[PublisherInfoResponse]:
