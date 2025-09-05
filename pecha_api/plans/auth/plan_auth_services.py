@@ -158,7 +158,7 @@ def generate_token_author(author: Author):
     return AuthorLoginResponse(
         user=AuthorInfo(
             name=author.first_name + " " + author.last_name,
-            image_url=author.image_url
+            avatar_url=author.avatar_url
         ),
         auth=token_response
     )

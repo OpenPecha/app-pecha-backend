@@ -252,13 +252,13 @@ def test_send_verification_email_sends_email():
             message="rendered_html",
         )
 
-from pecha_api.plans.plan_auth.plan_auth_services import (
+from pecha_api.plans.auth.plan_auth_services import (
     authenticate_author,
     check_verified_author,
     authenticate_and_generate_tokens,
     generate_token_author,
 )
-from pecha_api.plans.plan_auth.plan_auth_model import AuthorInfo, TokenResponse, AuthorLoginResponse
+from pecha_api.plans.auth.plan_auth_model import AuthorInfo, TokenResponse, AuthorLoginResponse
 
 
 def test_authenticate_author_success():
@@ -267,9 +267,9 @@ def test_authenticate_author_success():
     author.is_verified = True
     author.is_active = True
 
-    with patch("pecha_api.plans.plan_auth.plan_auth_services.SessionLocal") as mock_session_local, \
-        patch("pecha_api.plans.plan_auth.plan_auth_services.get_author_by_email", return_value=author), \
-        patch("pecha_api.plans.plan_auth.plan_auth_services.verify_password", return_value=True):
+    with patch("pecha_api.plans.auth.plan_auth_services.SessionLocal") as mock_session_local, \
+        patch("pecha_api.plans.auth.plan_auth_services.get_author_by_email", return_value=author), \
+        patch("pecha_api.plans.auth.plan_auth_services.verify_password", return_value=True):
         _mock_session_local(mock_session_local)
 
         result = authenticate_author("test@example.com", "password")
@@ -282,9 +282,9 @@ def test_authenticate_author_invalid_password():
     author.is_verified = True
     author.is_active = True
 
-    with patch("pecha_api.plans.plan_auth.plan_auth_services.SessionLocal") as mock_session_local, \
-        patch("pecha_api.plans.plan_auth.plan_auth_services.get_author_by_email", return_value=author), \
-        patch("pecha_api.plans.plan_auth.plan_auth_services.verify_password", return_value=False):
+    with patch("pecha_api.plans.auth.plan_auth_services.SessionLocal") as mock_session_local, \
+        patch("pecha_api.plans.auth.plan_auth_services.get_author_by_email", return_value=author), \
+        patch("pecha_api.plans.auth.plan_auth_services.verify_password", return_value=False):
         _mock_session_local(mock_session_local)
 
         try:
@@ -320,8 +320,8 @@ def test_check_verified_author_valid():
 
 def test_authenticate_and_generate_tokens():
     author = MagicMock()
-    with patch("pecha_api.plans.plan_auth.plan_auth_services.authenticate_author", return_value=author), \
-        patch("pecha_api.plans.plan_auth.plan_auth_services.generate_token_author", return_value="tokens") as mock_gen:
+    with patch("pecha_api.plans.auth.plan_auth_services.authenticate_author", return_value=author), \
+        patch("pecha_api.plans.auth.plan_auth_services.generate_token_author", return_value="tokens") as mock_gen:
         result = authenticate_and_generate_tokens("email", "password")
         mock_gen.assert_called_once_with(author)
         assert result == "tokens"
@@ -331,11 +331,11 @@ def test_generate_token_author_builds_response():
     author = MagicMock()
     author.first_name = "John"
     author.last_name = "Doe"
-    author.image_url = "img.png"
+    author.avatar_url = "img.png"
 
-    with patch("pecha_api.plans.plan_auth.plan_auth_services.generate_token_data", return_value={"sub": "123"}), \
-        patch("pecha_api.plans.plan_auth.plan_auth_services.create_access_token", return_value="access"), \
-        patch("pecha_api.plans.plan_auth.plan_auth_services.create_refresh_token", return_value="refresh"):
+    with patch("pecha_api.plans.auth.plan_auth_services.generate_token_data", return_value={"sub": "123"}), \
+        patch("pecha_api.plans.auth.plan_auth_services.create_access_token", return_value="access"), \
+        patch("pecha_api.plans.auth.plan_auth_services.create_refresh_token", return_value="refresh"):
         result = generate_token_author(author)
 
         assert isinstance(result, AuthorLoginResponse)
@@ -344,5 +344,4 @@ def test_generate_token_author_builds_response():
         assert result.auth.access_token == "access"
         assert result.auth.refresh_token == "refresh"
         assert result.user.name == "John Doe"
-        assert result.user.image_url == "img.png"
-
+        assert result.user.avatar_url == "img.png"
