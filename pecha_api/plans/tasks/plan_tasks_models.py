@@ -1,18 +1,17 @@
 from sqlalchemy import Column, Integer, DateTime, Boolean, Text, ForeignKey, Index, UUID,String
-from sqlalchemy import Enum as SQLEnum
 from sqlalchemy.orm import relationship
 from uuid import uuid4
 from ...db.database import Base
-from ..plan_enums import ContentType, ContentTypeEnum
+from ..plans_enums import ContentTypeEnum
 from _datetime import datetime
 import _datetime
 
 
 class PlanTask(Base):
-    __tablename__ = "plan_tasks"
+    __tablename__ = "tasks"
 
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid4)
-    plan_item_id = Column(UUID(as_uuid=True), ForeignKey('plan_items.id', ondelete='CASCADE'), nullable=False)
+    plan_item_id = Column(UUID(as_uuid=True), ForeignKey('items.id', ondelete='CASCADE'), nullable=False)
 
     title = Column(Text, nullable=True)
     content_type = Column(ContentTypeEnum, nullable=False)
