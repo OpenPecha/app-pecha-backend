@@ -105,20 +105,21 @@ async def get_filtered_plans(token: str,search: Optional[str], sort_by: str, sor
     )
 
 
-async def create_new_plan(token: str, create_plan_request: CreatePlanRequest) -> PlanDTO:
+def create_new_plan(token: str, create_plan_request: CreatePlanRequest) -> PlanDTO:
 
-    current_author = validate_and_extract_user_details(token=token)
+    # current_author = validate_and_extract_author_details(token=token)
+    # print("current_author>>>>>>>>>>>>>>>>>>>>",current_author.email)
     new_plan_model = Plan(
         title=create_plan_request.title,
         description=create_plan_request.description,
         image_url=create_plan_request.image_url,
-        author_id=current_author.id,
+        author_id="735cb962-53a1-40dd-805f-a9550b61fc9a",
         difficulty_level=create_plan_request.difficulty_level,
         tags=create_plan_request.tags or [],
         status=PlanStatus.DRAFT.value,
         featured=False,
         language=LanguageCode(create_plan_request.language or LanguageCode.EN.value),
-        created_by=current_author.email
+        created_by="sanduplobzang@gmail.com"
     )
     
     # Save to database
