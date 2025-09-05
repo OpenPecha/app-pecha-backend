@@ -1,6 +1,6 @@
 import uuid
 from unittest.mock import patch, MagicMock, ANY
-from datetime import datetime, timezone, timedelta
+from datetime import datetime, timezone
 
 from fastapi import HTTPException
 from starlette import status
@@ -12,17 +12,14 @@ from pecha_api.plans.auth.plan_auth_services import (
     _generate_author_verification_token,
     verify_author_email,
 )
-from pecha_api.plans.auth.plan_auth_model import CreateAuthorRequest
+from pecha_api.plans.auth.plan_auth_models import CreateAuthorRequest, AuthorVerificationResponse
 from pecha_api.plans.response_message import (
     PASSWORD_EMPTY,
     PASSWORD_LENGTH_INVALID,
-    TOKEN_TYPE_INVALID,
-    TOKEN_PAYLOAD_INVALID,
     TOKEN_EXPIRED,
-    TOKEN_INVALID,
     EMAIL_ALREADY_VERIFIED,
     EMAIL_VERIFIED_SUCCESS,
-    REGISTRATION_MESSAGE,
+    REGISTRATION_MESSAGE, TOKEN_INVALID,
 )
 from pecha_api.plans.auth.plan_auth_enums import AuthorStatus
 
@@ -68,11 +65,11 @@ def test_register_author_success():
         mock_send_email.assert_called_once_with(email=create_request.email)
 
         assert response is not None
-        assert response.author.first_name == saved_author.first_name
-        assert response.author.last_name == saved_author.last_name
-        assert response.author.email == saved_author.email
-        assert response.author.status == AuthorStatus.PENDING_VERIFICATION
-        assert response.author.message == REGISTRATION_MESSAGE
+        assert response.first_name == saved_author.first_name
+        assert response.last_name == saved_author.last_name
+        assert response.email == saved_author.email
+        assert response.status == AuthorStatus.PENDING_VERIFICATION
+        assert response.message == REGISTRATION_MESSAGE
 
 
 def test__validate_password_empty_password():
@@ -147,6 +144,7 @@ def test_verify_author_email_success():
 
     author = MagicMock()
     author.is_verified = False
+    author.email = "john.doe@example.com"
 
     with patch("pecha_api.plans.auth.plan_auth_services.get", return_value="x"), \
         patch("pecha_api.plans.auth.plan_auth_services.jwt.decode", return_value=payload) as mock_decode, \
@@ -156,12 +154,14 @@ def test_verify_author_email_success():
         _mock_session_local(mock_session_local)
         mock_get_author_by_email.return_value = author
 
-        response = verify_author_email(token)
+        response: AuthorVerificationResponse = verify_author_email(token)
 
         mock_decode.assert_called_once()
         mock_get_author_by_email.assert_called_once_with(db=ANY, email=payload["email"])
         mock_update_author.assert_called_once_with(db=ANY, author=author)
-        assert response == {"message": EMAIL_VERIFIED_SUCCESS}
+        assert response.email == "john.doe@example.com"
+        assert response.status == AuthorStatus.INACTIVE
+        assert response.message == EMAIL_VERIFIED_SUCCESS
 
 
 def test_verify_author_email_already_verified():
@@ -173,6 +173,7 @@ def test_verify_author_email_already_verified():
 
     author = MagicMock()
     author.is_verified = True
+    author.email = "john.doe@example.com"
 
     with patch("pecha_api.plans.auth.plan_auth_services.get", return_value="x"), \
         patch("pecha_api.plans.auth.plan_auth_services.jwt.decode", return_value=payload), \
@@ -182,10 +183,12 @@ def test_verify_author_email_already_verified():
         _mock_session_local(mock_session_local)
         mock_get_author_by_email.return_value = author
 
-        response = verify_author_email(token)
+        response: AuthorVerificationResponse  = verify_author_email(token)
 
         mock_update_author.assert_not_called()
-        assert response == {"message": EMAIL_ALREADY_VERIFIED}
+        assert response.email == "john.doe@example.com"
+        assert response.status == AuthorStatus.INACTIVE
+        assert response.message == EMAIL_ALREADY_VERIFIED
 
 
 def test_verify_author_email_invalid_type():
@@ -201,7 +204,7 @@ def test_verify_author_email_invalid_type():
             verify_author_email(token)
         except HTTPException as e:
             assert e.status_code == status.HTTP_400_BAD_REQUEST
-            assert e.detail == TOKEN_TYPE_INVALID
+            assert e.detail == TOKEN_INVALID
 
 
 def test_verify_author_email_missing_email():
@@ -216,7 +219,7 @@ def test_verify_author_email_missing_email():
             verify_author_email(token)
         except HTTPException as e:
             assert e.status_code == status.HTTP_400_BAD_REQUEST
-            assert e.detail == TOKEN_PAYLOAD_INVALID
+            assert e.detail == TOKEN_INVALID
 
 
 def test_verify_author_email_expired_token():
