@@ -1,5 +1,6 @@
 from .plan_auth_enums import AuthorStatus
-from .plan_auth_model import CreateAuthorRequest, AuthorResponse, AuthorDetails, TokenPayload
+from .plan_auth_models import CreateAuthorRequest, AuthorResponse, AuthorDetails, TokenPayload, \
+    AuthorVerificationResponse
 from pecha_api.plans.authors.plan_author_model import Author
 from pecha_api.db.database import SessionLocal
 from pecha_api.plans.authors.plan_authors_repository import save_author, get_author_by_email, update_author
@@ -15,20 +16,19 @@ from pathlib import Path
 from pecha_api.plans.response_message import (
     PASSWORD_EMPTY,
     PASSWORD_LENGTH_INVALID,
-    TOKEN_TYPE_INVALID,
-    TOKEN_PAYLOAD_INVALID,
     TOKEN_EXPIRED,
     TOKEN_INVALID,
+    EMAIL_VERIFIED_SUCCESS, 
     EMAIL_ALREADY_VERIFIED,
-    EMAIL_VERIFIED_SUCCESS, REGISTRATION_MESSAGE,
+    REGISTRATION_MESSAGE,
 )
 
 
-def register_author(create_user_request: CreateAuthorRequest) -> AuthorResponse:
+def register_author(create_user_request: CreateAuthorRequest) -> AuthorDetails:
     registered_user = _create_user(
         create_user_request=create_user_request
     )
-    return AuthorResponse(author=registered_user)
+    return registered_user
 
 def _create_user(create_user_request: CreateAuthorRequest) -> AuthorDetails:
     new_author = Author(**create_user_request.model_dump())
@@ -51,8 +51,7 @@ def _validate_password(password: str):
     if not password:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=PASSWORD_EMPTY)
     if len(password) < 8 or len(password) > 20:
-        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST,
-                            detail=PASSWORD_LENGTH_INVALID)
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=PASSWORD_LENGTH_INVALID)
 
 
 def _generate_author_verification_token(email: str) -> str:
@@ -86,7 +85,7 @@ def _send_verification_email(email: str) -> None:
     )
 
 
-def verify_author_email(token: str) -> dict:
+def verify_author_email(token: str) -> AuthorVerificationResponse:
     try:
         payload = jwt.decode(
             token,
@@ -95,16 +94,22 @@ def verify_author_email(token: str) -> dict:
             audience=get("JWT_AUD")
         )
         if payload.get("typ") != "author_email_verification":
-            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=TOKEN_TYPE_INVALID)
+            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=TOKEN_INVALID)
         email = payload.get("email")
         if not email:
-            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=TOKEN_PAYLOAD_INVALID)
+            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=TOKEN_INVALID)
         with SessionLocal() as db_session:
             author = get_author_by_email(db=db_session, email=email) # need validation for author
-            if author.is_verified:
-                return {"message": EMAIL_ALREADY_VERIFIED}
-            author.is_verified = True
-            update_author(db=db_session, author=author)
-            return {"message": EMAIL_VERIFIED_SUCCESS}
+            if not author.is_verified:
+                author.is_verified = True
+                update_author(db=db_session, author=author)
+                message = EMAIL_VERIFIED_SUCCESS
+            else:
+                message = EMAIL_ALREADY_VERIFIED
+            return AuthorVerificationResponse(
+                email=author.email,
+                status=AuthorStatus.INACTIVE,
+                message=message
+            )
     except jwt.ExpiredSignatureError:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=TOKEN_EXPIRED)

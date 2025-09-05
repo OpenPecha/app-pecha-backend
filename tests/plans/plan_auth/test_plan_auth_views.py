@@ -1,13 +1,13 @@
-from unittest.mock import patch, MagicMock
+from unittest.mock import patch
 
 from fastapi.testclient import TestClient
 from starlette import status
 
 from pecha_api.app import api
-from pecha_api.plans.auth.plan_auth_model import CreateAuthorRequest, AuthorResponse
-from pecha_api.plans.auth.plan_auth_model import AuthorDetails
+from pecha_api.plans.auth.plan_auth_models import AuthorDetails
 from pecha_api.plans.auth.plan_auth_enums import AuthorStatus
-
+from pecha_api.plans.auth.plan_auth_models import AuthorVerificationResponse
+from pecha_api.plans.response_message import EMAIL_VERIFIED_SUCCESS
 
 client = TestClient(api)
 
@@ -27,14 +27,13 @@ def test_register_user_success():
         status=AuthorStatus.PENDING_VERIFICATION,
         message="Registration successful"
     )
-    mock_response = AuthorResponse(author=author_details)
 
-    with patch("pecha_api.plans.auth.plan_auth_views.register_author", return_value=mock_response) as mock_register:
-        response = client.post("/plan-auth/register", json=request_payload)
+    with patch("pecha_api.plans.auth.plan_auth_views.register_author", return_value=author_details) as mock_register:
+        response = client.post("cms/auth/register", json=request_payload)
 
         assert response.status_code == status.HTTP_202_ACCEPTED
         data = response.json()
-        assert data["author"]["email"] == "john.doe@example.com"
+        assert data["email"] == "john.doe@example.com"
         mock_register.assert_called_once()
 
 
@@ -51,25 +50,27 @@ def test_register_user_validation_error_400():
         from fastapi import HTTPException
         mock_register.side_effect = HTTPException(status_code=400, detail="Password must be between 8 and 20 characters")
 
-        response = client.post("/plan-auth/register", json=request_payload)
+        response = client.post("cms/auth/register", json=request_payload)
 
         assert response.status_code == status.HTTP_400_BAD_REQUEST
         assert response.json()["detail"] == "Password must be between 8 and 20 characters"
 
 
 def test_verify_email_success():
-    token = "valid_token"
-    with patch("pecha_api.plans.auth.plan_auth_views.verify_author_email", return_value={"message": "ok"}) as mock_verify:
-        response = client.get(f"/plan-auth/verify-email?token={token}")
+    token = "test_token"
+    author_verification_response = AuthorVerificationResponse(
+        email='john.doe@example.com',
+        status=AuthorStatus.INACTIVE,
+        message=EMAIL_VERIFIED_SUCCESS
+    )
+    with patch("pecha_api.plans.auth.plan_auth_views.verify_author_email", return_value=author_verification_response) as mock_verify:
+        response = client.get("cms/auth/verify-email", headers={"Authorization": f"Bearer {token}"})
 
         assert response.status_code == status.HTTP_200_OK
-        assert response.json() == {"message": "ok"}
         mock_verify.assert_called_once_with(token=token)
 
 
-def test_verify_email_missing_token_422():
-    response = client.get("/plan-auth/verify-email")
+def test_verify_email_missing_token_403():
+    response = client.get("cms/auth/verify-email")
 
-    assert response.status_code == status.HTTP_422_UNPROCESSABLE_ENTITY
-
-
+    assert response.status_code == status.HTTP_403_FORBIDDEN
