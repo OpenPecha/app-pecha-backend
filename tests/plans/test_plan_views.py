@@ -88,14 +88,16 @@ async def test_get_plans_success_with_params():
             limit=5,
         )
 
-        mock_service.assert_awaited_once_with(
-            token="token123",
-            search="plan",
-            sort_by=SortBy.TITLE,
-            sort_order=SortOrder.ASC,
-            skip=1,
-            limit=5,
-        )
+        assert mock_service.call_count == 1
+        called_kwargs = mock_service.call_args.kwargs
+        assert called_kwargs == {
+            "token": "token123",
+            "search": "plan",
+            "sort_by": SortBy.TITLE,
+            "sort_order": SortOrder.ASC,
+            "skip": 1,
+            "limit": 5,
+        }
 
         assert resp == expected
 
@@ -108,13 +110,15 @@ async def test_get_plans_defaults():
     with patch("pecha_api.plans.plans_views.get_filtered_plans", return_value=expected, new_callable=AsyncMock) as mock_service:
         resp = await get_plans(authentication_credential=creds, search=None, sort_by=None, sort_order=None, skip=0, limit=10)
 
-        mock_service.assert_awaited_once_with(
-            token="tkn",
-            search=None,
-            sort_by=None,
-            sort_order=None,
-            skip=0,
-            limit=10,
-        )
+        assert mock_service.call_count == 1
+        called_kwargs = mock_service.call_args.kwargs
+        assert called_kwargs == {
+            "token": "tkn",
+            "search": None,
+            "sort_by": None,
+            "sort_order": None,
+            "skip": 0,
+            "limit": 10,
+        }
         assert resp == expected
 
