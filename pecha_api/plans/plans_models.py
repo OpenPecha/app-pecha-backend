@@ -34,10 +34,6 @@ class Plan(Base):
 
 
     author = relationship("Author", backref="plans", passive_deletes=True)
-    plan_items = relationship("PlanItem", back_populates="plan", cascade="all, delete-orphan")
-    user_progress = relationship("UserPlanProgress", back_populates="plan", cascade="all, delete-orphan")
-    reviews = relationship("PlanReview", back_populates="plan", cascade="all, delete-orphan")
-    favorites = relationship("Favorite", back_populates="plan", cascade="all, delete-orphan")
 
     __table_args__ = (
         # Indexes for plan discovery
