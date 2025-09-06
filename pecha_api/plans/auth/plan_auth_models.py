@@ -1,8 +1,8 @@
 from pydantic import BaseModel
 from datetime import datetime
+from typing import Optional
 
 from pecha_api.plans.auth.plan_auth_enums import AuthorStatus
-
 
 class CreateAuthorRequest(BaseModel):
     first_name: str
@@ -19,6 +19,25 @@ class AuthorDetails(BaseModel):
 
 class AuthorResponse(BaseModel):
     author: AuthorDetails
+
+class TokenResponse(BaseModel):
+    access_token: str
+    refresh_token: str
+    token_type: str
+
+
+class AuthorInfo(BaseModel):
+    name: str
+    image_url: Optional[str] = None
+
+
+class AuthorLoginResponse(BaseModel):
+    user: AuthorInfo
+    auth: TokenResponse
+
+class AuthorLoginRequest(BaseModel):
+    email: str
+    password: str
 
 class TokenPayload(BaseModel):
     email: str
