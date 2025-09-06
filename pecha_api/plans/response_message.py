@@ -11,6 +11,7 @@ EMAIL_VERIFIED_SUCCESS = "Email verified successfully. Your account is pending a
 
 PASSWORD_EMPTY = "Password cannot be empty"
 PASSWORD_LENGTH_INVALID = "Password must be between 8 and 20 characters"
+INVALID_EMAIL_PASSWORD = "Invalid email or password"
 
 TOKEN_EXPIRED = "Verification token expired"
 TOKEN_INVALID = "Invalid verification token"

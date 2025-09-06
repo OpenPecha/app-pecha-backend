@@ -21,6 +21,9 @@ from pecha_api.plans.response_message import (
     EMAIL_VERIFIED_SUCCESS, 
     EMAIL_ALREADY_VERIFIED,
     REGISTRATION_MESSAGE,
+    AUTHOR_NOT_VERIFIED,
+    AUTHOR_NOT_ACTIVE,
+    INVALID_EMAIL_PASSWORD
 )
 
 from pecha_api.auth.auth_repository import get_hashed_password
@@ -134,15 +137,15 @@ def authenticate_author(email: str, password: str):
         ):
             raise HTTPException(
                 status_code=status.HTTP_401_UNAUTHORIZED,
-                detail='Invalid email or password'
+                detail=INVALID_EMAIL_PASSWORD
             )
         return author
 
 def check_verified_author(author: Author) -> bool:
     if not author.is_verified:
-        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail='Author not verified')
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail = AUTHOR_NOT_VERIFIED)
     elif not author.is_active:
-        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail='Author not active')    
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail = AUTHOR_NOT_ACTIVE)    
     
 
 def authenticate_and_generate_tokens(email: str, password: str):
