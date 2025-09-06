@@ -1,10 +1,10 @@
 import uuid
 import pytest
-from unittest.mock import patch, MagicMock
+from unittest.mock import patch, MagicMock, AsyncMock
 
-from pecha_api.plans.plans_enums import DifficultyLevel, PlanStatus
-from pecha_api.plans.plans_response_models import CreatePlanRequest, PlanDTO
-from pecha_api.plans.plans_views import create_plan
+from pecha_api.plans.plans_enums import DifficultyLevel, PlanStatus, SortBy, SortOrder
+from pecha_api.plans.plans_response_models import CreatePlanRequest, PlanDTO, PlansResponse
+from pecha_api.plans.plans_views import create_plan, get_plans
 
 
 class _Creds:
@@ -52,4 +52,69 @@ async def test_create_plan_success():
         assert response.status == PlanStatus.DRAFT
         assert response.subscription_count == 0
 
+
+
+@pytest.mark.asyncio
+async def test_get_plans_success_with_params():
+    creds = _Creds(token="token123")
+
+    plan1 = PlanDTO(
+        id=uuid.uuid4(),
+        title="Plan One",
+        description="Desc 1",
+        image_url="https://example.com/1.jpg",
+        total_days=0,
+        status=PlanStatus.PUBLISHED,
+        subscription_count=0,
+    )
+    plan2 = PlanDTO(
+        id=uuid.uuid4(),
+        title="Plan Two",
+        description="Desc 2",
+        image_url="https://example.com/2.jpg",
+        total_days=0,
+        status=PlanStatus.DRAFT,
+        subscription_count=0,
+    )
+    expected = PlansResponse(plans=[plan1, plan2], skip=1, limit=5, total=2)
+
+    with patch("pecha_api.plans.plans_views.get_filtered_plans", return_value=expected, new_callable=AsyncMock) as mock_service:
+        resp = await get_plans(
+            authentication_credential=creds,
+            search="plan",
+            sort_by=SortBy.TITLE,
+            sort_order=SortOrder.ASC,
+            skip=1,
+            limit=5,
+        )
+
+        mock_service.assert_awaited_once_with(
+            token="token123",
+            search="plan",
+            sort_by=SortBy.TITLE,
+            sort_order=SortOrder.ASC,
+            skip=1,
+            limit=5,
+        )
+
+        assert resp == expected
+
+
+@pytest.mark.asyncio
+async def test_get_plans_defaults():
+    creds = _Creds(token="tkn")
+    expected = PlansResponse(plans=[], skip=0, limit=10, total=0)
+
+    with patch("pecha_api.plans.plans_views.get_filtered_plans", return_value=expected, new_callable=AsyncMock) as mock_service:
+        resp = await get_plans(authentication_credential=creds, search=None, sort_by=None, sort_order=None, skip=0, limit=10)
+
+        mock_service.assert_awaited_once_with(
+            token="tkn",
+            search=None,
+            sort_by=None,
+            sort_order=None,
+            skip=0,
+            limit=10,
+        )
+        assert resp == expected
 
