@@ -1,4 +1,4 @@
-from typing import Optional
+from typing import Optional, List
 
 from sqlalchemy.orm.attributes import create_proxied_attribute
 from starlette import status
@@ -12,6 +12,9 @@ from pecha_api.plans.authors.plan_author_service import validate_and_extract_aut
 from pecha_api.plans.plans_enums import LanguageCode, PlanStatus, ContentType
 from pecha_api.plans.plans_response_models import PlansResponse, PlanDTO, CreatePlanRequest, TaskDTO, PlanDayDTO, PlanWithDays, \
     UpdatePlanRequest, PlanStatusUpdate
+from pecha_api.plans.plans_repository import get_plans as repo_get_plans
+from pecha_api.db.database import SessionLocal
+import asyncio
 from uuid import uuid4, UUID
 from fastapi import HTTPException
 DUMMY_PLANS = [
@@ -78,31 +81,38 @@ DUMMY_DAYS = [
 ]
 
 
-async def get_filtered_plans(token: str,search: Optional[str], sort_by: str, sort_order: str, skip: int, limit: int) -> PlansResponse:
-   # current_author = validate_and_extract_author_details(token=token)
-    # Dummy data for development
-    filtered_plans = DUMMY_PLANS
-    if search:
-        filtered_plans = [p for p in DUMMY_PLANS if search.lower() in p.title.lower()]
+async def get_filtered_plans(token: str, search: Optional[str], sort_by: str, sort_order: str, skip: int, limit: int) -> PlansResponse:
+    # Validate token and author context (authorization can be extended later)
+    # validate_and_extract_author_details(token=token)
 
-    # Sort plans
-    reverse = sort_order == "desc"
-    if sort_by == "title":
-        filtered_plans.sort(key=lambda x: x.title, reverse=reverse)
-    elif sort_by == "total_days":
-        filtered_plans.sort(key=lambda x: x.total_days, reverse=reverse)
-    elif sort_by == "status":
-        filtered_plans.sort(key=lambda x: x.status.value, reverse=reverse)
+    def _run_query():
+        with SessionLocal() as db_session:
+            return repo_get_plans(
+                db=db_session,
+                search=search,
+                sort_by=sort_by,
+                sort_order=sort_order,
+                skip=skip,
+                limit=limit,
+            )
 
-    # Apply pagination
-    total = len(filtered_plans)
-    paginated_plans = filtered_plans[skip:skip + limit]
-    return PlansResponse(
-        plans=paginated_plans,
-        skip=skip,
-        limit=limit,
-        total=total
-    )
+    rows, total = await asyncio.to_thread(_run_query)
+
+    plans: List[PlanDTO] = []
+    for plan_model in rows:
+        plans.append(
+            PlanDTO(
+                id=plan_model.id,
+                title=plan_model.title,
+                description=plan_model.description,
+                image_url=plan_model.image_url,
+                total_days=0,
+                status=PlanStatus(plan_model.status.value),
+                subscription_count=0,
+            )
+        )
+
+    return PlansResponse(plans=plans, skip=skip, limit=limit, total=total)
 
 
 def create_new_plan(token: str, create_plan_request: CreatePlanRequest) -> PlanDTO:

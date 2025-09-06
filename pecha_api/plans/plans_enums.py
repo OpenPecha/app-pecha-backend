@@ -31,6 +31,15 @@ class LanguageCode(enum.Enum):
     BO = "bo"
     ZH = "zh"
 
+class SortOrder(enum.Enum):
+    ASC = "asc"
+    DESC = "desc"
+
+class SortBy(enum.Enum):
+    CREATED_DATE = "created_at"
+    TITLE = "title"
+
+
 # SQLAlchemy enum types
 DifficultyLevelEnum = Enum(DifficultyLevel)
 ContentTypeEnum = Enum(ContentType)
