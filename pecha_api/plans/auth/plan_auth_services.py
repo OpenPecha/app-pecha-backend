@@ -21,8 +21,15 @@ from pecha_api.plans.response_message import (
     EMAIL_VERIFIED_SUCCESS, 
     EMAIL_ALREADY_VERIFIED,
     REGISTRATION_MESSAGE,
+    AUTHOR_NOT_VERIFIED,
+    AUTHOR_NOT_ACTIVE,
+    INVALID_EMAIL_PASSWORD
 )
 
+from pecha_api.auth.auth_repository import get_hashed_password
+
+from pecha_api.auth.auth_repository import get_hashed_password, verify_password, create_access_token, create_refresh_token
+from .plan_auth_models import TokenResponse, AuthorLoginResponse, AuthorInfo
 
 def register_author(create_user_request: CreateAuthorRequest) -> AuthorDetails:
     registered_user = _create_user(
@@ -113,3 +120,64 @@ def verify_author_email(token: str) -> AuthorVerificationResponse:
             )
     except jwt.ExpiredSignatureError:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=TOKEN_EXPIRED)
+    except HTTPException as e:
+        # Re-raise expected HTTP errors (type/payload validation) without masking
+        raise e
+    except Exception:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=TOKEN_INVALID)
+
+
+def authenticate_author(email: str, password: str):
+    with SessionLocal() as db_session:
+        author = get_author_by_email(db=db_session, email=email)
+        check_verified_author(author=author)
+        if not verify_password(
+                plain_password=password,
+                hashed_password=author.password
+        ):
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail=INVALID_EMAIL_PASSWORD
+            )
+        return author
+
+def check_verified_author(author: Author) -> bool:
+    if not author.is_verified:
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail = AUTHOR_NOT_VERIFIED)
+    elif not author.is_active:
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail = AUTHOR_NOT_ACTIVE)    
+    
+
+def authenticate_and_generate_tokens(email: str, password: str):
+    author = authenticate_author(email=email, password=password)
+    return generate_token_author(author)
+
+def generate_author_token_data(author: Author):
+    if not all([author.email, author.first_name, author.last_name]):
+        return None
+    data = {
+        "email": author.email,
+        "name": author.first_name + " " + author.last_name,
+        "iss": get("JWT_ISSUER"),
+        "aud": get("JWT_AUD"),
+        "iat": datetime.now(timezone.utc)
+    }
+    return data
+
+def generate_token_author(author: Author):
+    data = generate_author_token_data(author)
+    access_token = create_access_token(data)
+    refresh_token = create_refresh_token(data)
+
+    token_response = TokenResponse(
+        access_token=access_token,
+        refresh_token=refresh_token,
+        token_type="Bearer"
+    )
+    return AuthorLoginResponse(
+        user=AuthorInfo(
+            name=author.first_name + " " + author.last_name,
+            image_url=author.image_url
+        ),
+        auth=token_response
+    )

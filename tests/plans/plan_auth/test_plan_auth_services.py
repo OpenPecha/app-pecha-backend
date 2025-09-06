@@ -255,4 +255,236 @@ def test_send_verification_email_sends_email():
             message="rendered_html",
         )
 
+from pecha_api.plans.auth.plan_auth_services import (
+    authenticate_author,
+    check_verified_author,
+    authenticate_and_generate_tokens,
+    generate_token_author,
+    generate_author_token_data,
+)
+from pecha_api.plans.auth.plan_auth_models import AuthorInfo, TokenResponse, AuthorLoginResponse
 
+
+def test_authenticate_author_success():
+    author = MagicMock()
+    author.password = "hashed"
+    author.is_verified = True
+    author.is_active = True
+
+    with patch("pecha_api.plans.auth.plan_auth_services.SessionLocal") as mock_session_local, \
+        patch("pecha_api.plans.auth.plan_auth_services.get_author_by_email", return_value=author), \
+        patch("pecha_api.plans.auth.plan_auth_services.verify_password", return_value=True):
+        _mock_session_local(mock_session_local)
+
+        result = authenticate_author("test@example.com", "password")
+        assert result == author
+
+
+def test_authenticate_author_invalid_password():
+    author = MagicMock()
+    author.password = "hashed"
+    author.is_verified = True
+    author.is_active = True
+
+    with patch("pecha_api.plans.auth.plan_auth_services.SessionLocal") as mock_session_local, \
+        patch("pecha_api.plans.auth.plan_auth_services.get_author_by_email", return_value=author), \
+        patch("pecha_api.plans.auth.plan_auth_services.verify_password", return_value=False):
+        _mock_session_local(mock_session_local)
+
+        try:
+            authenticate_author("test@example.com", "wrong")
+        except HTTPException as e:
+            assert e.status_code == status.HTTP_401_UNAUTHORIZED
+            assert e.detail == "Invalid email or password"
+
+
+def test_check_verified_author_not_verified():
+    author = MagicMock(is_verified=False, is_active=True)
+    try:
+        check_verified_author(author)
+    except HTTPException as e:
+        assert e.status_code == status.HTTP_401_UNAUTHORIZED
+        assert e.detail == "Author not verified"
+
+
+def test_check_verified_author_not_active():
+    author = MagicMock(is_verified=True, is_active=False)
+    try:
+        check_verified_author(author)
+    except HTTPException as e:
+        assert e.status_code == status.HTTP_401_UNAUTHORIZED
+        assert e.detail == "Author not active"
+
+
+def test_check_verified_author_valid():
+    author = MagicMock(is_verified=True, is_active=True)
+    # Should not raise
+    check_verified_author(author)
+
+
+def test_authenticate_and_generate_tokens():
+    author = MagicMock()
+    with patch("pecha_api.plans.auth.plan_auth_services.authenticate_author", return_value=author), \
+        patch("pecha_api.plans.auth.plan_auth_services.generate_token_author", return_value="tokens") as mock_gen:
+        result = authenticate_and_generate_tokens("email", "password")
+        mock_gen.assert_called_once_with(author)
+        assert result == "tokens"
+
+
+def test_generate_token_author_builds_response():
+    author = MagicMock()
+    author.first_name = "John"
+    author.last_name = "Doe"
+    author.email = "john.doe@example.com"
+    author.image_url = "img.png"
+
+    with patch("pecha_api.plans.auth.plan_auth_services.generate_author_token_data", return_value={"sub": "123"}), \
+        patch("pecha_api.plans.auth.plan_auth_services.create_access_token", return_value="access"), \
+        patch("pecha_api.plans.auth.plan_auth_services.create_refresh_token", return_value="refresh"):
+        result = generate_token_author(author)
+
+        assert isinstance(result, AuthorLoginResponse)
+        assert isinstance(result.user, AuthorInfo)
+        assert isinstance(result.auth, TokenResponse)
+        assert result.auth.access_token == "access"
+        assert result.auth.refresh_token == "refresh"
+        assert result.user.name == "John Doe"
+        assert result.user.image_url == "img.png"
+
+def test_generate_author_token_data_success():
+    """Test generate_author_token_data with valid author data"""
+    author = MagicMock()
+    author.email = "john.doe@example.com"
+    author.first_name = "John"
+    author.last_name = "Doe"
+    
+    with patch("pecha_api.plans.auth.plan_auth_services.get") as mock_get, \
+         patch("pecha_api.plans.auth.plan_auth_services.datetime") as mock_datetime:
+        
+        mock_get.side_effect = lambda key: {
+            "JWT_ISSUER": "https://pecha.org",
+            "JWT_AUD": "https://pecha.org"
+        }[key]
+        
+        mock_now = datetime(2024, 1, 1, 12, 0, 0, tzinfo=timezone.utc)
+        mock_datetime.now.return_value = mock_now
+        mock_datetime.timezone = timezone
+        
+        result = generate_author_token_data(author)
+        
+        assert result is not None
+        assert result["email"] == "john.doe@example.com"
+        assert result["name"] == "John Doe"
+        assert result["iss"] == "https://pecha.org"
+        assert result["aud"] == "https://pecha.org"
+        assert result["iat"] == mock_now
+
+
+def test_generate_author_token_data_missing_email():
+    """Test generate_author_token_data returns None when email is missing"""
+    author = MagicMock()
+    author.email = None
+    author.first_name = "John"
+    author.last_name = "Doe"
+    
+    result = generate_author_token_data(author)
+    
+    assert result is None
+
+
+def test_generate_author_token_data_empty_email():
+    """Test generate_author_token_data returns None when email is empty"""
+    author = MagicMock()
+    author.email = ""
+    author.first_name = "John"
+    author.last_name = "Doe"
+    
+    result = generate_author_token_data(author)
+    
+    assert result is None
+
+
+def test_generate_author_token_data_missing_first_name():
+    """Test generate_author_token_data returns None when first_name is missing"""
+    author = MagicMock()
+    author.email = "john.doe@example.com"
+    author.first_name = None
+    author.last_name = "Doe"
+    
+    result = generate_author_token_data(author)
+    
+    assert result is None
+
+
+def test_generate_author_token_data_empty_first_name():
+    """Test generate_author_token_data returns None when first_name is empty"""
+    author = MagicMock()
+    author.email = "john.doe@example.com"
+    author.first_name = ""
+    author.last_name = "Doe"
+    
+    result = generate_author_token_data(author)
+    
+    assert result is None
+
+
+def test_generate_author_token_data_missing_last_name():
+    """Test generate_author_token_data returns None when last_name is missing"""
+    author = MagicMock()
+    author.email = "john.doe@example.com"
+    author.first_name = "John"
+    author.last_name = None
+    
+    result = generate_author_token_data(author)
+    
+    assert result is None
+
+
+def test_generate_author_token_data_empty_last_name():
+    """Test generate_author_token_data returns None when last_name is empty"""
+    author = MagicMock()
+    author.email = "john.doe@example.com"
+    author.first_name = "John"
+    author.last_name = ""
+    
+    result = generate_author_token_data(author)
+    
+    assert result is None
+
+
+def test_generate_author_token_data_all_fields_missing():
+    """Test generate_author_token_data returns None when all required fields are missing"""
+    author = MagicMock()
+    author.email = None
+    author.first_name = None
+    author.last_name = None
+    
+    result = generate_author_token_data(author)
+    
+    assert result is None
+
+
+def test_generate_author_token_data_with_whitespace_names():
+    """Test generate_author_token_data handles names with whitespace correctly"""
+    author = MagicMock()
+    author.email = "john.doe@example.com"
+    author.first_name = " John "
+    author.last_name = " Doe "
+    
+    with patch("pecha_api.plans.auth.plan_auth_services.get") as mock_get, \
+         patch("pecha_api.plans.auth.plan_auth_services.datetime") as mock_datetime:
+        
+        mock_get.side_effect = lambda key: {
+            "JWT_ISSUER": "https://pecha.org",
+            "JWT_AUD": "https://pecha.org"
+        }[key]
+        
+        mock_now = datetime(2024, 1, 1, 12, 0, 0, tzinfo=timezone.utc)
+        mock_datetime.now.return_value = mock_now
+        mock_datetime.timezone = timezone
+        
+        result = generate_author_token_data(author)
+        
+        assert result is not None
+        assert result["name"] == " John   Doe "
+        assert result["email"] == "john.doe@example.com"
