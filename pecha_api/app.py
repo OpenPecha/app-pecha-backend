@@ -18,7 +18,9 @@ from pecha_api.texts.groups import groups_views
 from pecha_api.share import share_views
 from pecha_api.search import search_views
 from pecha_api.plans.auth import plan_auth_views
-from pecha_api.plans import plans_views
+from pecha_api.plans.cms import views as cms_plans_views
+from pecha_api.plans.public import views as public_plans_views
+from pecha_api.plans.user import views as user_plans_views
 import uvicorn
 
 
@@ -42,7 +44,9 @@ api.include_router(mappings_views.mapping_router)
 api.include_router(search_views.search_router)
 api.include_router(share_views.share_router)
 api.include_router(plan_auth_views.plan_auth_router)
-api.include_router(plans_views.plans_router)
+api.include_router(cms_plans_views.cms_plans_router)
+api.include_router(public_plans_views.public_plans_router)
+api.include_router(user_plans_views.user_progress_router)
 
 api.add_middleware(
     CORSMiddleware,

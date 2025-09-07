@@ -1,0 +1,1453 @@
+openapi: 3.0.3
+info:
+  title: Buddhist Reading Plans API for Content Creators
+  description: |
+    API for managing Buddhist reading plans and content delivery.
+    
+    ## Authentication
+    Most endpoints require JWT authentication. Include the token in the Authorization header:
+    `Authorization: Bearer <your-jwt-token>`
+    
+    ## Rate Limiting
+    - Authenticated users: 1000 requests per hour
+    - Unauthenticated users: 100 requests per hour
+    
+  version: 1.0.0
+  contact:
+    name: API Support
+    email: api-support@buddhist-plans.com
+  license:
+    name: MIT
+    url: https://opensource.org/licenses/MIT
+
+servers:
+  - url: https://api.webuddhist.com/v1
+    description: Production server
+  - url: https://staging-api.webuddhist.com/v1
+    description: Staging server
+  - url: http://localhost:8000/v1
+    description: Development server
+
+security:
+  - BearerAuth: []
+
+paths:
+  # Authentication Endpoints
+  /cms/auth/login:
+    post:
+      tags:
+        - Authentication
+      summary: Author login
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LoginRequest'
+      responses:
+        '200':
+          description: Login successful
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LoginResponse'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          description: Account not activated by admin
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              example:
+                error: "account_not_activated"
+                message: "Your account is pending admin approval"
+
+  /cms/auth/register:
+    post:
+      tags:
+        - Authentication
+      summary: Author registration requires email verification and admin activation
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RegisterRequest'
+      responses:
+        '201':
+          description: Registration successful - verification email sent
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RegisterResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '409':
+          description: Email already exists
+
+  /cms/auth/verify-email:
+    get:
+      tags:
+        - Authentication
+      summary: Verify email address
+      security:
+        - BearerAuth: []
+      responses:
+        '200':
+          description: Email verified successfully - awaiting admin activation
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EmailVerificationResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          description: Invalid verification token
+
+  /cms/auth/refresh-token:
+    post:
+      tags:
+        - Authentication
+      summary: Refresh access token
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RefreshTokenRequest'
+      responses:
+        '200':
+          description: Token refreshed successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TokenResponse'
+        '401':
+          description: Invalid or expired refresh token
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              example:
+                error: "invalid_refresh_token"
+                message: "The refresh token is invalid or expired"
+
+  # Media Upload Endpoints
+  /cms/media/upload:
+    post:
+      tags:
+        - Media
+      summary: Upload image for plans or tasks
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              properties:
+                file:
+                  type: string
+                  format: binary
+                  description: Image file (JPEG, PNG, WebP)
+                path:
+                  type: string
+                  description:  S3 folder path for the uploaded file
+                  example: "plans/images/"
+              required:
+                - file
+                - path
+      responses:
+        '201':
+          description: Image uploaded successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MediaUploadResponse'
+        '400':
+          description: Invalid file format or size
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              example:
+                error: "invalid_file"
+                message: "Only JPEG, PNG, and WebP images are allowed. Maximum size: 5MB"
+        '413':
+          description: File too large
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              example:
+                error: "file_too_large"
+                message: "File size exceeds 5MB limit"
+
+  # Plans Endpoints
+  /cms/plans:
+    get:
+      tags:
+        - Plans
+      summary: Get all plans with filtering and pagination
+      parameters:
+        - name: search
+          in: query
+          description: Search by plan title
+          schema:
+            type: string
+        - name: sort_by
+          in: query
+          description: Sort plans by field
+          schema:
+            type: string
+            enum:
+              - title
+              - total_days
+              - status
+            default: title
+        - name: sort_order
+          in: query
+          description: Sort order
+          schema:
+            type: string
+            enum:
+              - asc
+              - desc
+            default: asc
+        - name: skip
+          in: query
+          schema:
+            type: integer
+            minimum: 0
+            default: 0
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 50
+            default: 20
+      responses:
+        '200':
+          description: Plans retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedPlans'
+
+    post:
+      tags:
+        - Plans
+      summary: Create a new plan
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PlanCreate'
+      responses:
+        '201':
+          description: Plan created successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Plan'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+
+  /cms/plans/{plan_id}:
+    get:
+      tags:
+        - Plans
+      summary: Get plan details
+      parameters:
+        - name: plan_id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Plan details with days listing
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PlanWithDays'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+    put:
+      tags:
+        - Plans
+      summary: Update plan metadata
+      parameters:
+        - name: plan_id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PlanUpdate'
+      responses:
+        '200':
+          description: Plan updated successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Plan'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+    delete:
+      tags:
+        - Plans
+      summary: Delete plan
+      parameters:
+        - name: plan_id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '204':
+          description: Plan deleted successfully
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  /cms/plans/{plan_id}/status:
+    patch:
+      tags:
+        - Plans
+      summary: Update plan status
+      parameters:
+        - name: plan_id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PlanStatusUpdate'
+      responses:
+        '200':
+          description: Plan status updated successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Plan'
+        '400':
+          description: Invalid status or plan cannot be published
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              examples:
+                invalid_status:
+                  value:
+                    error: "invalid_status"
+                    message: "Status must be one of: DRAFT, PUBLISHED, UNPUBLISHED"
+                cannot_publish:
+                  value:
+                    error: "cannot_publish"
+                    message: "Plan must have at least one day with content to be published"
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  # Day Management Endpoints
+  /cms/plans/{plan_id}/days:
+    post:
+      tags:
+        - Days
+      summary: Add a new day to a plan (auto-generates day_number and title)
+      parameters:
+        - name: plan_id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/DayCreate'
+      responses:
+        '201':
+          description: Day created successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PlanDay'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '404':
+          $ref: '#/components/responses/NotFound'
+    patch:
+      tags:
+        - Days
+      summary: Reorder days within a plan
+      parameters:
+        - name: plan_id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/DayReorder'
+      responses:
+        '200':
+          description: Days reordered successfully
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/PlanDay'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  /cms/plans/{plan_id}/days/{day_id}:
+    delete:
+      tags:
+        - Days
+      summary: Delete a day and all its tasks
+      parameters:
+        - name: plan_id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: day_id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '204':
+          description: Day and all its tasks deleted successfully
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  # Task Management Endpoints
+  /cms/plans/{plan_id}/days/{day_id}/tasks:
+    post:
+      tags:
+        - Tasks
+      summary: Add a task to a specific day
+      parameters:
+        - name: plan_id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: day_id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TaskCreate'
+      responses:
+        '201':
+          description: Task created successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Task'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  /cms/plans/{plan_id}/days/{day_id}/tasks/{task_id}:
+    put:
+      tags:
+        - Tasks
+      summary: Update a specific task
+      parameters:
+        - name: plan_id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: day_id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: task_id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TaskUpdate'
+      responses:
+        '200':
+          description: Task updated successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Task'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '404':
+          $ref: '#/components/responses/NotFound'
+    delete:
+      tags:
+        - Tasks
+      summary: Delete a specific task
+      parameters:
+        - name: plan_id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: day_id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: task_id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '204':
+          description: Task deleted successfully
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  /cms/plans/{plan_id}/tasks/{task_id}:
+    patch:
+      tags:
+        - Tasks
+      summary: Move a task to a different day
+      parameters:
+        - name: plan_id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: task_id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TaskMove'
+      responses:
+        '200':
+          description: Task moved successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Task'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  # Reviews Endpoints
+  /cms/plans/{plan_id}/reviews:
+    get:
+      tags:
+        - Reviews
+      summary: Get plan reviews
+      parameters:
+        - name: plan_id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: skip
+          in: query
+          schema:
+            type: integer
+            minimum: 0
+            default: 0
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 50
+            default: 10
+      responses:
+        '200':
+          description: Reviews retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedReviews'
+
+  # Authors Endpoints
+  /cms/authors:
+    get:
+      tags:
+        - Authors
+      summary: Get all authors (Admin only)
+      parameters:
+        - name: verified_only
+          in: query
+          schema:
+            type: boolean
+            default: false
+        - name: skip
+          in: query
+          schema:
+            type: integer
+            minimum: 0
+            default: 0
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 50
+            default: 20
+      responses:
+        '200':
+          description: Authors retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedAuthors'
+
+  /cms/authors/me:
+    get:
+      tags:
+        - Authors
+      summary: Get current author's details
+      responses:
+        '200':
+          description: Author details
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AuthorDetail'
+        '404':
+          $ref: '#/components/responses/NotFound'
+    put:
+      tags:
+        - Authors
+      summary: Update current author's details
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AuthorUpdate'
+      responses:
+        '200':
+          description: Author updated successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Author'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  /cms/authors/{author_id}:
+    get:
+      tags:
+        - Authors
+      summary: Get author details (Admin only)
+      parameters:
+        - name: author_id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Author details
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AuthorDetail'
+        '404':
+          $ref: '#/components/responses/NotFound'
+    patch:
+      tags:
+        - Authors
+      summary: Enable/disable author (Admin only)
+      parameters:
+        - name: author_id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                is_active:
+                  type: boolean
+              required:
+                - is_active
+      responses:
+        '200':
+          description: Author status updated successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Author'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+    delete:
+      tags:
+        - Authors
+      summary: Delete author (Admin only)
+      parameters:
+        - name: author_id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '204':
+          description: Author deleted successfully
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          description: Cannot delete author with existing plans
+
+  /cms/authors/{author_id}/plans:
+    get:
+      tags:
+        - Authors
+      summary: Get plans by author (Admin only)
+      parameters:
+        - name: author_id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Author's plans
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AuthorPlansResponse'
+
+components:
+  securitySchemes:
+    BearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+
+  schemas:
+    # Enums
+    DifficultyLevel:
+      type: string
+      enum:
+        - BEGINNER
+        - INTERMEDIATE
+        - ADVANCED
+
+    ContentType:
+      type: string
+      enum:
+        - TEXT
+        - AUDIO
+        - VIDEO
+        - IMAGE
+        - SOURCE_REFERENCE
+
+
+    # Authentication Schemas
+    LoginRequest:
+      type: object
+      properties:
+        email:
+          type: string
+          format: email
+        hashed_password:
+          type: string
+          description: SHA-256 hash of password + email
+          pattern: '^[a-f0-9]{64}$'
+          example: "5e884898da28047151d0e56f8dc6292773603d0d6aabbdd62a11ef721d1542d8"
+      required:
+        - email
+        - hashed_password
+
+    RegisterRequest:
+      type: object
+      properties:
+        first_name:
+          type: string
+        last_name:
+          type: string
+        email:
+          type: string
+          format: email
+        hash_password:
+          type: string
+          minLength: 6
+      required:
+        - first_name
+        - last_name
+        - email
+        - password
+
+    RegisterResponse:
+      type: object
+      properties:
+        first_name:
+          type: string
+        last_name:
+          type: string
+        email:
+          type: string
+          format: email
+        status:
+          type: string
+          enum:
+            - PENDING_VERIFICATION
+        message:
+          type: string
+          example: "Registration successful. Please check your email to verify your account."
+      required:
+        - first_name
+        - last_name
+        - email
+        - status
+        - message
+
+    EmailVerificationRequest:
+      type: object
+      properties:
+        token:
+          type: string
+          description: Email verification token
+      required:
+        - token
+
+    EmailVerificationResponse:
+      type: object
+      properties:
+        email:
+          type: string
+          format: email
+        status:
+          type: string
+          enum:
+            - VERIFIED_PENDING_ACTIVATION
+        message:
+          type: string
+          example: "Email verified successfully. Your account is pending admin approval."
+      required:
+        - email
+        - status
+        - message
+
+    RefreshTokenRequest:
+      type: object
+      properties:
+        token:
+          type: string
+          description: The refresh token received during login
+      required:
+        - token
+
+    MediaUploadResponse:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          description: Unique identifier for the uploaded media
+        url:
+          type: string
+          format: uri
+          description: Public URL to access the uploaded image
+        mime_type:
+          type: string
+          description: MIME type of the uploaded file
+          example: "image/jpeg"
+        path:
+          type: string
+          description: Storage path where the file was uploaded
+      required:
+        - id
+        - url
+        - mime_type
+        - path
+
+    LoginResponse:
+      type: object
+      properties:
+        user:
+          $ref: '#/components/schemas/AuthorInfo'
+        auth:
+          $ref: '#/components/schemas/TokenResponse'
+
+    AuthorInfo:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        first_name:
+          type: string
+        last_name:
+          type: string
+      required:
+        - id
+        - first_name
+        - last_name
+
+    TokenResponse:
+      type: object
+      properties:
+        access_token:
+          type: string
+        refresh_token:
+          type: string
+        token_type:
+          type: string
+          example: "bearer"
+      required:
+        - access_token
+        - refresh_token
+        - token_type
+
+
+    # Plan Schemas
+    Plan:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        title:
+          type: string
+        description:
+          type: string
+        image_url:
+          type: string
+          format: uri
+        total_days:
+          type: integer
+        status:
+          type: string
+          enum:
+            - DRAFT
+            - PUBLISHED
+            - UNPUBLISHED
+        subscription_count:
+          type: integer
+      required:
+        - id
+        - title
+        - description
+        - total_days
+        - status
+        - subscription_count
+
+    PlanStatusUpdate:
+      type: object
+      properties:
+        status:
+          type: string
+          enum:
+            - DRAFT
+            - PUBLISHED
+            - UNPUBLISHED
+      required:
+        - status
+
+
+    PlanCreate:
+      type: object
+      properties:
+        title:
+          type: string
+          minLength: 1
+          maxLength: 255
+        description:
+          type: string
+        difficulty_level:
+          $ref: '#/components/schemas/DifficultyLevel'
+        total_days:
+          type: integer
+          minimum: 1
+        image_url:
+          type: string
+          format: uri
+        tags:
+          type: array
+          items:
+            type: string
+      required:
+        - title
+        - description
+        - difficulty_level
+        - total_days
+
+    PlanUpdate:
+      type: object
+      properties:
+        title:
+          type: string
+          minLength: 1
+          maxLength: 255
+        description:
+          type: string
+        difficulty_level:
+          $ref: '#/components/schemas/DifficultyLevel'
+        total_days:
+          type: integer
+          minimum: 1
+        image_url:
+          type: string
+          format: uri
+        tags:
+          type: array
+          items:
+            type: string
+
+    PlanWithDays:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        title:
+          type: string
+        description:
+          type: string
+        days:
+          type: array
+          items:
+            $ref: '#/components/schemas/PlanDay'
+      required:
+        - id
+        - title
+        - description
+        - days
+
+    PlanDay:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        day_number:
+          type: integer
+        title:
+          type: string
+        tasks:
+          type: array
+          items:
+            $ref: '#/components/schemas/Task'
+      required:
+        - id
+        - day_number
+        - title
+        - tasks
+
+    Task:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        title:
+          type: string
+        description:
+          type: string
+        content_type:
+          $ref: '#/components/schemas/ContentType'
+        content:
+          type: string
+        estimated_time:
+          type: integer
+          description: Estimated time in minutes
+      required:
+        - id
+        - title
+        - content_type
+
+    TaskCreate:
+      type: object
+      properties:
+        title:
+          type: string
+        description:
+          type: string
+        content_type:
+          $ref: '#/components/schemas/ContentType'
+        content:
+          type: string
+        estimated_time:
+          type: integer
+          description: Estimated time in minutes
+      required:
+        - title
+        - content_type
+
+    TaskUpdate:
+      type: object
+      properties:
+        title:
+          type: string
+        description:
+          type: string
+        content_type:
+          $ref: '#/components/schemas/ContentType'
+        content:
+          type: string
+        estimated_time:
+          type: integer
+          description: Estimated time in minutes
+
+    TaskMove:
+      type: object
+      properties:
+        day_id:
+          type: string
+          format: uuid
+          description: ID of the day to move the task to
+      required:
+        - day_id
+
+    DayCreate:
+      type: object
+      properties:
+        title:
+          type: string
+          description: Optional custom title, auto-generated if not provided
+
+    DayReorder:
+      type: object
+      properties:
+        days:
+          type: array
+          items:
+            type: object
+            properties:
+              day_id:
+                type: string
+                format: uuid
+              day_number:
+                type: integer
+                minimum: 1
+            required:
+              - day_id
+              - day_number
+      required:
+        - days
+
+    PaginatedPlans:
+      type: object
+      properties:
+        plans:
+          type: array
+          items:
+            $ref: '#/components/schemas/Plan'
+        skip:
+          type: integer
+        limit:
+          type: integer
+        total:
+          type: integer
+
+    PaginatedAuthors:
+      type: object
+      properties:
+        authors:
+          type: array
+          items:
+            $ref: '#/components/schemas/AuthorAdmin'
+        skip:
+          type: integer
+        limit:
+          type: integer
+        total:
+          type: integer
+
+    # Review Schemas
+    Review:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        plan_id:
+          type: string
+          format: uuid
+        author_id:
+          type: string
+          format: uuid
+        author_name:
+          type: string
+        rating:
+          type: integer
+          minimum: 1
+          maximum: 5
+        review_text:
+          type: string
+        is_approved:
+          type: boolean
+        created_at:
+          type: string
+          format: date-time
+
+    PaginatedReviews:
+      type: object
+      properties:
+        reviews:
+          type: array
+          items:
+            $ref: '#/components/schemas/Review'
+        skip:
+          type: integer
+        limit:
+          type: integer
+        total:
+          type: integer
+
+    # Author Schemas (Authors are the CMS users)
+    Author:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        first_name:
+          type: string
+        last_name:
+          type: string
+        email:
+          type: string
+          format: email
+        image_url:
+          type: string
+          format: uri
+      required:
+        - id
+        - first_name
+        - last_name
+        - email
+
+    AuthorAdmin:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        first_name:
+          type: string
+        last_name:
+          type: string
+        email:
+          type: string
+          format: email
+        image_url:
+          type: string
+          format: uri
+        is_active:
+          type: boolean
+        is_verified:
+          type: boolean
+        created_at:
+          type: string
+          format: date-time
+        activated_at:
+          type: string
+          format: date-time
+          nullable: true
+      required:
+        - id
+        - first_name
+        - last_name
+        - email
+        - is_active
+        - is_verified
+        - created_at
+
+    AuthorDetail:
+      allOf:
+        - $ref: '#/components/schemas/Author'
+        - type: object
+          properties:
+            plan_count:
+              type: integer
+            average_rating:
+              type: number
+              format: float
+            bio:
+              type: string
+
+    AuthorUpdate:
+      type: object
+      properties:
+        first_name:
+          type: string
+          minLength: 1
+          maxLength: 100
+        last_name:
+          type: string
+          minLength: 1
+          maxLength: 100
+        image_url:
+          type: string
+          format: uri
+        bio:
+          type: string
+          maxLength: 1000
+
+    AuthorPlansResponse:
+      type: object
+      properties:
+        plans:
+          type: array
+          items:
+            $ref: '#/components/schemas/Plan'
+      required:
+        - plans
+
+    # Error Schemas
+    Error:
+      type: object
+      properties:
+        error:
+          type: string
+        message:
+          type: string
+      required:
+        - error
+        - message
+
+
+  responses:
+    BadRequest:
+      description: Bad request
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+          example:
+            error: "bad_request"
+            message: "Invalid request parameters"
+
+    Unauthorized:
+      description: Unauthorized
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+          example:
+            error: "unauthorized"
+            message: "Authentication required"
+
+    Forbidden:
+      description: Forbidden
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+          example:
+            error: "forbidden"
+            message: "Insufficient permissions for this action"
+
+    NotFound:
+      description: Resource not found
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+          example:
+            error: "not_found"
+            message: "The requested resource was not found"
+
+tags:
+  - name: Authentication
+    description: User login, registration, and email verification
+  - name: Media
+    description: Image and file upload management
+  - name: Plans
+    description: Buddhist reading plans management
+  - name: Days
+    description: Plan day management
+  - name: Tasks
+    description: Task management within plan days
+  - name: Reviews
+    description: Plan reviews and ratings
+  - name: Authors
+    description: Content authors and teachers
