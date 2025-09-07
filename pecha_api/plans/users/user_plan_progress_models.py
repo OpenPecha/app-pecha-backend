@@ -28,7 +28,6 @@ class UserPlanProgress(Base):
     updated_at = Column(DateTime(timezone=True), default=datetime.now(_datetime.timezone.utc))
 
     user = relationship("Users", backref="plan_progress")
-    plan = relationship("Plan", backref="user_progress")
 
     __table_args__ = (
         UniqueConstraint("user_id", "plan_id", name="uq_user_plan_progress_user_plan"),

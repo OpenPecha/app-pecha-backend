@@ -4,7 +4,7 @@ from _datetime import datetime
 import _datetime
 from sqlalchemy.orm import relationship
 
-from db.database import Base
+from ...db.database import Base
 
 
 class UserTaskCompletion(Base):
@@ -18,7 +18,6 @@ class UserTaskCompletion(Base):
     created_at = Column(DateTime(timezone=True), default=datetime.now(_datetime.timezone.utc),nullable=False)
 
     user = relationship("Users", backref="completed_tasks")
-    task = relationship("PlanTask", backref="completions")
 
     __table_args__ = (
         UniqueConstraint("user_id", "task_id", name="uq_user_task_completion"),
