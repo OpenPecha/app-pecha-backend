@@ -130,7 +130,6 @@ def verify_author_email(token: str) -> AuthorVerificationResponse:
 def authenticate_author(email: str, password: str):
     with SessionLocal() as db_session:
         author = get_author_by_email(db=db_session, email=email)
-        check_verified_author(author=author)
         if not verify_password(
                 plain_password=password,
                 hashed_password=author.password
@@ -139,6 +138,7 @@ def authenticate_author(email: str, password: str):
                 status_code=status.HTTP_401_UNAUTHORIZED,
                 detail=INVALID_EMAIL_PASSWORD
             )
+        check_verified_author(author=author)
         return author
 
 def check_verified_author(author: Author) -> bool:
