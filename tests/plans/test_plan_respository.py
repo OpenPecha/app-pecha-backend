@@ -86,7 +86,7 @@ def test_get_plans_filter_sort_and_pagination(db):
     rows, total = get_plans(
         db=db,
         search=None,
-        sort_by="title",
+        sort_by="status",
         sort_order="asc",
         skip=0,
         limit=10,
@@ -99,7 +99,7 @@ def test_get_plans_filter_sort_and_pagination(db):
     rows, total = get_plans(
         db=db,
         search="A",
-        sort_by="title",
+        sort_by="status",
         sort_order="asc",
         skip=0,
         limit=10,
@@ -111,7 +111,7 @@ def test_get_plans_filter_sort_and_pagination(db):
     rows, total = get_plans(
         db=db,
         search=None,
-        sort_by="title",
+        sort_by="status",
         sort_order="asc",
         skip=1,
         limit=1,

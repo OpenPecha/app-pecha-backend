@@ -82,7 +82,7 @@ async def test_get_plans_success_with_params():
         resp = await get_plans(
             authentication_credential=creds,
             search="plan",
-            sort_by=SortBy.TITLE,
+            sort_by=SortBy.STATUS,
             sort_order=SortOrder.ASC,
             skip=1,
             limit=5,
@@ -93,7 +93,7 @@ async def test_get_plans_success_with_params():
         assert called_kwargs == {
             "token": "token123",
             "search": "plan",
-            "sort_by": SortBy.TITLE,
+            "sort_by": SortBy.STATUS,
             "sort_order": SortOrder.ASC,
             "skip": 1,
             "limit": 5,
