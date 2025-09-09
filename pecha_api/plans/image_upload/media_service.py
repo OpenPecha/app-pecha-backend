@@ -5,7 +5,12 @@ from ...config import get
 from ...image_utils import ImageUtils
 from ...uploads.S3_utils import upload_bytes, generate_presigned_access_url
 from .media_response_models import MediaUploadResponse
-
+from ...plans.response_message import (
+    IMAGE_UPLOAD_SUCCESS,
+    UNEXPECTED_ERROR_UPLOAD,
+    INVALID_FILE_FORMAT,
+    FILE_TOO_LARGE
+)
 
 ALLOWED_EXTENSIONS = {'.jpg', '.jpeg', '.png', '.webp'}
 MAX_FILE_SIZE = 5 * 1024 * 1024  # 5MB in bytes
@@ -18,7 +23,7 @@ def validate_file(file: UploadFile) -> None:
             status_code=status.HTTP_400_BAD_REQUEST,
             detail={
                 "error": "invalid_file",
-                "message": "Only JPEG, PNG, and WebP images are allowed. Maximum size: 5MB"
+                "message": INVALID_FILE_FORMAT
             }
         )
     
@@ -27,7 +32,7 @@ def validate_file(file: UploadFile) -> None:
             status_code=status.HTTP_413_REQUEST_ENTITY_TOO_LARGE,
             detail={
                 "error": "file_too_large", 
-                "message": "File size exceeds 5MB limit"
+                "message": FILE_TOO_LARGE
             }
         )
 
@@ -66,7 +71,7 @@ def upload_media_file(file: UploadFile, path: str) -> MediaUploadResponse:
         
         return MediaUploadResponse(
             url=presigned_url,
-            message="Image uploaded successfully"
+            message=IMAGE_UPLOAD_SUCCESS
         )
         
     except HTTPException:
@@ -77,6 +82,6 @@ def upload_media_file(file: UploadFile, path: str) -> MediaUploadResponse:
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail={
                 "error": "upload_failed",
-                "message": "An unexpected error occurred during upload"
+                "message": UNEXPECTED_ERROR_UPLOAD
             }
         )

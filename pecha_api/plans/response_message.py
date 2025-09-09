@@ -17,3 +17,9 @@ TOKEN_EXPIRED = "Verification token expired"
 TOKEN_INVALID = "Invalid verification token"
 
 EMAIL_VERIFICATION_PENDING_STATUS = "EMAIL VERIFICATION PENDING"
+
+IMAGE_UPLOAD_SUCCESS = "Image uploaded successfully"
+UNEXPECTED_ERROR_UPLOAD = "An unexpected error occurred during upload"
+INVALID_FILE_FORMAT = "Invalid file format. Only JPEG, PNG, and WebP images are allowed. Maximum size: 5MB"
+FILE_TOO_LARGE = "File size exceeds 5MB limit"
+
