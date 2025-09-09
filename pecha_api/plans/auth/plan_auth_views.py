@@ -1,6 +1,5 @@
 from fastapi import APIRouter, Depends, HTTPException
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
-from fastapi.responses import JSONResponse
 
 from .plan_auth_models import CreateAuthorRequest, AuthorDetails, AuthorVerificationResponse, AuthorLoginRequest, AuthorLoginResponse
 from starlette import status
@@ -8,8 +7,6 @@ from .plan_auth_services import register_author, verify_author_email
 from typing import Annotated
 oauth2_scheme = HTTPBearer()
 from .plan_auth_services import authenticate_and_generate_tokens
-from pecha_api.db.database import SessionLocal
-from pecha_api.plans.authors.plan_authors_repository import get_author_by_email
 
 plan_auth_router = APIRouter(
     prefix="/cms/auth",
