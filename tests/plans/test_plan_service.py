@@ -33,11 +33,19 @@ def test_create_new_plan_success():
     saved_plan.status = PlanStatus.DRAFT
 
     with patch("pecha_api.plans.plans_service.SessionLocal") as mock_session_local, \
-        patch("pecha_api.plans.plans_service.save_plan") as mock_save_plan:
+        patch("pecha_api.plans.plans_service.save_plan") as mock_save_plan, \
+        patch("pecha_api.plans.plans_service.validate_and_extract_author_details") as mock_validate_author:
         db_session = _mock_session_local(mock_session_local)
         mock_save_plan.return_value = saved_plan
 
+        author = MagicMock()
+        author.id = uuid.uuid4()
+        author.email = "author@example.com"
+        mock_validate_author.return_value = author
+
         response = create_new_plan(token="dummy", create_plan_request=request)
+
+        mock_validate_author.assert_called_once_with(token="dummy")
 
         # verify repository interactions
         mock_save_plan.assert_called_once_with(db=db_session, plan=ANY)
@@ -79,8 +87,10 @@ async def test_get_filtered_plans_success():
     rows = [plan1, plan2]
     total = 42
 
-    with patch("pecha_api.plans.plans_service.asyncio.to_thread", new_callable=AsyncMock) as mock_to_thread:
+    with patch("pecha_api.plans.plans_service.asyncio.to_thread", new_callable=AsyncMock) as mock_to_thread, \
+        patch("pecha_api.plans.plans_service.validate_and_extract_author_details") as mock_validate_author:
         mock_to_thread.return_value = (rows, total)
+        mock_validate_author.return_value = MagicMock()
 
         resp = await get_filtered_plans(
             token="dummy-token",
@@ -90,6 +100,8 @@ async def test_get_filtered_plans_success():
             skip=5,
             limit=10,
         )
+
+        mock_validate_author.assert_called_once_with(token="dummy-token")
 
         # verify background call made once
         assert mock_to_thread.await_count == 1
