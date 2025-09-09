@@ -12,7 +12,7 @@ from pecha_api.plans.authors.plan_author_service import validate_and_extract_aut
 from pecha_api.plans.plans_enums import LanguageCode, PlanStatus, ContentType
 from pecha_api.plans.plans_response_models import PlansResponse, PlanDTO, CreatePlanRequest, TaskDTO, PlanDayDTO, PlanWithDays, \
     UpdatePlanRequest, PlanStatusUpdate
-from pecha_api.plans.plans_repository import get_plans as repo_get_plans
+from pecha_api.plans.plans_repository import get_plans
 from pecha_api.db.database import SessionLocal
 import asyncio
 from uuid import uuid4, UUID
@@ -84,20 +84,20 @@ DUMMY_DAYS = [
 async def get_filtered_plans(token: str, search: Optional[str], sort_by: str, sort_order: str, skip: int, limit: int) -> PlansResponse:
     # Validate token and author context (authorization can be extended later)
     validate_and_extract_author_details(token=token)
-    def _run_query():
-        with SessionLocal() as db_session:
-            return repo_get_plans(
-                db=db_session,
-                search=search,
-                sort_by=sort_by,
-                sort_order=sort_order,
-                skip=skip,
-                limit=limit,
-            )
-
-    rows, total = await asyncio.to_thread(_run_query)
+    total = 0
+    rows = []
+    with SessionLocal() as db_session:
+        rows = get_plans(
+            db=db_session,
+            search=search,
+            sort_by=sort_by,
+            sort_order=sort_order,
+            skip=skip,
+            limit=limit,
+        )
 
     plans: List[PlanDTO] = []
+    total = len(rows)
     for plan_model in rows:
         plans.append(
             PlanDTO(

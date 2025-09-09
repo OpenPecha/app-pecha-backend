@@ -1,6 +1,6 @@
 import uuid
 import pytest
-from unittest.mock import patch, MagicMock, ANY, AsyncMock
+from unittest.mock import patch, MagicMock, ANY
 
 from pecha_api.plans.plans_enums import DifficultyLevel, PlanStatus
 from pecha_api.plans.plans_response_models import CreatePlanRequest
@@ -85,11 +85,12 @@ async def test_get_filtered_plans_success():
     plan2.status = PlanStatus.DRAFT
 
     rows = [plan1, plan2]
-    total = 42
 
-    with patch("pecha_api.plans.plans_service.asyncio.to_thread", new_callable=AsyncMock) as mock_to_thread, \
+    with patch("pecha_api.plans.plans_service.SessionLocal") as mock_session_local, \
+        patch("pecha_api.plans.plans_service.get_plans") as mock_get_plans, \
         patch("pecha_api.plans.plans_service.validate_and_extract_author_details") as mock_validate_author:
-        mock_to_thread.return_value = (rows, total)
+        db_session = _mock_session_local(mock_session_local)
+        mock_get_plans.return_value = rows
         mock_validate_author.return_value = MagicMock()
 
         resp = await get_filtered_plans(
@@ -103,14 +104,23 @@ async def test_get_filtered_plans_success():
 
         mock_validate_author.assert_called_once_with(token="dummy-token")
 
-        # verify background call made once
-        assert mock_to_thread.await_count == 1
+        # verify repository interaction
+        mock_get_plans.assert_called_once()
+        called_kwargs = mock_get_plans.call_args.kwargs
+        assert called_kwargs == {
+            "db": db_session,
+            "search": "plan",
+            "sort_by": "created_at",
+            "sort_order": "desc",
+            "skip": 5,
+            "limit": 10,
+        }
 
         # verify response mapping
         assert resp is not None
         assert resp.skip == 5
         assert resp.limit == 10
-        assert resp.total == total
+        assert resp.total == len(rows)
         assert len(resp.plans) == 2
 
         p1 = resp.plans[0]

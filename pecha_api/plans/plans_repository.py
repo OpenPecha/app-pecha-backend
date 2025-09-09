@@ -57,6 +57,6 @@ def get_plans(
     rows = query.offset(skip).limit(limit).all()
 
     # Total count without pagination/joins
-    total = db.query(func.count(Plan.id)).filter(*filters).scalar()
+    # total = db.query(func.count(Plan.id)).filter(*filters).scalar()
 
-    return rows, int(total or 0)
+    return rows
