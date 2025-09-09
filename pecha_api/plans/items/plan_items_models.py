@@ -18,8 +18,7 @@ class PlanItem(Base):
     updated_at = Column(DateTime(timezone=True), default=datetime.now(_datetime.timezone.utc))
     updated_by = Column(String(255))
 
-    plan = relationship("Plan", backref="items")
-    tasks = relationship("PlanTask", back_populates="plan_item", cascade="all, delete-orphan")
+    tasks = relationship("PlanTask", backref="plan_item", cascade="all, delete-orphan")
 
     __table_args__ = (
         UniqueConstraint("plan_id", "day_number", name="uq_plan_items_plan_day"),

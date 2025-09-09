@@ -78,8 +78,8 @@ def _generate_author_verification_token(email: str) -> str:
 
 def _send_verification_email(email: str) -> None:
     token = _generate_author_verification_token(email=email)
-    backend_endpoint = get("PECHA_BACKEND_ENDPOINT")
-    verify_link = f"{backend_endpoint}/plan/verify-email?token={token}"
+    frontend_endpoint = get("BASE_URL")
+    verify_link = f"{frontend_endpoint}/plan/verify-email?token={token}"
 
     template_path = Path(__file__).parent / "templates" / "verify_email_template.html"
     with open(template_path, "r") as f:
@@ -130,7 +130,6 @@ def verify_author_email(token: str) -> AuthorVerificationResponse:
 def authenticate_author(email: str, password: str):
     with SessionLocal() as db_session:
         author = get_author_by_email(db=db_session, email=email)
-        check_verified_author(author=author)
         if not verify_password(
                 plain_password=password,
                 hashed_password=author.password
@@ -139,6 +138,7 @@ def authenticate_author(email: str, password: str):
                 status_code=status.HTTP_401_UNAUTHORIZED,
                 detail=INVALID_EMAIL_PASSWORD
             )
+        check_verified_author(author=author)
         return author
 
 def check_verified_author(author: Author) -> bool:

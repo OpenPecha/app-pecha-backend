@@ -27,7 +27,6 @@ class PlanReview(Base):
     deleted_at = Column(DateTime(timezone=True))
     deleted_by = Column(String(255))
 
-    plan = relationship("Plan", backref="reviews")
     user = relationship("Users", backref="reviews")
 
     __table_args__ = (
