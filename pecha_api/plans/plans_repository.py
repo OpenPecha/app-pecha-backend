@@ -35,21 +35,24 @@ def get_plans(
     # Base query
     query = db.query(Plan).filter(*filters)
 
-    # Sorting
-    sort_by_normalized = (sort_by or "title").lower()
-    sort_order_normalized = (sort_order or "asc").lower()
+    # Sorting (accept enums or strings)
+    sort_by_value = getattr(sort_by, "value", sort_by)
+    sort_order_value = getattr(sort_order, "value", sort_order)
+    sort_by_normalized = (sort_by_value or "status")
+    sort_order_normalized = (sort_order_value or "asc")
 
-    if sort_by_normalized not in {"title", "created_at"}:
-        sort_by_normalized = "title"
+    allowed_sort_by = {"status", "created_at"}
+    if sort_by_normalized not in allowed_sort_by:
+        sort_by_normalized = "status"
     if sort_order_normalized not in {"asc", "desc"}:
         sort_order_normalized = "asc"
 
-    if sort_by_normalized == "title":
-        order_expr = asc(Plan.title) if sort_order_normalized == "asc" else desc(Plan.title)
+    if sort_by_normalized == "status":
+        order_expr = asc(Plan.status) if sort_order_normalized == "asc" else desc(Plan.status)
     elif sort_by_normalized == "created_at":
         order_expr = asc(Plan.created_at) if sort_order_normalized == "asc" else desc(Plan.created_at)
     else:
-        order_expr = asc(Plan.title) if sort_order_normalized == "asc" else desc(Plan.title)
+        order_expr = asc(Plan.status) if sort_order_normalized == "asc" else desc(Plan.status)
 
     query = query.order_by(order_expr)
 

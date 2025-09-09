@@ -36,8 +36,9 @@ class SortOrder(enum.Enum):
     DESC = "desc"
 
 class SortBy(enum.Enum):
-    CREATED_DATE = "created_at"
-    TITLE = "title"
+    TOTAL_DAYS = "total_days"
+    STATUS = "status"
+    CREATED_AT = "created_at"
 
 
 # SQLAlchemy enum types
