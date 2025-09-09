@@ -78,8 +78,8 @@ def _generate_author_verification_token(email: str) -> str:
 
 def _send_verification_email(email: str) -> None:
     token = _generate_author_verification_token(email=email)
-    frontend_endpoint = get("BASE_URL")
-    verify_link = f"{frontend_endpoint}/plan/verify-email?token={token}"
+    frontend_endpoint = get("WEBUDDHIST_STUDIO_BASE_URL")
+    verify_link = f"{frontend_endpoint}/verify-email?token={token}"
 
     template_path = Path(__file__).parent / "templates" / "verify_email_template.html"
     with open(template_path, "r") as f:

@@ -24,6 +24,7 @@ DEFAULTS = dict(
     MAX_FILE_SIZE_MB=1,
     MONGO_CONNECTION_STRING="mongodb://admin:pechaAdmin@localhost:27017/pecha?authSource=admin",
 
+    WEBUDDHIST_STUDIO_BASE_URL="https://studio.webuddhist.com/",
     MONGO_DATABASE_NAME="pecha",
     REFRESH_TOKEN_EXPIRE_DAYS=30,   
     SENDGRID_API_KEY="",
