@@ -17,7 +17,6 @@ class Favorite(Base):
     updated_at = Column(DateTime, default=datetime.now(_datetime.timezone.utc))
 
     user = relationship("Users", backref="favorites")
-    plan = relationship("Plan", backref="favorites")
 
     __table_args__ = (
         Index("idx_favorites_user_plan", "user_id", "plan_id"),
