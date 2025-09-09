@@ -57,7 +57,7 @@ def _create_user(create_user_request: CreateAuthorRequest) -> AuthorDetails:
 def _validate_password(password: str):
     if not password:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=PASSWORD_EMPTY)
-    if len(password) < 8 or len(password) > 20:
+    if len(password) < 6:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=PASSWORD_LENGTH_INVALID)
 
 
@@ -78,7 +78,7 @@ def _generate_author_verification_token(email: str) -> str:
 
 def _send_verification_email(email: str) -> None:
     token = _generate_author_verification_token(email=email)
-    frontend_endpoint = get("WEBUDDHIST_STUDIO_BASE_URL")
+    frontend_endpoint = get("WEBUDDHIST_STUDIO_BASE_URL")       
     verify_link = f"{frontend_endpoint}/verify-email?token={token}"
 
     template_path = Path(__file__).parent / "templates" / "verify_email_template.html"
