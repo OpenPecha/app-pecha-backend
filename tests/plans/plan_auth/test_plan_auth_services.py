@@ -1,8 +1,10 @@
 import uuid
+import json
 from unittest.mock import patch, MagicMock, ANY
 from datetime import datetime, timezone
 
 from fastapi import HTTPException
+from fastapi.responses import JSONResponse
 from starlette import status
 from jose import jwt
 
@@ -20,6 +22,8 @@ from pecha_api.plans.response_message import (
     EMAIL_ALREADY_VERIFIED,
     EMAIL_VERIFIED_SUCCESS,
     REGISTRATION_MESSAGE, TOKEN_INVALID,
+    BAD_REQUEST,
+    AUTHOR_ALREADY_EXISTS,
 )
 from pecha_api.plans.auth.plan_auth_enums import AuthorStatus
 
@@ -52,17 +56,21 @@ def test_register_author_success():
     with patch("pecha_api.plans.auth.plan_auth_services.SessionLocal") as mock_session_local, \
         patch("pecha_api.plans.auth.plan_auth_services.save_author") as mock_save_author, \
         patch("pecha_api.plans.auth.plan_auth_services.get_hashed_password") as mock_get_hashed_password, \
-        patch("pecha_api.plans.auth.plan_auth_services._send_verification_email") as mock_send_email:
+        patch("pecha_api.plans.auth.plan_auth_services._send_verification_email") as mock_send_email, \
+        patch("pecha_api.plans.auth.plan_auth_services.get_author_by_email") as mock_get_author_by_email:
         _mock_session_local(mock_session_local)
 
         mock_save_author.return_value = saved_author
         mock_get_hashed_password.return_value = "hashed_password123"
+        # Simulate no existing author found
+        mock_get_author_by_email.side_effect = HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="not found")
 
         response = register_author(create_user_request=create_request)
 
         mock_get_hashed_password.assert_called_once_with(create_request.password)
         mock_save_author.assert_called_once_with(db=ANY, author=ANY)
         mock_send_email.assert_called_once_with(email=create_request.email)
+        mock_get_author_by_email.assert_called_once_with(db=ANY, email=create_request.email)
 
         assert response is not None
         assert response.first_name == saved_author.first_name
@@ -70,6 +78,37 @@ def test_register_author_success():
         assert response.email == saved_author.email
         assert response.status == AuthorStatus.PENDING_VERIFICATION
         assert response.message == REGISTRATION_MESSAGE
+
+
+def test_register_author_duplicate_returns_error_response():
+    create_request = CreateAuthorRequest(
+        first_name="John",
+        last_name="Doe",
+        email="john.doe@example.com",
+        password="password123",
+    )
+
+    existing_author = MagicMock()
+
+    with patch("pecha_api.plans.auth.plan_auth_services.SessionLocal") as mock_session_local, \
+        patch("pecha_api.plans.auth.plan_auth_services.get_author_by_email", return_value=existing_author) as mock_get_author_by_email, \
+        patch("pecha_api.plans.auth.plan_auth_services.save_author") as mock_save_author, \
+        patch("pecha_api.plans.auth.plan_auth_services.get_hashed_password") as mock_get_hashed_password, \
+        patch("pecha_api.plans.auth.plan_auth_services._send_verification_email") as mock_send_email:
+        _mock_session_local(mock_session_local)
+
+        response = register_author(create_user_request=create_request)
+
+        # Should short-circuit and return JSON error response
+        assert isinstance(response, JSONResponse)
+        assert response.status_code == status.HTTP_400_BAD_REQUEST
+        body = json.loads(response.body)
+        assert body == {"error": BAD_REQUEST, "message": AUTHOR_ALREADY_EXISTS}
+
+        mock_get_author_by_email.assert_called_once_with(db=ANY, email=create_request.email)
+        mock_save_author.assert_not_called()
+        mock_get_hashed_password.assert_not_called()
+        mock_send_email.assert_not_called()
 
 
 def test__validate_password_empty_password():
