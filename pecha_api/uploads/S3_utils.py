@@ -56,7 +56,7 @@ def upload_bytes(bucket_name: str, s3_key: str, file: BytesIO, content_type: str
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="An unexpected error occurred.")
 
 
-def generate_presigned_upload_url(bucket_name: str, s3_key: str):
+def generate_presigned_access_url(bucket_name: str, s3_key: str):
     if isinstance(s3_key, str) and s3_key.strip():
         # Generate a presigned URL for uploading an object
         presigned_url = s3_client.generate_presigned_url(
