@@ -2,9 +2,10 @@ import os, uuid
 from fastapi import UploadFile, HTTPException, status
 
 import logging
-from ...config import get
+from ...config import get, get_int
 from ...image_utils import ImageUtils
 from ...uploads.S3_utils import upload_bytes, generate_presigned_access_url
+from ...plans.authors.plan_author_service import validate_and_extract_author_details
 from .media_response_models import MediaUploadResponse
 from ...plans.response_message import (
     IMAGE_UPLOAD_SUCCESS,
@@ -18,11 +19,12 @@ def validate_file(file: UploadFile) -> None:
     if file_extension not in get("ALLOWED_EXTENSIONS"):
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=INVALID_FILE_FORMAT)
     
-    if hasattr(file, 'size') and file.size and file.size > get("MAX_FILE_SIZE"):
+    if hasattr(file, 'size') and file.size and file.size > get_int("MAX_FILE_SIZE"):
         raise HTTPException(status_code=status.HTTP_413_REQUEST_ENTITY_TOO_LARGE, detail=FILE_TOO_LARGE)
 
 
-def upload_media_file(file: UploadFile, plan_id: str) -> MediaUploadResponse:
+def upload_media_file(token:str,file: UploadFile, plan_id: str) -> MediaUploadResponse:
+    validate_and_extract_author_details(token=token)
     try:
         validate_file(file)
         
