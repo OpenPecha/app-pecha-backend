@@ -38,12 +38,7 @@ from fastapi.responses import JSONResponse
 def register_author(create_user_request: CreateAuthorRequest) -> AuthorDetails:
     # Check for existing author to return required error shape on duplicates
     with SessionLocal() as db_session:
-        is_author_exists = check_author_exists(db=db_session, email=create_user_request.email)
-        if is_author_exists:
-            raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST, 
-                detail=ResponseError(error=BAD_REQUEST, message=AUTHOR_ALREADY_EXISTS).model_dump()
-            )
+        check_author_exists(db=db_session, email=create_user_request.email)
     registered_user = _create_user(
         create_user_request=create_user_request
     )

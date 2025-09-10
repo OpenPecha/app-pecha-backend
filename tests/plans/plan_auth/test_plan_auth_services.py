@@ -1,6 +1,5 @@
 import uuid
 import json
-import pytest
 from unittest.mock import patch, MagicMock, ANY
 from datetime import datetime, timezone
 
@@ -79,7 +78,7 @@ def test_register_author_success():
         assert response.message == REGISTRATION_MESSAGE
 
 
-def test_register_author_duplicate_returns_error_response():
+def test_register_author_duplicate_still_proceeds():
     create_request = CreateAuthorRequest(
         first_name="John",
         last_name="Doe",
@@ -87,7 +86,15 @@ def test_register_author_duplicate_returns_error_response():
         password="password123",
     )
 
-    existing_author = MagicMock()
+    saved_author = MagicMock()
+    saved_author.id = uuid.uuid4()
+    saved_author.first_name = create_request.first_name
+    saved_author.last_name = create_request.last_name
+    saved_author.email = create_request.email
+    saved_author.status = AuthorStatus.PENDING_VERIFICATION
+    saved_author.is_verified = False
+    saved_author.created_at = datetime.now(timezone.utc)
+    saved_author.created_by = create_request.email
 
     with patch("pecha_api.plans.auth.plan_auth_services.SessionLocal") as mock_session_local, \
         patch("pecha_api.plans.auth.plan_auth_services.check_author_exists", return_value=True) as mock_check_exists, \
@@ -96,16 +103,22 @@ def test_register_author_duplicate_returns_error_response():
         patch("pecha_api.plans.auth.plan_auth_services._send_verification_email") as mock_send_email:
         _mock_session_local(mock_session_local)
 
-        with pytest.raises(HTTPException) as exc:
-            register_author(create_user_request=create_request)
+        mock_save_author.return_value = saved_author
+        mock_get_hashed_password.return_value = "hashed_password123"
 
-        assert exc.value.status_code == status.HTTP_400_BAD_REQUEST
-        assert exc.value.detail == {"error": BAD_REQUEST, "message": AUTHOR_ALREADY_EXISTS}
+        response = register_author(create_user_request=create_request)
 
         mock_check_exists.assert_called_once_with(db=ANY, email=create_request.email)
-        mock_save_author.assert_not_called()
-        mock_get_hashed_password.assert_not_called()
-        mock_send_email.assert_not_called()
+        mock_get_hashed_password.assert_called_once_with(create_request.password)
+        mock_save_author.assert_called_once_with(db=ANY, author=ANY)
+        mock_send_email.assert_called_once_with(email=create_request.email)
+
+        assert response is not None
+        assert response.first_name == saved_author.first_name
+        assert response.last_name == saved_author.last_name
+        assert response.email == saved_author.email
+        assert response.status == AuthorStatus.PENDING_VERIFICATION
+        assert response.message == REGISTRATION_MESSAGE
 
 
 def test__validate_password_empty_password():

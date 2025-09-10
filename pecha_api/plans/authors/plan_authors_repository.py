@@ -34,6 +34,8 @@ def get_author_by_email(db: Session, email: str) -> Author:
 def check_author_exists(db: Session, email: str) -> bool:
     author = db.query(Author).filter(Author.email == email).first()
     is_exists = True if author else False
+    if is_exists:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=ResponseError(error=BAD_REQUEST, message=AUTHOR_ALREADY_EXISTS).model_dump())
     return is_exists
 
 
