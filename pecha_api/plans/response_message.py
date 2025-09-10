@@ -17,3 +17,5 @@ TOKEN_EXPIRED = "Verification token expired"
 TOKEN_INVALID = "Invalid verification token"
 
 EMAIL_VERIFICATION_PENDING_STATUS = "EMAIL VERIFICATION PENDING"
+AUTHOR_ALREADY_EXISTS = "Author already exists"
+BAD_REQUEST = "Bad request"
