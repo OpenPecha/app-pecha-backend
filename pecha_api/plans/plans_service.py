@@ -88,27 +88,32 @@ async def get_filtered_plans(token: str, search: Optional[str], sort_by: str, so
     total = 0
     rows = []
     with SessionLocal() as db_session:
-        rows = get_plans(
+        rows, total = get_plans(
             db=db_session,
             search=search,
-            sort_by=sort_by,
-            sort_order=sort_order,
+            sort_by=sort_by.value,
+            sort_order=sort_order.value,
             skip=skip,
             limit=limit,
         )
 
     plans: List[PlanDTO] = []
-    total = len(rows)
-    for plan_model in rows:
+    for row in rows:
+        print(row)
+        # Rows are returned as (Plan, total_days, subscription_count)
+        plan_model = row[0]
+        total_days = row[1]
+        subscription_count = row[2]
+
         plans.append(
             PlanDTO(
                 id=plan_model.id,
                 title=plan_model.title,
                 description=plan_model.description,
                 image_url=plan_model.image_url,
-                total_days=0,
+                total_days=int(total_days or 0),
                 status=PlanStatus(plan_model.status.value),
-                subscription_count=0,
+                subscription_count=int(subscription_count or 0),
             )
         )
 

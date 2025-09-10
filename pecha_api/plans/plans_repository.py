@@ -4,6 +4,8 @@ from sqlalchemy.orm import Session
 from sqlalchemy import func, asc, desc
 from typing import Optional
 from ..plans.plans_models import Plan
+from pecha_api.plans.items.plan_items_models import PlanItem
+from pecha_api.plans.users.user_plan_progress_models import UserPlanProgress
 from fastapi import HTTPException
 from starlette import status
 
@@ -32,34 +34,36 @@ def get_plans(
     if search:
         filters.append(Plan.title.ilike(f"%{search}%"))
 
-    # Base query
-    query = db.query(Plan).filter(*filters)
+    # Aggregates (matching provided SQL): SUM of item day_number and COUNT DISTINCT of subscribers
+    total_days_label = func.coalesce(func.sum(PlanItem.day_number), 0).label("total_days")
+    subscription_count_label = func.count(func.distinct(UserPlanProgress.user_id)).label("subscription_count")
 
-    # Sorting (accept enums or strings)
-    sort_by_value = getattr(sort_by, "value", sort_by)
-    sort_order_value = getattr(sort_order, "value", sort_order)
-    sort_by_normalized = (sort_by_value or "status")
-    sort_order_normalized = (sort_order_value or "asc")
+    # Base query with LEFT JOINs and GROUP BY
+    query = (
+        db.query(
+            Plan,
+            total_days_label,
+            subscription_count_label,
+        )
+        .outerjoin(PlanItem, PlanItem.plan_id == Plan.id)
+        .outerjoin(UserPlanProgress, UserPlanProgress.plan_id == Plan.id)
+        .filter(*filters)
+        .group_by(Plan.id)
+    )
 
-    allowed_sort_by = {"status", "created_at"}
-    if sort_by_normalized not in allowed_sort_by:
-        sort_by_normalized = "status"
-    if sort_order_normalized not in {"asc", "desc"}:
-        sort_order_normalized = "asc"
-
-    if sort_by_normalized == "status":
-        order_expr = asc(Plan.status) if sort_order_normalized == "asc" else desc(Plan.status)
-    elif sort_by_normalized == "created_at":
-        order_expr = asc(Plan.created_at) if sort_order_normalized == "asc" else desc(Plan.created_at)
+    # Sorting
+    if sort_by == "status":
+        order_expr = asc(Plan.status) if sort_order == "asc" else desc(Plan.status)
+    elif sort_by == "total_days":
+        order_expr = asc(total_days_label) if sort_order == "asc" else desc(total_days_label)
     else:
-        order_expr = asc(Plan.status) if sort_order_normalized == "asc" else desc(Plan.status)
+        order_expr = asc(Plan.created_at) if sort_order == "asc" else desc(Plan.created_at)
 
     query = query.order_by(order_expr)
 
     # Pagination
     rows = query.offset(skip).limit(limit).all()
-
     # Total count without pagination/joins
-    # total = db.query(func.count(Plan.id)).filter(*filters).scalar()
+    total = db.query(func.count(Plan.id)).filter(*filters).scalar()
 
-    return rows
+    return rows, total

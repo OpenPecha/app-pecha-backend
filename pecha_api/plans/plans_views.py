@@ -23,8 +23,8 @@ plans_router = APIRouter(
 async def get_plans(
         authentication_credential: Annotated[HTTPAuthorizationCredentials, Depends(oauth2_scheme)],
         search: Optional[str] = Query(default=None, description="Search by plan title"),
-        sort_by: Optional[SortBy] = Query(default=None),
-        sort_order: Optional[SortOrder] = Query(default=None),
+        sort_by: Optional[SortBy] = Query(default=SortBy.TOTAL_DAYS.value),
+        sort_order: Optional[SortOrder] = Query(default=SortOrder.ASC.value),
         skip: int = Query(default=0),
         limit: int = Query(default=10)
 ):
