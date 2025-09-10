@@ -2,7 +2,7 @@ import uuid
 import pytest
 from unittest.mock import patch, MagicMock, ANY
 
-from pecha_api.plans.plans_enums import DifficultyLevel, PlanStatus
+from pecha_api.plans.plans_enums import DifficultyLevel, PlanStatus, SortBy, SortOrder
 from pecha_api.plans.plans_response_models import CreatePlanRequest
 from pecha_api.plans.plans_service import create_new_plan, get_filtered_plans
 
@@ -99,20 +99,24 @@ async def test_get_filtered_plans_success():
     plan2.image_url = "https://example.com/two.jpg"
     plan2.status = PlanStatus.DRAFT
 
-    rows = [plan1, plan2]
+    # Repository returns tuples: (Plan, total_days, subscription_count)
+    rows = [
+        (plan1, 5, 2),
+        (plan2, 0, 0),
+    ]
 
     with patch("pecha_api.plans.plans_service.SessionLocal") as mock_session_local, \
         patch("pecha_api.plans.plans_service.get_plans") as mock_get_plans, \
         patch("pecha_api.plans.plans_service.validate_and_extract_author_details") as mock_validate_author:
         db_session = _mock_session_local(mock_session_local)
-        mock_get_plans.return_value = rows
+        mock_get_plans.return_value = (rows, len(rows))
         mock_validate_author.return_value = MagicMock()
 
         resp = await get_filtered_plans(
             token="dummy-token",
             search="plan",
-            sort_by="created_at",
-            sort_order="desc",
+            sort_by=SortBy.CREATED_AT,
+            sort_order=SortOrder.DESC,
             skip=5,
             limit=10,
         )
@@ -143,9 +147,9 @@ async def test_get_filtered_plans_success():
         assert p1.title == plan1.title
         assert p1.description == plan1.description
         assert p1.image_url == plan1.image_url
-        assert p1.total_days == 0
+        assert p1.total_days == 5
         assert p1.status == PlanStatus.PUBLISHED
-        assert p1.subscription_count == 0
+        assert p1.subscription_count == 2
 
         p2 = resp.plans[1]
         assert p2.id == plan2.id

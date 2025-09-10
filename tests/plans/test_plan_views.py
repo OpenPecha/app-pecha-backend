@@ -108,15 +108,23 @@ async def test_get_plans_defaults():
     expected = PlansResponse(plans=[], skip=0, limit=10, total=0)
 
     with patch("pecha_api.plans.plans_views.get_filtered_plans", return_value=expected, new_callable=AsyncMock) as mock_service:
-        resp = await get_plans(authentication_credential=creds, search=None, sort_by=None, sort_order=None, skip=0, limit=10)
+        # Pass explicit defaults to avoid FastAPI Query objects when calling directly
+        resp = await get_plans(
+            authentication_credential=creds,
+            search=None,
+            sort_by=SortBy.TOTAL_DAYS,
+            sort_order=SortOrder.ASC,
+            skip=0,
+            limit=10,
+        )
 
         assert mock_service.call_count == 1
         called_kwargs = mock_service.call_args.kwargs
         assert called_kwargs == {
             "token": "tkn",
             "search": None,
-            "sort_by": None,
-            "sort_order": None,
+            "sort_by": SortBy.TOTAL_DAYS,
+            "sort_order": SortOrder.ASC,
             "skip": 0,
             "limit": 10,
         }
