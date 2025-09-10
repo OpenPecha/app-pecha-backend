@@ -5,7 +5,7 @@ from .plan_items_models import PlanItem
 from fastapi import HTTPException
 from starlette import status
 from pecha_api.plans.auth.plan_auth_models import ResponseError
-from pecha_api.error_contants import BAD_REQUEST
+from pecha_api.plans.response_message import BAD_REQUEST
 
 def save_plan_item(db: Session, plan_item: PlanItem):
     try:

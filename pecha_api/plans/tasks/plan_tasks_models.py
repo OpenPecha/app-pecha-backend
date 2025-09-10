@@ -29,6 +29,7 @@ class PlanTask(Base):
     deleted_at = Column(DateTime(timezone=True))
     deleted_by = Column(String(255))
 
+    plan_item = relationship("PlanItem", backref="tasks", cascade="all, delete-orphan")
     user_completions = relationship("UserTaskCompletion", backref="task", cascade="all, delete-orphan")
 
     __table_args__ = (

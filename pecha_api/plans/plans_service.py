@@ -130,27 +130,28 @@ def create_new_plan(token: str, create_plan_request: CreatePlanRequest) -> PlanD
         language=LanguageCode(create_plan_request.language or LanguageCode.EN.value),
         created_by=current_author.email
     )
-    
+    plan = None
     # Save to database
     with SessionLocal() as db_session:
         saved_plan = save_plan(db=db_session, plan=new_plan_model)
-        if saved_plan:
-            new_item_model = PlanItem(
-                plan_id=saved_plan.id,
-                day_number=create_plan_request.total_days,
-                created_by=current_author.email
-            )
+
+        new_item_model = PlanItem(
+            plan_id=saved_plan.id,
+            day_number=create_plan_request.total_days,
+            created_by=current_author.email
+        )
+        
         saved_plan_item = save_plan_item(db=db_session, plan_item=new_item_model)
     
-    return PlanDTO(
-        id=saved_plan.id,
-        title=saved_plan.title,
-        description=saved_plan.description,
-        image_url=saved_plan.image_url,
-        total_days=saved_plan_item.day_number,
-        status=PlanStatus(saved_plan.status.value),
-        subscription_count=0
-    )
+        return PlanDTO(
+            id=saved_plan.id,
+            title=saved_plan.title,
+            description=saved_plan.description,
+            image_url=saved_plan.image_url,
+            total_days=saved_plan_item.day_number,
+            status=PlanStatus(saved_plan.status.value),
+            subscription_count=0
+        )
 
 async def get_details_plan(token:str,plan_id: UUID) -> PlanWithDays:
     #  current_author = validate_and_extract_author_details(token=token)
