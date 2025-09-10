@@ -3,9 +3,10 @@ from typing import Optional, List
 from sqlalchemy.orm.attributes import create_proxied_attribute
 from starlette import status
 from pecha_api.plans.plans_models import Plan
+from pecha_api.plans.items.plan_items_models import PlanItem
 from pecha_api.db.database import SessionLocal
 from pecha_api.plans.plans_repository import save_plan
-from pecha_api.users.users_service import validate_and_extract_user_details
+from pecha_api.plans.items.plan_items_repository import save_plan_item
 
 from pecha_api.error_contants import ErrorConstants
 from pecha_api.plans.authors.plan_author_service import validate_and_extract_author_details
@@ -133,13 +134,20 @@ def create_new_plan(token: str, create_plan_request: CreatePlanRequest) -> PlanD
     # Save to database
     with SessionLocal() as db_session:
         saved_plan = save_plan(db=db_session, plan=new_plan_model)
+        if saved_plan:
+            new_item_model = PlanItem(
+                plan_id=saved_plan.id,
+                day_number=create_plan_request.total_days,
+                created_by=current_author.email
+            )
+        saved_plan_item = save_plan_item(db=db_session, plan_item=new_item_model)
     
     return PlanDTO(
         id=saved_plan.id,
         title=saved_plan.title,
         description=saved_plan.description,
         image_url=saved_plan.image_url,
-        total_days=0,  # This will be updated when plan items are added
+        total_days=saved_plan_item.day_number,
         status=PlanStatus(saved_plan.status.value),
         subscription_count=0
     )
