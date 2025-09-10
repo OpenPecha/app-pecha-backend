@@ -7,7 +7,7 @@ from pecha_api.plans.items.plan_items_models import PlanItem
 from pecha_api.db.database import SessionLocal
 from pecha_api.plans.plans_repository import save_plan
 from pecha_api.plans.items.plan_items_repository import save_plan_item
-
+from pecha_api.plans.users.user_plan_progress_repository import get_plan_progress
 from pecha_api.error_contants import ErrorConstants
 from pecha_api.plans.authors.plan_author_service import validate_and_extract_author_details
 from pecha_api.plans.plans_enums import LanguageCode, PlanStatus, ContentType
@@ -142,7 +142,9 @@ def create_new_plan(token: str, create_plan_request: CreatePlanRequest) -> PlanD
         )
         
         saved_plan_item = save_plan_item(db=db_session, plan_item=new_item_model)
-    
+        plan_progress = get_plan_progress(db=db_session, plan_id=saved_plan.id)
+        total_subscription_count = len(plan_progress)
+        
         return PlanDTO(
             id=saved_plan.id,
             title=saved_plan.title,
@@ -150,7 +152,7 @@ def create_new_plan(token: str, create_plan_request: CreatePlanRequest) -> PlanD
             image_url=saved_plan.image_url,
             total_days=saved_plan_item.day_number,
             status=PlanStatus(saved_plan.status.value),
-            subscription_count=0
+            subscription_count=total_subscription_count
         )
 
 async def get_details_plan(token:str,plan_id: UUID) -> PlanWithDays:

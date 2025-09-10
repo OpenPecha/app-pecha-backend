@@ -35,12 +35,14 @@ def test_create_new_plan_success():
     with patch("pecha_api.plans.plans_service.SessionLocal") as mock_session_local, \
         patch("pecha_api.plans.plans_service.save_plan") as mock_save_plan, \
         patch("pecha_api.plans.plans_service.save_plan_item") as mock_save_plan_item, \
+        patch("pecha_api.plans.plans_service.get_plan_progress") as mock_get_plan_progress, \
         patch("pecha_api.plans.plans_service.validate_and_extract_author_details") as mock_validate_author:
         db_session = _mock_session_local(mock_session_local)
         mock_save_plan.return_value = saved_plan
         saved_plan_item = MagicMock()
         saved_plan_item.day_number = request.total_days
         mock_save_plan_item.return_value = saved_plan_item
+        mock_get_plan_progress.return_value = []
 
         author = MagicMock()
         author.id = uuid.uuid4()
@@ -50,6 +52,7 @@ def test_create_new_plan_success():
         response = create_new_plan(token="dummy", create_plan_request=request)
 
         mock_validate_author.assert_called_once_with(token="dummy")
+        mock_get_plan_progress.assert_called_once_with(db=db_session, plan_id=saved_plan.id)
 
         # verify repository interactions - plan
         mock_save_plan.assert_called_once_with(db=db_session, plan=ANY)
