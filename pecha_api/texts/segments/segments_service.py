@@ -48,7 +48,7 @@ from .segments_cache_service import (
     delete_segments_details_by_ids_cache
 )
 
-from pecha_api.uploads.S3_utils import generate_presigned_upload_url
+from pecha_api.uploads.S3_utils import generate_presigned_access_url
 
 from .segments_enum import SegmentType
 
