@@ -1,9 +1,9 @@
 from .plan_auth_enums import AuthorStatus
-from .plan_auth_models import CreateAuthorRequest, AuthorResponse, AuthorDetails, TokenPayload, \
+from .plan_auth_models import CreateAuthorRequest, AuthorDetails, TokenPayload, \
     AuthorVerificationResponse, ResponseError
 from pecha_api.plans.authors.plan_author_model import Author
 from pecha_api.db.database import SessionLocal
-from pecha_api.plans.authors.plan_authors_repository import save_author, get_author_by_email, update_author
+from pecha_api.plans.authors.plan_authors_repository import save_author, get_author_by_email, update_author, check_author_exists
 from pecha_api.auth.auth_repository import get_hashed_password
 from fastapi import HTTPException
 from starlette import status
@@ -38,15 +38,12 @@ from fastapi.responses import JSONResponse
 def register_author(create_user_request: CreateAuthorRequest) -> AuthorDetails:
     # Check for existing author to return required error shape on duplicates
     with SessionLocal() as db_session:
-        try:
-            get_author_by_email(db=db_session, email=create_user_request.email)
-            return JSONResponse(
-                status_code=status.HTTP_400_BAD_REQUEST,
-                content= ResponseError(error=BAD_REQUEST, message=AUTHOR_ALREADY_EXISTS).model_dump()
+        is_author_exists = check_author_exists(db=db_session, email=create_user_request.email)
+        if is_author_exists:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST, 
+                detail=ResponseError(error=BAD_REQUEST, message=AUTHOR_ALREADY_EXISTS).model_dump()
             )
-        except HTTPException as e:
-            if e.status_code != status.HTTP_404_NOT_FOUND:
-                raise
     registered_user = _create_user(
         create_user_request=create_user_request
     )

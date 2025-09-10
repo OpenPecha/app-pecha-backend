@@ -6,7 +6,10 @@ from uuid import UUID
 from pecha_api.plans.response_message import (
     AUTHOR_NOT_FOUND,
     AUTHOR_UPDATE_INVALID,
+    AUTHOR_ALREADY_EXISTS,
+    BAD_REQUEST,
 )
+from pecha_api.plans.auth.plan_auth_models import ResponseError
 from pecha_api.plans.authors.plan_author_model import Author
 
 
@@ -27,6 +30,11 @@ def get_author_by_email(db: Session, email: str) -> Author:
     if author is None:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=AUTHOR_NOT_FOUND)
     return author
+
+def check_author_exists(db: Session, email: str) -> bool:
+    author = db.query(Author).filter(Author.email == email).first()
+    is_exists = True if author else False
+    return is_exists
 
 
 def get_author_by_id(db: Session, author_id: UUID) -> Author:
