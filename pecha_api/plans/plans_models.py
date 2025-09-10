@@ -15,7 +15,7 @@ class Plan(Base):
     title = Column(String(255), nullable=False)
     description = Column(Text, nullable=True)
     author_id = Column(UUID(as_uuid=True), ForeignKey('authors.id', ondelete='RESTRICT'), nullable=False)
-    language = Column(LanguageCodeEnum, nullable=False, default='en')
+    language = Column(LanguageCodeEnum, nullable=False, default='EN')
     difficulty_level = Column(DifficultyLevelEnum, default='BEGINNER')
 
     tags = Column(JSONB, server_default=text("'[]'::jsonb"), nullable=False)

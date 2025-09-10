@@ -1,6 +1,5 @@
 from typing import Optional, List
 
-from sqlalchemy.orm.attributes import create_proxied_attribute
 from starlette import status
 from pecha_api.plans.plans_models import Plan
 from pecha_api.plans.items.plan_items_models import PlanItem
@@ -15,7 +14,7 @@ from pecha_api.plans.plans_response_models import PlansResponse, PlanDTO, Create
     UpdatePlanRequest, PlanStatusUpdate
 from pecha_api.plans.plans_repository import get_plans
 from pecha_api.db.database import SessionLocal
-import asyncio
+from ..config import get
 from uuid import uuid4, UUID
 from fastapi import HTTPException
 DUMMY_PLANS = [
@@ -99,7 +98,6 @@ async def get_filtered_plans(token: str, search: Optional[str], sort_by: str, so
 
     plans: List[PlanDTO] = []
     for row in rows:
-        print(row)
         # Rows are returned as (Plan, total_days, subscription_count)
         plan_model = row[0]
         total_days = row[1]
@@ -123,6 +121,7 @@ async def get_filtered_plans(token: str, search: Optional[str], sort_by: str, so
 def create_new_plan(token: str, create_plan_request: CreatePlanRequest) -> PlanDTO:
 
     current_author = validate_and_extract_author_details(token=token)
+    language = get("SITE_LANGUAGE").upper()
     new_plan_model = Plan(
         title=create_plan_request.title,
         description=create_plan_request.description,
@@ -132,7 +131,7 @@ def create_new_plan(token: str, create_plan_request: CreatePlanRequest) -> PlanD
         tags=create_plan_request.tags or [],
         status=PlanStatus.DRAFT.value,
         featured=False,
-        language=LanguageCode(create_plan_request.language or LanguageCode.EN.value),
+        language=LanguageCode(language),
         created_by=current_author.email
     )
     plan = None

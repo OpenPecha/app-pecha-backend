@@ -27,9 +27,9 @@ class PlanStatus(enum.Enum):
     UNDER_REVIEW = "UNDER_REVIEW"
 
 class LanguageCode(enum.Enum):
-    EN = "en"
-    BO = "bo"
-    ZH = "zh"
+    EN = "EN"
+    BO = "BO"
+    ZH = "ZH"
 
 class SortOrder(enum.Enum):
     ASC = "asc"
