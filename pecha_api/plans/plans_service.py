@@ -5,7 +5,7 @@ from pecha_api.plans.plans_models import Plan
 from pecha_api.plans.items.plan_items_models import PlanItem
 from pecha_api.db.database import SessionLocal
 from pecha_api.plans.plans_repository import save_plan
-from pecha_api.plans.items.plan_items_repository import save_plan_item
+from pecha_api.plans.items.plan_items_repository import save_plan_items
 from pecha_api.plans.users.user_plan_progress_repository import get_plan_progress
 from pecha_api.error_contants import ErrorConstants
 from pecha_api.plans.authors.plan_author_service import validate_and_extract_author_details
@@ -121,7 +121,9 @@ async def get_filtered_plans(token: str, search: Optional[str], sort_by: str, so
 def create_new_plan(token: str, create_plan_request: CreatePlanRequest) -> PlanDTO:
 
     current_author = validate_and_extract_author_details(token=token)
-    language = get("SITE_LANGUAGE").upper()
+
+    language = create_plan_request.language.upper() if create_plan_request.language else get("SITE_LANGUAGE").upper()
+
     new_plan_model = Plan(
         title=create_plan_request.title,
         description=create_plan_request.description,
@@ -129,33 +131,38 @@ def create_new_plan(token: str, create_plan_request: CreatePlanRequest) -> PlanD
         author_id=current_author.id,
         difficulty_level=create_plan_request.difficulty_level,
         tags=create_plan_request.tags or [],
-        status=PlanStatus.DRAFT.value,
+        status=PlanStatus.DRAFT,
         featured=False,
         language=LanguageCode(language),
         created_by=current_author.email
     )
-    plan = None
+
     # Save to database
     with SessionLocal() as db_session:
         saved_plan = save_plan(db=db_session, plan=new_plan_model)
 
-        new_item_model = PlanItem(
-            plan_id=saved_plan.id,
-            day_number=create_plan_request.total_days,
-            created_by=current_author.email
-        )
-        
-        saved_plan_item = save_plan_item(db=db_session, plan_item=new_item_model)
+        new_item_models = [
+            PlanItem(
+                plan_id=saved_plan.id,
+                day_number=day,
+                created_by=current_author.email
+            )
+            for day in range(1, create_plan_request.total_days + 1)
+        ]
+
+        saved_items = save_plan_items(db=db_session, plan_items=new_item_models)
         plan_progress = get_plan_progress(db=db_session, plan_id=saved_plan.id)
+
         total_subscription_count = len(plan_progress)
-        
+        total_days = len(saved_items)
+
         return PlanDTO(
             id=saved_plan.id,
             title=saved_plan.title,
             description=saved_plan.description,
             image_url=saved_plan.image_url,
-            total_days=saved_plan_item.day_number,
-            status=PlanStatus(saved_plan.status.value),
+            total_days=total_days,
+            status=saved_plan.status,
             subscription_count=total_subscription_count
         )
 
