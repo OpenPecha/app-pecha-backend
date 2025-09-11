@@ -1,10 +1,19 @@
 import uuid
 import pytest
 from unittest.mock import patch, MagicMock, ANY
+from fastapi import HTTPException
 
-from pecha_api.plans.plans_enums import DifficultyLevel, PlanStatus, SortBy, SortOrder
-from pecha_api.plans.plans_response_models import CreatePlanRequest
-from pecha_api.plans.plans_service import create_new_plan, get_filtered_plans
+import pecha_api.plans.plans_service as plans_service
+from pecha_api.plans.plans_enums import DifficultyLevel, PlanStatus
+from pecha_api.plans.plans_response_models import (
+    CreatePlanRequest, UpdatePlanRequest, PlanStatusUpdate,
+    PlanDTO, TaskDTO, PlanDayDTO, PlanWithDays
+)
+from pecha_api.plans.plans_service import (
+    create_new_plan, get_filtered_plans, get_details_plan,
+    update_plan_details, update_selected_plan_status, delete_selected_plan,
+    DUMMY_PLANS, DUMMY_TASKS, DUMMY_DAYS
+)
 
 
 def _mock_session_local(mock_session_local):
@@ -119,8 +128,8 @@ async def test_get_filtered_plans_success():
         resp = await get_filtered_plans(
             token="dummy-token",
             search="plan",
-            sort_by=SortBy.CREATED_AT,
-            sort_order=SortOrder.DESC,
+            sort_by="created_at",
+            sort_order="desc",
             skip=5,
             limit=10,
         )
@@ -158,4 +167,156 @@ async def test_get_filtered_plans_success():
         p2 = resp.plans[1]
         assert p2.id == plan2.id
         assert p2.status == PlanStatus.DRAFT
+
+
+@pytest.mark.asyncio
+async def test_get_details_plan_success():
+    # Create a test plan ID that exists in DUMMY_PLANS
+    test_plan = DUMMY_PLANS[0]
+    
+    with patch("pecha_api.plans.plans_service.validate_and_extract_author_details") as mock_validate_author:
+        mock_validate_author.return_value = MagicMock()
+        
+        response = await get_details_plan(token="dummy-token", plan_id=test_plan.id)
+        
+        # Verify response
+        assert response is not None
+        assert response.id == test_plan.id
+        assert response.title == test_plan.title
+        assert response.description == test_plan.description
+        assert response.days == DUMMY_DAYS
+
+
+@pytest.mark.asyncio
+async def test_get_details_plan_not_found():
+    non_existent_id = uuid.uuid4()
+    
+    with patch("pecha_api.plans.plans_service.validate_and_extract_author_details") as mock_validate_author:
+        mock_validate_author.return_value = MagicMock()
+        
+        with pytest.raises(HTTPException) as exc_info:
+            await get_details_plan(token="dummy-token", plan_id=non_existent_id)
+        
+        assert exc_info.value.status_code == 404
+        assert "Plan not found" in str(exc_info.value.detail)
+
+
+@pytest.mark.asyncio
+async def test_update_plan_details_success():
+    # Get a test plan from DUMMY_PLANS
+    test_plan = DUMMY_PLANS[0]
+    
+    update_request = UpdatePlanRequest(
+        title="Updated Title",
+        description="Updated Description",
+        total_days=10,
+        image_url="https://example.com/updated.jpg"
+    )
+    
+    with patch("pecha_api.plans.plans_service.validate_and_extract_author_details") as mock_validate_author:
+        mock_validate_author.return_value = MagicMock()
+        
+        response = await update_plan_details(
+            token="dummy-token",
+            plan_id=test_plan.id,
+            update_plan_request=update_request
+        )
+        
+        # Verify response
+        assert response is not None
+        assert response.id == test_plan.id
+        assert response.title == update_request.title
+        assert response.description == update_request.description
+        assert response.total_days == update_request.total_days
+        assert response.image_url == update_request.image_url
+
+
+@pytest.mark.asyncio
+async def test_update_plan_details_not_found():
+    non_existent_id = uuid.uuid4()
+    update_request = UpdatePlanRequest(title="Updated Title")
+    
+    with patch("pecha_api.plans.plans_service.validate_and_extract_author_details") as mock_validate_author:
+        mock_validate_author.return_value = MagicMock()
+        
+        with pytest.raises(HTTPException) as exc_info:
+            await update_plan_details(
+                token="dummy-token",
+                plan_id=non_existent_id,
+                update_plan_request=update_request
+            )
+        
+        assert exc_info.value.status_code == 404
+        assert "Plan not found" in str(exc_info.value.detail)
+
+
+@pytest.mark.asyncio
+async def test_update_selected_plan_status_success():
+    # Get a test plan from DUMMY_PLANS
+    test_plan = DUMMY_PLANS[0]
+    
+    status_update = PlanStatusUpdate(status=PlanStatus.PUBLISHED)
+    
+    with patch("pecha_api.plans.plans_service.validate_and_extract_author_details") as mock_validate_author:
+        mock_validate_author.return_value = MagicMock()
+        
+        response = await update_selected_plan_status(
+            token="dummy-token",
+            plan_id=test_plan.id,
+            plan_status_update=status_update
+        )
+        
+        # Verify response
+        assert response is not None
+        assert response.id == test_plan.id
+        assert response.status == PlanStatus.PUBLISHED
+
+
+@pytest.mark.asyncio
+async def test_update_selected_plan_status_invalid_transition():
+    # Ensure a plan with zero days exists
+    zero_day_plan = next((p for p in DUMMY_PLANS if getattr(p, "total_days", 0) == 0), None)
+    if zero_day_plan is None:
+        # Inject a zero-day plan for this test
+        zero_day_plan = PlanDTO(
+            id=uuid.uuid4(),
+            title="Zero Day Plan",
+            description="Should not publish",
+            image_url="https://example.com/zero.jpg",
+            total_days=0,
+            status=PlanStatus.DRAFT,
+            subscription_count=0
+        )
+        DUMMY_PLANS.append(zero_day_plan)
+
+    status_update = PlanStatusUpdate(status=PlanStatus.PUBLISHED)
+    
+    with patch("pecha_api.plans.plans_service.validate_and_extract_author_details") as mock_validate_author:
+        mock_validate_author.return_value = MagicMock()
+        
+        with pytest.raises(HTTPException) as exc_info:
+            await update_selected_plan_status(
+                token="dummy-token",
+                plan_id=zero_day_plan.id,
+                plan_status_update=status_update
+            )
+        
+        assert exc_info.value.status_code == 400
+        assert "must have at least one day with content" in str(exc_info.value.detail)
+
+
+@pytest.mark.asyncio
+async def test_delete_selected_plan_success():
+    # Get a test plan from DUMMY_PLANS
+    test_plan = DUMMY_PLANS[0]
+    initial_plan_count = len(DUMMY_PLANS)
+    
+    with patch("pecha_api.plans.plans_service.validate_and_extract_author_details") as mock_validate_author:
+        mock_validate_author.return_value = MagicMock()
+        
+        await delete_selected_plan(token="dummy-token", plan_id=test_plan.id)
+        
+        # Verify plan was removed from DUMMY_PLANS
+        assert len(plans_service.DUMMY_PLANS) == initial_plan_count - 1
+        assert not any(p.id == test_plan.id for p in plans_service.DUMMY_PLANS)
 

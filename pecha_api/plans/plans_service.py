@@ -90,8 +90,8 @@ async def get_filtered_plans(token: str, search: Optional[str], sort_by: str, so
         rows, total = get_plans(
             db=db_session,
             search=search,
-            sort_by=sort_by.value,
-            sort_order=sort_order.value,
+            sort_by=sort_by,
+            sort_order=sort_order,
             skip=skip,
             limit=limit,
         )

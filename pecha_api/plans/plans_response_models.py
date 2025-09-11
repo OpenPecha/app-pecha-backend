@@ -58,3 +58,10 @@ class PlansResponse(BaseModel):
     skip: int
     limit: int
     total: int
+
+
+
+class PlansRepositoryResponse(BaseModel):
+    
+    rows: List[tuple[PlanDTO, int, int]]
+    total: int

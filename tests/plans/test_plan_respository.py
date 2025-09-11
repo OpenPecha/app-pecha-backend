@@ -123,3 +123,46 @@ def test_get_plans_filter_sort_and_pagination(db):
     assert rows[0][0].title in ["A Plan", "B Plan", "C Plan"]
 
 
+def test_get_plans_sort_by_total_days_desc(db):
+    author = _create_author(db)
+
+    # Create three plans and attach different numbers of items
+    plan_counts = {"Zero": 0, "One": 1, "Two": 2}
+    created = {}
+    for title, count in plan_counts.items():
+        p = Plan(
+            title=f"{title} Items Plan",
+            description="desc",
+            author_id=author.id,
+            created_by="tester",
+        )
+        p = save_plan(db, p)
+        created[title] = p
+        for day in range(count):
+            item = PlanItem(
+                plan_id=p.id,
+                day_number=day + 1,
+                created_by="tester",
+            )
+            db.add(item)
+        db.commit()
+
+    rows, total = get_plans(
+        db=db,
+        search=None,
+        sort_by="total_days",
+        sort_order="desc",
+        skip=0,
+        limit=10,
+    )
+
+    # Extract just the seeded three for assertion order
+    titles_in_order = [r[0].title for r in rows if r[0].title.endswith("Items Plan")]
+    # Expect Two > One > Zero by total_days
+    assert titles_in_order[:3] == [
+        "Two Items Plan",
+        "One Items Plan",
+        "Zero Items Plan",
+    ]
+
+

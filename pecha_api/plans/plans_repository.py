@@ -8,7 +8,7 @@ from pecha_api.plans.items.plan_items_models import PlanItem
 from pecha_api.plans.users.user_plan_progress_models import UserPlanProgress
 from fastapi import HTTPException
 from starlette import status
-
+from pecha_api.plans.plans_response_models import PlansRepositoryResponse
 def save_plan(db: Session, plan: Plan):
     try:
         db.add(plan)
@@ -28,14 +28,14 @@ def get_plans(
     sort_order: str,
     skip: int,
     limit: int,
-):
+) -> PlansRepositoryResponse:
     # Filters
     filters = [Plan.deleted_at.is_(None)]
     if search:
         filters.append(Plan.title.ilike(f"%{search}%"))
 
     # Aggregates (matching provided SQL): SUM of item day_number and COUNT DISTINCT of subscribers
-    total_days_label = func.coalesce(func.sum(PlanItem.day_number), 0).label("total_days")
+    total_days_label = func.count(func.distinct(PlanItem.id)).label("total_days")
     subscription_count_label = func.count(func.distinct(UserPlanProgress.user_id)).label("subscription_count")
 
     # Base query with LEFT JOINs and GROUP BY
@@ -52,14 +52,13 @@ def get_plans(
     )
 
     # Sorting
-    if sort_by == "status":
-        order_expr = asc(Plan.status) if sort_order == "asc" else desc(Plan.status)
-    elif sort_by == "total_days":
-        order_expr = asc(total_days_label) if sort_order == "asc" else desc(total_days_label)
-    else:
-        order_expr = asc(Plan.created_at) if sort_order == "asc" else desc(Plan.created_at)
-
-    query = query.order_by(order_expr)
+    order = asc if sort_order == "asc" else desc
+    sort_fields = {
+        "created_at": Plan.created_at,
+        "status": Plan.status,
+        "total_days": total_days_label,
+    }
+    query = query.order_by(order(sort_fields.get(sort_by, Plan.created_at)))
 
     # Pagination
     rows = query.offset(skip).limit(limit).all()

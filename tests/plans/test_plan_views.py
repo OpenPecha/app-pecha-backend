@@ -2,7 +2,7 @@ import uuid
 import pytest
 from unittest.mock import patch, MagicMock, AsyncMock
 
-from pecha_api.plans.plans_enums import DifficultyLevel, PlanStatus, SortBy, SortOrder
+from pecha_api.plans.plans_enums import DifficultyLevel, PlanStatus
 from pecha_api.plans.plans_response_models import CreatePlanRequest, PlanDTO, PlansResponse
 from pecha_api.plans.plans_views import create_plan, get_plans
 
@@ -82,8 +82,8 @@ async def test_get_plans_success_with_params():
         resp = await get_plans(
             authentication_credential=creds,
             search="plan",
-            sort_by=SortBy.STATUS,
-            sort_order=SortOrder.ASC,
+            sort_by="status",
+            sort_order="asc",
             skip=1,
             limit=5,
         )
@@ -93,8 +93,8 @@ async def test_get_plans_success_with_params():
         assert called_kwargs == {
             "token": "token123",
             "search": "plan",
-            "sort_by": SortBy.STATUS,
-            "sort_order": SortOrder.ASC,
+            "sort_by": "status",
+            "sort_order": "asc",
             "skip": 1,
             "limit": 5,
         }
@@ -112,8 +112,8 @@ async def test_get_plans_defaults():
         resp = await get_plans(
             authentication_credential=creds,
             search=None,
-            sort_by=SortBy.TOTAL_DAYS,
-            sort_order=SortOrder.ASC,
+            sort_by="total_days",
+            sort_order="asc",
             skip=0,
             limit=10,
         )
@@ -123,8 +123,8 @@ async def test_get_plans_defaults():
         assert called_kwargs == {
             "token": "tkn",
             "search": None,
-            "sort_by": SortBy.TOTAL_DAYS,
-            "sort_order": SortOrder.ASC,
+            "sort_by": "total_days",
+            "sort_order": "asc",
             "skip": 0,
             "limit": 10,
         }
