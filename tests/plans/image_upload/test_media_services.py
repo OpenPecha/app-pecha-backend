@@ -209,17 +209,19 @@ class TestUploadMediaFile:
     def test_upload_with_plan_id(self, mock_upload_file, mock_successful_upload_dependencies):
         from pecha_api.plans.image_upload.media_services import upload_media_file
         
+        plan_id = "plan123"
+        custom_path = f"images/plan_images/{plan_id}"
+        
         result = upload_media_file(
             token="valid_token",
             file=mock_upload_file,
-            path="images/plan_images",
-            plan_id="plan123"
+            path=custom_path
         )
         
         upload_args = mock_successful_upload_dependencies['upload_bytes'].call_args[1]
         s3_key = upload_args.get("s3_key")
-        assert "images/plan_images/plan123/uuid123" in s3_key
-        assert "plan123" in result.path
+        assert f"images/plan_images/{plan_id}/uuid123" in s3_key
+        assert plan_id in result.path
 
     def test_custom_path(self, mock_upload_file, mock_successful_upload_dependencies):
         from pecha_api.plans.image_upload.media_services import upload_media_file
