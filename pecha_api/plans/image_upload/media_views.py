@@ -1,6 +1,6 @@
 from fastapi import APIRouter, UploadFile, File, status, Depends
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
-from .media_service import upload_media_file
+from .media_services import upload_media_file
 from .media_response_models import MediaUploadResponse
 from typing import Annotated
 

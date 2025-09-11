@@ -21,6 +21,7 @@ from pecha_api.plans.authors.plan_author_model import Author
 mock_success_response = MediaUploadResponse(
     url="https://s3.amazonaws.com/bucket/images/plan_images/uuid/test_image.jpg",
     key="images/plan_images/uuid/test_image.jpg",
+    path="images/plan_images/uuid",
     message=IMAGE_UPLOAD_SUCCESS
 )
 
@@ -35,7 +36,7 @@ mock_author = Author(
 @pytest.fixture(autouse=True)
 def mock_validate_author():
     """Mock the author validation function for all tests"""
-    with patch("pecha_api.plans.image_upload.media_service.validate_and_extract_author_details") as mock_func:
+    with patch("pecha_api.plans.image_upload.media_services.validate_and_extract_author_details") as mock_func:
         mock_func.return_value = mock_author
         yield mock_func
 
@@ -122,7 +123,7 @@ def test_upload_media_missing_file(client, mock_upload_service):
 
 def test_upload_media_invalid_file_format(client):
     """Test upload with an invalid file format"""
-    with patch("pecha_api.plans.image_upload.media_service.validate_file") as mock_validate_file:
+    with patch("pecha_api.plans.image_upload.media_services.validate_file") as mock_validate_file:
         mock_validate_file.side_effect = HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail=INVALID_FILE_FORMAT
@@ -139,7 +140,7 @@ def test_upload_media_invalid_file_format(client):
 
 def test_upload_media_file_too_large(client):
     """Test upload with file exceeding size limit"""
-    with patch("pecha_api.plans.image_upload.media_service.validate_file") as mock_validate_file:
+    with patch("pecha_api.plans.image_upload.media_services.validate_file") as mock_validate_file:
         mock_validate_file.side_effect = HTTPException(
             status_code=status.HTTP_413_REQUEST_ENTITY_TOO_LARGE,
             detail=FILE_TOO_LARGE
@@ -177,6 +178,7 @@ def test_upload_media_different_image_formats(client):
     mock_response = MediaUploadResponse(
         url="https://s3.amazonaws.com/bucket/images/plan_images/uuid/test_image.png",
         key="images/plan_images/uuid/test_image.png",
+        path="images/plan_images/uuid",
         message=IMAGE_UPLOAD_SUCCESS
     )
     
@@ -197,6 +199,7 @@ def test_upload_media_different_image_formats(client):
             response_data = response.json()
             assert response_data["url"] == mock_response.url
             assert response_data["key"] == mock_response.key
+            assert response_data["path"] == mock_response.path
             assert response_data["message"] == IMAGE_UPLOAD_SUCCESS
 
 
@@ -246,6 +249,7 @@ def test_upload_media_response_structure(client):
     mock_response = MediaUploadResponse(
         url="https://s3.amazonaws.com/bucket/images/plan_images/uuid/test_image.jpg",
         key="images/plan_images/uuid/test_image.jpg",
+        path="images/plan_images/uuid",
         message=IMAGE_UPLOAD_SUCCESS
     )
     
