@@ -34,14 +34,13 @@ def test_create_new_plan_success():
 
     with patch("pecha_api.plans.plans_service.SessionLocal") as mock_session_local, \
         patch("pecha_api.plans.plans_service.save_plan") as mock_save_plan, \
-        patch("pecha_api.plans.plans_service.save_plan_item") as mock_save_plan_item, \
+        patch("pecha_api.plans.plans_service.save_plan_items") as mock_save_plan_items, \
         patch("pecha_api.plans.plans_service.get_plan_progress") as mock_get_plan_progress, \
         patch("pecha_api.plans.plans_service.validate_and_extract_author_details") as mock_validate_author:
         db_session = _mock_session_local(mock_session_local)
         mock_save_plan.return_value = saved_plan
-        saved_plan_item = MagicMock()
-        saved_plan_item.day_number = request.total_days
-        mock_save_plan_item.return_value = saved_plan_item
+        # save_plan_items returns the list of saved items; return a list sized to total_days
+        mock_save_plan_items.return_value = [MagicMock() for _ in range(request.total_days)]
         mock_get_plan_progress.return_value = []
 
         author = MagicMock()
@@ -63,13 +62,18 @@ def test_create_new_plan_success():
         assert created_plan_model.image_url == request.image_url
         assert created_plan_model.author_id is not None and str(created_plan_model.author_id) != ""
 
-        # verify repository interactions - plan item
-        mock_save_plan_item.assert_called_once_with(db=db_session, plan_item=ANY)
-        called_item_kwargs = mock_save_plan_item.call_args.kwargs
-        created_plan_item_model = called_item_kwargs["plan_item"]
-        assert created_plan_item_model.plan_id == saved_plan.id
-        assert created_plan_item_model.day_number == request.total_days
-        assert created_plan_item_model.created_by == author.email
+        # verify repository interactions - plan items (bulk)
+        mock_save_plan_items.assert_called_once_with(db=db_session, plan_items=ANY)
+        called_item_kwargs = mock_save_plan_items.call_args.kwargs
+        created_plan_items = called_item_kwargs["plan_items"]
+        assert isinstance(created_plan_items, list)
+        assert len(created_plan_items) == request.total_days
+        # verify each generated PlanItem model
+        expected_days = list(range(1, request.total_days + 1))
+        actual_days = [item.day_number for item in created_plan_items]
+        assert actual_days == expected_days
+        assert all(item.plan_id == saved_plan.id for item in created_plan_items)
+        assert all(item.created_by == author.email for item in created_plan_items)
 
         # verify response mapping
         assert response is not None
