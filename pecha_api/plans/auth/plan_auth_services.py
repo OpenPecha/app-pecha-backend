@@ -1,9 +1,9 @@
 from .plan_auth_enums import AuthorStatus
-from .plan_auth_models import CreateAuthorRequest, AuthorResponse, AuthorDetails, TokenPayload, \
-    AuthorVerificationResponse
+from .plan_auth_models import CreateAuthorRequest, AuthorDetails, TokenPayload, \
+    AuthorVerificationResponse, ResponseError
 from pecha_api.plans.authors.plan_author_model import Author
 from pecha_api.db.database import SessionLocal
-from pecha_api.plans.authors.plan_authors_repository import save_author, get_author_by_email, update_author
+from pecha_api.plans.authors.plan_authors_repository import save_author, get_author_by_email, update_author, check_author_exists
 from pecha_api.auth.auth_repository import get_hashed_password
 from fastapi import HTTPException
 from starlette import status
@@ -23,15 +23,22 @@ from pecha_api.plans.response_message import (
     REGISTRATION_MESSAGE,
     AUTHOR_NOT_VERIFIED,
     AUTHOR_NOT_ACTIVE,
-    INVALID_EMAIL_PASSWORD
+    INVALID_EMAIL_PASSWORD,
+    AUTHOR_ALREADY_EXISTS,
+    BAD_REQUEST
+
 )
 
 from pecha_api.auth.auth_repository import get_hashed_password
 
 from pecha_api.auth.auth_repository import get_hashed_password, verify_password, create_access_token, create_refresh_token
 from .plan_auth_models import TokenResponse, AuthorLoginResponse, AuthorInfo
+from fastapi.responses import JSONResponse
 
 def register_author(create_user_request: CreateAuthorRequest) -> AuthorDetails:
+    # Check for existing author to return required error shape on duplicates
+    with SessionLocal() as db_session:
+        check_author_exists(db=db_session, email=create_user_request.email)
     registered_user = _create_user(
         create_user_request=create_user_request
     )
@@ -57,7 +64,7 @@ def _create_user(create_user_request: CreateAuthorRequest) -> AuthorDetails:
 def _validate_password(password: str):
     if not password:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=PASSWORD_EMPTY)
-    if len(password) < 8 or len(password) > 20:
+    if len(password) < 6:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=PASSWORD_LENGTH_INVALID)
 
 
@@ -78,8 +85,8 @@ def _generate_author_verification_token(email: str) -> str:
 
 def _send_verification_email(email: str) -> None:
     token = _generate_author_verification_token(email=email)
-    frontend_endpoint = get("BASE_URL")
-    verify_link = f"{frontend_endpoint}/plan/verify-email?token={token}"
+    frontend_endpoint = get("WEBUDDHIST_STUDIO_BASE_URL")       
+    verify_link = f"{frontend_endpoint}/verify-email?token={token}"
 
     template_path = Path(__file__).parent / "templates" / "verify_email_template.html"
     with open(template_path, "r") as f:

@@ -10,9 +10,10 @@ from pecha_api.plans.authors.plan_authors_repository import (
     get_author_by_email,
     get_author_by_id,
     update_author,
+    check_author_exists,
 )
 from fastapi import HTTPException
-from pecha_api.plans.response_message import AUTHOR_NOT_FOUND, AUTHOR_UPDATE_INVALID
+from pecha_api.plans.response_message import AUTHOR_NOT_FOUND, AUTHOR_UPDATE_INVALID, AUTHOR_ALREADY_EXISTS, BAD_REQUEST
 
 
 def _make_session_mock() -> Session:
@@ -114,4 +115,24 @@ def test_update_author_integrity_error_raises_400_and_rolls_back():
     assert exc.value.detail == AUTHOR_UPDATE_INVALID
     db.rollback.assert_called_once()
 
+
+
+def test_check_author_exists_raises_400_when_author_exists():
+    db = _make_session_mock()
+    db.query.return_value.filter.return_value.first.return_value = MagicMock(name="AuthorInstance")
+
+    with pytest.raises(HTTPException) as exc:
+        check_author_exists(db=db, email="exists@example.com")
+
+    assert exc.value.status_code == status.HTTP_400_BAD_REQUEST
+    assert exc.value.detail == {"error": BAD_REQUEST, "message": AUTHOR_ALREADY_EXISTS}
+
+
+def test_check_author_exists_no_exception_when_author_not_exists():
+    db = _make_session_mock()
+    db.query.return_value.filter.return_value.first.return_value = None
+
+    # Should not raise
+    result = check_author_exists(db=db, email="new@example.com")
+    assert result is None
 
