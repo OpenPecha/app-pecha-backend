@@ -13,6 +13,6 @@ media_router = APIRouter(
 
 
 @media_router.post("/upload", status_code=status.HTTP_201_CREATED)
-async def upload_media_image(authentication_credential: Annotated[HTTPAuthorizationCredentials, Depends(oauth2_scheme)], file: UploadFile = File()
+async def upload_media_image(authentication_credential: Annotated[HTTPAuthorizationCredentials, Depends(oauth2_scheme)], file: UploadFile = File(...)
 ) -> MediaUploadResponse:
     return upload_media_file(token=authentication_credential.credentials, file=file, plan_id=None)
