@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, HTTPException
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 
 from .plan_auth_models import CreateAuthorRequest, AuthorDetails, AuthorVerificationResponse, AuthorLoginRequest, AuthorLoginResponse
