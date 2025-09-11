@@ -31,12 +31,10 @@ def get_author_by_email(db: Session, email: str) -> Author:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=AUTHOR_NOT_FOUND)
     return author
 
-def check_author_exists(db: Session, email: str) -> bool:
+def check_author_exists(db: Session, email: str):
     author = db.query(Author).filter(Author.email == email).first()
-    is_exists = True if author else False
-    if is_exists:
+    if author:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=ResponseError(error=BAD_REQUEST, message=AUTHOR_ALREADY_EXISTS).model_dump())
-    return is_exists
 
 
 def get_author_by_id(db: Session, author_id: UUID) -> Author:
