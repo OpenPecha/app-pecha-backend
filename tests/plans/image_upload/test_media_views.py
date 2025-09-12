@@ -35,21 +35,18 @@ mock_author = Author(
 
 @pytest.fixture(autouse=True)
 def mock_validate_author():
-    """Mock the author validation function for all tests"""
     with patch("pecha_api.plans.image_upload.media_services.validate_and_extract_author_details") as mock_func:
         mock_func.return_value = mock_author
         yield mock_func
 
 @pytest.fixture
 def mock_upload_service():
-    """Mock the upload_media_file service function for tests that need it"""
     with patch("pecha_api.plans.image_upload.media_views.upload_media_file") as mock_func:
         mock_func.return_value = mock_success_response
         yield mock_func
         
 @pytest.fixture
 def client():
-    """Create a test client with proper dependency overrides"""
     from pecha_api.plans.image_upload.media_views import oauth2_scheme
     
     original_dependency = api.dependency_overrides.copy()
@@ -66,17 +63,27 @@ def client():
     api.dependency_overrides = original_dependency
 
 
+@pytest.fixture
+def client_no_auth():
+    original_dependency = api.dependency_overrides.copy()
+    
+    test_client = TestClient(api)
+    
+    yield test_client
+    
+    api.dependency_overrides = original_dependency
+
+
 def create_test_image_file(filename: str = "test_image.jpg", content: bytes = b"fake_image_content", content_type: str = "image/jpeg"):
-    """Create a file that can be used with TestClient for file uploads"""
     return ("file", (filename, content, content_type))
 
 
 def test_upload_media_success(client, mock_upload_service):
-    """Test a successful media upload"""
     files = [create_test_image_file()]
     headers = {"Authorization": "Bearer valid_token"}
+    params = {"plan_id": "test_plan_123"}
     
-    response = client.post("/cms/media/upload", files=files, headers=headers)
+    response = client.post("/cms/media/upload", files=files, headers=headers, params=params)
     
     assert response.status_code == status.HTTP_201_CREATED
     response_data = response.json()
@@ -85,17 +92,16 @@ def test_upload_media_success(client, mock_upload_service):
     assert response_data["message"] == IMAGE_UPLOAD_SUCCESS
 
 
-def test_upload_media_missing_authorization(client):
-    """Test that authorization is required"""
+def test_upload_media_missing_authorization(client_no_auth):
     files = [create_test_image_file()]
+    params = {"plan_id": "test_plan_123"}
     
-    response = client.post("/cms/media/upload", files=files)
+    response = client_no_auth.post("/cms/media/upload", files=files, params=params)
     
-    assert response.status_code == status.HTTP_400_BAD_REQUEST
+    assert response.status_code == status.HTTP_403_FORBIDDEN
 
 
 def test_upload_media_invalid_token(client, mock_validate_author):
-    """Test with an invalid token"""
     mock_validate_author.side_effect = HTTPException(
         status_code=status.HTTP_404_NOT_FOUND,
         detail=AUTHOR_NOT_FOUND
@@ -103,15 +109,15 @@ def test_upload_media_invalid_token(client, mock_validate_author):
     
     files = [create_test_image_file()]
     headers = {"Authorization": "Bearer invalid_token"}
+    params = {"plan_id": "test_plan_123"}
     
-    response = client.post("/cms/media/upload", files=files, headers=headers)
+    response = client.post("/cms/media/upload", files=files, headers=headers, params=params)
     
     assert response.status_code == status.HTTP_404_NOT_FOUND
     assert response.json()["detail"] == AUTHOR_NOT_FOUND
 
 
 def test_upload_media_missing_file(client, mock_upload_service):
-    """Test upload without providing a file"""
     headers = {"Authorization": "Bearer valid_token"}
     
     response = client.post("/cms/media/upload", headers=headers)
@@ -122,7 +128,6 @@ def test_upload_media_missing_file(client, mock_upload_service):
 
 
 def test_upload_media_invalid_file_format(client):
-    """Test upload with an invalid file format"""
     with patch("pecha_api.plans.image_upload.media_services.validate_file") as mock_validate_file:
         mock_validate_file.side_effect = HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
@@ -131,15 +136,15 @@ def test_upload_media_invalid_file_format(client):
     
         files = [create_test_image_file(filename="test.txt", content_type="text/plain")]
         headers = {"Authorization": "Bearer valid_token"}
-    
-        response = client.post("/cms/media/upload", files=files, headers=headers)
+        params = {"plan_id": "test_plan_123"}
+
+        response = client.post("/cms/media/upload", files=files, headers=headers, params=params)
     
         assert response.status_code == status.HTTP_400_BAD_REQUEST
         assert response.json()["detail"] == INVALID_FILE_FORMAT
 
 
 def test_upload_media_file_too_large(client):
-    """Test upload with file exceeding size limit"""
     with patch("pecha_api.plans.image_upload.media_services.validate_file") as mock_validate_file:
         mock_validate_file.side_effect = HTTPException(
             status_code=status.HTTP_413_REQUEST_ENTITY_TOO_LARGE,
@@ -149,15 +154,15 @@ def test_upload_media_file_too_large(client):
         large_content = b"x" * (6 * 1024 * 1024)  # 6MB content
         files = [create_test_image_file(content=large_content)]
         headers = {"Authorization": "Bearer valid_token"}
-        
-        response = client.post("/cms/media/upload", files=files, headers=headers)
+        params = {"plan_id": "test_plan_123"}
+
+        response = client.post("/cms/media/upload", files=files, headers=headers, params=params)
         
         assert response.status_code == status.HTTP_413_REQUEST_ENTITY_TOO_LARGE
         assert response.json()["detail"] == FILE_TOO_LARGE
 
 
 def test_upload_media_server_error(client):
-    """Test handling of server errors"""
     with patch("pecha_api.plans.image_upload.media_views.upload_media_file") as mock_upload:
         mock_upload.side_effect = HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
@@ -166,15 +171,15 @@ def test_upload_media_server_error(client):
         
         files = [create_test_image_file()]
         headers = {"Authorization": "Bearer valid_token"}
-        
-        response = client.post("/cms/media/upload", files=files, headers=headers)
+        params = {"plan_id": "test_plan_123"}
+
+        response = client.post("/cms/media/upload", files=files, headers=headers, params=params)
         
         assert response.status_code == status.HTTP_500_INTERNAL_SERVER_ERROR
         assert response.json()["detail"] == UNEXPECTED_ERROR_UPLOAD
 
 
 def test_upload_media_different_image_formats(client):
-    """Test upload with different valid image formats"""
     mock_response = MediaUploadResponse(
         url="https://s3.amazonaws.com/bucket/images/plan_images/uuid/test_image.png",
         key="images/plan_images/uuid/test_image.png",
@@ -192,8 +197,9 @@ def test_upload_media_different_image_formats(client):
         for filename, content_type in image_formats:
             files = [create_test_image_file(filename=filename, content_type=content_type)]
             headers = {"Authorization": "Bearer valid_token"}
-            
-            response = client.post("/cms/media/upload", files=files, headers=headers)
+            params = {"plan_id": "test_plan_123"}
+
+            response = client.post("/cms/media/upload", files=files, headers=headers, params=params)
             
             assert response.status_code == status.HTTP_201_CREATED
             response_data = response.json()
@@ -204,48 +210,47 @@ def test_upload_media_different_image_formats(client):
 
 
 def test_upload_media_empty_file(client):
-    """Test upload with an empty file"""
     files = [create_test_image_file(content=b"")]
     headers = {"Authorization": "Bearer valid_token"}
-    
+    params = {"plan_id": "test_plan_123"}
+
     with patch("pecha_api.plans.image_upload.media_views.upload_media_file", return_value=mock_success_response):
-        response = client.post("/cms/media/upload", files=files, headers=headers)
+        response = client.post("/cms/media/upload", files=files, headers=headers, params=params)
         
         assert response.status_code == status.HTTP_201_CREATED
 
 
-def test_upload_media_malformed_bearer_token(client):
-    """Test with malformed authorization header"""
+def test_upload_media_malformed_bearer_token(client_no_auth):
     files = [create_test_image_file()]
     headers = {"Authorization": "InvalidFormat token"}
+    params = {"plan_id": "test_plan_123"}
     
-    response = client.post("/cms/media/upload", files=files, headers=headers)
+    response = client_no_auth.post("/cms/media/upload", files=files, headers=headers, params=params)
     
-    assert response.status_code == status.HTTP_400_BAD_REQUEST
+    assert response.status_code == status.HTTP_403_FORBIDDEN
 
 
 def test_upload_media_filename_with_special_characters(client):
-    """Test upload with special characters in filename"""
     with patch("pecha_api.plans.image_upload.media_views.upload_media_file", return_value=mock_success_response):
         files = [create_test_image_file(filename="test image with spaces & symbols!@#.jpg")]
         headers = {"Authorization": "Bearer valid_token"}
-        
-        response = client.post("/cms/media/upload", files=files, headers=headers)
+        params = {"plan_id": "test_plan_123"}
+
+        response = client.post("/cms/media/upload", files=files, headers=headers, params=params)
         
         assert response.status_code == status.HTTP_201_CREATED
 
 
 def test_upload_media_no_filename(client):
-    """Test upload with no filename"""
     files = [("file", (None, b"fake_image_content", "image/jpeg"))]
     headers = {"Authorization": "Bearer valid_token"}
+    params = {"plan_id": "test_plan_123"}
     
-    response = client.post("/cms/media/upload", files=files, headers=headers)
+    response = client.post("/cms/media/upload", files=files, headers=headers, params=params)
     assert response.status_code == status.HTTP_422_UNPROCESSABLE_ENTITY
 
 
 def test_upload_media_response_structure(client):
-    """Test the structure of the upload response"""
     mock_response = MediaUploadResponse(
         url="https://s3.amazonaws.com/bucket/images/plan_images/uuid/test_image.jpg",
         key="images/plan_images/uuid/test_image.jpg",
@@ -256,8 +261,9 @@ def test_upload_media_response_structure(client):
     with patch("pecha_api.plans.image_upload.media_views.upload_media_file", return_value=mock_response):
         files = [create_test_image_file()]
         headers = {"Authorization": "Bearer valid_token"}
-        
-        response = client.post("/cms/media/upload", files=files, headers=headers)
+        params = {"plan_id": "test_plan_123"}
+
+        response = client.post("/cms/media/upload", files=files, headers=headers, params=params)
         
         assert response.status_code == status.HTTP_201_CREATED
         response_data = response.json()
