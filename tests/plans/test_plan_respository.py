@@ -10,6 +10,7 @@ from pecha_api.plans.items.plan_items_models import PlanItem
 from pecha_api.plans.users.user_plan_progress_models import UserPlanProgress
 from pecha_api.plans.authors.plan_author_model import Author
 from pecha_api.plans.plans_repository import save_plan, get_plans
+from pecha_api.plans.plans_response_models import PlansRepositoryResponse, PlanWithAggregates
 
 
 DATABASE_URL = os.getenv("TEST_DATABASE_URL")
@@ -85,7 +86,7 @@ def test_get_plans_filter_sort_and_pagination(db):
         save_plan(db, p)
 
     # Sort by status ascending (all defaults are DRAFT)
-    rows, total = get_plans(
+    repo_resp: PlansRepositoryResponse = get_plans(
         db=db,
         search=None,
         sort_by="status",
@@ -94,12 +95,12 @@ def test_get_plans_filter_sort_and_pagination(db):
         limit=10,
     )
 
-    assert total >= 3
-    titles = [r[0].title for r in rows[:3]]
+    assert repo_resp.total >= 3
+    titles = [r.plan.title for r in repo_resp.plan_info[:3]]
     assert set(["A Plan", "B Plan", "C Plan"]) <= set(titles)
 
     # Search filter
-    rows, total = get_plans(
+    repo_resp = get_plans(
         db=db,
         search="A",
         sort_by="status",
@@ -107,11 +108,11 @@ def test_get_plans_filter_sort_and_pagination(db):
         skip=0,
         limit=10,
     )
-    assert any(r[0].title == "A Plan" for r in rows)
-    assert all("A" in r[0].title for r in rows)
+    assert any(r.plan.title == "A Plan" for r in repo_resp.plan_info)
+    assert all("A" in r.plan.title for r in repo_resp.plan_info)
 
     # Pagination
-    rows, total = get_plans(
+    repo_resp = get_plans(
         db=db,
         search=None,
         sort_by="status",
@@ -119,8 +120,8 @@ def test_get_plans_filter_sort_and_pagination(db):
         skip=1,
         limit=1,
     )
-    assert len(rows) == 1
-    assert rows[0][0].title in ["A Plan", "B Plan", "C Plan"]
+    assert len(repo_resp.plan_info) == 1
+    assert repo_resp.plan_info[0].plan.title in ["A Plan", "B Plan", "C Plan"]
 
 
 def test_get_plans_sort_by_total_days_desc(db):
@@ -147,7 +148,7 @@ def test_get_plans_sort_by_total_days_desc(db):
             db.add(item)
         db.commit()
 
-    rows, total = get_plans(
+    repo_resp = get_plans(
         db=db,
         search=None,
         sort_by="total_days",
@@ -157,7 +158,7 @@ def test_get_plans_sort_by_total_days_desc(db):
     )
 
     # Extract just the seeded three for assertion order
-    titles_in_order = [r[0].title for r in rows if r[0].title.endswith("Items Plan")]
+    titles_in_order = [r.plan.title for r in repo_resp.plan_info if r.plan.title.endswith("Items Plan")]
     # Expect Two > One > Zero by total_days
     assert titles_in_order[:3] == [
         "Two Items Plan",

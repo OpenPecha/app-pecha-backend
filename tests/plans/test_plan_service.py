@@ -5,9 +5,11 @@ from fastapi import HTTPException
 
 import pecha_api.plans.plans_service as plans_service
 from pecha_api.plans.plans_enums import DifficultyLevel, PlanStatus
+from pecha_api.plans.plans_models import Plan
 from pecha_api.plans.plans_response_models import (
     CreatePlanRequest, UpdatePlanRequest, PlanStatusUpdate,
-    PlanDTO, TaskDTO, PlanDayDTO, PlanWithDays
+    PlanDTO, TaskDTO, PlanDayDTO, PlanWithDays,
+    PlanWithAggregates, PlansRepositoryResponse
 )
 from pecha_api.plans.plans_service import (
     create_new_plan, get_filtered_plans, get_details_plan,
@@ -98,31 +100,40 @@ def test_create_new_plan_success():
 
 @pytest.mark.asyncio
 async def test_get_filtered_plans_success():
-    plan1 = MagicMock()
-    plan1.id = uuid.uuid4()
-    plan1.title = "Plan One"
-    plan1.description = "Description One"
-    plan1.image_url = "https://example.com/one.jpg"
-    plan1.status = PlanStatus.PUBLISHED
+    plan1 = Plan(
+        id=uuid.uuid4(),
+        title="Plan One",
+        description="Description One",
+        image_url="https://example.com/one.jpg",
+        status=PlanStatus.PUBLISHED,
+        author_id=uuid.uuid4(),
+        created_by="tester@example.com",
+    )
 
-    plan2 = MagicMock()
-    plan2.id = uuid.uuid4()
-    plan2.title = "Plan Two"
-    plan2.description = "Description Two"
-    plan2.image_url = "https://example.com/two.jpg"
-    plan2.status = PlanStatus.DRAFT
+    plan2 = Plan(
+        id=uuid.uuid4(),
+        title="Plan Two",
+        description="Description Two",
+        image_url="https://example.com/two.jpg",
+        status=PlanStatus.DRAFT,
+        author_id=uuid.uuid4(),
+        created_by="tester@example.com",
+    )
 
-    # Repository returns tuples: (Plan, total_days, subscription_count)
-    rows = [
-        (plan1, 5, 2),
-        (plan2, 0, 0),
-    ]
+    # Repository now returns PlansRepositoryResponse with PlanWithAggregates items
+    repo_response = PlansRepositoryResponse(
+        plan_info=[
+            PlanWithAggregates(plan=plan1, total_days=5, subscription_count=2),
+            PlanWithAggregates(plan=plan2, total_days=0, subscription_count=0),
+        ],
+        total=2,
+    )
 
     with patch("pecha_api.plans.plans_service.SessionLocal") as mock_session_local, \
         patch("pecha_api.plans.plans_service.get_plans") as mock_get_plans, \
         patch("pecha_api.plans.plans_service.validate_and_extract_author_details") as mock_validate_author:
         db_session = _mock_session_local(mock_session_local)
-        mock_get_plans.return_value = (rows, len(rows))
+        mock_get_plans.return_value = repo_response
         mock_validate_author.return_value = MagicMock()
 
         resp = await get_filtered_plans(
@@ -152,7 +163,7 @@ async def test_get_filtered_plans_success():
         assert resp is not None
         assert resp.skip == 5
         assert resp.limit == 10
-        assert resp.total == len(rows)
+        assert resp.total == 2
         assert len(resp.plans) == 2
 
         p1 = resp.plans[0]
