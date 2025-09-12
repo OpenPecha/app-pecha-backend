@@ -2,7 +2,7 @@ from fastapi import APIRouter, UploadFile, File, status, Depends
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from .media_services import upload_media_file
 from .media_response_models import MediaUploadResponse
-from typing import Annotated
+from typing import Annotated, Optional
 
 oauth2_scheme = HTTPBearer()
 
@@ -13,5 +13,5 @@ media_router = APIRouter(
 
 
 @media_router.post("/upload", status_code=status.HTTP_201_CREATED)
-async def upload_media_image(authentication_credential: Annotated[HTTPAuthorizationCredentials, Depends(oauth2_scheme)], file: UploadFile = File(...), path: str = "images/plan_images") -> MediaUploadResponse:
-    return upload_media_file(token=authentication_credential.credentials, file=file, path=path)
+async def upload_media_image(authentication_credential: Annotated[HTTPAuthorizationCredentials, Depends(oauth2_scheme)], plan_id: Optional[str], file: UploadFile = File(...), path: str = "images/plan_images") -> MediaUploadResponse:
+    return upload_media_file(token=authentication_credential.credentials, plan_id=plan_id, file=file, path=path)
