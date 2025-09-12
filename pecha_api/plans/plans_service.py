@@ -3,15 +3,15 @@ from typing import Optional, List
 from starlette import status
 from pecha_api.plans.plans_models import Plan
 from pecha_api.plans.items.plan_items_models import PlanItem
-from pecha_api.db.database import SessionLocal
 from pecha_api.plans.plans_repository import save_plan
 from pecha_api.plans.items.plan_items_repository import save_plan_items
 from pecha_api.plans.users.user_plan_progress_repository import get_plan_progress
 from pecha_api.error_contants import ErrorConstants
 from pecha_api.plans.authors.plan_author_service import validate_and_extract_author_details
 from pecha_api.plans.plans_enums import LanguageCode, PlanStatus, ContentType
-from pecha_api.plans.plans_response_models import PlansResponse, PlanDTO, CreatePlanRequest, TaskDTO, PlanDayDTO, PlanWithDays, \
-    UpdatePlanRequest, PlanStatusUpdate
+from pecha_api.plans.plans_response_models import PlansResponse, PlanDTO, CreatePlanRequest, TaskDTO, PlanDayDTO, \
+    PlanWithDays, \
+    UpdatePlanRequest, PlanStatusUpdate, PlansRepositoryResponse, PlanWithAggregates
 from pecha_api.plans.plans_repository import get_plans
 from pecha_api.db.database import SessionLocal
 from ..config import get
@@ -84,10 +84,8 @@ DUMMY_DAYS = [
 async def get_filtered_plans(token: str, search: Optional[str], sort_by: str, sort_order: str, skip: int, limit: int) -> PlansResponse:
     # Validate token and author context (authorization can be extended later)
     validate_and_extract_author_details(token=token)
-    total = 0
-    rows = []
     with SessionLocal() as db_session:
-        rows, total = get_plans(
+        plan_repository_response : PlansRepositoryResponse = get_plans(
             db=db_session,
             search=search,
             sort_by=sort_by,
@@ -97,25 +95,24 @@ async def get_filtered_plans(token: str, search: Optional[str], sort_by: str, so
         )
 
     plans: List[PlanDTO] = []
-    for row in rows:
-        # Rows are returned as (Plan, total_days, subscription_count)
-        plan_model = row[0]
-        total_days = row[1]
-        subscription_count = row[2]
+
+    for plan_info in plan_repository_response.plan_info:
+        plan_info: PlanWithAggregates
+        selected_plan = plan_info.plan
 
         plans.append(
             PlanDTO(
-                id=plan_model.id,
-                title=plan_model.title,
-                description=plan_model.description,
-                image_url=plan_model.image_url,
-                total_days=int(total_days or 0),
-                status=PlanStatus(plan_model.status.value),
-                subscription_count=int(subscription_count or 0),
+                id=selected_plan.id,
+                title=selected_plan.title,
+                description=selected_plan.description,
+                image_url=selected_plan.image_url,
+                total_days=int(plan_info.total_days or 0),
+                status=PlanStatus(selected_plan.status.value),
+                subscription_count=int(plan_info.subscription_count or 0),
             )
         )
 
-    return PlansResponse(plans=plans, skip=skip, limit=limit, total=total)
+    return PlansResponse(plans=plans, skip=skip, limit=limit, total=plan_repository_response.total)
 
 
 def create_new_plan(token: str, create_plan_request: CreatePlanRequest) -> PlanDTO:

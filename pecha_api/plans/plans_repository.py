@@ -8,7 +8,7 @@ from pecha_api.plans.items.plan_items_models import PlanItem
 from pecha_api.plans.users.user_plan_progress_models import UserPlanProgress
 from fastapi import HTTPException
 from starlette import status
-from pecha_api.plans.plans_response_models import PlansRepositoryResponse
+from pecha_api.plans.plans_response_models import PlansRepositoryResponse, PlanWithAggregates
 def save_plan(db: Session, plan: Plan):
     try:
         db.add(plan)
@@ -62,7 +62,17 @@ def get_plans(
 
     # Pagination
     rows = query.offset(skip).limit(limit).all()
+    
+    # Transform tuples into PlanWithAggregates objects using list comprehension
+    plan_aggregates = [
+        PlanWithAggregates(
+            plan=plan,
+            total_days=total_days,
+            subscription_count=subscription_count
+        )
+        for plan, total_days, subscription_count in rows
+    ]
+    
     # Total count without pagination/joins
     total = db.query(func.count(Plan.id)).filter(*filters).scalar()
-
-    return rows, total
+    return PlansRepositoryResponse(plan_info=plan_aggregates, total=total)
