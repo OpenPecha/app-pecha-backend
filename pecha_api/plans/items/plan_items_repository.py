@@ -8,7 +8,6 @@ from typing import List
 from pecha_api.plans.auth.plan_auth_models import ResponseError
 from pecha_api.plans.response_message import BAD_REQUEST
 
-
 def save_plan_items(db: Session, plan_items: List[PlanItem]):
     try:
         db.add_all(plan_items)
@@ -24,3 +23,13 @@ def save_plan_items(db: Session, plan_items: List[PlanItem]):
             detail=ResponseError(error=BAD_REQUEST, 
             message=e.orig).model_dump()
         )
+
+def get_plan_item(db: Session, plan_id: str, day_id: str) -> PlanItem:
+    plan_item = (
+        db.query(PlanItem)
+        .filter(PlanItem.id == day_id, PlanItem.plan_id == plan_id)
+        .first()
+    )
+    if not plan_item:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Plan day not found")
+    return plan_item

@@ -7,46 +7,29 @@ from fastapi import HTTPException
 from starlette import status
 
 from pecha_api.db.database import SessionLocal
-from pecha_api.plans.items.plan_items_models import PlanItem
+from pecha_api.plans.items.plan_items_repository import get_plan_item
 from pecha_api.plans.tasks.plan_tasks_models import PlanTask
 from pecha_api.plans.tasks.plan_tasks_response_model import CreateTaskRequest, TaskDTO
 
 
-def _get_plan_item(db: Session, plan_id: UUID, day_id: UUID) -> PlanItem:
-    plan_item = (
-        db.query(PlanItem)
-        .filter(PlanItem.id == day_id, PlanItem.plan_id == plan_id)
-        .first()
-    )
-    if not plan_item:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Plan day not found")
-    return plan_item
 
 
-def _next_display_order(db: Session, plan_item_id: UUID) -> int:
-    max_order = (
-        db.query(func.max(PlanTask.display_order))
-        .filter(PlanTask.plan_item_id == plan_item_id)
-        .scalar()
-    )
-    return (max_order or 0) + 1
-
-
-def create_task(create_task_request: CreateTaskRequest, plan_id: UUID, day_id: UUID, created_by: str) -> TaskDTO:
+def create_task(create_task_request: CreateTaskRequest, plan_id: str, day_id: str, created_by: str) -> TaskDTO:
+    
     with SessionLocal() as db:
-        plan_item = _get_plan_item(db=db, plan_id=plan_id, day_id=day_id)
-        display_order = _next_display_order(db=db, plan_item_id=plan_item.id)
 
+        plan_item = get_plan_item(db=db, plan_id=plan_id, day_id=day_id)
+        display_order = plan_item.tasks.count() + 1
+        
         new_task = PlanTask(
             plan_item_id=plan_item.id,
             title=create_task_request.title,
+            description=create_task_request.description,
             content_type=create_task_request.content_type,
             content=create_task_request.content,
             display_order=display_order,
             estimated_time=create_task_request.estimated_time,
-            is_required=True,
             created_by=created_by,
-            updated_by=created_by,
         )
 
         try:

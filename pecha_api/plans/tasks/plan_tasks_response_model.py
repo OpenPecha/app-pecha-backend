@@ -8,7 +8,7 @@ class CreateTaskRequest(BaseModel):
     title: str
     description: Optional[str] = None
     content_type: ContentType
-    content: Optional[str] = None
+    content: str
     estimated_time: Optional[int] = None
 
 class TaskDTO(BaseModel):
@@ -16,7 +16,8 @@ class TaskDTO(BaseModel):
     title: str
     description: Optional[str] = None
     content_type: ContentType
-    content: Optional[str] = None
+    content: str
+    display_order: int
     estimated_time: Optional[int] = None
 
 
