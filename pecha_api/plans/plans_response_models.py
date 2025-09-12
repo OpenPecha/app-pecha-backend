@@ -1,9 +1,8 @@
-from pydantic import BaseModel
+from pydantic import BaseModel, ConfigDict
 from typing import Optional, List
 from pecha_api.plans.plans_enums import DifficultyLevel, PlanStatus,ContentType
 from uuid import UUID
-
-from plans.plans_models import Plan
+from pecha_api.plans.plans_models import Plan
 
 
 # Request/Response Models
@@ -62,9 +61,8 @@ class PlansResponse(BaseModel):
     limit: int
     total: int
 
-
-
 class PlanWithAggregates(BaseModel):
+    model_config = ConfigDict(arbitrary_types_allowed=True)
     plan: Plan
     total_days: int
     subscription_count: int
