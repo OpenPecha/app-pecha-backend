@@ -3,6 +3,9 @@ from typing import Optional, List
 from pecha_api.plans.plans_enums import DifficultyLevel, PlanStatus,ContentType
 from uuid import UUID
 
+from plans.plans_models import Plan
+
+
 # Request/Response Models
 class CreatePlanRequest(BaseModel):
     title: str
@@ -61,7 +64,11 @@ class PlansResponse(BaseModel):
 
 
 
+class PlanWithAggregates(BaseModel):
+    plan: Plan
+    total_days: int
+    subscription_count: int
+
 class PlansRepositoryResponse(BaseModel):
-    
-    rows: List[tuple[PlanDTO, int, int]]
+    plan_info: List[PlanWithAggregates]
     total: int
