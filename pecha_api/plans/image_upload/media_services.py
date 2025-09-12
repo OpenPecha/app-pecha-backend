@@ -1,5 +1,6 @@
 import os, uuid
 from fastapi import UploadFile, HTTPException, status
+from typing import Optional
 
 import logging
 from ...config import get, get_int
@@ -23,7 +24,7 @@ def validate_file(file: UploadFile) -> None:
         raise HTTPException(status_code=status.HTTP_413_REQUEST_ENTITY_TOO_LARGE, detail=FILE_TOO_LARGE)
 
 
-def upload_media_file(token: str, file: UploadFile, path: str = "images/plan_images") -> MediaUploadResponse:
+def upload_media_file(token: str, plan_id: Optional[str], file: UploadFile, path: str = "images/plan_images") -> MediaUploadResponse:
     validate_and_extract_author_details(token=token)
     try:
         validate_file(file)
@@ -33,7 +34,7 @@ def upload_media_file(token: str, file: UploadFile, path: str = "images/plan_ima
         file_name, ext = os.path.splitext(file.filename)
         unique_id = str(uuid.uuid4())
 
-        image_path_full = f"{path}/{unique_id}"
+        image_path_full = f"{path}/{plan_id}/{unique_id}" if plan_id is not None else f"{path}/{unique_id}"
         plan_image_name = f"{image_path_full}/{file_name}{ext}"
         upload_key = upload_bytes(
             bucket_name=get("AWS_BUCKET_NAME"),
