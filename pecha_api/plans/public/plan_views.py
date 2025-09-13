@@ -4,8 +4,8 @@ from uuid import UUID
 from starlette import status
 
 from pecha_api.plans.plans_response_models import PlansResponse, PlanDTO, PlanDayDTO
-from pecha_api.plans.public.models import PlanDaysResponse
-from pecha_api.plans.public.service import (
+from pecha_api.plans.public.plan_models import PlanDaysResponse
+from pecha_api.plans.public.plan_service import (
     get_published_plans, 
     get_published_plan_details, 
     get_plan_days,

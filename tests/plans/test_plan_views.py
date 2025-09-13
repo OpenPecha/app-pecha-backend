@@ -4,7 +4,7 @@ from unittest.mock import patch, AsyncMock
 
 from pecha_api.plans.plans_enums import DifficultyLevel, PlanStatus
 from pecha_api.plans.plans_response_models import CreatePlanRequest, PlanDTO, PlansResponse
-from pecha_api.plans.cms.views import create_plan, get_plans
+from pecha_api.plans.cms.cms_plans_views import create_plan, get_plans
 
 
 class _Creds:
@@ -37,7 +37,7 @@ async def test_create_plan_success():
 
     creds = _Creds(token="token123")
 
-    with patch("pecha_api.plans.cms.views.create_new_plan", return_value=expected) as mock_create:
+    with patch("pecha_api.plans.cms.cms_plans_views.create_new_plan", return_value=expected) as mock_create:
         response = await create_plan(authentication_credential=creds, create_plan_request=request)
 
         mock_create.assert_called_once_with(token="token123", create_plan_request=request)
@@ -78,7 +78,7 @@ async def test_get_plans_success_with_params():
     )
     expected = PlansResponse(plans=[plan1, plan2], skip=1, limit=5, total=2)
 
-    with patch("pecha_api.plans.cms.views.get_filtered_plans", return_value=expected, new_callable=AsyncMock) as mock_service:
+    with patch("pecha_api.plans.cms.cms_plans_views.get_filtered_plans", return_value=expected, new_callable=AsyncMock) as mock_service:
         resp = await get_plans(
             authentication_credential=creds,
             search="plan",
@@ -107,7 +107,7 @@ async def test_get_plans_defaults():
     creds = _Creds(token="tkn")
     expected = PlansResponse(plans=[], skip=0, limit=10, total=0)
 
-    with patch("pecha_api.plans.cms.views.get_filtered_plans", return_value=expected, new_callable=AsyncMock) as mock_service:
+    with patch("pecha_api.plans.cms.cms_plans_views.get_filtered_plans", return_value=expected, new_callable=AsyncMock) as mock_service:
         # Pass explicit defaults to avoid FastAPI Query objects when calling directly
         resp = await get_plans(
             authentication_credential=creds,

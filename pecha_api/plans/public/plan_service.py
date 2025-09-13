@@ -7,7 +7,7 @@ from pecha_api.error_contants import ErrorConstants
 from pecha_api.plans.plans_enums import PlanStatus
 from pecha_api.plans.plans_response_models import PlansResponse, PlanDTO, PlanDayDTO
 from pecha_api.plans.shared.utils import load_plans_from_json, convert_plan_model_to_dto, convert_day_model_to_dto
-from pecha_api.plans.public.models import PlanDaysResponse, PlanDayBasic
+from pecha_api.plans.public.plan_models import PlanDaysResponse, PlanDayBasic
 
 
 async def get_published_plans(

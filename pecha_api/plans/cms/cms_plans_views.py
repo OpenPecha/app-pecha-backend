@@ -7,7 +7,7 @@ from typing import Annotated
 
 from pecha_api.plans.plans_response_models import PlansResponse, PlanDTO, CreatePlanRequest, PlanWithDays, UpdatePlanRequest, \
     PlanStatusUpdate
-from pecha_api.plans.cms.service import get_filtered_plans, create_new_plan, get_details_plan, update_plan_details, \
+from pecha_api.plans.cms.cms_plans_service import get_filtered_plans, create_new_plan, get_details_plan, update_plan_details, \
     delete_selected_plan, update_selected_plan_status
 from pecha_api.plans.plans_enums import SortBy, SortOrder
 

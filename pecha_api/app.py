@@ -18,10 +18,10 @@ from pecha_api.texts.groups import groups_views
 from pecha_api.share import share_views
 from pecha_api.search import search_views
 from pecha_api.plans.auth import plan_auth_views
-from pecha_api.plans.cms import views as cms_plans_views
-from pecha_api.plans.public import views as public_plans_views
-from pecha_api.plans.users import views as user_plans_views
-from pecha_api.plans.image_upload import media_views
+from pecha_api.plans.cms import cms_plans_views as cms_plans_views
+from pecha_api.plans.public import plan_views as public_plans_views
+from pecha_api.plans.users import plan_users_views as user_plans_views
+from pecha_api.plans.media import media_views
 import uvicorn
 
 

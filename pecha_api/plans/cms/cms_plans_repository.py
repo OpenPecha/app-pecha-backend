@@ -3,12 +3,13 @@ from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 from sqlalchemy import func, asc, desc
 from typing import Optional
-from ..plans.plans_models import Plan
+from pecha_api.plans.plans_models import Plan
 from pecha_api.plans.items.plan_items_models import PlanItem
-from ..plans.users.models import UserPlanProgress
+from pecha_api.plans.users.plan_users_models import UserPlanProgress
 from fastapi import HTTPException
 from starlette import status
 from pecha_api.plans.plans_response_models import PlansRepositoryResponse, PlanWithAggregates
+
 def save_plan(db: Session, plan: Plan):
     try:
         db.add(plan)
