@@ -8,6 +8,7 @@ DEFAULTS = dict(
     AWS_SECRET_KEY="",
     AWS_REGION="eu-central-1",
     AWS_BUCKET_NAME="app-pecha-backend",
+    AWS_BUCKET_OWNER="",
     BASE_URL="https://webuddhist.com/",
     CLIENT_ID="",
     COMPRESSED_QUALITY=80,
