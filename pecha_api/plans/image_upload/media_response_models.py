@@ -1,7 +1,7 @@
 from pydantic import BaseModel
 from pecha_api.plans.response_message import IMAGE_UPLOAD_SUCCESS
 
-class MediaUploadResponse(BaseModel):
+class PlanUploadResponse(BaseModel):
     url: str
     key: str
     path: str
