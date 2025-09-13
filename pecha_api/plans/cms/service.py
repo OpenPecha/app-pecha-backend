@@ -14,7 +14,7 @@ from pecha_api.plans.plans_response_models import PlansResponse, PlanDTO, Create
     UpdatePlanRequest, PlanStatusUpdate, PlansRepositoryResponse, PlanWithAggregates
 from pecha_api.plans.plans_repository import get_plans
 from pecha_api.db.database import SessionLocal
-from ..config import get
+from pecha_api.config import get
 from uuid import uuid4, UUID
 from fastapi import HTTPException
 DUMMY_PLANS = [
