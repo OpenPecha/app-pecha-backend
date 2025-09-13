@@ -15,7 +15,7 @@ class Plan(Base):
     title = Column(String(255), nullable=False)
     description = Column(Text, nullable=True)
     author_id = Column(UUID(as_uuid=True), ForeignKey('authors.id', ondelete='RESTRICT'), nullable=False)
-    language = Column(LanguageCodeEnum, nullable=False, default='en')
+    language = Column(LanguageCodeEnum, nullable=False, default='EN')
     difficulty_level = Column(DifficultyLevelEnum, default='BEGINNER')
 
     tags = Column(JSONB, server_default=text("'[]'::jsonb"), nullable=False)
@@ -34,10 +34,6 @@ class Plan(Base):
 
 
     author = relationship("Author", backref="plans", passive_deletes=True)
-    plan_items = relationship("PlanItem", backref="plan", cascade="all, delete-orphan")
-    user_progress = relationship("UserPlanProgress", backref="plan", cascade="all, delete-orphan")
-    reviews = relationship("PlanReview", backref="plan", cascade="all, delete-orphan")
-    favorites = relationship("Favorite", backref="plan", cascade="all, delete-orphan")
 
     __table_args__ = (
         # Indexes for plan discovery

@@ -1,6 +1,7 @@
 import os
 
 DEFAULTS = dict(
+    SITE_LANGUAGE="en",
     SITE_NAME="Pecha",
     ACCESS_TOKEN_EXPIRE_MINUTES=30,
     APP_NAME="Pecha Backend",

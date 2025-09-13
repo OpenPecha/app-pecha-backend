@@ -27,9 +27,19 @@ class PlanStatus(enum.Enum):
     UNDER_REVIEW = "UNDER_REVIEW"
 
 class LanguageCode(enum.Enum):
-    EN = "en"
-    BO = "bo"
-    ZH = "zh"
+    EN = "EN"
+    BO = "BO"
+    ZH = "ZH"
+
+class SortOrder(enum.Enum):
+    ASC = "asc"
+    DESC = "desc"
+
+class SortBy(enum.Enum):
+    TOTAL_DAYS = "total_days"
+    STATUS = "status"
+    CREATED_AT = "created_at"
+
 
 # SQLAlchemy enum types
 DifficultyLevelEnum = Enum(DifficultyLevel)

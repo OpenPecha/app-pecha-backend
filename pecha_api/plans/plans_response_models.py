@@ -1,7 +1,9 @@
-from pydantic import BaseModel
+from pydantic import BaseModel, ConfigDict
 from typing import Optional, List
 from pecha_api.plans.plans_enums import DifficultyLevel, PlanStatus,ContentType
 from uuid import UUID
+from pecha_api.plans.plans_models import Plan
+
 
 # Request/Response Models
 class CreatePlanRequest(BaseModel):
@@ -9,6 +11,7 @@ class CreatePlanRequest(BaseModel):
     description: str
     difficulty_level: DifficultyLevel
     total_days: int
+    language: str
     image_url: Optional[str] = None
     tags: Optional[List[str]] = []
 
@@ -56,4 +59,14 @@ class PlansResponse(BaseModel):
     plans: List[PlanDTO]
     skip: int
     limit: int
+    total: int
+
+class PlanWithAggregates(BaseModel):
+    model_config = ConfigDict(arbitrary_types_allowed=True)
+    plan: Plan
+    total_days: int
+    subscription_count: int
+
+class PlansRepositoryResponse(BaseModel):
+    plan_info: List[PlanWithAggregates]
     total: int
