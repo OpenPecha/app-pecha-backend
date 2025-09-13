@@ -9,7 +9,7 @@ from pecha_api.auth.auth_repository import validate_token
 from pecha_api.db.database import SessionLocal
 from pecha_api.error_contants import ErrorConstants
 from pecha_api.plans.authors.plan_author_model import Author
-from pecha_api.plans.authors.plan_author_repository import get_author_by_email
+from pecha_api.plans.authors.plan_authors_repository import get_author_by_email
 import jose
 
 def validate_and_extract_author_details(token: str) -> Author:

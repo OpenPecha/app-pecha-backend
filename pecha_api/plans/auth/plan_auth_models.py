@@ -51,3 +51,7 @@ class AuthorVerificationResponse(BaseModel):
     email: str
     status: AuthorStatus
     message: str
+
+class ResponseError(BaseModel):
+    error: str
+    message: str

@@ -9,6 +9,7 @@ from pecha_api.plans.plans_response_models import PlansResponse, PlanDTO, Create
     PlanStatusUpdate
 from pecha_api.plans.cms.service import get_filtered_plans, create_new_plan, get_details_plan, update_plan_details, \
     delete_selected_plan, update_selected_plan_status
+from pecha_api.plans.plans_enums import SortBy, SortOrder
 
 oauth2_scheme = HTTPBearer()
 # Create router for CMS plan endpoints
@@ -21,11 +22,11 @@ cms_plans_router = APIRouter(
 @cms_plans_router.get("", status_code=status.HTTP_200_OK, response_model=PlansResponse)
 async def get_plans(
         authentication_credential: Annotated[HTTPAuthorizationCredentials, Depends(oauth2_scheme)],
-        search: Optional[str] = Query(None, description="Search by plan title"),
-        sort_by: str = Query("title", enum=["title", "total_days", "status"]),
-        sort_order: str = Query("asc", enum=["asc", "desc"]),
-        skip: int = Query(0, ge=0),
-        limit: int = Query(20, ge=1, le=50)
+        search: Optional[str] = Query(default=None, description="Search by plan title"),
+        sort_by: str = Query(default=SortBy.TOTAL_DAYS),
+        sort_order: str = Query(default=SortOrder.ASC),
+        skip: int = Query(default=0),
+        limit: int = Query(default=10)
 ):
     return await get_filtered_plans(
         token=authentication_credential.credentials,

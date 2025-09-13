@@ -415,7 +415,7 @@ async def test_get_sheet_by_id_success():
     with patch("pecha_api.sheets.sheets_service.fetch_user_by_email", new_callable=MagicMock, return_value=mock_user_details), \
         patch("pecha_api.sheets.sheets_service.get_segments_details_by_ids", new_callable=AsyncMock, return_value=segment_dict), \
         patch("pecha_api.sheets.sheets_service.get_table_of_content_by_sheet_id", new_callable=AsyncMock, return_value=mock_table_of_content_response), \
-        patch("pecha_api.sheets.sheets_service.generate_presigned_upload_url", new_callable=MagicMock, return_value="image_url"), \
+        patch("pecha_api.sheets.sheets_service.generate_presigned_access_url", new_callable=MagicMock, return_value="image_url"), \
         patch("pecha_api.sheets.sheets_service.TextUtils.get_text_details_by_id", new_callable=AsyncMock, return_value=mock_sheet_details):
 
         response = await get_sheet_by_id(sheet_id=sheet_id, skip=0, limit=10)
@@ -1075,7 +1075,7 @@ def test_upload_sheet_image_request_with_sheet_id():
     
     with patch("pecha_api.sheets.sheets_service.ImageUtils.validate_and_compress_image") as mock_validate, \
          patch("pecha_api.sheets.sheets_service.upload_bytes", return_value="test_upload_key") as mock_upload, \
-         patch("pecha_api.sheets.sheets_service.generate_presigned_upload_url", return_value="https://test-url.com") as mock_presigned, \
+         patch("pecha_api.sheets.sheets_service.generate_presigned_access_url", return_value="https://test-url.com") as mock_presigned, \
          patch("pecha_api.sheets.sheets_service.get", return_value="test-bucket"):
         
         mock_validate.return_value = io.BytesIO(b"compressed_image_data")
@@ -1100,7 +1100,7 @@ def test_upload_sheet_image_request_without_sheet_id():
     
     with patch("pecha_api.sheets.sheets_service.ImageUtils.validate_and_compress_image") as mock_validate, \
          patch("pecha_api.sheets.sheets_service.upload_bytes", return_value="test_upload_key") as mock_upload, \
-         patch("pecha_api.sheets.sheets_service.generate_presigned_upload_url", return_value="https://test-url.com") as mock_presigned, \
+         patch("pecha_api.sheets.sheets_service.generate_presigned_access_url", return_value="https://test-url.com") as mock_presigned, \
          patch("pecha_api.sheets.sheets_service.get", return_value="test-bucket"):
         
         mock_validate.return_value = io.BytesIO(b"compressed_image_data")
@@ -1291,7 +1291,7 @@ async def test_generate_sheet_section():
     )
     
     with patch("pecha_api.sheets.sheets_service.TextUtils.get_text_details_by_id", new_callable=AsyncMock, return_value=mock_source_text), \
-         patch("pecha_api.sheets.sheets_service.generate_presigned_upload_url", return_value="https://presigned-image-url.com"), \
+         patch("pecha_api.sheets.sheets_service.generate_presigned_access_url", return_value="https://presigned-image-url.com"), \
          patch("pecha_api.sheets.sheets_service.get", return_value="test-bucket"):
         
         result = await _generate_sheet_section_(segments=segments, segments_dict=segments_dict)

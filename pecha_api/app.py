@@ -21,6 +21,7 @@ from pecha_api.plans.auth import plan_auth_views
 from pecha_api.plans.cms import views as cms_plans_views
 from pecha_api.plans.public import views as public_plans_views
 from pecha_api.plans.user import views as user_plans_views
+from pecha_api.plans.image_upload import media_views
 import uvicorn
 
 
@@ -44,6 +45,7 @@ api.include_router(mappings_views.mapping_router)
 api.include_router(search_views.search_router)
 api.include_router(share_views.share_router)
 api.include_router(plan_auth_views.plan_auth_router)
+api.include_router(media_views.media_router)
 api.include_router(cms_plans_views.cms_plans_router)
 api.include_router(public_plans_views.public_plans_router)
 api.include_router(user_plans_views.user_progress_router)
@@ -67,4 +69,3 @@ async def get_health():
 
 if __name__ == "__main__":
     uvicorn.run("pecha_api.app:api", host="127.0.0.1", port=8000, reload=True)
-

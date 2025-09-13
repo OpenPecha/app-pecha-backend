@@ -1,12 +1,20 @@
-from typing import Optional
+from typing import Optional, List
 
 from starlette import status
-
+from pecha_api.plans.plans_models import Plan
+from pecha_api.plans.items.plan_items_models import PlanItem
+from pecha_api.plans.plans_repository import save_plan
+from pecha_api.plans.items.plan_items_repository import save_plan_items
+from pecha_api.plans.users.user_plan_progress_repository import get_plan_progress
 from pecha_api.error_contants import ErrorConstants
 from pecha_api.plans.authors.plan_author_service import validate_and_extract_author_details
-from pecha_api.plans.plans_enums import PlanStatus, ContentType
-from pecha_api.plans.plans_response_models import PlansResponse, PlanDTO, CreatePlanRequest, TaskDTO, PlanDayDTO, PlanWithDays, \
-    UpdatePlanRequest, PlanStatusUpdate
+from pecha_api.plans.plans_enums import LanguageCode, PlanStatus, ContentType
+from pecha_api.plans.plans_response_models import PlansResponse, PlanDTO, CreatePlanRequest, TaskDTO, PlanDayDTO, \
+    PlanWithDays, \
+    UpdatePlanRequest, PlanStatusUpdate, PlansRepositoryResponse, PlanWithAggregates
+from pecha_api.plans.plans_repository import get_plans
+from pecha_api.db.database import SessionLocal
+from ..config import get
 from uuid import uuid4, UUID
 from fastapi import HTTPException
 DUMMY_PLANS = [
@@ -73,49 +81,87 @@ DUMMY_DAYS = [
 ]
 
 
-async def get_filtered_plans(token: str,search: Optional[str], sort_by: str, sort_order: str, skip: int, limit: int) -> PlansResponse:
-   # current_author = validate_and_extract_author_details(token=token)
-    # Dummy data for development
-    filtered_plans = DUMMY_PLANS
-    if search:
-        filtered_plans = [p for p in DUMMY_PLANS if search.lower() in p.title.lower()]
+async def get_filtered_plans(token: str, search: Optional[str], sort_by: str, sort_order: str, skip: int, limit: int) -> PlansResponse:
+    # Validate token and author context (authorization can be extended later)
+    validate_and_extract_author_details(token=token)
+    with SessionLocal() as db_session:
+        plan_repository_response : PlansRepositoryResponse = get_plans(
+            db=db_session,
+            search=search,
+            sort_by=sort_by,
+            sort_order=sort_order,
+            skip=skip,
+            limit=limit,
+        )
 
-    # Sort plans
-    reverse = sort_order == "desc"
-    if sort_by == "title":
-        filtered_plans.sort(key=lambda x: x.title, reverse=reverse)
-    elif sort_by == "total_days":
-        filtered_plans.sort(key=lambda x: x.total_days, reverse=reverse)
-    elif sort_by == "status":
-        filtered_plans.sort(key=lambda x: x.status.value, reverse=reverse)
+    plans: List[PlanDTO] = []
 
-    # Apply pagination
-    total = len(filtered_plans)
-    paginated_plans = filtered_plans[skip:skip + limit]
-    return PlansResponse(
-        plans=paginated_plans,
-        skip=skip,
-        limit=limit,
-        total=total
-    )
+    for plan_info in plan_repository_response.plan_info:
+        plan_info: PlanWithAggregates
+        selected_plan = plan_info.plan
+
+        plans.append(
+            PlanDTO(
+                id=selected_plan.id,
+                title=selected_plan.title,
+                description=selected_plan.description,
+                image_url=selected_plan.image_url,
+                total_days=int(plan_info.total_days or 0),
+                status=PlanStatus(selected_plan.status.value),
+                subscription_count=int(plan_info.subscription_count or 0),
+            )
+        )
+
+    return PlansResponse(plans=plans, skip=skip, limit=limit, total=plan_repository_response.total)
 
 
-async def create_new_plan(token:str,create_plan_request: CreatePlanRequest) -> PlanDTO:
-    #  current_author = validate_and_extract_author_details(token=token)
-    """Create a new plan"""
-    new_plan = PlanDTO(
-        id=uuid4(),
+def create_new_plan(token: str, create_plan_request: CreatePlanRequest) -> PlanDTO:
+
+    current_author = validate_and_extract_author_details(token=token)
+
+    language = create_plan_request.language.upper() if create_plan_request.language else get("SITE_LANGUAGE").upper()
+
+    new_plan_model = Plan(
         title=create_plan_request.title,
         description=create_plan_request.description,
         image_url=create_plan_request.image_url,
-        total_days=create_plan_request.total_days,
+        author_id=current_author.id,
+        difficulty_level=create_plan_request.difficulty_level,
+        tags=create_plan_request.tags or [],
         status=PlanStatus.DRAFT,
-        subscription_count=0
+        featured=False,
+        language=LanguageCode(language),
+        created_by=current_author.email
     )
 
-    # In real implementation, save to database
-    DUMMY_PLANS.append(new_plan)
-    return new_plan
+    # Save to database
+    with SessionLocal() as db_session:
+        saved_plan = save_plan(db=db_session, plan=new_plan_model)
+
+        new_item_models = [
+            PlanItem(
+                plan_id=saved_plan.id,
+                day_number=day,
+                created_by=current_author.email
+            )
+            for day in range(1, create_plan_request.total_days + 1)
+        ]
+
+        saved_items = save_plan_items(db=db_session, plan_items=new_item_models)
+        plan_progress = get_plan_progress(db=db_session, plan_id=saved_plan.id)
+
+        total_subscription_count = len(plan_progress)
+        total_days = len(saved_items)
+
+        return PlanDTO(
+            id=saved_plan.id,
+            title=saved_plan.title,
+            description=saved_plan.description,
+            image_url=saved_plan.image_url,
+            total_days=total_days,
+            status=saved_plan.status,
+            subscription_count=total_subscription_count
+        )
 
 async def get_details_plan(token:str,plan_id: UUID) -> PlanWithDays:
     #  current_author = validate_and_extract_author_details(token=token)

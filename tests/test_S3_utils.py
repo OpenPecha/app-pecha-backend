@@ -2,7 +2,7 @@ import pytest
 from unittest.mock import patch, MagicMock
 from fastapi import UploadFile
 from io import BytesIO
-from pecha_api.uploads.S3_utils import upload_file, upload_bytes, generate_presigned_upload_url, delete_file
+from pecha_api.uploads.S3_utils import upload_file, upload_bytes, generate_presigned_access_url, delete_file
 
 
 @pytest.fixture
@@ -42,16 +42,16 @@ def test_upload_bytes_invalid_file(mock_s3_client):
         upload_bytes("test-bucket", "test-key", "invalid file", "text/plain")
 
 
-def test_generate_presigned_upload_url_success(mock_s3_client):
+def test_generate_presigned_access_url_success(mock_s3_client):
     mock_s3_client.generate_presigned_url.return_value = "http://example.com"
-    result = generate_presigned_upload_url("test-bucket", "test-key")
+    result = generate_presigned_access_url("test-bucket", "test-key")
     assert result == "http://example.com"
 
 
-def test_generate_presigned_upload_url_client_error(mock_s3_client):
+def test_generate_presigned_access_url_client_error(mock_s3_client):
     mock_s3_client.generate_presigned_url.side_effect = Exception("ClientError")
     with pytest.raises(Exception):
-        generate_presigned_upload_url("test-bucket", "test-key")
+        generate_presigned_access_url("test-bucket", "test-key")
 
 
 def test_delete_file_success(mock_s3_client):
