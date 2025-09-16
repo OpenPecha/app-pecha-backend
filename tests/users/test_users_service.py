@@ -189,7 +189,7 @@ def test_upload_user_image_success():
             patch("pecha_api.users.users_service.delete_file") as mock_delete_file, \
             patch("pecha_api.users.users_service.update_user") as mock_update_user, \
             patch("pecha_api.users.users_service.upload_bytes", return_value="s3_key"), \
-            patch("pecha_api.users.users_service.generate_presigned_upload_url",
+            patch("pecha_api.users.users_service.generate_presigned_access_url",
                   return_value="http://example.com/presigned_url"):
         response = upload_user_image(token, file)
         mock_update_user.assert_called_once()
@@ -433,7 +433,7 @@ def test_get_publisher_info_by_username_success_with_avatar():
     )
 
     with patch("pecha_api.users.users_service.get_user_by_username", return_value=user), \
-            patch("pecha_api.users.users_service.generate_presigned_upload_url", 
+            patch("pecha_api.users.users_service.generate_presigned_access_url", 
                   return_value="https://example.com/presigned_avatar.jpg"):
         response = get_publisher_info_by_username(username)
         
@@ -522,7 +522,7 @@ def test_get_publisher_info_by_username_presigned_url_exception():
     )
 
     with patch("pecha_api.users.users_service.get_user_by_username", return_value=user), \
-            patch("pecha_api.users.users_service.generate_presigned_upload_url", 
+            patch("pecha_api.users.users_service.generate_presigned_access_url", 
                   side_effect=Exception("S3 connection error")), \
             patch("pecha_api.users.users_service.logging.error") as mock_logger:
         response = get_publisher_info_by_username(username)

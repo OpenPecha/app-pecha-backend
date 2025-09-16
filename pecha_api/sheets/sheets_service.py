@@ -10,7 +10,7 @@ from pecha_api.texts.texts_models import Text
 from pecha_api.error_contants import ErrorConstants
 from pecha_api.config import get
 from .sheets_response_models import CreateSheetRequest, SheetImageResponse, Publisher
-from ..uploads.S3_utils import upload_bytes, generate_presigned_upload_url
+from ..uploads.S3_utils import upload_bytes, generate_presigned_access_url
 from pecha_api.image_utils import ImageUtils
 from pecha_api.utils import Utils
 from pecha_api.texts.texts_utils import TextUtils
@@ -353,7 +353,7 @@ def upload_sheet_image_request(sheet_id: Optional[str], file: UploadFile) -> She
         file=compressed_image,
         content_type=file.content_type
     )
-    presigned_url = generate_presigned_upload_url(
+    presigned_url = generate_presigned_access_url(
         bucket_name=get("AWS_BUCKET_NAME"),
         s3_key=upload_key
     )
@@ -466,7 +466,7 @@ async def _generate_sheet_section_(segments: List[TextSegment], segments_dict: D
             s3_key = None
             if segment_details.type == SegmentType.IMAGE:
                 s3_key = segment_details.content
-                segment_details.content = generate_presigned_upload_url(
+                segment_details.content = generate_presigned_access_url(
                     bucket_name=get("AWS_BUCKET_NAME"),
                     s3_key=segment_details.content
                 )

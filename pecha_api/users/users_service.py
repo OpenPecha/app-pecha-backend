@@ -15,7 +15,7 @@ from .users_enums import SocialProfile
 from .users_models import Users, SocialMediaAccount
 from ..auth.auth_repository import verify_auth0_token, decode_backend_token, validate_token
 from .users_repository import get_user_by_email, update_user, get_user_by_username
-from ..uploads.S3_utils import delete_file, upload_bytes, generate_presigned_upload_url
+from ..uploads.S3_utils import delete_file, upload_bytes, generate_presigned_access_url
 from ..db.database import SessionLocal
 from ..config import get, get_int
 from PIL import Image
@@ -67,7 +67,7 @@ def generate_user_info_response(user: Users) -> Optional[UserInfoResponse]:
                 organization=user.organization,
                 location=user.location,
                 educations=user.education.split(',') if user.education else [],
-                avatar_url=generate_presigned_upload_url(bucket_name=get("AWS_BUCKET_NAME"), s3_key=user.avatar_url),
+                avatar_url=generate_presigned_access_url(bucket_name=get("AWS_BUCKET_NAME"), s3_key=user.avatar_url),
                 about_me=user.about_me,
                 followers=0,
                 following=0,
@@ -133,7 +133,7 @@ def upload_user_image(token: str, file: UploadFile) -> str:
             file=compressed_image,
             content_type=file.content_type
         )
-        presigned_url = generate_presigned_upload_url(
+        presigned_url = generate_presigned_access_url(
             bucket_name=get("AWS_BUCKET_NAME"),
             s3_key=upload_key
         )
@@ -198,7 +198,7 @@ def get_publisher_info_by_username(username: str) -> Optional[PublisherInfoRespo
             if user:
                 avatar_url = None
                 if user.avatar_url:
-                    avatar_url = generate_presigned_upload_url(
+                    avatar_url = generate_presigned_access_url(
                         bucket_name=get("AWS_BUCKET_NAME"), 
                         s3_key=user.avatar_url
                     )
