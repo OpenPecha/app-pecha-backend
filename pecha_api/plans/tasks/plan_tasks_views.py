@@ -19,8 +19,8 @@ plans_router = APIRouter(
 async def create_task(
         authentication_credential: Annotated[HTTPAuthorizationCredentials, Depends(oauth2_scheme)],
         create_task_request: CreateTaskRequest,
-        plan_id: str,
-        day_id: str,
+        plan_id: UUID,
+        day_id: UUID,
 ):
     return await create_new_task(
         token=authentication_credential.credentials,
