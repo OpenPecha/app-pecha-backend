@@ -15,7 +15,7 @@ plans_router = APIRouter(
 )
 
 
-@plans_router.post("/{plan_id}/day/{day_id}", status_code=status.HTTP_200_OK, response_model=TaskDTO)
+@plans_router.post("/{plan_id}/day/{day_id}/tasks", status_code=status.HTTP_200_OK, response_model=TaskDTO)
 async def create_task(
         authentication_credential: Annotated[HTTPAuthorizationCredentials, Depends(oauth2_scheme)],
         create_task_request: CreateTaskRequest,
