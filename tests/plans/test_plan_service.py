@@ -104,7 +104,7 @@ async def test_get_filtered_plans_success():
         id=uuid.uuid4(),
         title="Plan One",
         description="Description One",
-        image_url="https://example.com/one.jpg",
+        image_url="plans/images/one.jpg",
         status=PlanStatus.PUBLISHED,
         author_id=uuid.uuid4(),
         created_by="tester@example.com",
@@ -114,7 +114,7 @@ async def test_get_filtered_plans_success():
         id=uuid.uuid4(),
         title="Plan Two",
         description="Description Two",
-        image_url="https://example.com/two.jpg",
+        image_url="plans/images/two.jpg",
         status=PlanStatus.DRAFT,
         author_id=uuid.uuid4(),
         created_by="tester@example.com",
@@ -131,10 +131,12 @@ async def test_get_filtered_plans_success():
 
     with patch("pecha_api.plans.plans_service.SessionLocal") as mock_session_local, \
         patch("pecha_api.plans.plans_service.get_plans") as mock_get_plans, \
+        patch("pecha_api.plans.plans_service.generate_presigned_access_url") as mock_presigned_url, \
         patch("pecha_api.plans.plans_service.validate_and_extract_author_details") as mock_validate_author:
         db_session = _mock_session_local(mock_session_local)
         mock_get_plans.return_value = repo_response
         mock_validate_author.return_value = MagicMock()
+        mock_presigned_url.return_value = "https://s3.amazonaws.com/bucket/plans/images/one.jpg?presigned-params"
 
         resp = await get_filtered_plans(
             token="dummy-token",
@@ -170,7 +172,15 @@ async def test_get_filtered_plans_success():
         assert p1.id == plan1.id
         assert p1.title == plan1.title
         assert p1.description == plan1.description
-        assert p1.image_url == plan1.image_url
+        
+        # Verify that the image_url is a presigned URL and contains the original S3 key
+        mock_presigned_url.assert_any_call(
+            bucket_name=ANY,  # AWS_BUCKET_NAME from config
+            s3_key=plan1.image_url  # Original S3 key: "plans/images/one.jpg"
+        )
+        # Verify the returned URL is the mocked presigned URL
+        assert p1.image_url == mock_presigned_url.return_value
+        
         assert p1.total_days == 5
         assert p1.status == PlanStatus.PUBLISHED
         assert p1.subscription_count == 2
