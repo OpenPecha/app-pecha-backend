@@ -11,10 +11,9 @@ from pecha_api.plans.items.plan_items_repository import get_plan_item
 from pecha_api.plans.tasks.plan_tasks_models import PlanTask
 from pecha_api.plans.tasks.plan_tasks_response_model import CreateTaskRequest, TaskDTO
 
-def create_task(create_task_request: CreateTaskRequest, plan_id: str, day_id: str, created_by: str) -> TaskDTO:
+def create_task(create_task_request: CreateTaskRequest, plan_id: UUID, day_id: UUID, created_by: str) -> TaskDTO:
     
     with SessionLocal() as db:
-
         plan_item = get_plan_item(db=db, plan_id=plan_id, day_id=day_id)
         max_order = db.query(func.max(PlanTask.display_order)).filter(PlanTask.plan_item_id == plan_item.id).scalar() or 0
         display_order:int = max_order + 1
