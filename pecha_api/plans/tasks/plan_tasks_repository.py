@@ -10,6 +10,8 @@ from pecha_api.db.database import SessionLocal
 from pecha_api.plans.items.plan_items_repository import get_plan_item
 from pecha_api.plans.tasks.plan_tasks_models import PlanTask
 from pecha_api.plans.tasks.plan_tasks_response_model import CreateTaskRequest, TaskDTO
+from pecha_api.plans.auth.plan_auth_models import ResponseError
+from pecha_api.plans.response_message import BAD_REQUEST
 
 def create_task(create_task_request: CreateTaskRequest, plan_id: UUID, day_id: UUID, created_by: str) -> TaskDTO:
     
@@ -34,7 +36,7 @@ def create_task(create_task_request: CreateTaskRequest, plan_id: UUID, day_id: U
             db.refresh(new_task)
         except IntegrityError as e:
             db.rollback()
-            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e.orig))
+            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=ResponseError(error=BAD_REQUEST, message=str(e.orig)).model_dump())
 
         return TaskDTO(
             id=new_task.id,    

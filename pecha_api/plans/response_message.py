@@ -24,3 +24,4 @@ INVALID_FILE_FORMAT = "Invalid file format. Only JPEG, PNG, and WebP images are 
 FILE_TOO_LARGE = "File size exceeds 5MB limit"
 AUTHOR_ALREADY_EXISTS = "Author already exists"
 BAD_REQUEST = "Bad request"
+PLAN_DAY_NOT_FOUND = "Plan day not found"
