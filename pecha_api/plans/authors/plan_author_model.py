@@ -1,4 +1,4 @@
-from sqlalchemy import Column, String, DateTime, Boolean, UUID, Text, Index, text
+from sqlalchemy import Column, ForeignKey, Integer, String, DateTime, Boolean, UUID, Text, Index, text
 from sqlalchemy.orm import relationship
 
 from pecha_api.db.database import Base
@@ -16,6 +16,7 @@ class Author(Base):
     image_url = Column(String(255), nullable=True)
     email = Column(String(255), nullable=False, unique=True, index=True)
     password = Column(String(255), nullable=False)
+    registration_source = Column(String(25), nullable=False)
     is_verified = Column(Boolean, default=False)
     is_active = Column(Boolean, default=False)
     created_at = Column(DateTime(timezone=True), default=datetime.now(_datetime.timezone.utc),nullable=False)
@@ -29,3 +30,10 @@ class Author(Base):
     __table_args__ = (
         Index("idx_authors_verified", "is_verified", postgresql_where=text("is_verified = TRUE")),
     )
+
+class PasswordReset(Base):
+    __tablename__ = "password_resets"
+    id = Column(Integer, primary_key=True, index=True)
+    email = Column(String, ForeignKey("authors.email", ondelete="CASCADE"), nullable=False)
+    reset_token = Column(String(255), nullable=False, unique=True, index=True)
+    token_expiry = Column(DateTime(timezone=True), nullable=False)
