@@ -46,11 +46,9 @@ api.include_router(search_views.search_router)
 api.include_router(share_views.share_router)
 api.include_router(plan_auth_views.plan_auth_router)
 api.include_router(plans_views.plans_router)
-<<<<<<< HEAD
 api.include_router(plan_tasks_views.plans_router)
-=======
 api.include_router(media_views.media_router)
->>>>>>> develop
+
 
 api.add_middleware(
     CORSMiddleware,
