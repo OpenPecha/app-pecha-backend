@@ -3,18 +3,17 @@ import pytest
 from unittest.mock import patch, MagicMock, ANY
 from fastapi import HTTPException
 
-import pecha_api.plans.plans_service as plans_service
+import pecha_api.plans.cms.cms_plans_service as plans_service
 from pecha_api.plans.plans_enums import DifficultyLevel, PlanStatus
 from pecha_api.plans.plans_models import Plan
 from pecha_api.plans.plans_response_models import (
     CreatePlanRequest, UpdatePlanRequest, PlanStatusUpdate,
-    PlanDTO, TaskDTO, PlanDayDTO, PlanWithDays,
-    PlanWithAggregates, PlansRepositoryResponse
+    PlanDTO,PlanWithAggregates, PlansRepositoryResponse
 )
-from pecha_api.plans.plans_service import (
+from pecha_api.plans.cms.cms_plans_service import (
     create_new_plan, get_filtered_plans, get_details_plan,
     update_plan_details, update_selected_plan_status, delete_selected_plan,
-    DUMMY_PLANS, DUMMY_TASKS, DUMMY_DAYS
+    DUMMY_PLANS, DUMMY_DAYS
 )
 
 
@@ -43,11 +42,11 @@ def test_create_new_plan_success():
     saved_plan.image_url = request.image_url
     saved_plan.status = PlanStatus.DRAFT
 
-    with patch("pecha_api.plans.plans_service.SessionLocal") as mock_session_local, \
-        patch("pecha_api.plans.plans_service.save_plan") as mock_save_plan, \
-        patch("pecha_api.plans.plans_service.save_plan_items") as mock_save_plan_items, \
-        patch("pecha_api.plans.plans_service.get_plan_progress") as mock_get_plan_progress, \
-        patch("pecha_api.plans.plans_service.validate_and_extract_author_details") as mock_validate_author:
+    with patch("pecha_api.plans.cms.cms_plans_service.SessionLocal") as mock_session_local, \
+        patch("pecha_api.plans.cms.cms_plans_service.save_plan") as mock_save_plan, \
+        patch("pecha_api.plans.cms.cms_plans_service.save_plan_items") as mock_save_plan_items, \
+        patch("pecha_api.plans.cms.cms_plans_service.get_plan_progress") as mock_get_plan_progress, \
+        patch("pecha_api.plans.cms.cms_plans_service.validate_and_extract_author_details") as mock_validate_author:
         db_session = _mock_session_local(mock_session_local)
         mock_save_plan.return_value = saved_plan
         # save_plan_items returns the list of saved items; return a list sized to total_days
@@ -104,7 +103,7 @@ async def test_get_filtered_plans_success():
         id=uuid.uuid4(),
         title="Plan One",
         description="Description One",
-        image_url="plans/images/one.jpg",
+        image_url="https://example.com/one.jpg",
         status=PlanStatus.PUBLISHED,
         author_id=uuid.uuid4(),
         created_by="tester@example.com",
@@ -114,7 +113,7 @@ async def test_get_filtered_plans_success():
         id=uuid.uuid4(),
         title="Plan Two",
         description="Description Two",
-        image_url="plans/images/two.jpg",
+        image_url="https://example.com/two.jpg",
         status=PlanStatus.DRAFT,
         author_id=uuid.uuid4(),
         created_by="tester@example.com",
@@ -129,14 +128,12 @@ async def test_get_filtered_plans_success():
         total=2,
     )
 
-    with patch("pecha_api.plans.plans_service.SessionLocal") as mock_session_local, \
-        patch("pecha_api.plans.plans_service.get_plans") as mock_get_plans, \
-        patch("pecha_api.plans.plans_service.generate_presigned_access_url") as mock_presigned_url, \
-        patch("pecha_api.plans.plans_service.validate_and_extract_author_details") as mock_validate_author:
+    with patch("pecha_api.plans.cms.cms_plans_service.SessionLocal") as mock_session_local, \
+        patch("pecha_api.plans.cms.cms_plans_service.get_plans") as mock_get_plans, \
+        patch("pecha_api.plans.cms.cms_plans_service.validate_and_extract_author_details") as mock_validate_author:
         db_session = _mock_session_local(mock_session_local)
         mock_get_plans.return_value = repo_response
         mock_validate_author.return_value = MagicMock()
-        mock_presigned_url.return_value = "https://s3.amazonaws.com/bucket/plans/images/one.jpg?presigned-params"
 
         resp = await get_filtered_plans(
             token="dummy-token",
@@ -172,15 +169,7 @@ async def test_get_filtered_plans_success():
         assert p1.id == plan1.id
         assert p1.title == plan1.title
         assert p1.description == plan1.description
-        
-        # Verify that the image_url is a presigned URL and contains the original S3 key
-        mock_presigned_url.assert_any_call(
-            bucket_name=ANY,  # AWS_BUCKET_NAME from config
-            s3_key=plan1.image_url  # Original S3 key: "plans/images/one.jpg"
-        )
-        # Verify the returned URL is the mocked presigned URL
-        assert p1.image_url == mock_presigned_url.return_value
-        
+        assert p1.image_url == plan1.image_url
         assert p1.total_days == 5
         assert p1.status == PlanStatus.PUBLISHED
         assert p1.subscription_count == 2
@@ -195,7 +184,7 @@ async def test_get_details_plan_success():
     # Create a test plan ID that exists in DUMMY_PLANS
     test_plan = DUMMY_PLANS[0]
     
-    with patch("pecha_api.plans.plans_service.validate_and_extract_author_details") as mock_validate_author:
+    with patch("pecha_api.plans.cms.cms_plans_service.validate_and_extract_author_details") as mock_validate_author:
         mock_validate_author.return_value = MagicMock()
         
         response = await get_details_plan(token="dummy-token", plan_id=test_plan.id)
@@ -212,7 +201,7 @@ async def test_get_details_plan_success():
 async def test_get_details_plan_not_found():
     non_existent_id = uuid.uuid4()
     
-    with patch("pecha_api.plans.plans_service.validate_and_extract_author_details") as mock_validate_author:
+    with patch("pecha_api.plans.cms.cms_plans_service.validate_and_extract_author_details") as mock_validate_author:
         mock_validate_author.return_value = MagicMock()
         
         with pytest.raises(HTTPException) as exc_info:
@@ -234,7 +223,7 @@ async def test_update_plan_details_success():
         image_url="https://example.com/updated.jpg"
     )
     
-    with patch("pecha_api.plans.plans_service.validate_and_extract_author_details") as mock_validate_author:
+    with patch("pecha_api.plans.cms.cms_plans_service.validate_and_extract_author_details") as mock_validate_author:
         mock_validate_author.return_value = MagicMock()
         
         response = await update_plan_details(
@@ -257,7 +246,7 @@ async def test_update_plan_details_not_found():
     non_existent_id = uuid.uuid4()
     update_request = UpdatePlanRequest(title="Updated Title")
     
-    with patch("pecha_api.plans.plans_service.validate_and_extract_author_details") as mock_validate_author:
+    with patch("pecha_api.plans.cms.cms_plans_service.validate_and_extract_author_details") as mock_validate_author:
         mock_validate_author.return_value = MagicMock()
         
         with pytest.raises(HTTPException) as exc_info:
@@ -278,7 +267,7 @@ async def test_update_selected_plan_status_success():
     
     status_update = PlanStatusUpdate(status=PlanStatus.PUBLISHED)
     
-    with patch("pecha_api.plans.plans_service.validate_and_extract_author_details") as mock_validate_author:
+    with patch("pecha_api.plans.cms.cms_plans_service.validate_and_extract_author_details") as mock_validate_author:
         mock_validate_author.return_value = MagicMock()
         
         response = await update_selected_plan_status(
@@ -312,7 +301,7 @@ async def test_update_selected_plan_status_invalid_transition():
 
     status_update = PlanStatusUpdate(status=PlanStatus.PUBLISHED)
     
-    with patch("pecha_api.plans.plans_service.validate_and_extract_author_details") as mock_validate_author:
+    with patch("pecha_api.plans.cms.cms_plans_service.validate_and_extract_author_details") as mock_validate_author:
         mock_validate_author.return_value = MagicMock()
         
         with pytest.raises(HTTPException) as exc_info:
@@ -332,7 +321,7 @@ async def test_delete_selected_plan_success():
     test_plan = DUMMY_PLANS[0]
     initial_plan_count = len(DUMMY_PLANS)
     
-    with patch("pecha_api.plans.plans_service.validate_and_extract_author_details") as mock_validate_author:
+    with patch("pecha_api.plans.cms.cms_plans_service.validate_and_extract_author_details") as mock_validate_author:
         mock_validate_author.return_value = MagicMock()
         
         await delete_selected_plan(token="dummy-token", plan_id=test_plan.id)
