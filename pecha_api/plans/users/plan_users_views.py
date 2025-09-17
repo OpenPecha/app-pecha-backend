@@ -6,7 +6,7 @@ from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from typing import Annotated
 
 from pecha_api.plans.plans_response_models import PlansResponse
-from pecha_api.plans.users.plan_users_models import UserPlanEnrollRequest, UserPlanProgress
+from pecha_api.plans.users.plan_users_response_models import UserPlanEnrollRequest, UserPlanProgress
 from pecha_api.plans.users.plan_users_service import (
     get_user_enrolled_plans,
     enroll_user_in_plan,
