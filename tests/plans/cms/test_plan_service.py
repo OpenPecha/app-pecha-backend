@@ -4,8 +4,10 @@ from unittest.mock import patch, MagicMock, ANY
 from fastapi import HTTPException
 
 import pecha_api.plans.cms.cms_plans_service as plans_service
-from pecha_api.plans.plans_enums import DifficultyLevel, PlanStatus
+from pecha_api.plans.plans_enums import DifficultyLevel, PlanStatus, ContentType
 from pecha_api.plans.plans_models import Plan
+from pecha_api.plans.items.plan_items_models import PlanItem
+from pecha_api.plans.tasks.plan_tasks_models import PlanTask
 from pecha_api.plans.plans_response_models import (
     CreatePlanRequest, UpdatePlanRequest, PlanStatusUpdate,
     PlanDTO,PlanWithAggregates, PlansRepositoryResponse
@@ -130,10 +132,15 @@ async def test_get_filtered_plans_success():
 
     with patch("pecha_api.plans.cms.cms_plans_service.SessionLocal") as mock_session_local, \
         patch("pecha_api.plans.cms.cms_plans_service.get_plans") as mock_get_plans, \
-        patch("pecha_api.plans.cms.cms_plans_service.validate_and_extract_author_details") as mock_validate_author:
+        patch("pecha_api.plans.cms.cms_plans_service.validate_and_extract_author_details") as mock_validate_author, \
+        patch("pecha_api.plans.cms.cms_plans_service.generate_presigned_access_url") as mock_presign, \
+        patch("pecha_api.plans.cms.cms_plans_service.get") as mock_get_config:
         db_session = _mock_session_local(mock_session_local)
         mock_get_plans.return_value = repo_response
         mock_validate_author.return_value = MagicMock()
+        # Return the original key so assertions comparing to plan.image_url still pass
+        mock_presign.side_effect = lambda bucket_name, s3_key: s3_key
+        mock_get_config.return_value = "dummy-bucket"
 
         resp = await get_filtered_plans(
             token="dummy-token",
@@ -181,34 +188,97 @@ async def test_get_filtered_plans_success():
 
 @pytest.mark.asyncio
 async def test_get_details_plan_success():
-    # Create a test plan ID that exists in DUMMY_PLANS
-    test_plan = DUMMY_PLANS[0]
-    
-    with patch("pecha_api.plans.cms.cms_plans_service.validate_and_extract_author_details") as mock_validate_author:
-        mock_validate_author.return_value = MagicMock()
-        
-        response = await get_details_plan(token="dummy-token", plan_id=test_plan.id)
-        
-        # Verify response
-        assert response is not None
-        assert response.id == test_plan.id
-        assert response.title == test_plan.title
-        assert response.description == test_plan.description
-        assert response.days == DUMMY_DAYS
+    plan = Plan(
+        id=uuid.uuid4(),
+        title="Test Plan",
+        description="Test Description",
+        image_url="https://example.com/image.jpg",
+        status=PlanStatus.PUBLISHED,
+        author_id=uuid.uuid4(),
+        created_by="tester@example.com",
+    )
 
+    item1 = PlanItem(id=uuid.uuid4(), plan_id=plan.id, day_number=1, created_by="tester@example.com")
+    item2 = PlanItem(id=uuid.uuid4(), plan_id=plan.id, day_number=2, created_by="tester@example.com")
+
+    task1 = PlanTask(
+        id=uuid.uuid4(),
+        plan_item_id=item1.id,
+        title="Morning Practice",
+        content_type=ContentType.TEXT,
+        content="Breathe for 10 minutes",
+        display_order=1,
+        estimated_time=10,
+        created_by="tester@example.com",
+    )
+    task2 = PlanTask(
+        id=uuid.uuid4(),
+        plan_item_id=item2.id,
+        title="Listen Audio",
+        content_type=ContentType.AUDIO,
+        content="https://example.com/audio.mp3",
+        display_order=1,
+        estimated_time=20,
+        created_by="tester@example.com",
+    )
+
+    with patch("pecha_api.plans.cms.cms_plans_service.SessionLocal") as mock_session_local, \
+        patch("pecha_api.plans.cms.cms_plans_service.get_plan_by_id") as mock_get_plan_by_id, \
+        patch("pecha_api.plans.cms.cms_plans_service.get_plan_items_by_plan_id") as mock_get_plan_items_by_plan_id, \
+        patch("pecha_api.plans.cms.cms_plans_service.get_tasks_by_item_ids") as mock_get_tasks_by_item_ids, \
+        patch("pecha_api.plans.cms.cms_plans_service.validate_and_extract_author_details") as mock_validate_author:
+        db_session = _mock_session_local(mock_session_local)
+        mock_validate_author.return_value = MagicMock()
+        mock_get_plan_by_id.return_value = plan
+        mock_get_plan_items_by_plan_id.return_value = [item1, item2]
+        mock_get_tasks_by_item_ids.return_value = [task1, task2]
+
+        response = await get_details_plan(token="dummy-token", plan_id=plan.id)
+
+        mock_validate_author.assert_called_once_with(token="dummy-token")
+        mock_get_plan_by_id.assert_called_once_with(db=db_session, plan_id=plan.id)
+        mock_get_plan_items_by_plan_id.assert_called_once_with(db=db_session, plan_id=plan.id)
+        mock_get_tasks_by_item_ids.assert_called_once_with(db=db_session, plan_item_ids=[item1.id, item2.id])
+
+        assert response is not None
+        assert response.id == plan.id
+        assert response.title == plan.title
+        assert response.description == plan.description
+        assert len(response.days) == 2
+
+        day1 = next(d for d in response.days if d.id == item1.id)
+        assert day1.day_number == 1
+        assert len(day1.tasks) == 1
+        assert day1.tasks[0].id == task1.id
+        assert day1.tasks[0].title == task1.title
+        assert day1.tasks[0].content_type == task1.content_type
+        assert day1.tasks[0].content == task1.content
+        assert day1.tasks[0].estimated_time == task1.estimated_time
+
+        day2 = next(d for d in response.days if d.id == item2.id)
+        assert day2.day_number == 2
+        assert len(day2.tasks) == 1
+        assert day2.tasks[0].id == task2.id
+        assert day2.tasks[0].content_type == task2.content_type
 
 @pytest.mark.asyncio
 async def test_get_details_plan_not_found():
     non_existent_id = uuid.uuid4()
-    
-    with patch("pecha_api.plans.cms.cms_plans_service.validate_and_extract_author_details") as mock_validate_author:
+
+
+    with patch("pecha_api.plans.cms.cms_plans_service.SessionLocal") as mock_session_local, \
+        patch("pecha_api.plans.cms.cms_plans_service.get_plan_by_id") as mock_get_plan_by_id, \
+        patch("pecha_api.plans.cms.cms_plans_service.validate_and_extract_author_details") as mock_validate_author:
+        _ = _mock_session_local(mock_session_local)
+
         mock_validate_author.return_value = MagicMock()
-        
+        mock_get_plan_by_id.return_value = None
+
         with pytest.raises(HTTPException) as exc_info:
             await get_details_plan(token="dummy-token", plan_id=non_existent_id)
-        
+
         assert exc_info.value.status_code == 404
-        assert "Plan not found" in str(exc_info.value.detail)
+        assert exc_info.value.detail == {"error": "Bad request", "message": "Plan not found"}
 
 
 @pytest.mark.asyncio

@@ -38,7 +38,6 @@ class PlanDTO(BaseModel):
 class TaskDTO(BaseModel):
     id: UUID
     title: str
-    description: Optional[str] = None
     content_type: ContentType
     content: Optional[str] = None
     estimated_time: Optional[int] = None
@@ -46,7 +45,6 @@ class TaskDTO(BaseModel):
 class PlanDayDTO(BaseModel):
     id: UUID
     day_number: int
-    title: str
     tasks: List[TaskDTO]
 
 class PlanWithDays(BaseModel):
