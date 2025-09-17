@@ -4,7 +4,7 @@ from unittest.mock import patch, MagicMock
 from fastapi import UploadFile, HTTPException
 from starlette import status
 
-from pecha_api.plans.image_upload.media_response_models import PlanUploadResponse
+from pecha_api.plans.media.media_response_models import PlanUploadResponse
 from pecha_api.plans.response_message import (
     IMAGE_UPLOAD_SUCCESS,
     INVALID_FILE_FORMAT,
@@ -24,13 +24,13 @@ TEST_S3_KEY = "images/plan_images/uuid123/test_image.jpg"
 TEST_PRESIGNED_URL = f"https://s3.amazonaws.com/{TEST_BUCKET_NAME}/{TEST_S3_KEY}"
 
 # Mock Path Constants
-IMAGE_UTILS_PATH = "pecha_api.plans.image_upload.media_services.ImageUtils"
-UPLOAD_BYTES_PATH = "pecha_api.plans.image_upload.media_services.upload_bytes"
-GENERATE_URL_PATH = "pecha_api.plans.image_upload.media_services.generate_presigned_access_url"
-VALIDATE_AUTHOR_PATH = "pecha_api.plans.image_upload.media_services.validate_and_extract_author_details"
-UUID_PATH = "pecha_api.plans.image_upload.media_services.uuid.uuid4"
-GET_CONFIG_PATH = "pecha_api.plans.image_upload.media_services.get"
-GET_INT_CONFIG_PATH = "pecha_api.plans.image_upload.media_services.get_int"
+IMAGE_UTILS_PATH = "pecha_api.plans.media.media_services.ImageUtils"
+UPLOAD_BYTES_PATH = "pecha_api.plans.media.media_services.upload_bytes"
+GENERATE_URL_PATH = "pecha_api.plans.media.media_services.generate_presigned_access_url"
+VALIDATE_AUTHOR_PATH = "pecha_api.plans.media.media_services.validate_and_extract_author_details"
+UUID_PATH = "pecha_api.plans.media.media_services.uuid.uuid4"
+GET_CONFIG_PATH = "pecha_api.plans.media.media_services.get"
+GET_INT_CONFIG_PATH = "pecha_api.plans.media.media_services.get_int"
 
 
 class TestDataFactory:
@@ -177,14 +177,14 @@ class TestFileValidation:
     
     def test_valid_file_passes_validation(self, mock_upload_file, config_patches):
         """Test that a valid file passes validation without raising exceptions"""
-        from pecha_api.plans.image_upload.media_services import validate_file
+        from pecha_api.plans.media.media_services import validate_file
         validate_file(mock_upload_file)  # Should not raise exception
     
     def test_invalid_file_extension_rejected(self, mock_upload_file, config_patches):
         """Test that files with invalid extensions are rejected"""
         mock_upload_file.filename = "test_document.pdf"
         
-        from pecha_api.plans.image_upload.media_services import validate_file
+        from pecha_api.plans.media.media_services import validate_file
         with pytest.raises(HTTPException) as exc_info:
             validate_file(mock_upload_file)
             
@@ -195,7 +195,7 @@ class TestFileValidation:
         """Test that files exceeding size limit are rejected"""
         mock_upload_file.size = 6 * 1024 * 1024  # 6MB
         
-        from pecha_api.plans.image_upload.media_services import validate_file
+        from pecha_api.plans.media.media_services import validate_file
         with pytest.raises(HTTPException) as exc_info:
             validate_file(mock_upload_file)
             
@@ -206,7 +206,7 @@ class TestFileValidation:
         """Test that files without filename are rejected"""
         mock_upload_file.filename = None
         
-        from pecha_api.plans.image_upload.media_services import validate_file
+        from pecha_api.plans.media.media_services import validate_file
         with pytest.raises(HTTPException) as exc_info:
             validate_file(mock_upload_file)
             
@@ -218,21 +218,21 @@ class TestFileValidation:
         """Test that all supported image formats are accepted"""
         mock_upload_file.filename = f"test_image{extension}"
         
-        from pecha_api.plans.image_upload.media_services import validate_file
+        from pecha_api.plans.media.media_services import validate_file
         validate_file(mock_upload_file)  # Should not raise exception
     
     def test_case_insensitive_extension_validation(self, mock_upload_file, config_patches):
         """Test that file extension validation is case insensitive"""
         mock_upload_file.filename = "test_image.JPG"
         
-        from pecha_api.plans.image_upload.media_services import validate_file
+        from pecha_api.plans.media.media_services import validate_file
         validate_file(mock_upload_file)  # Should not raise exception
     
     def test_file_at_size_limit_accepted(self, mock_upload_file, config_patches):
         """Test that files exactly at the size limit are accepted"""
         mock_upload_file.size = 5 * 1024 * 1024  # Exactly 5MB
         
-        from pecha_api.plans.image_upload.media_services import validate_file
+        from pecha_api.plans.media.media_services import validate_file
         validate_file(mock_upload_file)  # Should not raise exception
 
 
@@ -256,7 +256,7 @@ class TestImageUploadSuccess:
     def test_successful_upload_without_plan_id(self, mock_upload_file):
         """Test successful upload without plan_id"""
         with MockManager() as mock_manager:
-            from pecha_api.plans.image_upload.media_services import upload_plan_image
+            from pecha_api.plans.media.media_services import upload_plan_image
             
             result = upload_plan_image(
                 token=VALID_TOKEN,
@@ -275,7 +275,7 @@ class TestImageUploadSuccess:
     def test_successful_upload_with_plan_id(self, mock_upload_file):
         """Test successful upload with plan_id"""
         with MockManager() as mock_manager:
-            from pecha_api.plans.image_upload.media_services import upload_plan_image
+            from pecha_api.plans.media.media_services import upload_plan_image
             
             result = upload_plan_image(
                 token=VALID_TOKEN,
@@ -296,7 +296,7 @@ class TestImageUploadSuccess:
             with MockManager() as mock_manager:
                 mock_upload_file.content_type = content_type
                 
-                from pecha_api.plans.image_upload.media_services import upload_plan_image
+                from pecha_api.plans.media.media_services import upload_plan_image
                 result = upload_plan_image(
                     token=VALID_TOKEN,
                     plan_id=None,
@@ -317,7 +317,7 @@ class TestImageUploadSuccess:
         with MockManager() as mock_manager:
             mock_upload_file.filename = filename
             
-            from pecha_api.plans.image_upload.media_services import upload_plan_image
+            from pecha_api.plans.media.media_services import upload_plan_image
             result = upload_plan_image(
                 token=VALID_TOKEN,
                 plan_id=None,
@@ -332,7 +332,7 @@ class TestImageUploadSuccess:
         with MockManager() as mock_manager:
             mock_upload_file.file = io.BytesIO(b"")
             
-            from pecha_api.plans.image_upload.media_services import upload_plan_image
+            from pecha_api.plans.media.media_services import upload_plan_image
             result = upload_plan_image(
                 token=VALID_TOKEN,
                 plan_id=None,
@@ -354,7 +354,7 @@ class TestImageUploadAuthentication:
                 detail=AUTHOR_NOT_FOUND
             )
             
-            from pecha_api.plans.image_upload.media_services import upload_plan_image
+            from pecha_api.plans.media.media_services import upload_plan_image
             with pytest.raises(HTTPException) as exc_info:
                 upload_plan_image(
                     token=INVALID_TOKEN,
@@ -373,7 +373,7 @@ class TestImageUploadAuthentication:
                 detail="Token has expired"
             )
             
-            from pecha_api.plans.image_upload.media_services import upload_plan_image
+            from pecha_api.plans.media.media_services import upload_plan_image
             with pytest.raises(HTTPException) as exc_info:
                 upload_plan_image(
                     token="expired_token",
@@ -395,7 +395,7 @@ class TestImageUploadValidation:
         with patch(GET_CONFIG_PATH, side_effect=lambda key: test_config.get(key)), \
              patch(GET_INT_CONFIG_PATH, side_effect=lambda key: test_config.get(key)), \
              patch(VALIDATE_AUTHOR_PATH):
-            from pecha_api.plans.image_upload.media_services import upload_plan_image
+            from pecha_api.plans.media.media_services import upload_plan_image
             with pytest.raises(HTTPException) as exc_info:
                 upload_plan_image(
                     token=VALID_TOKEN,
@@ -413,7 +413,7 @@ class TestImageUploadValidation:
         with patch(GET_CONFIG_PATH, side_effect=lambda key: test_config.get(key)), \
              patch(GET_INT_CONFIG_PATH, side_effect=lambda key: test_config.get(key)), \
              patch(VALIDATE_AUTHOR_PATH):
-            from pecha_api.plans.image_upload.media_services import upload_plan_image
+            from pecha_api.plans.media.media_services import upload_plan_image
             with pytest.raises(HTTPException) as exc_info:
                 upload_plan_image(
                     token=VALID_TOKEN,
@@ -440,7 +440,7 @@ class TestImageUploadErrorHandling:
                 detail="Failed to process the image"
             )
             
-            from pecha_api.plans.image_upload.media_services import upload_plan_image
+            from pecha_api.plans.media.media_services import upload_plan_image
             with pytest.raises(HTTPException) as exc_info:
                 upload_plan_image(
                     token=VALID_TOKEN,
@@ -456,7 +456,7 @@ class TestImageUploadErrorHandling:
         with MockManager() as mock_manager:
             mock_manager.mocks['upload_bytes'].side_effect = Exception("S3 upload failed")
             
-            from pecha_api.plans.image_upload.media_services import upload_plan_image
+            from pecha_api.plans.media.media_services import upload_plan_image
             with pytest.raises(Exception) as exc_info:
                 upload_plan_image(
                     token=VALID_TOKEN,
@@ -471,7 +471,7 @@ class TestImageUploadErrorHandling:
         with MockManager() as mock_manager:
             mock_manager.mocks['presigned_url'].side_effect = Exception("Failed to generate presigned URL")
             
-            from pecha_api.plans.image_upload.media_services import upload_plan_image
+            from pecha_api.plans.media.media_services import upload_plan_image
             with pytest.raises(Exception) as exc_info:
                 upload_plan_image(
                     token=VALID_TOKEN,
@@ -488,7 +488,7 @@ class TestImageUploadIntegration:
     def test_complete_upload_workflow(self, mock_upload_file):
         """Test the complete upload workflow from start to finish"""
         with MockManager() as mock_manager:
-            from pecha_api.plans.image_upload.media_services import upload_plan_image
+            from pecha_api.plans.media.media_services import upload_plan_image
             
             result = upload_plan_image(
                 token=VALID_TOKEN,
@@ -515,7 +515,7 @@ class TestImageUploadIntegration:
             mock_upload_file.filename = "custom_image.png"
             mock_upload_file.content_type = "image/png"
             
-            from pecha_api.plans.image_upload.media_services import upload_plan_image
+            from pecha_api.plans.media.media_services import upload_plan_image
             
             result = upload_plan_image(
                 token=VALID_TOKEN,

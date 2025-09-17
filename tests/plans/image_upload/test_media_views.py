@@ -7,7 +7,7 @@ from fastapi import UploadFile, HTTPException
 from starlette import status
 
 from pecha_api.app import api
-from pecha_api.plans.image_upload.media_response_models import PlanUploadResponse
+from pecha_api.plans.media.media_response_models import PlanUploadResponse
 from pecha_api.plans.response_message import (
     IMAGE_UPLOAD_SUCCESS,
     INVALID_FILE_FORMAT,
@@ -83,7 +83,7 @@ def mock_success_response():
 @pytest.fixture(autouse=True)
 def mock_validate_author(mock_author):
     """Auto-used fixture to mock author validation"""
-    with patch("pecha_api.plans.image_upload.media_services.validate_and_extract_author_details") as mock_func:
+    with patch("pecha_api.plans.media.media_services.validate_and_extract_author_details") as mock_func:
         mock_func.return_value = mock_author
         yield mock_func
 
@@ -91,7 +91,7 @@ def mock_validate_author(mock_author):
 @pytest.fixture
 def mock_upload_service(mock_success_response):
     """Mock the upload service with success response"""
-    with patch("pecha_api.plans.image_upload.media_views.upload_plan_image") as mock_func:
+    with patch("pecha_api.plans.media.media_views.upload_plan_image") as mock_func:
         mock_func.return_value = mock_success_response
         yield mock_func
 
@@ -99,7 +99,7 @@ def mock_upload_service(mock_success_response):
 @pytest.fixture
 def authenticated_client():
     """Test client with authentication override"""
-    from pecha_api.plans.image_upload.media_views import oauth2_scheme
+    from pecha_api.plans.media.media_views import oauth2_scheme
     
     original_dependency = api.dependency_overrides.copy()
     
@@ -153,7 +153,7 @@ class TestMediaUploadSuccess:
             ("test.gif", "image/gif")
         ]
         
-        with patch("pecha_api.plans.image_upload.media_views.upload_plan_image", return_value=mock_success_response):
+        with patch("pecha_api.plans.media.media_views.upload_plan_image", return_value=mock_success_response):
             for filename, content_type in image_formats:
                 files = [TestDataFactory.create_test_file(filename=filename, content_type=content_type)]
                 headers = {"Authorization": f"Bearer {VALID_TOKEN}"}
@@ -248,7 +248,7 @@ class TestMediaUploadValidation:
     
     def test_upload_invalid_file_format(self, authenticated_client):
         """Test upload with invalid file format"""
-        with patch("pecha_api.plans.image_upload.media_services.validate_file") as mock_validate_file:
+        with patch("pecha_api.plans.media.media_services.validate_file") as mock_validate_file:
             mock_validate_file.side_effect = HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
                 detail=INVALID_FILE_FORMAT
@@ -265,7 +265,7 @@ class TestMediaUploadValidation:
     
     def test_upload_file_too_large(self, authenticated_client):
         """Test upload with file exceeding size limit"""
-        with patch("pecha_api.plans.image_upload.media_services.validate_file") as mock_validate_file:
+        with patch("pecha_api.plans.media.media_services.validate_file") as mock_validate_file:
             mock_validate_file.side_effect = HTTPException(
                 status_code=status.HTTP_413_REQUEST_ENTITY_TOO_LARGE,
                 detail=FILE_TOO_LARGE
@@ -298,7 +298,7 @@ class TestMediaUploadErrorHandling:
     
     def test_upload_server_error(self, authenticated_client):
         """Test upload when server encounters internal error"""
-        with patch("pecha_api.plans.image_upload.media_views.upload_plan_image") as mock_upload:
+        with patch("pecha_api.plans.media.media_views.upload_plan_image") as mock_upload:
             mock_upload.side_effect = HTTPException(
                 status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
                 detail=UNEXPECTED_ERROR_UPLOAD
@@ -315,7 +315,7 @@ class TestMediaUploadErrorHandling:
     
     def test_upload_service_unavailable(self, authenticated_client):
         """Test upload when upload service is unavailable"""
-        with patch("pecha_api.plans.image_upload.media_views.upload_plan_image") as mock_upload:
+        with patch("pecha_api.plans.media.media_views.upload_plan_image") as mock_upload:
             mock_upload.side_effect = HTTPException(
                 status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
                 detail="Upload service temporarily unavailable"
@@ -335,7 +335,7 @@ class TestMediaUploadResponseStructure:
     
     def test_successful_upload_response_structure(self, authenticated_client, mock_success_response):
         """Test that successful upload returns correct response structure"""
-        with patch("pecha_api.plans.image_upload.media_views.upload_plan_image", return_value=mock_success_response):
+        with patch("pecha_api.plans.media.media_views.upload_plan_image", return_value=mock_success_response):
             files = [TestDataFactory.create_test_file()]
             headers = {"Authorization": f"Bearer {VALID_TOKEN}"}
             params = {"plan_id": TEST_PLAN_ID}
@@ -358,7 +358,7 @@ class TestMediaUploadResponseStructure:
     
     def test_response_url_format(self, authenticated_client, mock_success_response):
         """Test that response URL follows expected format"""
-        with patch("pecha_api.plans.image_upload.media_views.upload_plan_image", return_value=mock_success_response):
+        with patch("pecha_api.plans.media.media_views.upload_plan_image", return_value=mock_success_response):
             files = [TestDataFactory.create_test_file(filename="test-image.jpg")]
             headers = {"Authorization": f"Bearer {VALID_TOKEN}"}
             params = {"plan_id": TEST_PLAN_ID}
