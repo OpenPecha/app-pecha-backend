@@ -3,7 +3,7 @@ from typing import Optional, List
 from starlette import status
 from pecha_api.plans.plans_models import Plan
 from pecha_api.plans.items.plan_items_models import PlanItem
-from pecha_api.plans.plans_repository import save_plan, get_plan_by_id_with_items_and_tasks, get_plan_by_id
+from pecha_api.plans.plans_repository import save_plan, get_plan_by_id
 from pecha_api.plans.items.plan_items_repository import save_plan_items
 from pecha_api.plans.users.user_plan_progress_repository import get_plan_progress
 from pecha_api.error_contants import ErrorConstants
@@ -221,6 +221,7 @@ def _get_plan_details(db: Session, plan_id: UUID) -> PlanWithDays:
         description=plan.description or "",
         days=day_dtos,
     )
+    
 async def update_plan_details(token:str,plan_id: UUID, update_plan_request: UpdatePlanRequest) -> PlanDTO:
     """Update plan metadata"""
     # Find plan by ID
