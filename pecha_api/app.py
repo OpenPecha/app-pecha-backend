@@ -20,6 +20,7 @@ from pecha_api.search import search_views
 from pecha_api.plans.auth import plan_auth_views
 from pecha_api.plans import plans_views
 from pecha_api.plans.image_upload import media_views
+from pecha_api.plans.items import plan_items_views
 import uvicorn
 
 
@@ -45,6 +46,7 @@ api.include_router(share_views.share_router)
 api.include_router(plan_auth_views.plan_auth_router)
 api.include_router(plans_views.plans_router)
 api.include_router(media_views.media_router)
+api.include_router(plan_items_views.items_router)
 
 api.add_middleware(
     CORSMiddleware,

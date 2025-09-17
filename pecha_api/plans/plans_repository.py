@@ -3,6 +3,7 @@ from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 from sqlalchemy import func, asc, desc
 from typing import Optional
+from uuid import UUID
 from ..plans.plans_models import Plan
 from pecha_api.plans.items.plan_items_models import PlanItem
 from pecha_api.plans.users.user_plan_progress_models import UserPlanProgress
@@ -76,3 +77,6 @@ def get_plans(
     # Total count without pagination/joins
     total = db.query(func.count(Plan.id)).filter(*filters).scalar()
     return PlansRepositoryResponse(plan_info=plan_aggregates, total=total)
+
+def get_plan_by_id(db: Session, plan_id: UUID) -> Plan:
+    return db.query(Plan).filter(Plan.id == plan_id).first()
