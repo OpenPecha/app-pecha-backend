@@ -31,8 +31,8 @@ class Author(Base):
         Index("idx_authors_verified", "is_verified", postgresql_where=text("is_verified = TRUE")),
     )
 
-class PasswordReset(Base):
-    __tablename__ = "password_resets"
+class Author_Password_Reset(Base):
+    __tablename__ = "author_password_resets"
     id = Column(Integer, primary_key=True, index=True)
     email = Column(String, ForeignKey("authors.email", ondelete="CASCADE"), nullable=False)
     reset_token = Column(String(255), nullable=False, unique=True, index=True)

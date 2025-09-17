@@ -2,7 +2,7 @@ import secrets
 from .plan_auth_enums import AuthorStatus
 from .plan_auth_models import CreateAuthorRequest, AuthorDetails, TokenPayload, \
     AuthorVerificationResponse, ResponseError
-from pecha_api.plans.authors.plan_author_model import Author, PasswordReset
+from pecha_api.plans.authors.plan_author_model import Author, Author_Password_Reset
 from pecha_api.db.database import SessionLocal
 from pecha_api.plans.authors.plan_authors_repository import save_author, get_author_by_email, update_author, check_author_exists
 from pecha_api.auth.auth_repository import get_hashed_password
@@ -199,7 +199,7 @@ def request_reset_password(email: str):
 
         reset_token = secrets.token_urlsafe(32)
         token_expiry = datetime.now(timezone.utc) + timedelta(minutes=30)
-        password_reset = PasswordReset(
+        password_reset = Author_Password_Reset(
             email=current_user.email,
             reset_token=reset_token,
             token_expiry=token_expiry
@@ -222,6 +222,6 @@ def send_reset_email(email: str, reset_link: str):
 
     send_email(
         to_email=email,
-        subject="Pecha Password Reset",
+        subject="Pecha studio Password Reset",
         message=html_content
     )
