@@ -4,7 +4,7 @@ from unittest.mock import patch, MagicMock, ANY
 from fastapi import HTTPException
 
 import pecha_api.plans.cms.cms_plans_service as plans_service
-from pecha_api.plans.plans_enums import DifficultyLevel, PlanStatus
+from pecha_api.plans.plans_enums import DifficultyLevel, PlanStatus, ContentType
 from pecha_api.plans.plans_models import Plan
 from pecha_api.plans.items.plan_items_models import PlanItem
 from pecha_api.plans.tasks.plan_tasks_models import PlanTask
@@ -132,10 +132,15 @@ async def test_get_filtered_plans_success():
 
     with patch("pecha_api.plans.cms.cms_plans_service.SessionLocal") as mock_session_local, \
         patch("pecha_api.plans.cms.cms_plans_service.get_plans") as mock_get_plans, \
-        patch("pecha_api.plans.cms.cms_plans_service.validate_and_extract_author_details") as mock_validate_author:
+        patch("pecha_api.plans.cms.cms_plans_service.validate_and_extract_author_details") as mock_validate_author, \
+        patch("pecha_api.plans.cms.cms_plans_service.generate_presigned_access_url") as mock_presign, \
+        patch("pecha_api.plans.cms.cms_plans_service.get") as mock_get_config:
         db_session = _mock_session_local(mock_session_local)
         mock_get_plans.return_value = repo_response
         mock_validate_author.return_value = MagicMock()
+        # Return the original key so assertions comparing to plan.image_url still pass
+        mock_presign.side_effect = lambda bucket_name, s3_key: s3_key
+        mock_get_config.return_value = "dummy-bucket"
 
         resp = await get_filtered_plans(
             token="dummy-token",
@@ -217,11 +222,11 @@ async def test_get_details_plan_success():
         created_by="tester@example.com",
     )
 
-    with patch("pecha_api.plans.plans_service.SessionLocal") as mock_session_local, \
-        patch("pecha_api.plans.plans_service.get_plan_by_id") as mock_get_plan_by_id, \
-        patch("pecha_api.plans.plans_service.get_plan_items_by_plan_id") as mock_get_plan_items_by_plan_id, \
-        patch("pecha_api.plans.plans_service.get_tasks_by_item_ids") as mock_get_tasks_by_item_ids, \
-        patch("pecha_api.plans.plans_service.validate_and_extract_author_details") as mock_validate_author:
+    with patch("pecha_api.plans.cms.cms_plans_service.SessionLocal") as mock_session_local, \
+        patch("pecha_api.plans.cms.cms_plans_service.get_plan_by_id") as mock_get_plan_by_id, \
+        patch("pecha_api.plans.cms.cms_plans_service.get_plan_items_by_plan_id") as mock_get_plan_items_by_plan_id, \
+        patch("pecha_api.plans.cms.cms_plans_service.get_tasks_by_item_ids") as mock_get_tasks_by_item_ids, \
+        patch("pecha_api.plans.cms.cms_plans_service.validate_and_extract_author_details") as mock_validate_author:
         db_session = _mock_session_local(mock_session_local)
         mock_validate_author.return_value = MagicMock()
         mock_get_plan_by_id.return_value = plan
@@ -261,8 +266,8 @@ async def test_get_details_plan_not_found():
     non_existent_id = uuid.uuid4()
 
 
-    with patch("pecha_api.plans.plans_service.SessionLocal") as mock_session_local, \
-        patch("pecha_api.plans.plans_service.get_plan_by_id") as mock_get_plan_by_id, \
+    with patch("pecha_api.plans.cms.cms_plans_service.SessionLocal") as mock_session_local, \
+        patch("pecha_api.plans.cms.cms_plans_service.get_plan_by_id") as mock_get_plan_by_id, \
         patch("pecha_api.plans.cms.cms_plans_service.validate_and_extract_author_details") as mock_validate_author:
         _ = _mock_session_local(mock_session_local)
 
