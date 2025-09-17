@@ -1,22 +1,33 @@
-from typing import Optional, List
+import py_compile
+from typing import Optional, List, Dict
 
 from starlette import status
 from pecha_api.plans.plans_models import Plan
 from pecha_api.plans.items.plan_items_models import PlanItem
-from pecha_api.plans.plans_repository import save_plan
+from pecha_api.plans.cms.cms_plans_repository import save_plan, get_plan_by_id
 from pecha_api.plans.items.plan_items_repository import save_plan_items
-from pecha_api.plans.users.user_plan_progress_repository import get_plan_progress
-from pecha_api.error_contants import ErrorConstants
+from pecha_api.plans.users.plan_users_progress_repository import get_plan_progress
+
 from pecha_api.plans.authors.plan_author_service import validate_and_extract_author_details
 from pecha_api.plans.plans_enums import LanguageCode, PlanStatus, ContentType
 from pecha_api.plans.plans_response_models import PlansResponse, PlanDTO, CreatePlanRequest, TaskDTO, PlanDayDTO, \
     PlanWithDays, \
     UpdatePlanRequest, PlanStatusUpdate, PlansRepositoryResponse, PlanWithAggregates
-from pecha_api.plans.plans_repository import get_plans
+    
+from pecha_api.plans.cms.cms_plans_repository import get_plans
+from pecha_api.plans.items.plan_items_repository import get_plan_items_by_plan_id
+from pecha_api.plans.tasks.plan_tasks_repository import get_tasks_by_item_ids
+from pecha_api.plans.tasks.plan_tasks_models import PlanTask
+from sqlalchemy.orm import Session
+
 from pecha_api.db.database import SessionLocal
-from ..config import get
+from pecha_api.config import get
+from pecha_api.uploads.S3_utils import generate_presigned_access_url
 from uuid import uuid4, UUID
 from fastapi import HTTPException
+from pecha_api.plans.auth.plan_auth_models import ResponseError
+from pecha_api.plans.response_message import BAD_REQUEST, PLAN_NOT_FOUND
+
 DUMMY_PLANS = [
     PlanDTO(
         id=uuid4(),
@@ -105,7 +116,7 @@ async def get_filtered_plans(token: str, search: Optional[str], sort_by: str, so
                 id=selected_plan.id,
                 title=selected_plan.title,
                 description=selected_plan.description,
-                image_url=selected_plan.image_url,
+                image_url= generate_presigned_access_url(bucket_name=get("AWS_BUCKET_NAME"), s3_key=selected_plan.image_url),
                 total_days=int(plan_info.total_days or 0),
                 status=PlanStatus(selected_plan.status.value),
                 subscription_count=int(plan_info.subscription_count or 0),
@@ -164,19 +175,57 @@ def create_new_plan(token: str, create_plan_request: CreatePlanRequest) -> PlanD
         )
 
 async def get_details_plan(token:str,plan_id: UUID) -> PlanWithDays:
-    #  current_author = validate_and_extract_author_details(token=token)
-    """Get plan details with days listing"""
-    # Find plan by ID
-    plan = next((p for p in DUMMY_PLANS if p.id == plan_id), None)
+    validate_and_extract_author_details(token=token)
+    with SessionLocal() as db_session:
+        return _get_plan_details(db_session, plan_id)
+
+
+def _get_plan_details(db: Session, plan_id: UUID) -> PlanWithDays:
+    # Fetch base plan
+    plan: Plan = get_plan_by_id(db=db, plan_id=plan_id)
     if not plan:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND,
-                            detail=ErrorConstants.PLAN_NOT_FOUND)
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, 
+            detail=ResponseError(error=BAD_REQUEST, 
+            message=PLAN_NOT_FOUND).model_dump()
+        )
+
+    # Fetch items (days)
+    items = get_plan_items_by_plan_id(db=db, plan_id=plan.id)
+    plan_item_ids = [item.id for item in items]
+
+    # Fetch tasks for all items in one query
+    tasks = get_tasks_by_item_ids(db=db, plan_item_ids=plan_item_ids)
+    tasks_by_item: Dict[UUID, List[PlanTask]] = {}
+    for task in tasks:
+        tasks_by_item.setdefault(task.plan_item_id, []).append(task)
+
+    # Map to DTOs
+    day_dtos: List[PlanDayDTO] = [
+        PlanDayDTO(
+            id=item.id,
+            day_number=item.day_number,
+            tasks=[
+                TaskDTO(
+                    id=task.id,
+                    title=task.title,
+                    content_type=task.content_type,
+                    content=task.content,
+                    estimated_time=task.estimated_time,
+                )
+                for task in tasks_by_item.get(item.id, [])
+            ],
+        )
+        for item in items
+    ]
+
     return PlanWithDays(
         id=plan.id,
         title=plan.title,
-        description=plan.description,
-        days=DUMMY_DAYS
+        description=plan.description or "",
+        days=day_dtos,
     )
+    
 async def update_plan_details(token:str,plan_id: UUID, update_plan_request: UpdatePlanRequest) -> PlanDTO:
     """Update plan metadata"""
     # Find plan by ID

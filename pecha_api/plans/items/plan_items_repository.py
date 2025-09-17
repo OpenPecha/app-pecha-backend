@@ -28,7 +28,7 @@ def save_plan_items(db: Session, plan_items: List[PlanItem]):
         )
 
 
-def save_plan_item(db: Session, plan_item: PlanItem):
+def save_plan_item(db: Session, plan_item: PlanItem) -> PlanItem:
     try:
         db.add(plan_item)
         db.commit()

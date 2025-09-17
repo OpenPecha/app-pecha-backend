@@ -1,0 +1,41 @@
+{
+    "plans": [
+        {
+            "id": "1e0cc375-382b-4c11-b39c-192ed62123bd",
+            "title": "Plan 1",
+            "description": "Description 1",
+            "image_url": "https://example.com/image1.jpg",
+            "total_days": 7,
+            "status": "PUBLISHED",
+            "subscription_count": 10,
+            "days": [
+                {
+                    "id": "2f1dd486-493c-4d22-c49d-203fe73234ce",
+                    "day_number": 1,
+                    "title": "Day 1",
+                    "tasks": [
+                        {
+                            "id": "3a2ee597-5a4d-4e33-d5ae-314af84345df",
+                            "title": "Task 1",
+                            "description": "Description 1",
+                            "content_type": "TEXT",
+                            "content": "Content 1",
+                            "estimated_time": 15
+                        },
+                        {
+                            "id": "4b3ff6a8-6b5e-4f44-e6bf-425ba95456ea",
+                            "title": "Task 2",
+                            "description": "Description 2",
+                            "content_type": "TEXT",
+                            "content": "Content 2",
+                            "estimated_time": 15
+                        }
+                    ]
+                }
+            ]
+        }
+    ],
+    "skip": 0,
+    "limit": 20,
+    "total": 1
+}
