@@ -69,8 +69,7 @@ def generate_presigned_access_url(bucket_name: str, s3_key: str):
             ClientMethod="get_object",
             Params={
                 "Bucket": bucket_name,
-                "Key": s3_key,
-                "ExpectedBucketOwner": get("AWS_BUCKET_OWNER")
+                "Key": s3_key
             },
             ExpiresIn=3600
         )

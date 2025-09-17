@@ -15,6 +15,7 @@ from pecha_api.plans.plans_response_models import PlansResponse, PlanDTO, Create
 from pecha_api.plans.cms.cms_plans_repository import get_plans
 from pecha_api.db.database import SessionLocal
 from pecha_api.config import get
+from pecha_api.uploads.S3_utils import generate_presigned_access_url
 from uuid import uuid4, UUID
 from fastapi import HTTPException
 DUMMY_PLANS = [
@@ -105,7 +106,7 @@ async def get_filtered_plans(token: str, search: Optional[str], sort_by: str, so
                 id=selected_plan.id,
                 title=selected_plan.title,
                 description=selected_plan.description,
-                image_url=selected_plan.image_url,
+                image_url= generate_presigned_access_url(bucket_name=get("AWS_BUCKET_NAME"), s3_key=selected_plan.image_url),
                 total_days=int(plan_info.total_days or 0),
                 status=PlanStatus(selected_plan.status.value),
                 subscription_count=int(plan_info.subscription_count or 0),

@@ -22,7 +22,7 @@ class Plan(Base):
     featured = Column(Boolean, default=False,nullable=False)
     status = Column(PlanStatusEnum, nullable=False, default='DRAFT')
     # Content metadata
-    image_url = Column(String(255), nullable=True)
+    image_url = Column(String(1000), nullable=True)
     
     created_at = Column(DateTime(timezone=True), default=datetime.now(_datetime.timezone.utc),nullable=False)
     created_by = Column(String(255), nullable=False)
@@ -43,4 +43,3 @@ class Plan(Base):
               postgresql_using="gin"),
         Index("idx_plans_tags", "tags", postgresql_using="gin"),
     )
-
