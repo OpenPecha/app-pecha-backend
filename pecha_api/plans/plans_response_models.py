@@ -35,12 +35,18 @@ class PlanDTO(BaseModel):
     status: PlanStatus
     subscription_count: int
 
-class TaskDTO(BaseModel):
+class SubTaskDTO(BaseModel):
+    """Subtask model for tasks without titles but with different content types"""
     id: UUID
-    title: str
     content_type: ContentType
     content: Optional[str] = None
+    display_order: Optional[int] = None
+
+class TaskDTO(BaseModel):
+    id: UUID
+    title: Optional[str] = None  # Made optional to support subtasks
     estimated_time: Optional[int] = None
+    subtasks: List[SubTaskDTO] = []
 
 class PlanDayDTO(BaseModel):
     id: UUID
@@ -68,3 +74,6 @@ class PlanWithAggregates(BaseModel):
 class PlansRepositoryResponse(BaseModel):
     plan_info: List[PlanWithAggregates]
     total: int
+
+# Update forward references for nested models
+TaskDTO.model_rebuild()

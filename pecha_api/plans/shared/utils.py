@@ -1,9 +1,12 @@
 import json
 import os
+from typing import List
 from uuid import UUID
 from pecha_api.plans.plans_enums import PlanStatus, ContentType
 from pecha_api.plans.plans_response_models import PlanDTO, PlanDayDTO, TaskDTO
 from pecha_api.plans.shared.models import PlanListingModel, PlanModel, DayModel
+from pecha_api.plans.plans_response_models import SubTaskDTO
+from pecha_api.plans.shared.models import TaskModel, SubTaskModel
 
 
 def load_plans_from_json() -> PlanListingModel:
@@ -45,23 +48,60 @@ def convert_plan_model_to_dto(plan_model: PlanModel) -> PlanDTO:
     )
 
 
-def convert_day_model_to_dto(day_model: DayModel) -> PlanDayDTO:
-    """Convert DayModel to PlanDayDTO"""
+def convert_day_model_to_dto(day_model: DayModel) -> PlanDayDTO:    
     tasks = []
-    for task_model in day_model.tasks:
-        task = TaskDTO(
-            id=UUID(task_model.id),
-            title=task_model.title,
-            description=task_model.description,
-            content_type=ContentType(task_model.content_type),
-            content=task_model.content,
-            estimated_time=task_model.estimated_time
-        )
-        tasks.append(task)
     
-    return PlanDayDTO(
-        id=UUID(day_model.id),
-        day_number=day_model.day_number,
-        title=day_model.title,
-        tasks=tasks
-    )
+    # Handle tasks conversion with error recovery
+    if day_model.tasks:
+        for i, task_model in enumerate(day_model.tasks):
+            try:
+                subtasks = convert_subtask_to_dto(task_model)
+                task = TaskDTO(
+                    id=UUID(task_model.id),
+                    title=task_model.title,
+                    estimated_time=getattr(task_model, 'estimated_time', None),
+                    subtasks=subtasks
+                )
+                tasks.append(task)
+            except (ValueError, TypeError) as e:
+                # Log error and skip invalid task
+                print(f"Warning: Skipping invalid task at index {i}: {e}")
+                continue
+    
+    try:
+        return PlanDayDTO(
+            id=UUID(day_model.id),
+            day_number=day_model.day_number,
+            title=day_model.title,
+            tasks=tasks
+        )
+    except (ValueError, TypeError) as e:
+        raise ValueError(f"Failed to create PlanDayDTO: {e}") from e
+
+def convert_subtask_to_dto(task: TaskModel) -> List[SubTaskDTO]:
+    if not hasattr(task, 'subtasks') or task.subtasks is None:
+        return []
+
+    subtasks = []
+    
+    for subtask_model in task.subtasks:
+        try:
+            if not all(hasattr(subtask_model, attr) for attr in ['id', 'content_type', 'content', 'display_order']):
+                continue  # Skip invalid subtasks
+                
+            subtask = SubTaskDTO(
+                id=UUID(subtask_model.id),
+                content_type=ContentType(subtask_model.content_type),  # Ensure proper enum conversion
+                content=subtask_model.content,
+                display_order=subtask_model.display_order
+            )
+            subtasks.append(subtask)
+        except (ValueError, TypeError) as e:
+            # Log error in production, skip invalid subtask
+            print(f"Warning: Skipping invalid subtask {getattr(subtask_model, 'id', 'unknown')}: {e}")
+            continue
+    
+    return subtasks
+
+
+

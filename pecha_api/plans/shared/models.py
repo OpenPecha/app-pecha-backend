@@ -2,13 +2,19 @@ from typing import List
 from pydantic import BaseModel
 
 
+class SubTaskModel(BaseModel):
+    id: str
+    content_type: str
+    content: str
+    display_order: int
+
 class TaskModel(BaseModel):
     id: str
     title: str
     description: str
-    content_type: str
-    content: str
     estimated_time: int
+    subtasks: List[SubTaskModel]
+
 
 
 class DayModel(BaseModel):
