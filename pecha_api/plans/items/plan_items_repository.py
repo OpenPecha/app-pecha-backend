@@ -4,7 +4,7 @@ from sqlalchemy.orm import Session
 from .plan_items_models import PlanItem
 from fastapi import HTTPException
 from starlette import status
-from sqlalchemy import func
+from sqlalchemy import func, asc
 from uuid import UUID
 from typing import List
 from pecha_api.plans.auth.plan_auth_models import ResponseError
@@ -38,6 +38,14 @@ def save_plan_item(db: Session, plan_item: PlanItem) -> PlanItem:
         db.rollback()
         print(f"Integrity error: {e.orig}")
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=ResponseError(error=BAD_REQUEST, message=e.orig).model_dump())
+
+def get_plan_items_by_plan_id(db: Session, plan_id: UUID) -> List[PlanItem]:
+    return (
+        db.query(PlanItem)
+        .filter(PlanItem.plan_id == plan_id)
+        .order_by(asc(PlanItem.day_number))
+        .all()
+    )
 
 def get_last_day_number(db: Session, plan_id: UUID) -> int:
     return db.query(func.max(PlanItem.day_number)).filter(PlanItem.plan_id == plan_id).scalar() or 0

@@ -10,11 +10,11 @@ oauth2_scheme = HTTPBearer()
 
 items_router = APIRouter(
     prefix="/cms/plans",
-    tags=["items"],
+    tags=["Items"],
 )
 
 @items_router.post("/{plan_id}/days", status_code=status.HTTP_201_CREATED, response_model=ItemDTO)
-async def create_plan(authentication_credential: Annotated[HTTPAuthorizationCredentials, Depends(oauth2_scheme)],
+async def create_new_item(authentication_credential: Annotated[HTTPAuthorizationCredentials, Depends(oauth2_scheme)],
                       plan_id: UUID):
 
     return create_plan_item(
