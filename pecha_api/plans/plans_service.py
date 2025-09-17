@@ -1,4 +1,4 @@
-from typing import Optional, List
+from typing import Optional, List, Dict
 
 from starlette import status
 from pecha_api.plans.plans_models import Plan
@@ -6,7 +6,6 @@ from pecha_api.plans.items.plan_items_models import PlanItem
 from pecha_api.plans.plans_repository import save_plan, get_plan_by_id
 from pecha_api.plans.items.plan_items_repository import save_plan_items
 from pecha_api.plans.users.user_plan_progress_repository import get_plan_progress
-from pecha_api.error_contants import ErrorConstants
 from pecha_api.plans.authors.plan_author_service import validate_and_extract_author_details
 from pecha_api.plans.plans_enums import LanguageCode, PlanStatus, ContentType
 from pecha_api.plans.plans_response_models import PlansResponse, PlanDTO, CreatePlanRequest, TaskDTO, PlanDayDTO, \
@@ -15,6 +14,7 @@ from pecha_api.plans.plans_response_models import PlansResponse, PlanDTO, Create
 from pecha_api.plans.plans_repository import get_plans
 from pecha_api.plans.items.plan_items_repository import get_plan_items_by_plan_id
 from pecha_api.plans.tasks.plan_tasks_repository import get_tasks_by_item_ids
+from pecha_api.plans.tasks.plan_tasks_models import PlanTask
 from sqlalchemy.orm import Session
 from pecha_api.db.database import SessionLocal
 from ..config import get
@@ -179,7 +179,11 @@ def _get_plan_details(db: Session, plan_id: UUID) -> PlanWithDays:
     # Fetch base plan
     plan: Plan = get_plan_by_id(db=db, plan_id=plan_id)
     if not plan:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=ResponseError(error=BAD_REQUEST, message=PLAN_NOT_FOUND).model_dump())
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, 
+            detail=ResponseError(error=BAD_REQUEST, 
+            message=PLAN_NOT_FOUND).model_dump()
+        )
 
     # Fetch items (days)
     items = get_plan_items_by_plan_id(db=db, plan_id=plan.id)
@@ -187,17 +191,16 @@ def _get_plan_details(db: Session, plan_id: UUID) -> PlanWithDays:
 
     # Fetch tasks for all items in one query
     tasks = get_tasks_by_item_ids(db=db, plan_item_ids=plan_item_ids)
-    tasks_by_item = {}
-    for t in tasks:
-        tasks_by_item.setdefault(t.plan_item_id, []).append(t)
+    tasks_by_item: Dict[UUID, List[PlanTask]] = {}
+    for task in tasks:
+        tasks_by_item.setdefault(task.plan_item_id, []).append(task)
 
     # Map to DTOs
-    day_dtos: List[PlanDayDTO] = []
-    for item in items:
-        item_tasks = tasks_by_item.get(item.id, [])
-        task_dtos: List[TaskDTO] = []
-        for task in item_tasks:
-            task_dtos.append(
+    day_dtos: List[PlanDayDTO] = [
+        PlanDayDTO(
+            id=item.id,
+            day_number=item.day_number,
+            tasks=[
                 TaskDTO(
                     id=task.id,
                     title=task.title,
@@ -205,15 +208,11 @@ def _get_plan_details(db: Session, plan_id: UUID) -> PlanWithDays:
                     content=task.content,
                     estimated_time=task.estimated_time,
                 )
-            )
-
-        day_dtos.append(
-            PlanDayDTO(
-                id=item.id,
-                day_number=item.day_number,
-                tasks=task_dtos,
-            )
+                for task in tasks_by_item.get(item.id, [])
+            ],
         )
+        for item in items
+    ]
 
     return PlanWithDays(
         id=plan.id,
