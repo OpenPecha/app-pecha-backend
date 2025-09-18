@@ -1,11 +1,12 @@
 import secrets
 from .plan_auth_enums import AuthorStatus
 from .plan_auth_models import CreateAuthorRequest, AuthorDetails, TokenPayload, \
-    AuthorVerificationResponse, ResponseError
+    AuthorVerificationResponse, ResponseError, TokenResponse, AuthorLoginResponse, AuthorInfo
 from pecha_api.plans.authors.plan_author_model import Author, Author_Password_Reset
 from pecha_api.db.database import SessionLocal
 from pecha_api.plans.authors.plan_authors_repository import save_author, get_author_by_email, update_author, check_author_exists
-from pecha_api.auth.auth_repository import get_hashed_password
+from pecha_api.auth.auth_repository import get_hashed_password, verify_password, create_access_token, create_refresh_token
+from pecha_api.auth.auth_service import send_reset_email
 from fastapi import HTTPException
 from starlette import status
 from datetime import datetime, timedelta, timezone
@@ -26,11 +27,6 @@ from pecha_api.plans.response_message import (
     AUTHOR_NOT_ACTIVE,
     INVALID_EMAIL_PASSWORD
 )
-
-from pecha_api.auth.auth_repository import get_hashed_password
-
-from pecha_api.auth.auth_repository import get_hashed_password, verify_password, create_access_token, create_refresh_token
-from .plan_auth_models import TokenResponse, AuthorLoginResponse, AuthorInfo
 from pecha_api.auth.password_reset_repository import save_password_reset
 
 def register_author(create_user_request: CreateAuthorRequest) -> AuthorDetails:
@@ -194,9 +190,6 @@ def request_reset_password(email: str):
             db=db_session,
             email=email
         )
-        if current_user.registration_source != 'email':
-            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Registration Source Mismatch")
-
         reset_token = secrets.token_urlsafe(32)
         token_expiry = datetime.now(timezone.utc) + timedelta(minutes=30)
         password_reset = Author_Password_Reset(
@@ -211,17 +204,3 @@ def request_reset_password(email: str):
         reset_link = f"{get('BASE_URL')}/reset-password?token={reset_token}"
         send_reset_email(email=email, reset_link=reset_link)
         return {"message": "If the email exists in our system, a password reset email has been sent."}
-
-
-
-def send_reset_email(email: str, reset_link: str):
-    template_path = Path(__file__).parent / "templates" / "reset_password_template.html"
-    with open(template_path, "r") as f:
-        template = Template(f.read())
-    html_content = template.render(reset_link=reset_link)
-
-    send_email(
-        to_email=email,
-        subject="Pecha studio Password Reset",
-        message=html_content
-    )
