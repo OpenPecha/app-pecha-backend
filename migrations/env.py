@@ -11,8 +11,8 @@ from pecha_api.plans.items.plan_items_models import PlanItem
 from pecha_api.plans.tasks.plan_tasks_models import PlanTask
 from pecha_api.plans.reviews.plan_reviews_models import PlanReview
 from pecha_api.plans.favorites.favorites_models import Favorite
-from pecha_api.plans.users.user_plan_progress_models import UserPlanProgress
-from pecha_api.plans.users.user_task_completion_models import UserTaskCompletion
+from pecha_api.plans.users.plan_users_model import UserPlanProgress
+from pecha_api.plans.users.plan_users_model import UserTaskCompletion
 from pecha_api.users.users_models import Users, SocialMediaAccount, PasswordReset
 
 # this is the Alembic Config object, which provides

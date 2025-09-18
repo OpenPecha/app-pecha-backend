@@ -5,6 +5,8 @@ from sqlalchemy.orm import Session
 from sqlalchemy import func
 from fastapi import HTTPException
 from starlette import status
+from typing import List
+from sqlalchemy import asc
 
 from pecha_api.db.database import SessionLocal
 from pecha_api.plans.items.plan_items_repository import get_plan_item
@@ -47,3 +49,16 @@ def create_task(create_task_request: CreateTaskRequest, plan_id: UUID, day_id: U
             display_order=new_task.display_order,
             estimated_time=int(new_task.estimated_time),
         )
+
+def get_tasks_by_item_ids(db: Session, plan_item_ids: List[UUID]) -> List[PlanTask]:
+    if not plan_item_ids:
+        return {}
+
+    tasks = (
+        db.query(PlanTask)
+        .filter(PlanTask.plan_item_id.in_(plan_item_ids))
+        .order_by(asc(PlanTask.plan_item_id), asc(PlanTask.display_order))
+        .all()
+    )
+
+    return tasks

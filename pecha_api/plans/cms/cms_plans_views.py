@@ -7,19 +7,19 @@ from typing import Annotated
 
 from pecha_api.plans.plans_response_models import PlansResponse, PlanDTO, CreatePlanRequest, PlanWithDays, UpdatePlanRequest, \
     PlanStatusUpdate
-from pecha_api.plans.plans_service import get_filtered_plans, create_new_plan, get_details_plan, update_plan_details, \
+from pecha_api.plans.cms.cms_plans_service import get_filtered_plans, create_new_plan, get_details_plan, update_plan_details, \
     delete_selected_plan, update_selected_plan_status
 from pecha_api.plans.plans_enums import SortBy, SortOrder
 
 oauth2_scheme = HTTPBearer()
-# Create router for plan endpoints
-plans_router = APIRouter(
+# Create router for CMS plan endpoints
+cms_plans_router = APIRouter(
     prefix="/cms/plans",
-    tags=["Plans"]
+    tags=["CMS Plans"]
 )
 
 
-@plans_router.get("", status_code=status.HTTP_200_OK, response_model=PlansResponse)
+@cms_plans_router.get("", status_code=status.HTTP_200_OK, response_model=PlansResponse)
 async def get_plans(
         authentication_credential: Annotated[HTTPAuthorizationCredentials, Depends(oauth2_scheme)],
         search: Optional[str] = Query(default=None, description="Search by plan title"),
@@ -38,7 +38,7 @@ async def get_plans(
     )
 
 
-@plans_router.post("", status_code=status.HTTP_201_CREATED, response_model=PlanDTO)
+@cms_plans_router.post("", status_code=status.HTTP_201_CREATED, response_model=PlanDTO)
 async def create_plan(authentication_credential: Annotated[HTTPAuthorizationCredentials, Depends(oauth2_scheme)],
                       create_plan_request: CreatePlanRequest):
     return create_new_plan(
@@ -47,7 +47,7 @@ async def create_plan(authentication_credential: Annotated[HTTPAuthorizationCred
     )
 
 
-@plans_router.get("/{plan_id}", status_code=status.HTTP_200_OK, response_model=PlanWithDays)
+@cms_plans_router.get("/{plan_id}", status_code=status.HTTP_200_OK, response_model=PlanWithDays)
 async def get_plan_details(authentication_credential: Annotated[HTTPAuthorizationCredentials, Depends(oauth2_scheme)],
                            plan_id: UUID):
     return await get_details_plan(
@@ -56,7 +56,7 @@ async def get_plan_details(authentication_credential: Annotated[HTTPAuthorizatio
     )
 
 
-@plans_router.put("/{plan_id}", status_code=status.HTTP_200_OK, response_model=PlanDTO)
+@cms_plans_router.put("/{plan_id}", status_code=status.HTTP_200_OK, response_model=PlanDTO)
 async def update_plan(authentication_credential: Annotated[HTTPAuthorizationCredentials, Depends(oauth2_scheme)],
                       plan_id: UUID, update_plan_request: UpdatePlanRequest = None):
     return await update_plan_details(
@@ -66,7 +66,7 @@ async def update_plan(authentication_credential: Annotated[HTTPAuthorizationCred
     )
 
 
-@plans_router.delete("/{plan_id}", status_code=status.HTTP_204_NO_CONTENT)
+@cms_plans_router.delete("/{plan_id}", status_code=status.HTTP_204_NO_CONTENT)
 async def delete_plan(authentication_credential: Annotated[HTTPAuthorizationCredentials, Depends(oauth2_scheme)],
                       plan_id: UUID):
     return await delete_selected_plan(
@@ -75,7 +75,7 @@ async def delete_plan(authentication_credential: Annotated[HTTPAuthorizationCred
     )
 
 
-@plans_router.patch("/{plan_id}/status", response_model=PlanDTO)
+@cms_plans_router.patch("/{plan_id}/status", response_model=PlanDTO)
 async def update_plan_status(
         authentication_credential: Annotated[HTTPAuthorizationCredentials, Depends(oauth2_scheme)],
         plan_id: UUID,
