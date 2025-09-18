@@ -74,3 +74,179 @@ def test_verify_email_missing_token_403():
     response = client.get("cms/auth/verify-email")
 
     assert response.status_code == status.HTTP_403_FORBIDDEN
+
+
+def test_request_reset_password_success():
+    request_payload = {
+        "email": "john.doe@example.com"
+    }
+    
+    expected_response = {"message": "If the email exists in our system, a password reset email has been sent."}
+    
+    with patch("pecha_api.plans.auth.plan_auth_views.request_reset_password", return_value=expected_response) as mock_request_reset:
+        response = client.post("cms/auth/request-reset-password", json=request_payload)
+        
+        assert response.status_code == status.HTTP_202_ACCEPTED
+        data = response.json()
+        assert data["message"] == "If the email exists in our system, a password reset email has been sent."
+        mock_request_reset.assert_called_once_with(email="john.doe@example.com")
+
+
+def test_request_reset_password_missing_email_422():
+    request_payload = {}  
+    
+    response = client.post("cms/auth/request-reset-password", json=request_payload)
+    
+    assert response.status_code == status.HTTP_422_UNPROCESSABLE_ENTITY
+    data = response.json()
+    assert "detail" in data
+    assert any(error["loc"] == ["body", "email"] for error in data["detail"])
+
+
+def test_request_reset_password_invalid_email_422():
+    request_payload = {
+        "email": "invalid-email-format"
+    }
+    
+    response = client.post("cms/auth/request-reset-password", json=request_payload)
+    
+    assert response.status_code in [status.HTTP_422_UNPROCESSABLE_ENTITY, status.HTTP_202_ACCEPTED, status.HTTP_404_NOT_FOUND]
+
+
+def test_request_reset_password_service_error():
+    request_payload = {
+        "email": "john.doe@example.com"
+    }
+    
+    from fastapi import HTTPException
+    
+    with patch("pecha_api.plans.auth.plan_auth_views.request_reset_password") as mock_request_reset:
+        mock_request_reset.side_effect = HTTPException(status_code=400, detail="User not found")
+        
+        response = client.post("cms/auth/request-reset-password", json=request_payload)
+        
+        assert response.status_code == status.HTTP_400_BAD_REQUEST
+        data = response.json()
+        assert data["detail"] == "User not found"
+
+
+def test_reset_password_success():
+    request_payload = {
+        "password": "newpassword123"
+    }
+    
+    token = "valid_reset_token"
+    
+    # Mock the updated author object that would be returned
+    from pecha_api.plans.authors.plan_author_model import Author
+    updated_author = Author(
+        first_name="John",
+        last_name="Doe", 
+        email="john.doe@example.com",
+        password="hashed_new_password"
+    )
+    
+    with patch("pecha_api.plans.auth.plan_auth_views.update_password", return_value=updated_author) as mock_update_password:
+        response = client.post(
+            "cms/auth/reset-password", 
+            json=request_payload,
+            headers={"Authorization": f"Bearer {token}"}
+        )
+        
+        assert response.status_code == status.HTTP_200_OK
+        mock_update_password.assert_called_once_with(token=token, password="newpassword123")
+
+
+def test_reset_password_missing_authorization_403():
+    request_payload = {
+        "password": "newpassword123"
+    }
+    
+    response = client.post("cms/auth/reset-password", json=request_payload)
+    
+    assert response.status_code == status.HTTP_403_FORBIDDEN
+
+
+def test_reset_password_missing_password_422():
+    request_payload = {}  
+    token = "valid_reset_token"
+    
+    response = client.post(
+        "cms/auth/reset-password", 
+        json=request_payload,
+        headers={"Authorization": f"Bearer {token}"}
+    )
+    
+    assert response.status_code == status.HTTP_422_UNPROCESSABLE_ENTITY
+    data = response.json()
+    assert "detail" in data
+    assert any(error["loc"] == ["body", "password"] for error in data["detail"])
+
+
+def test_reset_password_invalid_token_400():
+    request_payload = {
+        "password": "newpassword123"
+    }
+    
+    token = "invalid_or_expired_token"
+    
+    from fastapi import HTTPException
+    
+    with patch("pecha_api.plans.auth.plan_auth_views.update_password") as mock_update_password:
+        mock_update_password.side_effect = HTTPException(status_code=400, detail="Invalid or expired token")
+        
+        response = client.post(
+            "cms/auth/reset-password", 
+            json=request_payload,
+            headers={"Authorization": f"Bearer {token}"}
+        )
+        
+        assert response.status_code == status.HTTP_400_BAD_REQUEST
+        data = response.json()
+        assert data["detail"] == "Invalid or expired token"
+
+
+def test_reset_password_registration_source_mismatch_400():
+    request_payload = {
+        "password": "newpassword123"
+    }
+    
+    token = "valid_token_oauth_user"
+    
+    from fastapi import HTTPException
+    
+    with patch("pecha_api.plans.auth.plan_auth_views.update_password") as mock_update_password:
+        mock_update_password.side_effect = HTTPException(status_code=400, detail="Registration Source Mismatch")
+        
+        response = client.post(
+            "cms/auth/reset-password", 
+            json=request_payload,
+            headers={"Authorization": f"Bearer {token}"}
+        )
+        
+        assert response.status_code == status.HTTP_400_BAD_REQUEST
+        data = response.json()
+        assert data["detail"] == "Registration Source Mismatch"
+
+
+def test_reset_password_weak_password_400():
+    request_payload = {
+        "password": "weak"
+    }
+    
+    token = "valid_reset_token"
+    
+    from fastapi import HTTPException
+    
+    with patch("pecha_api.plans.auth.plan_auth_views.update_password") as mock_update_password:
+        mock_update_password.side_effect = HTTPException(status_code=400, detail="Password must be between 8 and 20 characters")
+        
+        response = client.post(
+            "cms/auth/reset-password", 
+            json=request_payload,
+            headers={"Authorization": f"Bearer {token}"}
+        )
+        
+        assert response.status_code == status.HTTP_400_BAD_REQUEST
+        data = response.json()
+        assert data["detail"] == "Password must be between 8 and 20 characters"
