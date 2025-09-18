@@ -1,5 +1,6 @@
 import uuid
 import json
+import pytest
 from unittest.mock import patch, MagicMock, ANY
 from datetime import datetime, timezone, timedelta
 
@@ -15,8 +16,13 @@ from pecha_api.plans.auth.plan_auth_services import (
     verify_author_email,
     request_reset_password,
     update_password,
+    authenticate_author,
+    check_verified_author,
+    authenticate_and_generate_tokens,
+    generate_token_author,
+    generate_author_token_data,
 )
-from pecha_api.plans.auth.plan_auth_models import CreateAuthorRequest, AuthorVerificationResponse
+from pecha_api.plans.auth.plan_auth_models import CreateAuthorRequest, AuthorVerificationResponse, AuthorInfo, TokenResponse, AuthorLoginResponse
 from pecha_api.plans.response_message import (
     PASSWORD_EMPTY,
     PASSWORD_LENGTH_INVALID,
@@ -123,37 +129,19 @@ def test_register_author_duplicate_still_proceeds():
         assert response.message == REGISTRATION_MESSAGE
 
 
-def test__validate_password_empty_password():
-    password = ""
-
-    try:
+@pytest.mark.parametrize("password,expected_error,test_description", [
+    ("", PASSWORD_EMPTY, "empty_password"),
+    ("short", PASSWORD_LENGTH_INVALID, "short_password"),
+])
+def test__validate_password_invalid_cases(password, expected_error, test_description):
+    with pytest.raises(HTTPException) as exc_info:
         _validate_password(password)
-    except HTTPException as e:
-        assert e.status_code == status.HTTP_400_BAD_REQUEST
-        assert e.detail == PASSWORD_EMPTY
+    
+    assert exc_info.value.status_code == status.HTTP_400_BAD_REQUEST
+    assert exc_info.value.detail == expected_error
 
 
-def test__validate_password_short_password():
-    password = "short"
-
-    try:
-        _validate_password(password)
-    except HTTPException as e:
-        assert e.status_code == status.HTTP_400_BAD_REQUEST
-        assert e.detail == PASSWORD_LENGTH_INVALID
-
-
-def test__validate_password_long_password():
-    password = "a" * 21
-
-    try:
-        _validate_password(password)
-    except HTTPException as e:
-        assert e.status_code == status.HTTP_400_BAD_REQUEST
-        assert e.detail == PASSWORD_LENGTH_INVALID
-
-
-def test__validate_password_valid_password():
+def test__validate_password_valid():
     _validate_password("validpass")
 
 
@@ -306,14 +294,7 @@ def test_send_verification_email_sends_email():
             message="rendered_html",
         )
 
-from pecha_api.plans.auth.plan_auth_services import (
-    authenticate_author,
-    check_verified_author,
-    authenticate_and_generate_tokens,
-    generate_token_author,
-    generate_author_token_data,
-)
-from pecha_api.plans.auth.plan_auth_models import AuthorInfo, TokenResponse, AuthorLoginResponse
+
 
 
 def test_authenticate_author_success():
@@ -701,77 +682,21 @@ def test_generate_author_token_data_success():
         assert result["iat"] == mock_now
 
 
-def test_generate_author_token_data_missing_email():
+@pytest.mark.parametrize("email,first_name,last_name,test_description", [
+    (None, "John", "Doe", "missing_email"),
+    ("", "John", "Doe", "empty_email"),
+    ("john.doe@example.com", None, "Doe", "missing_first_name"),
+    ("john.doe@example.com", "", "Doe", "empty_first_name"),
+    ("john.doe@example.com", "John", None, "missing_last_name"),
+    ("john.doe@example.com", "John", "", "empty_last_name"),
+    (None, None, None, "all_fields_missing"),
+])
+def test_generate_author_token_data_invalid_inputs(email, first_name, last_name, test_description):
+    """Test that generate_author_token_data returns None for invalid inputs"""
     author = MagicMock()
-    author.email = None
-    author.first_name = "John"
-    author.last_name = "Doe"
-    
-    result = generate_author_token_data(author)
-    
-    assert result is None
-
-
-def test_generate_author_token_data_empty_email():
-    author = MagicMock()
-    author.email = ""
-    author.first_name = "John"
-    author.last_name = "Doe"
-    
-    result = generate_author_token_data(author)
-    
-    assert result is None
-
-
-def test_generate_author_token_data_missing_first_name():
-    author = MagicMock()
-    author.email = "john.doe@example.com"
-    author.first_name = None
-    author.last_name = "Doe"
-    
-    result = generate_author_token_data(author)
-    
-    assert result is None
-
-
-def test_generate_author_token_data_empty_first_name():
-    author = MagicMock()
-    author.email = "john.doe@example.com"
-    author.first_name = ""
-    author.last_name = "Doe"
-    
-    result = generate_author_token_data(author)
-    
-    assert result is None
-
-
-def test_generate_author_token_data_missing_last_name():
-    author = MagicMock()
-    author.email = "john.doe@example.com"
-    author.first_name = "John"
-    author.last_name = None
-    
-    result = generate_author_token_data(author)
-    
-    assert result is None
-
-
-def test_generate_author_token_data_empty_last_name():
-    author = MagicMock()
-    author.email = "john.doe@example.com"
-    author.first_name = "John"
-    author.last_name = ""
-    
-    result = generate_author_token_data(author)
-    
-    assert result is None
-
-
-def test_generate_author_token_data_all_fields_missing():
-    author = MagicMock()
-    author.email = None
-    author.first_name = None
-    author.last_name = None
+    author.email = email
+    author.first_name = first_name
+    author.last_name = last_name
     
     result = generate_author_token_data(author)
     
