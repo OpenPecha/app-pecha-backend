@@ -10,12 +10,12 @@ from pecha_api.plans.shared.models import TaskModel, SubTaskModel
 
 
 def load_plans_from_json() -> PlanListingModel:
-    """Load plans from plan_listing.json file and return structured model"""
+    """Load plans from plan_listings.json file and return structured model"""
     json_file_path = os.path.join(
         os.path.dirname(__file__), 
         "..", 
         "mocks", 
-        "plan_listing.json"
+        "plan_listings.json"
     )
     
     try:

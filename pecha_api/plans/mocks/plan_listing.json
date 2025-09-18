@@ -4,6 +4,7 @@
       "id": "1e0cc375-382b-4c11-b39c-192ed62123bd",
       "title": "Plan 1",
       "description": "Description 1",
+      "language": "en",
       "image_url": "https://example.com/image1.jpg",
       "total_days": 7,
       "status": "PUBLISHED",
@@ -19,11 +20,18 @@
               "title": "Task 1",
               "description": "Description 1",
               "estimated_time": 15,
+              "display_order": 1,
               "subtasks": [
                 {
                   "id": "3a2ee597-5a4d-4e33-d5ae-314af84345df",
                   "content_type": "TEXT",
                   "content": "Content 1",
+                  "display_order": 1
+                }
+              ],
+              "subtasks": [
+                {
+                  "id": "",
                   "display_order": 1
                 }
               ]
@@ -33,6 +41,7 @@
               "title": "Task 2",
               "description": "Description 2",
               "estimated_time": 15,
+              "display_order": 2,
               "subtasks": [
                 {
                   "id": "3a2ee597-5a4d-4e33-d5ae-314af84345df",
