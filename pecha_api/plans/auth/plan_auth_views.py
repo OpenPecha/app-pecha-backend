@@ -6,7 +6,7 @@ from starlette import status
 from .plan_auth_services import register_author, verify_author_email
 from typing import Annotated
 oauth2_scheme = HTTPBearer()
-from .plan_auth_services import authenticate_and_generate_tokens, request_reset_password
+from .plan_auth_services import authenticate_and_generate_tokens, request_reset_password, update_password
 
 
 plan_auth_router = APIRouter(
@@ -34,4 +34,9 @@ def login_user(author_login_request: AuthorLoginRequest) -> AuthorLoginResponse:
 
 @plan_auth_router.post("/request-reset-password", status_code=status.HTTP_202_ACCEPTED)
 async def password_reset_request(reset_request: PasswordResetRequest):
-    return request_reset_password(email=reset_request.email)    
+    return request_reset_password(email=reset_request.email)   
+
+@plan_auth_router.post("/reset-password", status_code=status.HTTP_200_OK)
+def password_reset(reset_password_request: ResetPasswordRequest,
+                   authentication_credential: Annotated[HTTPAuthorizationCredentials, Depends(oauth2_scheme)]):
+    update_password(token=authentication_credential.credentials, password=reset_password_request.password)
