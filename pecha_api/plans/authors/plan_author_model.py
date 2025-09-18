@@ -16,7 +16,6 @@ class Author(Base):
     image_url = Column(String(255), nullable=True)
     email = Column(String(255), nullable=False, unique=True, index=True)
     password = Column(String(255), nullable=False)
-    registration_source = Column(String(25), nullable=False)
     is_verified = Column(Boolean, default=False)
     is_active = Column(Boolean, default=False)
     created_at = Column(DateTime(timezone=True), default=datetime.now(_datetime.timezone.utc),nullable=False)

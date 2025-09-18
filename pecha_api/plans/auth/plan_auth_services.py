@@ -6,6 +6,7 @@ from pecha_api.plans.authors.plan_author_model import Author, Author_Password_Re
 from pecha_api.db.database import SessionLocal
 from pecha_api.plans.authors.plan_authors_repository import save_author, get_author_by_email, update_author, check_author_exists
 from pecha_api.auth.auth_repository import get_hashed_password, verify_password, create_access_token, create_refresh_token
+from pecha_api.auth.password_reset_repository import save_password_reset, get_password_reset_by_token
 from pecha_api.auth.auth_service import send_reset_email
 from fastapi import HTTPException
 from starlette import status
@@ -27,7 +28,6 @@ from pecha_api.plans.response_message import (
     AUTHOR_NOT_ACTIVE,
     INVALID_EMAIL_PASSWORD
 )
-from pecha_api.auth.password_reset_repository import save_password_reset, get_password_reset_by_token, get_user_by_email
 
 def register_author(create_user_request: CreateAuthorRequest) -> AuthorDetails:
     # Check for existing author to return required error shape on duplicates
