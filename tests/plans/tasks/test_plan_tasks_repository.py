@@ -5,7 +5,7 @@ from unittest.mock import MagicMock, patch
 from sqlalchemy.exc import IntegrityError
 
 # Ensure related mapped classes are registered for relationship resolution
-from pecha_api.plans.users import user_task_completion_models as _utc_models  # noqa: F401
+from pecha_api.plans.users.plan_users_model import UserTaskCompletion as _utc_models  # noqa: F401
 from pecha_api.users import users_models as _users_models  # noqa: F401
 
 from pecha_api.plans.plans_enums import ContentType
