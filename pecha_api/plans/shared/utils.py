@@ -10,12 +10,12 @@ from pecha_api.plans.shared.models import TaskModel, SubTaskModel
 
 
 def load_plans_from_json() -> PlanListingModel:
-    """Load plans from plan_listing.json file and return structured model"""
+    """Load plans from plan_listings.json file and return structured model"""
     json_file_path = os.path.join(
         os.path.dirname(__file__), 
         "..", 
         "mocks", 
-        "plan_listing.json"
+        "plan_listings.json"
     )
     
     try:
@@ -41,6 +41,7 @@ def convert_plan_model_to_dto(plan_model: PlanModel) -> PlanDTO:
         id=UUID(plan_model.id),
         title=plan_model.title,
         description=plan_model.description,
+        language=plan_model.language,
         image_url=plan_model.image_url,
         total_days=plan_model.total_days,
         status=PlanStatus(plan_model.status),

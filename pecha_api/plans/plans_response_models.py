@@ -30,6 +30,7 @@ class PlanDTO(BaseModel):
     id: UUID
     title: str
     description: str
+    language: str
     image_url: Optional[str] = None
     total_days: int
     status: PlanStatus

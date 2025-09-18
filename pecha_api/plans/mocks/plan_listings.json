@@ -1,0 +1,2509 @@
+{
+  "plans": [
+    {
+      "id": "0b2dcd32-5274-4a03-85c7-edcecdbd8f5d",
+      "title": "བློ་སྦྱོང་ཚིག་བརྒྱད་ཉམས་ལེན་བསྡུས་པ།",
+      "description": "འདི་ནི་རྗེ་བཙུན་ལངས་རི་ཐང་པ་ཆེན་པོའི་བློ་སྦྱོང་ཚིག་རྐང་བརྒྱད་མའི་གདམས་ངག་ལ་བརྟེན་ནས་ཉིན་བརྒྱད་རིང་ལ་ཉམས་ལེན་བསྡུས་པ།",
+      "image_url": "https://drive.google.com/uc?export=view&id=1eRSQKKcD_Mtq_Dw4wATiSt5d1d4TOYJa",
+      "total_days": 8,
+      "language": "bo",
+      "status": "PUBLISHED",
+      "subscription_count": 15,
+      "days": [
+        {
+          "id": "13d62085-044b-4671-9e9b-44fa4f04601a",
+          "day_number": 1,
+          "title": "Monday - Cherishing All Beings",
+          "tasks": [
+            {
+              "id": "d3c42847-f4c5-40f2-840c-acbd2cdece10",
+              "title": "ཉིན་རེའི་རྩ་ཚིགས།",
+              "description": "ཉིན་རེའི་རྩ་ཚིགས།",
+              "display_order": 1,
+              "estimated_time": 3,
+              "subtasks": [
+                {
+                  "id": "821bc7b2-4506-44ba-9c35-e6272f448134",
+                  "content_type": "TEXT",
+                  "content": "བདག་ནི་སེམས་ཅན་ཐམས་ཅད་ལ། །་\nཡིད་བཞིན་ནོར་བུ་ལས་ལྷག་པའི། །\nདོན་མཆོག་སྒྲུབ་པའི་བསམ་པ་ཡིས། །\nརྟག་ཏུ་གཅེས་པར་འཛིན་པར་ཤོག །",
+                  "display_order": 1
+                }
+              ]
+            },
+            {
+              "id": "838ec497-8ed6-4df8-affb-324eca753971",
+              "title": "ཞིབ་གཟིགས།",
+              "description": "ཞིབ་གཟིགས།",
+              "display_order": 2,
+              "subtasks": [
+                {
+                  "id": "3c1d57e5-1acb-4ce6-934b-25b39679cb62",
+                  "content_type": "VIDEO",
+                  "content": "https://www.youtube.com/watch?v=oFPVuddzCVA",
+                  "display_order": 1
+                }
+              ],
+              "estimated_time": 4
+            },
+            {
+              "id": "fc434e75-c5be-428b-bb71-2b5e203adad3",
+              "title": "སྒོམ་སྒྲུབ།",
+              "description": "སྒོམ་སྒྲུབ།",
+              "display_order": 3,
+              "subtasks": [
+                {
+                  "id": "1e51d447-00e7-44d4-8063-b37526c18928",
+                  "content_type": "VIDEO",
+                  "content": "https://www.youtube.com/watch?v=OhNwPPbTnBQ",
+                  "display_order": 1
+                }
+              ],
+              "estimated_time": 3
+            },
+            {
+              "id": "362cb786-c02e-4c84-887f-843e2969a047",
+              "title": "བཟླས་པ།",
+              "description": "བཟླས་པ།",
+              "display_order": 4,
+              "subtasks": [
+                {
+                  "id": "de7cb301-5e4e-4a1c-b3e2-ca736a5d6112",
+                  "content_type": "VIDEO",
+                  "content": "https://www.youtube.com/watch?v=mW7xLALjfng",
+                  "display_order": 1
+                }
+              ],
+              "estimated_time": 4
+            },
+            {
+              "id": "c82fa55e-29f3-4b75-8c1a-cbf9153769a3",
+              "title": "ཉམས་ལེན་དངོས།",
+              "description": "ཉམས་ལེན་དངོས།",
+              "display_order": 5,
+              "subtasks": [
+                {
+                  "id": "881e12c5-1772-4df5-9961-01cc33a4dceb",
+                  "display_order": 1,
+                  "content_type": "IMAGE",
+                  "content": "https://drive.google.com/uc?export=view&id=1LplUUkzqMi7v0Oqm4mchbIXXm-634yuZ"
+                }
+              ],
+              "estimated_time": 2
+            }
+          ]
+        },
+        {
+          "id": "5d46c6ba-01d4-49a8-ad4d-1e2042bec355",
+          "day_number": 2,
+          "title": "Tuesday - Humility and Compassion",
+          "tasks": [
+            {
+              "id": "de5dc268-06d1-4311-ad8e-cbf80a699d81",
+              "title": "ཉིན་རེའི་རྩ་ཚིགས།",
+              "description": "ཉིན་རེའི་རྩ་ཚིགས།",
+              "display_order": 1,
+              "estimated_time": 10,
+              "subtasks": [
+                {
+                  "id": "de5dc268-06d1-4311-ad8e-cbf80a699d82",
+                  "content_type": "TEXT",
+                  "content": "གང་དུ་སུ་དང་འགྲོགས་པའི་ཚེ། །\nབདག་ཉིད་ཀུན་ལས་དམན་བལྟ་ཞིང༌ །།་\nགཞན་ལ་བསམ་པ་ཐག་པ་ཡིས། །\nམཆོག་ཏུ་གཅེས་པར་འཛིན་པར་ཤོག །",
+                  "display_order": 1
+                }
+              ]
+            },
+            {
+              "id": "08d3ea64-2648-4ba4-b35f-e4b0fe735702",
+              "title": "ཞིབ་གཟིགས།",
+              "description": "ཞིབ་གཟིགས།",
+              "display_order": 2,
+              "estimated_time": 20,
+              "subtasks": [
+                {
+                  "id": "08d3ea64-2648-4ba4-b35f-e4b0fe735703",
+                  "content_type": "VIDEO",
+                  "content": "https://www.youtube.com/watch?v=QeRTqpiNOac",
+                  "display_order": 1
+                }
+              ]
+            },
+            {
+              "id": "e95ee8d6-7c1c-4dee-a1d1-e5a2e3b479b4",
+              "title": "སྒོམ་སྒྲུབ།",
+              "description": "སྒོམ་སྒྲུབ།",
+              "display_order": 3,
+              "estimated_time": 15,
+              "subtasks": [
+                {
+                  "id": "e95ee8d6-7c1c-4dee-a1d1-e5a2e3b479b5",
+                  "content_type": "VIDEO",
+                  "content": "https://www.youtube.com/watch?v=IkdEbE-crPo",
+                  "display_order": 1
+                }
+              ]
+            },
+            {
+              "id": "df4212a6-ae60-4319-9996-e6bb1f876979",
+              "title": "བཟླས་པ།",
+              "description": "བཟླས་པ།",
+              "display_order": 4,
+              "estimated_time": 10,
+              "subtasks": [
+                {
+                  "id": "df4212a6-ae60-4319-9996-e6bb1f876980",
+                  "content_type": "VIDEO",
+                  "content": "https://www.youtube.com/watch?v=mW7xLALjfng",
+                  "display_order": 1
+                }
+              ]
+            },
+            {
+              "id": "bdfb9ff3-6868-4a57-8e29-67e347eeb93a",
+              "title": "ཉམས་ལེན་དངོས།",
+              "description": "ཉམས་ལེན་དངོས།",
+              "display_order": 5,
+              "estimated_time": 5,
+              "subtasks": [
+                {
+                  "id": "bdfb9ff3-6868-4a57-8e29-67e347eeb93b",
+                  "content_type": "IMAGE",
+                  "content": "https://drive.google.com/uc?export=view&id=1Q3VbV2UFcpz_q91IBYSC1ptPW_dqEQo3",
+                  "display_order": 1
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "5bd5ebae-faac-46d9-b37e-534207466392",
+          "day_number": 3,
+          "title": "Wednesday - Mindful Awareness",
+          "tasks": [
+            {
+              "id": "d872268f-b81b-4d58-a166-94ca4bd9eec8",
+              "title": "ཉིན་རེའི་རྩ་ཚིགས།",
+              "description": "ཉིན་རེའི་རྩ་ཚིགས།",
+              "display_order": 1,
+              "estimated_time": 10,
+              "subtasks": [
+                {
+                  "id": "d872268f-b81b-4d58-a166-94ca4bd9eec9",
+                  "content_type": "TEXT",
+                  "content": "སྤྱོད་ལམ་ཀུན་ཏུ་རང་རྒྱུད་ལ། །\nརྟོག་ཅིང་ཉོན་མོངས་སྐྱེས་མ་ཐག །\nབདག་གཞན་མ་རུངས་བྱེད་པས་ན། །\nབཙན་ཐབས་གདོང་ནས་བཟློག་པར་ཤོག །",
+                  "display_order": 1
+                }
+              ]
+            },
+            {
+              "id": "7d469d93-7e53-44f8-94d4-d3230762b64e",
+              "title": "ཞིབ་གཟིགས།",
+              "description": "ཞིབ་གཟིགས།",
+              "display_order": 2,
+              "estimated_time": 20,
+              "subtasks": [
+                {
+                  "id": "7d469d93-7e53-44f8-94d4-d3230762b64f",
+                  "content_type": "VIDEO",
+                  "content": "https://www.youtube.com/watch?v=xMM3cxZTLn0",
+                  "display_order": 1
+                }
+              ]
+            },
+            {
+              "id": "eae56b98-a1dc-4f6b-afc2-997a986d9277",
+              "title": "སྒོམ་སྒྲུབ།",
+              "description": "སྒོམ་སྒྲུབ།",
+              "display_order": 3,
+              "estimated_time": 15,
+              "subtasks": [
+                {
+                  "id": "eae56b98-a1dc-4f6b-afc2-997a986d9278",
+                  "content_type": "VIDEO",
+                  "content": "https://www.youtube.com/watch?v=FzMOV7FvQMM",
+                  "display_order": 1
+                }
+              ]
+            },
+            {
+              "id": "4e0e1b1d-1fdc-449b-9b87-e163d05f40cb",
+              "title": "བཟླས་པ།",
+              "description": "བཟླས་པ།",
+              "display_order": 4,
+              "estimated_time": 10,
+              "subtasks": [
+                {
+                  "id": "4e0e1b1d-1fdc-449b-9b87-e163d05f40cc",
+                  "content_type": "VIDEO",
+                  "content": "https://www.youtube.com/watch?v=mW7xLALjfng",
+                  "display_order": 1
+                }
+              ]
+            },
+            {
+              "id": "680a07cf-f0b4-4508-a9b3-70f5c6a4cdd5",
+              "title": "ཉམས་ལེན་དངོས།",
+              "description": "ཉམས་ལེན་དངོས།",
+              "display_order": 5,
+              "estimated_time": 5,
+              "subtasks": [
+                {
+                  "id": "680a07cf-f0b4-4508-a9b3-70f5c6a4cdd6",
+                  "content_type": "IMAGE",
+                  "content": "https://drive.google.com/uc?export=view&id=1q9o4P42uheqWvpYBWysQyRDS7aWsPKys",
+                  "display_order": 1
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "4803cd55-7cd0-42a6-b7d9-e94c15c57ec7",
+          "day_number": 4,
+          "title": "Thursday - Difficult People as Teachers",
+          "tasks": [
+            {
+              "id": "cdfda470-8cee-4180-ba24-d582bc0aa9d0",
+              "title": "ཉིན་རེའི་རྩ་ཚིགས།",
+              "description": "ཉིན་རེའི་རྩ་ཚིགས།",
+              "display_order": 1,
+              "estimated_time": 10,
+              "subtasks": [
+                {
+                  "id": "cdfda470-8cee-4180-ba24-d582bc0aa9d1",
+                  "content_type": "TEXT",
+                  "content": "རང་བཞིན་ངན་པའི་སེམས་ཅན་རྣམས། །\nསྡིག་སྡུག་དྲག་པོས་ནོན་མཐོང་ཚེ། །\nརིན་ཆེན་གཏེར་དང་འཕྲད་པ་བཞིན། །\nརྙེད་པར་དཀའ་བས་གཅེས་འཛིན་ཤོག །",
+                  "display_order": 1
+                }
+              ]
+            },
+            {
+              "id": "624211d7-54ce-408f-b3ad-7fd8cbc72428",
+              "title": "ཞིབ་གཟིགས།",
+              "description": "ཞིབ་གཟིགས།",
+              "display_order": 2,
+              "estimated_time": 20,
+              "subtasks": [
+                {
+                  "id": "624211d7-54ce-408f-b3ad-7fd8cbc72429",
+                  "content_type": "VIDEO",
+                  "content": "https://www.youtube.com/watch?v=x5H104enZbE",
+                  "display_order": 1
+                }
+              ]
+            },
+            {
+              "id": "df7ff079-790f-4d53-9a80-5e3f2128df12",
+              "title": "སྒོམ་སྒྲུབ།",
+              "description": "སྒོམ་སྒྲུབ།",
+              "display_order": 3,
+              "estimated_time": 15,
+              "subtasks": [
+                {
+                  "id": "df7ff079-790f-4d53-9a80-5e3f2128df13",
+                  "content_type": "VIDEO",
+                  "content": "https://www.youtube.com/watch?v=Se1uwhQVsNk",
+                  "display_order": 1
+                }
+              ]
+            },
+            {
+              "id": "174b6aea-e744-4ce6-9b60-15c1a4482d79",
+              "title": "བཟླས་པ།",
+              "description": "བཟླས་པ།",
+              "display_order": 4,
+              "estimated_time": 10,
+              "subtasks": [
+                {
+                  "id": "174b6aea-e744-4ce6-9b60-15c1a4482d80",
+                  "content_type": "VIDEO",
+                  "content": "https://www.youtube.com/watch?v=mW7xLALjfng",
+                  "display_order": 1
+                }
+              ]
+            },
+            {
+              "id": "6a485283-e11e-41a4-82ce-0b1b573a6bf2",
+              "title": "ཉམས་ལེན་དངོས།",
+              "description": "ཉམས་ལེན་དངོས།",
+              "display_order": 5,
+              "estimated_time": 5,
+              "subtasks": [
+                {
+                  "id": "6a485283-e11e-41a4-82ce-0b1b573a6bf3",
+                  "content_type": "IMAGE",
+                  "content": "https://drive.google.com/uc?export=view&id=1WCzmyqyUzNSOZfs9z6Kr3rlRWZ1FRUsA",
+                  "display_order": 1
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "b74a59dc-d48d-4c92-9725-e731c93f2fe1",
+          "day_number": 5,
+          "title": "Friday - Taking and Giving",
+          "tasks": [
+            {
+              "id": "938b71f0-ac2c-40a3-859f-cdab644f4f0b",
+              "title": "ཉིན་རེའི་རྩ་ཚིགས།",
+              "description": "ཉིན་རེའི་རྩ་ཚིགས།",
+              "display_order": 1,
+              "estimated_time": 10,
+              "subtasks": [
+                {
+                  "id": "938b71f0-ac2c-40a3-859f-cdab644f4f0c",
+                  "content_type": "TEXT",
+                  "content": "བདག་ལ་གཞན་གྱིས་ཕྲག་དོག་གིས། །\nགཤེ་བསྐུར་ལ་སོགས་མི་རིགས་པའི། །\nགྱོང་ཁ་རང་གིས་ལེན་པ་དང༌། །\nརྒྱལ་ཁ་གཞན་ལ་འབུལ་བར་ཤོག །",
+                  "display_order": 1
+                }
+              ]
+            },
+            {
+              "id": "87a5ce6b-9314-4b81-b9d7-a2745de0977c",
+              "title": "ཞིབ་གཟིགས།",
+              "description": "ཞིབ་གཟིགས།",
+              "display_order": 2,
+              "estimated_time": 20,
+              "subtasks": [
+                {
+                  "id": "87a5ce6b-9314-4b81-b9d7-a2745de0977d",
+                  "content_type": "VIDEO",
+                  "content": "https://www.youtube.com/watch?v=Mx9_V88J0qA",
+                  "display_order": 1
+                }
+              ]
+            },
+            {
+              "id": "688850bd-238e-440a-a34b-269fa514f8fd",
+              "title": "སྒོམ་སྒྲུབ།",
+              "description": "སྒོམ་སྒྲུབ།",
+              "display_order": 3,
+              "estimated_time": 15,
+              "subtasks": [
+                {
+                  "id": "688850bd-238e-440a-a34b-269fa514f8fe",
+                  "content_type": "VIDEO",
+                  "content": "https://www.youtube.com/watch?v=4N7YnzBcyA4",
+                  "display_order": 1
+                }
+              ]
+            },
+            {
+              "id": "d8a83723-142f-463b-a9a5-4d55a3fd6bed",
+              "title": "བཟླས་པ།",
+              "description": "བཟླས་པ།",
+              "display_order": 4,
+              "estimated_time": 10,
+              "subtasks": [
+                {
+                  "id": "d8a83723-142f-463b-a9a5-4d55a3fd6bee",
+                  "content_type": "VIDEO",
+                  "content": "https://www.youtube.com/watch?v=mW7xLALjfng",
+                  "display_order": 1
+                }
+              ]
+            },
+            {
+              "id": "f0520d5c-cd77-4913-af48-7d2f61a2844e",
+              "title": "ཉམས་ལེན་དངོས།",
+              "description": "ཉམས་ལེན་དངོས།",
+              "display_order": 5,
+              "estimated_time": 5,
+              "subtasks": [
+                {
+                  "id": "f0520d5c-cd77-4913-af48-7d2f61a2844f",
+                  "content_type": "IMAGE",
+                  "content": "https://drive.google.com/uc?export=view&id=1IwSvDHTA8bv-4auqqnulqis5A2f3BySk",
+                  "display_order": 1
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "97017339-bd25-4caa-8cf6-de7a3213581f",
+          "day_number": 6,
+          "title": "Saturday - Seeing Enemies as Teachers",
+          "tasks": [
+            {
+              "id": "c6bafaa4-30e9-4d7d-8beb-9fa3c228bd54",
+              "title": "ཉིན་རེའི་རྩ་ཚིགས།",
+              "description": "ཉིན་རེའི་རྩ་ཚིགས།",
+              "display_order": 1,
+              "estimated_time": 10,
+              "subtasks": [
+                {
+                  "id": "c6bafaa4-30e9-4d7d-8beb-9fa3c228bd55",
+                  "content_type": "TEXT",
+                  "content": "གང་ལ་བདག་གིས་ཕན་བཏགས་པའི། །\nརེ་བ་ཆེ་བ་གང་ཞིག་གིས། །\nཤིན་ཏུ་མི་རིགས་གནོད་བྱེད་ནའང༌། །\nབཤེས་གཉེན་དམ་པར་བལྟ་བར་ཤོག །",
+                  "display_order": 1
+                }
+              ]
+            },
+            {
+              "id": "6be2072a-930d-41e4-a345-90cdc26d3b88",
+              "title": "ཞིབ་གཟིགས།",
+              "description": "ཞིབ་གཟིགས།",
+              "display_order": 2,
+              "estimated_time": 20,
+              "subtasks": [
+                {
+                  "id": "6be2072a-930d-41e4-a345-90cdc26d3b89",
+                  "content_type": "VIDEO",
+                  "content": "https://www.youtube.com/watch?v=h5nnBcgGXs4",
+                  "display_order": 1
+                }
+              ]
+            },
+            {
+              "id": "1d66ea3d-8dce-4981-a341-f26ac9f24369",
+              "title": "སྒོམ་སྒྲུབ།",
+              "description": "སྒོམ་སྒྲུབ།",
+              "display_order": 3,
+              "estimated_time": 15,
+              "subtasks": [
+                {
+                  "id": "1d66ea3d-8dce-4981-a341-f26ac9f2436a",
+                  "content_type": "VIDEO",
+                  "content": "https://www.youtube.com/shorts/Hd72cun2XYw",
+                  "display_order": 1
+                }
+              ]
+            },
+            {
+              "id": "c77163a6-cb20-44da-bbc1-5038866e8adf",
+              "title": "བཟླས་པ།",
+              "description": "བཟླས་པ།",
+              "display_order": 4,
+              "estimated_time": 10,
+              "subtasks": [
+                {
+                  "id": "c77163a6-cb20-44da-bbc1-5038866e8ae0",
+                  "content_type": "VIDEO",
+                  "content": "https://www.youtube.com/watch?v=mW7xLALjfng",
+                  "display_order": 1
+                }
+              ]
+            },
+            {
+              "id": "1b11bbd1-4b69-40d1-82ab-1d4850442f4e",
+              "title": "ཉམས་ལེན་དངོས།",
+              "description": "ཉམས་ལེན་དངོས།",
+              "display_order": 5,
+              "estimated_time": 5,
+              "subtasks": [
+                {
+                  "id": "1b11bbd1-4b69-40d1-82ab-1d4850442f4f",
+                  "content_type": "IMAGE",
+                  "content": "https://drive.google.com/uc?export=view&id=169C5PkW32J8pkGT2dDtXHfRn5zompgi5",
+                  "display_order": 1
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "2379ffee-0722-44a9-93a1-8f4cf00fd7a4",
+          "day_number": 7,
+          "title": "Sunday - Taking and Giving Practice",
+          "tasks": [
+            {
+              "id": "b4c85c93-30ec-438c-81a6-4318deffce2e",
+              "title": "ཉིན་རེའི་རྩ་ཚིགས།",
+              "description": "ཉིན་རེའི་རྩ་ཚིགས།",
+              "display_order": 1,
+              "estimated_time": 10,
+              "subtasks": [
+                {
+                  "id": "b4c85c93-30ec-438c-81a6-4318deffce2f",
+                  "content_type": "TEXT",
+                  "content": "མདོར་ན་དངོས་སམ་བརྒྱུད་པ་ཡིས། །\nཕན་བདེ་མ་རྣམས་ཀུན་ལ་འབུལ། །\nམ་ཡི་གནོད་དང་སྡུག་བསྔལ་ཀུན། །\nགསང་བས་བདག་ལ་ལེན་པར་ཤོག །",
+                  "display_order": 1
+                }
+              ]
+            },
+            {
+              "id": "e8c3aa8e-50d8-442e-99c6-3020709dc8fa",
+              "title": "ཞིབ་གཟིགས།",
+              "description": "ཞིབ་གཟིགས།",
+              "display_order": 2,
+              "estimated_time": 20,
+              "subtasks": [
+                {
+                  "id": "e8c3aa8e-50d8-442e-99c6-3020709dc8fb",
+                  "content_type": "VIDEO",
+                  "content": "https://www.youtube.com/watch?v=8xJGAXUe2i4",
+                  "display_order": 1
+                }
+              ]
+            },
+            {
+              "id": "1e0cc375-382b-4c11-b39c-192ed62123bd",
+              "title": "སྒོམ་སྒྲུབ།",
+              "description": "སྒོམ་སྒྲུབ།",
+              "display_order": 3,
+              "estimated_time": 15,
+              "subtasks": [
+                {
+                  "id": "1e0cc375-382b-4c11-b39c-192ed62123be",
+                  "content_type": "VIDEO",
+                  "content": "https://www.youtube.com/watch?v=jQdewDno-3s",
+                  "display_order": 1
+                }
+              ]
+            },
+            {
+              "id": "2f1dd486-493c-4d22-c49d-203fe73234ce",
+              "title": "བཟླས་པ།",
+              "description": "བཟླས་པ།",
+              "display_order": 4,
+              "estimated_time": 10,
+              "subtasks": [
+                {
+                  "id": "2f1dd486-493c-4d22-c49d-203fe73234cf",
+                  "content_type": "VIDEO",
+                  "content": "https://www.youtube.com/watch?v=mW7xLALjfng",
+                  "display_order": 1
+                }
+              ]
+            },
+            {
+              "id": "3a2ee597-5a4d-4e33-d5ae-314af84345df",
+              "title": "ཉམས་ལེན་དངོས།",
+              "description": "ཉམས་ལེན་དངོས།",
+              "display_order": 5,
+              "estimated_time": 5,
+              "subtasks": [
+                {
+                  "id": "3a2ee597-5a4d-4e33-d5ae-314af84345e0",
+                  "content_type": "IMAGE",
+                  "content": "https://drive.google.com/uc?export=view&id=1L5o-RkyAhhCpmmKWswfGaDo2_BDz5hRX",
+                  "display_order": 1
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "72df3d57-422d-420e-9025-bc611569a692",
+          "day_number": 8,
+          "title": "Sunday - Taking and Giving Practice",
+          "tasks": [
+            {
+              "id": "d47cd0f9-c869-4e2d-94cb-0d1d8049eb45",
+              "title": "ཉིན་རེའི་རྩ་ཚིགས།",
+              "description": "ཉིན་རེའི་རྩ་ཚིགས།",
+              "display_order": 1,
+              "estimated_time": 10,
+              "subtasks": [
+                {
+                  "id": "d47cd0f9-c869-4e2d-94cb-0d1d8049eb46",
+                  "content_type": "TEXT",
+                  "content": "དེ་དག་ཀུན་ཀྱང་ཆོས་བརྒྱད་ཀྱི། །\nརྟོག་པའི་དྲི་མས་མ་སྦགས་ཤིང༌། །\nཆོས་ཀུན་སྒྱུ་མར་ཤེས་པའི་བློས། །\nཞེན་མེད་འཆིང་བ་ལས་གྲོལ་ཤོག །",
+                  "display_order": 1
+                }
+              ]
+            },
+            {
+              "id": "0a8bc649-82cb-4718-a1eb-934ec582f5db",
+              "title": "ཞིབ་གཟིགས།",
+              "description": "ཞིབ་གཟིགས།",
+              "display_order": 2,
+              "estimated_time": 20,
+              "subtasks": [
+                {
+                  "id": "0a8bc649-82cb-4718-a1eb-934ec582f5dc",
+                  "content_type": "VIDEO",
+                  "content": "https://www.youtube.com/watch?v=rwPWTkDq42Q",
+                  "display_order": 1
+                }
+              ]
+            },
+            {
+              "id": "cf58305e-e7c2-408c-869a-8660bfc2b691",
+              "title": "སྒོམ་སྒྲུབ།",
+              "description": "སྒོམ་སྒྲུབ།",
+              "display_order": 3,
+              "estimated_time": 15,
+              "subtasks": [
+                {
+                  "id": "cf58305e-e7c2-408c-869a-8660bfc2b692",
+                  "content_type": "VIDEO",
+                  "content": "https://www.youtube.com/watch?v=skIsuX-UiNE",
+                  "display_order": 1
+                }
+              ]
+            },
+            {
+              "id": "c6c7091a-d4b2-4623-af3d-b43ccfb7268b",
+              "title": "བཟླས་པ།",
+              "description": "བཟླས་པ།",
+              "display_order": 4,
+              "estimated_time": 10,
+              "subtasks": [
+                {
+                  "id": "c6c7091a-d4b2-4623-af3d-b43ccfb7268c",
+                  "content_type": "VIDEO",
+                  "content": "https://www.youtube.com/watch?v=mW7xLALjfng",
+                  "display_order": 1
+                }
+              ]
+            },
+            {
+              "id": "823ca84e-94ee-499d-98c2-f9fa9f4ff685",
+              "title": "ཉམས་ལེན་དངོས།",
+              "description": "ཉམས་ལེན་དངོས།",
+              "display_order": 5,
+              "estimated_time": 5,
+              "subtasks": [
+                {
+                  "id": "823ca84e-94ee-499d-98c2-f9fa9f4ff686",
+                  "content_type": "IMAGE",
+                  "content": "https://drive.google.com/uc?export=view&id=1SfSZhKIn6dfYiuBhUPmBLO_rvCg0f8WH",
+                  "display_order": 1
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "3bf92af3-78d0-4214-a29d-c5cb986c152b",
+      "title": "ལུས་ངག་ཡིད་གསུམ་གྱིས་ཡིག་བརྒྱ་ཉམས་ལེན།",
+      "description": "རྡོ་རྗེ་སེམས་དཔའ་ནི་སངས་རྒྱས་ཀུན་གྱི་དག་པའི་རང་བཞིན་སྟེ། ཁོང་གི་ཡི་གེ་བརྒྱ་པའི་གསང་སྔགས་ལ་བརྟེན་ནས་ཉིན་གསུམ་རིང་དག་སྦྱོང་གི་ཉམས་ལེན་སྒྲུབ་པའི་ལམ་ཁྲིད་ཡིན། སྡིག་སྒྲིབ་དག་པ། སེམས་ཀྱི་རང་མདངས་གསལ་བ། བར་དོ་རྨི་ལམ་གྱི་གཞི་འདེགས་པ། དམ་ཚིག་ཉམས་ཆག་སླར་གསོ་བ་སོགས་ཀྱི་ཕན་ཡོན་དཔག་མེད་་ཡོད།",
+      "image_url": "https://drive.google.com/uc?export=view&id=1w_RiCA3Ekgyij9DhtmfCycK62G68Iv32",
+      "total_days": 3,
+      "language": "bo",
+      "status": "PUBLISHED",
+      "subscription_count": 18,
+      "days": [
+        {
+          "id": "e39d10d9-aa88-429f-a741-15893ea27d94",
+          "day_number": 1,
+          "title": "ཉིན་དང་པོ། ལུས་ཀྱི་མི་དགེ་བ་བཤགས་པ།",
+          "tasks": [
+            {
+              "id": "96db7b95-f3c3-4b04-b1d2-410eaba00b69",
+              "title": "ཉིན་རེའི་རྩ་ཚིགས།",
+              "description": "ཉིན་རེའི་རྩ་ཚིགས།",
+              "display_order": 1,
+              "estimated_time": 2,
+              "subtasks": [
+                {
+                  "id": "96db7b95-f3c3-4b04-b1d2-410eaba00b70",
+                  "content_type": "TEXT",
+                  "content": "ༀ་བཛྲ་སཏྭ་ས་མ་ཡ། མ་ནུ་པཱ་ལ་ཡ། བཛྲ་སཏྭ་ཏྲྭེ་ནོ་པ། ཏིཥྛ་དྲཱྀ་ཌྷོ་མེ་བྷ་ཝ།\nསུ་ཏོ་ཥྱོ་མེ་བྷ་ཝ། སུ་པོ་ཥྱོ་མེ་བྷ་ཝ། ཨ་ནུ་རཀྟོ་མེ་བྷ་ཝ། སརྦ་སིདྡྷི་མྨེ་པྲ་ཡཙྪ།\nསརྦ་ཀརྨ་སུ་ཙ་མེ། ཙིཏྟཾ་ཤྲཱེ་ཡཾ་ཀུ་རུ་ཧཱུྃ། ཧ་ཧ་ཧ་ཧ་ཧོཿ བྷ་ག་ཝཱན།།\nསརྦ་ཏ་ཐཱ་ག་ཏ། བཛྲ་མཱ་མེ་མུཉྩ། བཛྲི་བྷ་ཝ་སརྦ་མ་ཧཱ་ས་མ་ཡ་སཏྭ་ཨཱཿ",
+                  "display_order": 1
+                }
+              ]
+            },
+            {
+              "id": "93c8d570-1c44-4a96-9577-8a4ea4ce1252",
+              "title": "ཞིབ་གཟིགས།",
+              "description": "ཞིབ་གཟིགས།",
+              "display_order": 2,
+              "estimated_time": 5,
+              "subtasks": [
+                {
+                  "id": "93c8d570-1c44-4a96-9577-8a4ea4ce1253",
+                  "content_type": "VIDEO",
+                  "content": "https://www.youtube.com/watch?v=dAMb-R1iDVg",
+                  "display_order": 1
+                }
+              ]
+            },
+            {
+              "id": "2b81034d-eab9-4177-abc7-7eae2329dacb",
+              "title": "སྒོམ་སྒྲུབ།",
+              "description": "སྒོམ་སྒྲུབ།",
+              "display_order": 3,
+              "estimated_time": 5,
+              "subtasks": [
+                {
+                  "id": "2b81034d-eab9-4177-abc7-7eae2329dacc",
+                  "content_type": "AUDIO",
+                  "content": "https://youtu.be/RfwWPmPxMCI",
+                  "display_order": 1
+                }
+              ]
+            },
+            {
+              "id": "a94ce7a3-3158-4089-b3fc-ee565205674a",
+              "title": "ངའི་དེ་རིང་གི་དམིགས་པ།",
+              "description": "ངའི་དེ་རིང་གི་དམིགས་པ།",
+              "display_order": 4,
+              "estimated_time": 2,
+              "subtasks": [
+                {
+                  "id": "a94ce7a3-3158-4089-b3fc-ee565205674b",
+                  "content_type": "IMAGE",
+                  "content": "https://drive.google.com/uc?export=view&id=1uNzvVledk4o0HGXuAuoLCnymfc6dWcK4",
+                  "display_order": 1
+                }
+              ]
+            },
+            {
+              "id": "4cb43a4c-f31d-4e9a-a8fd-110a6f1351fb",
+              "title": "ཉམས་ལེན་དངོས།",
+              "description": "ཉམས་ལེན་དངོས།",
+              "display_order": 5,
+              "estimated_time": 2,
+              "subtasks": [
+                {
+                  "id": "4cb43a4c-f31d-4e9a-a8fd-110a6f1351fc",
+                  "content_type": "IMAGE",
+                  "content": "https://drive.google.com/uc?export=view&id=1vo0bUKXw3q6GpKLt36zAEbnpe8A0cz04",
+                  "display_order": 1
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "a50daaca-bd68-40cd-bbf7-76c6838d1c88",
+          "day_number": 2,
+          "title": "ཉིན་གཉིས་པ། ངག་གི་མི་དགེ་བ་བཤགས་པ།",
+          "tasks": [
+            {
+              "id": "bbccec63-ca8e-423c-8e16-17bd48e06408",
+              "title": "ཉིན་རེའི་རྩ་ཚིགས།",
+              "description": "ཉིན་རེའི་རྩ་ཚིགས།",
+              "display_order": 1,
+              "estimated_time": 2,
+              "subtasks": [
+                {
+                  "id": "bbccec63-ca8e-423c-8e16-17bd48e06409",
+                  "content_type": "TEXT",
+                  "content": "ༀ་བཛྲ་སཏྭ་ས་མ་ཡ། མ་ནུ་པཱ་ལ་ཡ། བཛྲ་སཏྭ་ཏྲྭེ་ནོ་པ། ཏིཥྛ་དྲཱྀ་ཌྷོ་མེ་བྷ་ཝ།\nསུ་ཏོ་ཥྱོ་མེ་བྷ་ཝ། སུ་པོ་ཥྱོ་མེ་བྷ་ཝ། ཨ་ནུ་རཀྟོ་མེ་བྷ་ཝ། སརྦ་སིདྡྷི་མྨེ་པྲ་ཡཙྪ།\nསརྦ་ཀརྨ་སུ་ཙ་མེ། ཙིཏྟཾ་ཤྲཱེ་ཡཾ་ཀུ་རུ་ཧཱུྃ། ཧ་ཧ་ཧ་ཧ་ཧོཿ བྷ་ག་ཝཱན།།\nསརྦ་ཏ་ཐཱ་ག་ཏ། བཛྲ་མཱ་མེ་མུཉྩ། བཛྲི་བྷ་ཝ་སརྦ་མ་ཧཱ་ས་མ་ཡ་སཏྭ་ཨཱཿ",
+                  "display_order": 1
+                }
+              ]
+            },
+            {
+              "id": "f7ee4334-1ff7-4f66-a5fa-a4263fb6f8bf",
+              "title": "ཞིབ་གཟིགས།",
+              "description": "ཞིབ་གཟིགས།",
+              "display_order": 2,
+              "estimated_time": 5,
+              "subtasks": [
+                {
+                  "id": "f7ee4334-1ff7-4f66-a5fa-a4263fb6f8c0",
+                  "content_type": "VIDEO",
+                  "content": "https://www.youtube.com/watch?v=AIqU8kQkM6s",
+                  "display_order": 1
+                }
+              ]
+            },
+            {
+              "id": "2ee8f4ea-e43d-4a61-89d6-4844e9c63b23",
+              "title": "སྒོམ་སྒྲུབ།",
+              "description": "སྒོམ་སྒྲུབ།",
+              "display_order": 3,
+              "estimated_time": 5,
+              "subtasks": [
+                {
+                  "id": "2ee8f4ea-e43d-4a61-89d6-4844e9c63b24",
+                  "content_type": "AUDIO",
+                  "content": "https://youtu.be/mbXbjToHsag",
+                  "display_order": 1
+                }
+              ]
+            },
+            {
+              "id": "7e1400d2-9dc9-4c6d-8fde-b84e809bf39d",
+              "title": "ངའི་དེ་རིང་གི་དམིགས་པ།",
+              "description": "ངའི་དེ་རིང་གི་དམིགས་པ།",
+              "display_order": 4,
+              "estimated_time": 2,
+              "subtasks": [
+                {
+                  "id": "7e1400d2-9dc9-4c6d-8fde-b84e809bf39e",
+                  "content_type": "IMAGE",
+                  "content": "https://drive.google.com/uc?export=view&id=1UpDsFFtZbDZsp8I2p1fjbhUTShVYHwFW",
+                  "display_order": 1
+                }
+              ]
+            },
+            {
+              "id": "ef94cf4a-22eb-4d26-ae32-14f6f74287b3",
+              "title": "ཉམས་ལེན་དངོས།",
+              "description": "ཉམས་ལེན་དངོས།",
+              "display_order": 5,
+              "estimated_time": 2,
+              "subtasks": [
+                {
+                  "id": "ef94cf4a-22eb-4d26-ae32-14f6f74287b4",
+                  "content_type": "IMAGE",
+                  "content": "https://drive.google.com/uc?export=view&id=111WKKsUnP9X_kugAtNjvPMhbvhxeHC1M",
+                  "display_order": 1
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "35abb888-6774-4d2f-b758-0d26978085a0",
+          "day_number": 3,
+          "title": " ཉིན་གསུམ་པ། ཡིད་ཀྱི་མི་དགེ་བ་བཤགས་པ།་",
+          "tasks": [
+            {
+              "id": "70bacfb7-67a4-4407-a664-71c0d2ddcdbf",
+              "title": "ཉིན་རེའི་རྩ་ཚིགས།",
+              "description": "ཉིན་རེའི་རྩ་ཚིགས།",
+              "display_order": 1,
+              "estimated_time": 2,
+              "subtasks": [
+                {
+                  "id": "70bacfb7-67a4-4407-a664-71c0d2ddcdc0",
+                  "content_type": "TEXT",
+                  "content": "ༀ་བཛྲ་སཏྭ་ས་མ་ཡ། མ་ནུ་པཱ་ལ་ཡ། བཛྲ་སཏྭ་ཏྲྭེ་ནོ་པ། ཏིཥྛ་དྲཱྀ་ཌྷོ་མེ་བྷ་ཝ།\nསུ་ཏོ་ཥྱོ་མེ་བྷ་ཝ། སུ་པོ་ཥྱོ་མེ་བྷ་ཝ། ཨ་ནུ་རཀྟོ་མེ་བྷ་ཝ། སརྦ་སིདྡྷི་མྨེ་པྲ་ཡཙྪ།\nསརྦ་ཀརྨ་སུ་ཙ་མེ། ཙིཏྟཾ་ཤྲཱེ་ཡཾ་ཀུ་རུ་ཧཱུྃ། ཧ་ཧ་ཧ་ཧ་ཧོཿ བྷ་ག་ཝཱན།།\nསརྦ་ཏ་ཐཱ་ག་ཏ། བཛྲ་མཱ་མེ་མུཉྩ། བཛྲི་བྷ་ཝ་སརྦ་མ་ཧཱ་ས་མ་ཡ་སཏྭ་ཨཱཿ",
+                  "display_order": 1
+                }
+              ]
+            },
+            {
+              "id": "07961d4f-d133-4833-a3f2-7386da7cda0d",
+              "title": "ཞིབ་གཟིགས།",
+              "description": "ཞིབ་གཟིགས།",
+              "display_order": 2,
+              "estimated_time": 5,
+              "subtasks": [
+                {
+                  "id": "07961d4f-d133-4833-a3f2-7386da7cda0e",
+                  "content_type": "VIDEO",
+                  "content": "https://www.youtube.com/watch?v=lUt32nHKUHk",
+                  "display_order": 1
+                }
+              ]
+            },
+            {
+              "id": "4a8e48ab-ef14-4a0c-b4db-c15d534dcf3a",
+              "title": "སྒོམ་སྒྲུབ།",
+              "description": "སྒོམ་སྒྲུབ།",
+              "display_order": 3,
+              "estimated_time": 5,
+              "subtasks": [
+                {
+                  "id": "4a8e48ab-ef14-4a0c-b4db-c15d534dcf3b",
+                  "content_type": "AUDIO",
+                  "content": "https://youtu.be/TTjV-hZ3_eQ",
+                  "display_order": 1
+                }
+              ]
+            },
+            {
+              "id": "8fa6ec1c-cbab-4a05-bff0-3a42a60fd3f0",
+              "title": "ངའི་དེ་རིང་གི་དམིགས་པ།",
+              "description": "ངའི་དེ་རིང་གི་དམིགས་པ།",
+              "display_order": 4,
+              "estimated_time": 2,
+              "subtasks": [
+                {
+                  "id": "8fa6ec1c-cbab-4a05-bff0-3a42a60fd3f1",
+                  "content_type": "IMAGE",
+                  "content": "https://drive.google.com/uc?export=view&id=17mAFn_fPNwN7tnNspnKhL_sitqyqrmCh",
+                  "display_order": 1
+                }
+              ]
+            },
+            {
+              "id": "f59f0a58-16b5-4c69-b015-fe609d691348",
+              "title": "ཉམས་ལེན་དངོས།",
+              "description": "ཉམས་ལེན་དངོས།",
+              "display_order": 5,
+              "estimated_time": 2,
+              "subtasks": [
+                {
+                  "id": "f59f0a58-16b5-4c69-b015-fe609d691349",
+                  "content_type": "IMAGE",
+                  "content": "https://drive.google.com/uc?export=view&id=1I56jMTr_kbnMv0sy7HoI_fyO6u9JM0ll",
+                  "display_order": 1
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "9c6877c4-5e07-4e34-ad62-f085cb63b0f9",
+      "title": "Medicine Buddha Healing Practice",
+      "description": "Five-day English Medicine Buddha healing practice with daily verses, deeper teachings, meditation, recitation, and practical application",
+      "image_url": "https://drive.google.com/uc?export=view&id=1v94uQ1YInSQCXub1_cUOQDeZZm0KuM7H",
+      "total_days": 5,
+      "language": "en",
+      "status": "PUBLISHED",
+      "subscription_count": 32,
+      "days": [
+        {
+          "id": "df452b4f-a168-4cc4-94ea-bcbcb65d737a",
+          "day_number": 1,
+          "title": "Wednesday - Protection & Blessing",
+          "tasks": [
+            {
+              "id": "43c4533c-af8a-432e-a4a0-89655c85dfe6",
+              "title": "Verse of the day",
+              "description": "Daily Medicine Buddha protection verse",
+              "display_order": 1,
+              "estimated_time": 1,
+              "subtasks": [
+                {
+                  "id": "43c4533c-af8a-432e-a4a0-89655c85dfe7",
+                  "content_type": "TEXT",
+                  "content": "Avert enemies, harm, and epidemics,\nPacify all conflicts, expand bodily and mental bliss,\nIncrease wealth, dominion, grain, and lifespan,\nAccomplish all desired aims according to one's wishes,\nAnd always protect and guard without negligence.",
+                  "display_order": 1
+                }
+              ]
+            },
+            {
+              "id": "087f61c3-5cbe-4eaa-8a27-038541b4f7a1",
+              "title": "Go deeper",
+              "description": "Medicine Buddha practice video teaching",
+              "display_order": 2,
+              "estimated_time": 3,
+              "subtasks": [
+                {
+                  "id": "087f61c3-5cbe-4eaa-8a27-038541b4f7a2",
+                  "content_type": "VIDEO",
+                  "content": "https://www.youtube.com/watch?v=fusKR990UyE",
+                  "display_order": 1
+                }
+              ]
+            },
+            {
+              "id": "58fa44ff-a13c-474a-b6f1-3a2db8d07269",
+              "title": "Meditation",
+              "description": "Medicine Buddha meditation practice",
+              "display_order": 3,
+              "estimated_time": 3,
+              "subtasks": [
+                {
+                  "id": "58fa44ff-a13c-474a-b6f1-3a2db8d0726a",
+                  "content_type": "VIDEO",
+                  "content": "https://youtube.com/shorts/k4kzbi48SVc",
+                  "display_order": 1
+                }
+              ]
+            },
+            {
+              "id": "d5cc60c2-f261-4e4c-82cc-d1d517f97ff5",
+              "title": "Recitation",
+              "description": "Medicine Buddha mantra recitation",
+              "display_order": 4,
+              "estimated_time": 1,
+              "subtasks": [
+                {
+                  "id": "d5cc60c2-f261-4e4c-82cc-d1d517f97ff6",
+                  "content_type": "VIDEO",
+                  "content": "https://www.youtube.com/shorts/JoyGCOrgPjY",
+                  "display_order": 1
+                }
+              ]
+            },
+            {
+              "id": "9ca33216-5530-40d0-8eb4-a5359bd1b58b",
+              "title": "Bringing it to life",
+              "description": "Practical application guidance",
+              "display_order": 5,
+              "estimated_time": 1,
+              "subtasks": [
+                {
+                  "id": "9ca33216-5530-40d0-8eb4-a5359bd1b58c",
+                  "content_type": "IMAGE",
+                  "content": "https://drive.google.com/uc?export=view&id=19dDFtkhowkKg_mtTOGJXp9X_B4B_A6G7",
+                  "display_order": 1
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "49a49f09-4cc6-4961-8b1d-bba8cb5a74f8",
+          "day_number": 2,
+          "title": "Thursday - Lapis Lazuli Radiance",
+          "tasks": [
+            {
+              "id": "475003f7-c3ec-4977-9c1a-303f0c17ab06",
+              "title": "Verse of the day",
+              "description": "Praise to Medicine Buddha's lapis lazuli radiance",
+              "display_order": 1,
+              "estimated_time": 1,
+              "subtasks": [
+                {
+                  "id": "475003f7-c3ec-4977-9c1a-303f0c17ab07",
+                  "content_type": "TEXT",
+                  "content": "Blessed One whose compassion extends equally to all,\nWhose very name, when heard, relieves the suffering of unfortunate rebirths,\nMedicine Buddha who heals the illness of the three poisons,\nI pray to your lapis lazuli radiance.",
+                  "display_order": 1
+                }
+              ]
+            },
+            {
+              "id": "484ed6ff-9b35-4cdb-b8e8-c21cfac4d4ea",
+              "title": "Go deeper",
+              "description": "Medicine Buddha practice video teaching",
+              "display_order": 2,
+              "estimated_time": 3,
+              "subtasks": [
+                {
+                  "id": "484ed6ff-9b35-4cdb-b8e8-c21cfac4d4eb",
+                  "content_type": "VIDEO",
+                  "content": "https://www.youtube.com/watch?v=qy779fPrHEY",
+                  "display_order": 1
+                }
+              ]
+            },
+            {
+              "id": "1ea3fdef-f641-42eb-b130-112e5326c3eb",
+              "title": "Meditation",
+              "description": "Medicine Buddha meditation practice",
+              "display_order": 3,
+              "estimated_time": 3,
+              "subtasks": [
+                {
+                  "id": "1ea3fdef-f641-42eb-b130-112e5326c3ec",
+                  "content_type": "VIDEO",
+                  "content": "https://youtube.com/shorts/k4kzbi48SVc",
+                  "display_order": 1
+                }
+              ]
+            },
+            {
+              "id": "617e70b2-236e-4467-afcc-fa884cb87535",
+              "title": "Recitation",
+              "description": "Medicine Buddha mantra recitation",
+              "display_order": 4,
+              "estimated_time": 1,
+              "subtasks": [
+                {
+                  "id": "617e70b2-236e-4467-afcc-fa884cb87536",
+                  "content_type": "VIDEO",
+                  "content": "https://www.youtube.com/shorts/JoyGCOrgPjY",
+                  "display_order": 1
+                }
+              ]
+            },
+            {
+              "id": "d5ad444a-e627-4d5b-a951-7e8109315e7b",
+              "title": "Bringing it to life",
+              "description": "Practical application guidance",
+              "display_order": 5,
+              "estimated_time": 1,
+              "subtasks": [
+                {
+                  "id": "d5ad444a-e627-4d5b-a951-7e8109315e7c",
+                  "content_type": "IMAGE",
+                  "content": "https://drive.google.com/uc?export=view&id=1ImGalpW_1duxn4J7cxuWYqlFG0xBm-2X",
+                  "display_order": 1
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "1b6d8d21-edd9-4ac0-9e24-b192ae11ebac",
+          "day_number": 3,
+          "title": "Sunday - Perfect Practice",
+          "tasks": [
+            {
+              "id": "4c6eeb21-4250-47f7-a476-c9cce87a0142",
+              "title": "Verse of the day",
+              "description": "Perfect Medicine Buddha mantra",
+              "display_order": 1,
+              "estimated_time": 1,
+              "subtasks": [
+                {
+                  "id": "4c6eeb21-4250-47f7-a476-c9cce87a0143",
+                  "content_type": "TEXT",
+                  "content": "Tayatha Om Bhekanze Bhekanze Maha Bhekanze\nRadza Samudgate Soha (Tibetan)\nTadhyatha Om Bhaisajye Bhaisajye Bhaisajya\nSamudgate Svaha. (Sanskrit)",
+                  "display_order": 1
+                }
+              ]
+            },
+            {
+              "id": "706dc037-5b8e-4633-bc2c-34e0f98139de",
+              "title": "Go deeper",
+              "description": "Medicine Buddha practice video teaching",
+              "display_order": 2,
+              "estimated_time": 3,
+              "subtasks": [
+                {
+                  "id": "706dc037-5b8e-4633-bc2c-34e0f98139df",
+                  "content_type": "VIDEO",
+                  "content": "https://www.youtube.com/watch?v=VKlbbq3BdEI",
+                  "display_order": 1
+                }
+              ]
+            },
+            {
+              "id": "0699b762-7a22-432c-aa4b-11e77ceffe95",
+              "title": "Meditation",
+              "description": "Medicine Buddha meditation practice",
+              "display_order": 3,
+              "estimated_time": 3,
+              "subtasks": [
+                {
+                  "id": "0699b762-7a22-432c-aa4b-11e77ceffe96",
+                  "content_type": "VIDEO",
+                  "content": "https://youtube.com/shorts/k4kzbi48SVc",
+                  "display_order": 1
+                }
+              ]
+            },
+            {
+              "id": "dd96b026-9006-48f9-9624-9e9bc6f7e327",
+              "title": "Recitation",
+              "description": "Medicine Buddha mantra recitation",
+              "display_order": 4,
+              "estimated_time": 1,
+              "subtasks": [
+                {
+                  "id": "dd96b026-9006-48f9-9624-9e9bc6f7e328",
+                  "content_type": "VIDEO",
+                  "content": "https://www.youtube.com/shorts/JoyGCOrgPjY",
+                  "display_order": 1
+                }
+              ]
+            },
+            {
+              "id": "fd98bf18-70ca-4884-ac52-fa60724dec1c",
+              "title": "Bringing it to life",
+              "description": "Practical application guidance",
+              "display_order": 5,
+              "estimated_time": 1,
+              "subtasks": [
+                {
+                  "id": "fd98bf18-70ca-4884-ac52-fa60724dec1d",
+                  "content_type": "IMAGE",
+                  "content": "https://drive.google.com/uc?export=view&id=19dDFtkhowkKg_mtTOGJXp9X_B4B_A6G7",
+                  "display_order": 1
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "71f01292-0386-4975-abf2-67e6856c2a3c",
+          "day_number": 4,
+          "title": "Monday - Medicine Buddha Mantra",
+          "tasks": [
+            {
+              "id": "10edadae-c2f8-489d-9fa0-d8d2d40ce179",
+              "title": "Verse of the day",
+              "description": "Medicine Buddha mantra in both traditions",
+              "display_order": 1,
+              "estimated_time": 1,
+              "subtasks": [
+                {
+                  "id": "10edadae-c2f8-489d-9fa0-d8d2d40ce180",
+                  "content_type": "TEXT",
+                  "content": "Tayatha Om Bhekanze Bhekanze Maha Bhekanze\nRadza Samudgate Soha (Tibetan)\nTadhyatha Om Bhaisajye Bhaisajye Bhaisajya\nSamudgate Svaha (Sanskrit)",
+                  "display_order": 1
+                }
+              ]
+            },
+            {
+              "id": "1d365cd4-13e0-4d3a-bd8a-0d4e97913df1",
+              "title": "Go deeper",
+              "description": "Medicine Buddha practice video teaching",
+              "display_order": 2,
+              "estimated_time": 3,
+              "subtasks": [
+                {
+                  "id": "1d365cd4-13e0-4d3a-bd8a-0d4e97913df2",
+                  "content_type": "VIDEO",
+                  "content": "https://www.youtube.com/watch?v=HkuSCwRJJUo",
+                  "display_order": 1
+                }
+              ]
+            },
+            {
+              "id": "f4e0f57c-700a-4d94-bd45-b23d55f11ab8",
+              "title": "Meditation",
+              "description": "Medicine Buddha meditation practice",
+              "display_order": 3,
+              "estimated_time": 3,
+              "subtasks": [
+                {
+                  "id": "f4e0f57c-700a-4d94-bd45-b23d55f11ab9",
+                  "content_type": "VIDEO",
+                  "content": "https://youtube.com/shorts/k4kzbi48SVc",
+                  "display_order": 1
+                }
+              ]
+            },
+            {
+              "id": "8177b0e2-3823-4b06-9526-6754b1b7d0ec",
+              "title": "Recitation",
+              "description": "Medicine Buddha mantra recitation",
+              "display_order": 4,
+              "estimated_time": 1,
+              "subtasks": [
+                {
+                  "id": "8177b0e2-3823-4b06-9526-6754b1b7d0ed",
+                  "content_type": "VIDEO",
+                  "content": "https://www.youtube.com/shorts/JoyGCOrgPjY",
+                  "display_order": 1
+                }
+              ]
+            },
+            {
+              "id": "19d6003b-e3a2-4b29-9fe0-5b719117b5e8",
+              "title": "Bringing it to life",
+              "description": "Practical application guidance",
+              "display_order": 5,
+              "estimated_time": 1,
+              "subtasks": [
+                {
+                  "id": "19d6003b-e3a2-4b29-9fe0-5b719117b5e9",
+                  "content_type": "IMAGE",
+                  "content": "https://drive.google.com/uc?export=view&id=1ImGalpW_1duxn4J7cxuWYqlFG0xBm-2X",
+                  "display_order": 1
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "97cd5b53-debe-441d-9301-d29275241895",
+          "day_number": 5,
+          "title": "Tuesday - Healing Prayers",
+          "tasks": [
+            {
+              "id": "cb1e20e4-3e3b-449f-8df7-261c349b59dd",
+              "title": "Verse of the day",
+              "description": "Medicine Buddha healing aspiration prayer",
+              "display_order": 1,
+              "estimated_time": 1,
+              "subtasks": [
+                {
+                  "id": "cb1e20e4-3e3b-449f-8df7-261c349b59de",
+                  "content_type": "TEXT",
+                  "content": "Through this positive energy, may I quickly\nAttain the realization of Medicine Buddha,\nAnd may I bring every single living being\nWithout exception to that same enlightened state.\nMay all beings who suffer from illness,\nHowever many there are, be swiftly freed from disease,\nAnd may all the sicknesses that afflict living beings never arise again.",
+                  "display_order": 1
+                }
+              ]
+            },
+            {
+              "id": "e5d5ab4e-308f-4d01-a755-c3e76209a8f9",
+              "title": "Go deeper",
+              "description": "Medicine Buddha practice video teaching",
+              "display_order": 2,
+              "estimated_time": 3,
+              "subtasks": [
+                {
+                  "id": "e5d5ab4e-308f-4d01-a755-c3e76209a8fa",
+                  "content_type": "VIDEO",
+                  "content": "https://www.youtube.com/watch?v=cTYvsrVtfAU",
+                  "display_order": 1
+                }
+              ]
+            },
+            {
+              "id": "c6ba7b79-72cd-434d-9a20-b920d8b7934b",
+              "title": "Meditation",
+              "description": "Medicine Buddha meditation practice",
+              "display_order": 3,
+              "estimated_time": 3,
+              "subtasks": [
+                {
+                  "id": "c6ba7b79-72cd-434d-9a20-b920d8b7934c",
+                  "content_type": "VIDEO",
+                  "content": "https://youtube.com/shorts/k4kzbi48SVc",
+                  "display_order": 1
+                }
+              ]
+            },
+            {
+              "id": "e057305c-c10f-4bbb-b14e-3fd3ec194032",
+              "title": "Recitation",
+              "description": "Medicine Buddha mantra recitation",
+              "display_order": 4,
+              "estimated_time": 1,
+              "subtasks": [
+                {
+                  "id": "e057305c-c10f-4bbb-b14e-3fd3ec194033",
+                  "content_type": "VIDEO",
+                  "content": "https://www.youtube.com/shorts/JoyGCOrgPjY",
+                  "display_order": 1
+                }
+              ]
+            },
+            {
+              "id": "58555a40-8f09-48ad-9157-b065966b584c",
+              "title": "Bringing it to life",
+              "description": "Practical application guidance",
+              "display_order": 5,
+              "estimated_time": 1,
+              "subtasks": [
+                {
+                  "id": "58555a40-8f09-48ad-9157-b065966b584d",
+                  "content_type": "IMAGE",
+                  "content": "https://drive.google.com/uc?export=view&id=19dDFtkhowkKg_mtTOGJXp9X_B4B_A6G7",
+                  "display_order": 1
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "db5248c4-6f74-4ebb-a17c-6e0cc5417d07",
+      "title": "心智訓練 - 第十三週 (中文)",
+      "description": "七天中文心智訓練計劃，包含今日偈頌、深入了解、冥想、禪修、迴向和融入生活",
+      "image_url": "https://drive.google.com/uc?export=view&id=1akiHZT72HvFetTktMaU3ZTvd0leNOPWX",
+      "total_days": 7,
+      "language": "zh",
+      "status": "PUBLISHED",
+      "subscription_count": 28,
+      "days": [
+        {
+          "id": "3f39a09b-d50c-45be-8a03-96ed3dd2b7c3",
+          "day_number": 1,
+          "title": "週一 - 珍視一切眾生",
+          "tasks": [
+            {
+              "id": "32414818-e893-431d-a3eb-b4cc529c4604",
+              "title": "今日偈頌",
+              "description": "今日偈頌",
+              "display_order": 1,
+              "estimated_time": 1,
+              "subtasks": [
+                {
+                  "id": "32414818-e893-431d-a3eb-b4cc529c4605",
+                  "content_type": "TEXT",
+                  "content": "我於一切有情眾,\n視之尤勝如意寶，\n願成滿彼究竟利，\n恆常心懷珍愛情。",
+                  "display_order": 1
+                }
+              ]
+            },
+            {
+              "id": "8e1852a1-d9ac-4ef3-a0fd-b7b07e868182",
+              "title": "深入了解",
+              "description": "深入了解",
+              "display_order": 2,
+              "estimated_time": 3,
+              "subtasks": [
+                {
+                  "id": "8e1852a1-d9ac-4ef3-a0fd-b7b07e868183",
+                  "content_type": "VIDEO",
+                  "content": "https://www.youtube.com/watch?v=tgYk8ojts-8",
+                  "display_order": 1
+                }
+              ]
+            },
+            {
+              "id": "10a19638-4ca8-4081-803c-990b654cd443",
+              "title": "禪修",
+              "description": "禪修",
+              "display_order": 3,
+              "estimated_time": 8,
+              "subtasks": [
+                {
+                  "id": "10a19638-4ca8-4081-803c-990b654cd444",
+                  "content_type": "VIDEO",
+                  "content": "https://www.youtube.com/watch?v=r1K_CkE1ddc",
+                  "display_order": 1
+                }
+              ]
+            },
+            {
+              "id": "8c307fc9-7a0e-456d-922a-9bb9a8b06d4f",
+              "title": "迴向",
+              "description": "迴向",
+              "display_order": 4,
+              "estimated_time": 1,
+              "subtasks": [
+                {
+                  "id": "8c307fc9-7a0e-456d-922a-9bb9a8b06d50",
+                  "content_type": "VIDEO",
+                  "content": "https://www.youtube.com/watch?v=CJ_-PxSqemI",
+                  "display_order": 1
+                }
+              ]
+            },
+            {
+              "id": "0a0a1a8e-de84-4068-a281-8f521746482c",
+              "title": "融入生活",
+              "description": "融入生活",
+              "display_order": 5,
+              "estimated_time": 1,
+              "subtasks": [
+                {
+                  "id": "0a0a1a8e-de84-4068-a281-8f521746482d",
+                  "content_type": "IMAGE",
+                  "content": "https://drive.google.com/uc?export=view&id=1MhQsLe8d2Se55F65hN0Le5-Gppu45W4H",
+                  "display_order": 1
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "9eea0c38-067a-4f74-96a4-0a958f43bb3b",
+          "day_number": 2,
+          "title": "週二 - 謙遜與慈悲",
+          "tasks": [
+            {
+              "id": "254ae39b-8fef-44a9-8c44-0576a4f780dd",
+              "title": "今日偈頌",
+              "description": "今日偈頌",
+              "display_order": 1,
+              "estimated_time": 1,
+              "subtasks": [
+                {
+                  "id": "254ae39b-8fef-44a9-8c44-0576a4f780de",
+                  "content_type": "TEXT",
+                  "content": "隨處與誰為伴時,\n視己較諸眾卑劣，\n從心深處思利他，\n恆常尊他為最上。",
+                  "display_order": 1
+                }
+              ]
+            },
+            {
+              "id": "80091ecc-3ce1-4cfa-bf15-c02ddca712b7",
+              "title": "深入了解",
+              "description": "深入了解",
+              "display_order": 2,
+              "estimated_time": 3,
+              "subtasks": [
+                {
+                  "id": "80091ecc-3ce1-4cfa-bf15-c02ddca712b8",
+                  "content_type": "VIDEO",
+                  "content": "https://www.youtube.com/watch?v=l89lfXe0oK0",
+                  "display_order": 1
+                }
+              ]
+            },
+            {
+              "id": "0ae22ff4-744f-4008-a698-1510f6428fb9",
+              "title": "禪修",
+              "description": "禪修",
+              "display_order": 3,
+              "estimated_time": 8,
+              "subtasks": [
+                {
+                  "id": "0ae22ff4-744f-4008-a698-1510f6428fba",
+                  "content_type": "VIDEO",
+                  "content": "https://www.youtube.com/watch?v=r1K_CkE1ddc",
+                  "display_order": 1
+                }
+              ]
+            },
+            {
+              "id": "de7a93d4-efc7-4f66-90fa-1e6e92335bc3",
+              "title": "迴向",
+              "description": "迴向",
+              "display_order": 4,
+              "estimated_time": 10,
+              "subtasks": [
+                {
+                  "id": "de7a93d4-efc7-4f66-90fa-1e6e92335bc4",
+                  "content_type": "VIDEO",
+                  "content": "https://www.youtube.com/watch?v=CJ_-PxSqemI",
+                  "display_order": 1
+                }
+              ]
+            },
+            {
+              "id": "4ca58a1e-ed97-4e6c-8cd1-7ca12e8f7103",
+              "title": "融入生活",
+              "description": "融入生活",
+              "display_order": 5,
+              "estimated_time": 1,
+              "subtasks": [
+                {
+                  "id": "4ca58a1e-ed97-4e6c-8cd1-7ca12e8f7104",
+                  "content_type": "IMAGE",
+                  "content": "https://drive.google.com/uc?export=view&id=1QMvsmawVOVpE8dqQgpLCxVRzzkGWutan",
+                  "display_order": 1
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "a8ae9915-7a0b-4528-a5b1-0c9376e19fac",
+          "day_number": 3,
+          "title": "週三 - 正念覺知",
+          "tasks": [
+            {
+              "id": "23012691-1708-4ac9-9f57-8a2692f239a5",
+              "title": "今日偈頌",
+              "description": "今日偈頌",
+              "display_order": 1,
+              "estimated_time": 1,
+              "subtasks": [
+                {
+                  "id": "23012691-1708-4ac9-9f57-8a2692f239a6",
+                  "content_type": "TEXT",
+                  "content": "一舉一動觀自心,\n正當煩惱初萌生，\n危害自與他人時，\n願疾呵斥令消除。",
+                  "display_order": 1
+                }
+              ]
+            },
+            {
+              "id": "d080fdd6-392f-4505-8bff-e29567ed6605",
+              "title": "深入了解",
+              "description": "深入了解",
+              "display_order": 2,
+              "estimated_time": 2,
+              "subtasks": [
+                {
+                  "id": "d080fdd6-392f-4505-8bff-e29567ed6606",
+                  "content_type": "VIDEO",
+                  "content": "https://www.youtube.com/watch?v=NkRN2ESCcYw",
+                  "display_order": 1
+                }
+              ]
+            },
+            {
+              "id": "bee32e10-d631-4143-994d-f67a54a364f3",
+              "title": "禪修",
+              "description": "禪修",
+              "display_order": 3,
+              "estimated_time": 8,
+              "subtasks": [
+                {
+                  "id": "bee32e10-d631-4143-994d-f67a54a364f4",
+                  "content_type": "VIDEO",
+                  "content": "https://www.youtube.com/watch?v=r1K_CkE1ddc",
+                  "display_order": 1
+                }
+              ]
+            },
+            {
+              "id": "14165959-92db-4ee9-8dda-97e0d4cad54c",
+              "title": "迴向",
+              "description": "迴向",
+              "display_order": 4,
+              "estimated_time": 1,
+              "subtasks": [
+                {
+                  "id": "14165959-92db-4ee9-8dda-97e0d4cad54d",
+                  "content_type": "VIDEO",
+                  "content": "https://www.youtube.com/watch?v=CJ_-PxSqemI",
+                  "display_order": 1
+                }
+              ]
+            },
+            {
+              "id": "f1e82f90-ef0e-42d7-94f1-330f889e12c7",
+              "title": "融入生活",
+              "description": "融入生活",
+              "display_order": 5,
+              "estimated_time": 1,
+              "subtasks": [
+                {
+                  "id": "f1e82f90-ef0e-42d7-94f1-330f889e12c8",
+                  "content_type": "IMAGE",
+                  "content": "https://drive.google.com/uc?export=view&id=1QMvsmawVOVpE8dqQgpLCxVRzzkGWutan",
+                  "display_order": 1
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "138ae1f5-0efb-43a3-987b-ad679cde7ce0",
+          "day_number": 4,
+          "title": "週四 - 困難的人是老師",
+          "tasks": [
+            {
+              "id": "eb16ee3a-9f56-4c8b-a762-56efa0d068df",
+              "title": "今日偈頌",
+              "description": "今日偈頌",
+              "display_order": 1,
+              "estimated_time": 1,
+              "subtasks": [
+                {
+                  "id": "eb16ee3a-9f56-4c8b-a762-56efa0d068e0",
+                  "content_type": "TEXT",
+                  "content": "秉性邪惡眾有情，\n恆為猛烈罪苦迫，\n見時如遇大寶藏\n願恆惜此難得寶。",
+                  "display_order": 1
+                }
+              ]
+            },
+            {
+              "id": "8229bf88-11dc-492e-b27a-143897161613",
+              "title": "深入了解",
+              "description": "深入了解",
+              "display_order": 2,
+              "estimated_time": 2,
+              "subtasks": [
+                {
+                  "id": "8229bf88-11dc-492e-b27a-143897161614",
+                  "content_type": "VIDEO",
+                  "content": "https://www.youtube.com/watch?v=iTkY43cW9Nk",
+                  "display_order": 1
+                }
+              ]
+            },
+            {
+              "id": "b0ac2e68-ce42-4b66-a780-ec11a9840fef",
+              "title": "禪修",
+              "description": "禪修",
+              "display_order": 3,
+              "estimated_time": 8,
+              "subtasks": [
+                {
+                  "id": "b0ac2e68-ce42-4b66-a780-ec11a9840ff0",
+                  "content_type": "VIDEO",
+                  "content": "https://www.youtube.com/watch?v=r1K_CkE1ddc",
+                  "display_order": 1
+                }
+              ]
+            },
+            {
+              "id": "391dcf0b-d41a-4e22-8524-c7bc3c1d8ac6",
+              "title": "迴向",
+              "description": "迴向",
+              "display_order": 4,
+              "estimated_time": 1,
+              "subtasks": [
+                {
+                  "id": "391dcf0b-d41a-4e22-8524-c7bc3c1d8ac7",
+                  "content_type": "VIDEO",
+                  "content": "https://www.youtube.com/watch?v=CJ_-PxSqemI",
+                  "display_order": 1
+                }
+              ]
+            },
+            {
+              "id": "43c1e4f7-2b5d-4c48-8d61-b90282566a56",
+              "title": "融入生活",
+              "description": "融入生活",
+              "display_order": 5,
+              "estimated_time": 1,
+              "subtasks": [
+                {
+                  "id": "43c1e4f7-2b5d-4c48-8d61-b90282566a57",
+                  "content_type": "IMAGE",
+                  "content": "https://drive.google.com/uc?export=view&id=1shj38Ofi9jdFz2fzjS3Ga2dzXLwXPHzb",
+                  "display_order": 1
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "079b5c54-0aca-42b5-a5c3-7e125d5b324f",
+          "day_number": 5,
+          "title": "週五 - 取與施",
+          "tasks": [
+            {
+              "id": "905dd44a-d3be-4ae6-96a9-f2df093e3545",
+              "title": "今日偈頌",
+              "description": "今日偈頌",
+              "display_order": 1,
+              "estimated_time": 1,
+              "subtasks": [
+                {
+                  "id": "905dd44a-d3be-4ae6-96a9-f2df093e3546",
+                  "content_type": "TEXT",
+                  "content": "他人出於嫉妒心，\n非理辱駡謗我等，\n虧損失敗我取受\n願將勝利奉獻他。",
+                  "display_order": 1
+                }
+              ]
+            },
+            {
+              "id": "7fae4d7b-bbed-48d0-b3cc-bfb7b73e2a4e",
+              "title": "深入了解",
+              "description": "深入了解",
+              "display_order": 2,
+              "estimated_time": 2,
+              "subtasks": [
+                {
+                  "id": "7fae4d7b-bbed-48d0-b3cc-bfb7b73e2a4f",
+                  "content_type": "VIDEO",
+                  "content": "https://www.youtube.com/watch?v=XBiCI4JvJhY",
+                  "display_order": 1
+                }
+              ]
+            },
+            {
+              "id": "4d8d86a4-cf1e-4cf0-98fe-308e59640483",
+              "title": "禪修",
+              "description": "禪修",
+              "display_order": 3,
+              "estimated_time": 8,
+              "subtasks": [
+                {
+                  "id": "4d8d86a4-cf1e-4cf0-98fe-308e59640484",
+                  "content_type": "VIDEO",
+                  "content": "https://www.youtube.com/watch?v=r1K_CkE1ddc",
+                  "display_order": 1
+                }
+              ]
+            },
+            {
+              "id": "b48e5170-99d9-4706-882d-2b2c3853d830",
+              "title": "迴向",
+              "description": "迴向",
+              "display_order": 4,
+              "estimated_time": 1,
+              "subtasks": [
+                {
+                  "id": "b48e5170-99d9-4706-882d-2b2c3853d831",
+                  "content_type": "VIDEO",
+                  "content": "https://www.youtube.com/watch?v=CJ_-PxSqemI",
+                  "display_order": 1
+                }
+              ]
+            },
+            {
+              "id": "e1bc9443-1ffa-4d40-bace-51d1ab4671dd",
+              "title": "融入生活",
+              "description": "融入生活",
+              "display_order": 5,
+              "estimated_time": 1,
+              "subtasks": [
+                {
+                  "id": "e1bc9443-1ffa-4d40-bace-51d1ab4671de",
+                  "content_type": "IMAGE",
+                  "content": "https://drive.google.com/uc?export=view&id=1Hux80R2OsVowZTLMgVOWwGz2vAJwyzly",
+                  "display_order": 1
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "8cd17763-9ffd-4f64-9463-2eb5744b3b20",
+          "day_number": 6,
+          "title": "週六 - 視敵人為善知識",
+          "tasks": [
+            {
+              "id": "b8fb546e-9feb-4e23-b178-c2538581c066",
+              "title": "今日偈頌",
+              "description": "今日偈頌",
+              "display_order": 1,
+              "estimated_time": 1,
+              "subtasks": [
+                {
+                  "id": "b8fb546e-9feb-4e23-b178-c2538581c067",
+                  "content_type": "TEXT",
+                  "content": "吾昔饒益助某人,\n且曾深心寄厚望，\n彼雖非理妄加害，\n願視彼為善知識。",
+                  "display_order": 1
+                }
+              ]
+            },
+            {
+              "id": "ad81e1ec-cc02-4dd3-bd87-5e805856e115",
+              "title": "深入了解",
+              "description": "深入了解",
+              "display_order": 2,
+              "estimated_time": 2,
+              "subtasks": [
+                {
+                  "id": "ad81e1ec-cc02-4dd3-bd87-5e805856e116",
+                  "content_type": "VIDEO",
+                  "content": "https://www.youtube.com/watch?v=d9zxvmornTY",
+                  "display_order": 1
+                }
+              ]
+            },
+            {
+              "id": "1549fb8d-046b-4024-bb52-8ce3d3104860",
+              "title": "禪修",
+              "description": "禪修",
+              "display_order": 3,
+              "estimated_time": 8,
+              "subtasks": [
+                {
+                  "id": "1549fb8d-046b-4024-bb52-8ce3d3104861",
+                  "content_type": "VIDEO",
+                  "content": "https://www.youtube.com/watch?v=r1K_CkE1ddc",
+                  "display_order": 1
+                }
+              ]
+            },
+            {
+              "id": "9bdd2057-c677-4dbf-95d0-62249627bd5d",
+              "title": "迴向",
+              "description": "迴向",
+              "display_order": 4,
+              "estimated_time": 10,
+              "subtasks": [
+                {
+                  "id": "9bdd2057-c677-4dbf-95d0-62249627bd5e",
+                  "content_type": "VIDEO",
+                  "content": "https://www.youtube.com/watch?v=CJ_-PxSqemI",
+                  "display_order": 1
+                }
+              ]
+            },
+            {
+              "id": "fd997523-56d2-4094-a8db-eea2177f76a4",
+              "title": "融入生活",
+              "description": "融入生活",
+              "display_order": 5,
+              "estimated_time": 1,
+              "subtasks": [
+                {
+                  "id": "fd997523-56d2-4094-a8db-eea2177f76a5",
+                  "content_type": "IMAGE",
+                  "content": "https://drive.google.com/uc?export=view&id=1Hux80R2OsVowZTLMgVOWwGz2vAJwyzly",
+                  "display_order": 1
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "6721e507-b4c2-497a-b410-743510364482",
+          "day_number": 7,
+          "title": "週日 - 取與施的實踐",
+          "tasks": [
+            {
+              "id": "7f8e9d2a-3b4c-5e6f-8a9b-1c2d3e4f5a6b",
+              "title": "今日偈頌",
+              "description": "今日偈頌",
+              "display_order": 1,
+              "estimated_time": 1,
+              "subtasks": [
+                {
+                  "id": "8f9e0d3b-4c5d-6e7f-9a0b-2c3d4e5f6a7c",
+                  "content_type": "TEXT",
+                  "content": "無論直接與間接,\n願獻利樂於慈母，\n如母有情諸苦患，\n我願暗中自取受。",
+                  "display_order": 1
+                }
+              ]
+            },
+            {
+              "id": "9f0e1d4c-5d6e-7f8a-0b1c-3d4e5f6a7b8c",
+              "title": "深入了解",
+              "description": "深入了解",
+              "display_order": 2,
+              "estimated_time": 2,
+              "subtasks": [
+                {
+                  "id": "0f1e2d5c-6d7e-8f9a-1b2c-4d5e6f7a8b9c",
+                  "content_type": "VIDEO",
+                  "content": "https://www.youtube.com/watch?v=Vu3ArgIHx0M",
+                  "display_order": 1
+                }
+              ]
+            },
+            {
+              "id": "1f2e3d6c-7d8e-9f0a-2b3c-5d6e7f8a9b0c",
+              "title": "禪修",
+              "description": "禪修",
+              "display_order": 3,
+              "estimated_time": 8,
+              "subtasks": [
+                {
+                  "id": "2f3e4d7c-8d9e-0f1a-3b4c-6d7e8f9a0b1c",
+                  "content_type": "VIDEO",
+                  "content": "https://www.youtube.com/watch?v=r1K_CkE1ddc",
+                  "display_order": 1
+                }
+              ]
+            },
+            {
+              "id": "4b3ff6a8-6b5e-4f44-e6bf-425ba95456ea",
+              "title": "迴向",
+              "description": "迴向",
+              "display_order": 4,
+              "estimated_time": 10,
+              "subtasks": [
+                {
+                  "id": "4b3ff6a8-6b5e-4f44-e6bf-425ba95456eb",
+                  "content_type": "VIDEO",
+                  "content": "https://www.youtube.com/watch?v=CJ_-PxSqemI",
+                  "display_order": 1
+                }
+              ]
+            },
+            {
+              "id": "5c4gg7c9-7c6f-5f55-f7gf-536cb96567fb",
+              "title": "融入生活",
+              "description": "融入生活",
+              "display_order": 5,
+              "estimated_time": 1,
+              "subtasks": [
+                {
+                  "id": "5c4gg7c9-7c6f-5f55-f7gf-536cb96567fc",
+                  "content_type": "IMAGE",
+                  "content": "https://drive.google.com/uc?export=view&id=18_oZvCinRoyluiL8Q7xHqcrvgJYYX6DJ",
+                  "display_order": 1
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "cdf93d39-9428-4fe2-9b3e-5a05a98189eb",
+      "title": "聖救度母修持法",
+      "description": "五天的聖救度母修持法，包含今日偈頌、深入了解、禪修、持誦和融入生活",
+      "image_url": "https://drive.google.com/uc?export=view&id=1JNpuTb_Yzocl0JIpT6bP0UKVudsaDpEe",
+      "total_days": 5,
+      "language": "zh",
+      "status": "PUBLISHED",
+      "subscription_count": 32,
+      "days": [
+        {
+          "id": "7b8450cf-8cdc-4d35-9d95-6f08eaada6e4",
+          "day_number": 1,
+          "title": "週五 - 超越惡趣",
+          "tasks": [
+            {
+              "id": "32bd6a2a-0465-4438-a72d-f0e1ef2d5f7e",
+              "title": "今日偈頌",
+              "description": "聖救度母每日偈頌",
+              "display_order": 1,
+              "estimated_time": 1,
+              "subtasks": [
+                {
+                  "id": "32bd6a2a-0465-4438-a72d-f0e1ef2d5f7f",
+                  "content_type": "TEXT",
+                  "content": "救度尊處誠信禮\n是故讚嘆根本咒\n每晨旦起夕時禮\n憶念施諸勝無畏\n一切罪業盡消除\n悉能超越諸惡趣",
+                  "display_order": 1
+                }
+              ]
+            },
+            {
+              "id": "ff853fdb-e918-410b-aad9-835eb5c876f2",
+              "title": "深入了解",
+              "description": "聖救度母修持法的視頻教學",
+              "display_order": 2,
+              "estimated_time": 5,
+              "subtasks": [
+                {
+                  "id": "ff853fdb-e918-410b-aad9-835eb5c876f3",
+                  "content_type": "VIDEO",
+                  "content": "https://www.youtube.com/watch?v=anwpRupmk_0",
+                  "display_order": 1
+                }
+              ]
+            },
+            {
+              "id": "5a84f7ca-4df9-4d8e-9d8f-ebaa9ebd88a5",
+              "title": "禪修",
+              "description": "禪修",
+              "display_order": 3,
+              "estimated_time": 3,
+              "subtasks": [
+                {
+                  "id": "5a84f7ca-4df9-4d8e-9d8f-ebaa9ebd88a6",
+                  "content_type": "VIDEO",
+                  "content": "https://www.youtube.com/shorts/NgxVs6CvT4U",
+                  "display_order": 1
+                }
+              ]
+            },
+            {
+              "id": "8d2923f7-15bc-4042-b37b-2d31a3adee3e",
+              "title": "持誦",
+              "description": "持誦",
+              "display_order": 4,
+              "estimated_time": 3,
+              "subtasks": [
+                {
+                  "id": "8d2923f7-15bc-4042-b37b-2d31a3adee3f",
+                  "content_type": "AUDIO",
+                  "content": "https://www.youtube.com/watch?v=ILhNZlSWeqU",
+                  "display_order": 1
+                }
+              ]
+            },
+            {
+              "id": "f9a48405-c149-418a-94ce-d629cc0e5915",
+              "title": "融入生活",
+              "description": "融入生活",
+              "display_order": 5,
+              "estimated_time": 1,
+              "subtasks": [
+                {
+                  "id": "f9a48405-c149-418a-94ce-d629cc0e5916",
+                  "content_type": "IMAGE",
+                  "content": "https://drive.google.com/uc?export=view&id=1i3qQ7EFbt0rKQU_2KGWeY3RAHrX2VcI3",
+                  "display_order": 1
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "f4b6898a-e5cb-4d16-aea5-531abe7fd98b",
+          "day_number": 2,
+          "title": "週六 - 趣向佛位",
+          "tasks": [
+            {
+              "id": "1fb05ed9-7c95-4487-9f6c-24c53483e132",
+              "title": "今日偈頌",
+              "description": "聖救度母每日偈頌",
+              "display_order": 1,
+              "estimated_time": 1,
+              "subtasks": [
+                {
+                  "id": "1fb05ed9-7c95-4487-9f6c-24c53483e133",
+                  "content_type": "TEXT",
+                  "content": "七俱胝佛所灌頂\n此等速能得聰慧\n現世富貴壽延安\n當來趣向諸佛位",
+                  "display_order": 1
+                }
+              ]
+            },
+            {
+              "id": "4ea2692e-da54-426e-b3a1-d38aff03719d",
+              "title": "深入了解",
+              "description": "聖救度母修持法的視頻教學",
+              "display_order": 2,
+              "estimated_time": 4,
+              "subtasks": [
+                {
+                  "id": "4ea2692e-da54-426e-b3a1-d38aff03719e",
+                  "content_type": "VIDEO",
+                  "content": "https://www.youtube.com/watch?v=CfqoeyTn1xg",
+                  "display_order": 1
+                }
+              ]
+            },
+            {
+              "id": "a71648da-e877-4f29-bb06-819bac91edd9",
+              "title": "禪修",
+              "description": "禪修",
+              "display_order": 3,
+              "estimated_time": 3,
+              "subtasks": [
+                {
+                  "id": "a71648da-e877-4f29-bb06-819bac91edda",
+                  "content_type": "VIDEO",
+                  "content": "https://www.youtube.com/shorts/oA4PcFZrCJ0",
+                  "display_order": 1
+                }
+              ]
+            },
+            {
+              "id": "b1d2e7b8-77b6-4831-8f2a-e7ecba9ca94b",
+              "title": "持誦",
+              "description": "持誦",
+              "display_order": 4,
+              "estimated_time": 3,
+              "subtasks": [
+                {
+                  "id": "b1d2e7b8-77b6-4831-8f2a-e7ecba9ca94c",
+                  "content_type": "VIDEO",
+                  "content": "https://www.youtube.com/watch?v=ILhNZlSWeqU",
+                  "display_order": 1
+                }
+              ]
+            },
+            {
+              "id": "670900d9-cdec-49b6-a4de-369b2db84c62",
+              "title": "融入生活",
+              "description": "融入生活",
+              "display_order": 5,
+              "estimated_time": 1,
+              "subtasks": [
+                {
+                  "id": "670900d9-cdec-49b6-a4de-369b2db84c63",
+                  "content_type": "IMAGE",
+                  "content": "https://drive.google.com/uc?export=view&id=13SCE09UaRtoLZQCUyRPMaGpCMF1b8kLy",
+                  "display_order": 1
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "f88005fe-f026-45fe-9de8-cd6c7bf7fc5b",
+          "day_number": 3,
+          "title": "週日 - 消滅毒害",
+          "tasks": [
+            {
+              "id": "a0d39ffd-ac32-46e3-b52a-f49edbbdbc78",
+              "title": "今日偈頌",
+              "description": "聖救度母每日偈頌",
+              "display_order": 1,
+              "estimated_time": 1,
+              "subtasks": [
+                {
+                  "id": "a0d39ffd-ac32-46e3-b52a-f49edbbdbc79",
+                  "content_type": "TEXT",
+                  "content": "有情誤服諸毒物\n或自然生或合成\n憶念聖尊真實力\n諸惡毒藥盡消滅",
+                  "display_order": 1
+                }
+              ]
+            },
+            {
+              "id": "ceb40dc0-ad8f-4bc9-8d3b-5a73f3f83595",
+              "title": "深入了解",
+              "description": "聖救度母修持法的視頻教學",
+              "display_order": 2,
+              "estimated_time": 8,
+              "subtasks": [
+                {
+                  "id": "ceb40dc0-ad8f-4bc9-8d3b-5a73f3f83596",
+                  "content_type": "VIDEO",
+                  "content": "https://www.youtube.com/watch?v=PkbLmeou0Qw",
+                  "display_order": 1
+                }
+              ]
+            },
+            {
+              "id": "a543ca5d-2ecf-4d47-a25b-b4f52aa05669",
+              "title": "禪修",
+              "description": "禪修",
+              "display_order": 3,
+              "estimated_time": 3,
+              "subtasks": [
+                {
+                  "id": "a543ca5d-2ecf-4d47-a25b-b4f52aa0566a",
+                  "content_type": "VIDEO",
+                  "content": "https://www.youtube.com/shorts/NgxVs6CvT4U",
+                  "display_order": 1
+                }
+              ]
+            },
+            {
+              "id": "23a93679-ea97-40ab-8143-cd2f6e3aabda",
+              "title": "持誦",
+              "description": "持誦",
+              "display_order": 4,
+              "estimated_time": 3,
+              "subtasks": [
+                {
+                  "id": "23a93679-ea97-40ab-8143-cd2f6e3aabdb",
+                  "content_type": "VIDEO",
+                  "content": "https://www.youtube.com/watch?v=ILhNZlSWeqU",
+                  "display_order": 1
+                }
+              ]
+            },
+            {
+              "id": "5a96837f-9315-42fe-aca6-252b0ae9856a",
+              "title": "融入生活",
+              "description": "融入生活",
+              "display_order": 5,
+              "estimated_time": 1,
+              "subtasks": [
+                {
+                  "id": "5a96837f-9315-42fe-aca6-252b0ae9856b",
+                  "content_type": "IMAGE",
+                  "content": "https://drive.google.com/uc?export=view&id=1i3qQ7EFbt0rKQU_2KGWeY3RAHrX2VcI3",
+                  "display_order": 1
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "3d9306b8-195d-4953-970c-f7b5f9de25e0",
+          "day_number": 4,
+          "title": "週一 - 消除苦惱",
+          "tasks": [
+            {
+              "id": "c5dbc672-60ae-4bd8-8fca-324698d24ae2",
+              "title": "今日偈頌",
+              "description": "聖救度母每日偈頌",
+              "display_order": 1,
+              "estimated_time": 1,
+              "subtasks": [
+                {
+                  "id": "c5dbc672-60ae-4bd8-8fca-324698d24ae3",
+                  "content_type": "TEXT",
+                  "content": "或見他人遭鬼魅\n或發熱病受諸苦\n彼諸苦惱悉蠲除\n若轉此讚二、三、 七",
+                  "display_order": 1
+                }
+              ]
+            },
+            {
+              "id": "68cb6b20-65d8-4f6d-8b5b-ed2852e3457b",
+              "title": "深入了解",
+              "description": "聖救度母修持法的視頻教學",
+              "display_order": 2,
+              "estimated_time": 5,
+              "subtasks": [
+                {
+                  "id": "68cb6b20-65d8-4f6d-8b5b-ed2852e3457c",
+                  "content_type": "VIDEO",
+                  "content": "https://www.youtube.com/watch?v=qMQmBHMdeOw",
+                  "display_order": 1
+                }
+              ]
+            },
+            {
+              "id": "2d260e0e-8556-47e5-9141-2fb9cb366b72",
+              "title": "禪修",
+              "description": "禪修",
+              "display_order": 3,
+              "estimated_time": 3,
+              "subtasks": [
+                {
+                  "id": "2d260e0e-8556-47e5-9141-2fb9cb366b73",
+                  "content_type": "VIDEO",
+                  "content": "https://www.youtube.com/shorts/oA4PcFZrCJ0",
+                  "display_order": 1
+                }
+              ]
+            },
+            {
+              "id": "68de0450-ea1f-417e-aaca-28a24dda3c21",
+              "title": "持誦",
+              "description": "持誦",
+              "display_order": 4,
+              "estimated_time": 3,
+              "subtasks": [
+                {
+                  "id": "68de0450-ea1f-417e-aaca-28a24dda3c22",
+                  "content_type": "VIDEO",
+                  "content": "https://www.youtube.com/watch?v=ILhNZlSWeqU",
+                  "display_order": 1
+                }
+              ]
+            },
+            {
+              "id": "c0aa80d1-7fbd-410a-b43b-b8f8cc02e876",
+              "title": "融入生活",
+              "description": "融入生活",
+              "display_order": 5,
+              "estimated_time": 1,
+              "subtasks": [
+                {
+                  "id": "c0aa80d1-7fbd-410a-b43b-b8f8cc02e877",
+                  "content_type": "IMAGE",
+                  "content": "https://drive.google.com/uc?export=view&id=13SCE09UaRtoLZQCUyRPMaGpCMF1b8kLy",
+                  "display_order": 1
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "e7db45a9-2a41-4d13-8418-d0fc2c1c39fb",
+          "day_number": 5,
+          "title": "週二 - 圓滿願望",
+          "tasks": [
+            {
+              "id": "48c55366-380c-4977-9f12-33bdf28e7581",
+              "title": "今日偈頌",
+              "description": "聖救度母每日偈頌",
+              "display_order": 1,
+              "estimated_time": 1,
+              "subtasks": [
+                {
+                  "id": "48c55366-380c-4977-9f12-33bdf28e7582",
+                  "content_type": "TEXT",
+                  "content": "欲男女得男女\n求財寶位獲富饒\n善能圓滿隨意願\n一切障礙不能侵",
+                  "display_order": 1
+                }
+              ]
+            },
+            {
+              "id": "25b48505-9115-408d-9ca8-d956ce2242f6",
+              "title": "深入了解",
+              "description": "深入了解",
+              "display_order": 2,
+              "estimated_time": 8,
+              "subtasks": [
+                {
+                  "id": "25b48505-9115-408d-9ca8-d956ce2242f7",
+                  "content_type": "VIDEO",
+                  "content": "https://www.youtube.com/watch?v=EWrMyke5QTM",
+                  "display_order": 1
+                }
+              ]
+            },
+            {
+              "id": "de19b603-f57e-44ab-b32b-bebd8c307e28",
+              "title": "禪修",
+              "description": "禪修",
+              "display_order": 3,
+              "estimated_time": 3,
+              "subtasks": [
+                {
+                  "id": "de19b603-f57e-44ab-b32b-bebd8c307e29",
+                  "content_type": "VIDEO",
+                  "content": "https://www.youtube.com/shorts/NgxVs6CvT4U",
+                  "display_order": 1
+                }
+              ]
+            },
+            {
+              "id": "b9b5ac52-530e-4ab4-987a-3523e4980050",
+              "title": "持誦",
+              "description": "持誦",
+              "display_order": 4,
+              "estimated_time": 3,
+              "subtasks": [
+                {
+                  "id": "b9b5ac52-530e-4ab4-987a-3523e4980051",
+                  "content_type": "VIDEO",
+                  "content": "https://www.youtube.com/watch?v=ILhNZlSWeqU",
+                  "display_order": 1
+                }
+              ]
+            },
+            {
+              "id": "d59c5e64-5a33-4221-b069-37a106a27db0",
+              "title": "融入生活",
+              "description": "融入生活",
+              "display_order": 5,
+              "estimated_time": 1,
+              "subtasks": [
+                {
+                  "id": "d59c5e64-5a33-4221-b069-37a106a27db1",
+                  "content_type": "IMAGE",
+                  "content": "https://drive.google.com/uc?export=view&id=1JCYlNX_SLrf46PmgETGSoKFWojIdc0e7",
+                  "display_order": 1
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "8808f25e-5013-41c8-95b9-5df7f6e80cc4",
+      "title": "克服瞋恚修持法 - 第十七週 (中文)",
+      "description": "兩天中文克服瞋恚修持法，包含每日智慧、深入了解、融入生活和今日任務",
+      "image_url": "https://drive.google.com/uc?export=view&id=1O-WJAPlEDJk6XzKjeqm5GV4RpES46F1K",
+      "total_days": 2,
+      "language": "zh",
+      "status": "PUBLISHED",
+      "subscription_count": 24,
+      "days": [
+        {
+          "id": "0f2cff9d-d28d-4cc1-a749-a62ab30c8f41",
+          "day_number": 1,
+          "title": "週二 - 瞋恚的根源",
+          "tasks": [
+            {
+              "id": "764ea286-ffd1-44bd-8acd-441cb5047e4d",
+              "title": "今日智慧",
+              "description": "關於瞋恚根源的每日智慧",
+              "display_order": 1,
+              "estimated_time": 1,
+              "subtasks": [
+                {
+                  "id": "764ea286-ffd1-44bd-8acd-441cb5047e4e",
+                  "content_type": "TEXT",
+                  "content": "作所不欲遮所欲\n瞋恚由斯二者生\n心不愉悅如飲食\n長養瞋心應摧伏",
+                  "display_order": 1
+                }
+              ]
+            },
+            {
+              "id": "28a4bd42-c851-4d15-8afd-75e668fbed40",
+              "title": "深入了解",
+              "description": "深入了解瞋恚的本質和對治方法",
+              "display_order": 2,
+              "estimated_time": 13,
+              "subtasks": [
+                {
+                  "id": "28a4bd42-c851-4d15-8afd-75e668fbed41",
+                  "content_type": "VIDEO",
+                  "content": "https://www.youtube.com/watch?v=XMKjN94v3gE",
+                  "display_order": 1
+                }
+              ]
+            },
+            {
+              "id": "d296b40f-2c41-4a29-8365-22dea440eb84",
+              "title": "融入生活",
+              "description": "將智慧融入日常生活的實踐",
+              "display_order": 3,
+              "estimated_time": 2,
+              "subtasks": [
+                {
+                  "id": "d296b40f-2c41-4a29-8365-22dea440eb85",
+                  "content_type": "VIDEO",
+                  "content": "https://www.youtube.com/watch?v=e0m_J3LuTe4",
+                  "display_order": 1
+                }
+              ]
+            },
+            {
+              "id": "81e8727b-3749-4dce-934e-23ba722a8b66",
+              "title": "今日任務",
+              "description": "今日的實踐任務",
+              "display_order": 4,
+              "estimated_time": 1,
+              "subtasks": [
+                {
+                  "id": "81e8727b-3749-4dce-934e-23ba722a8b67",
+                  "content_type": "IMAGE",
+                  "content": "https://drive.google.com/uc?export=view&id=1SyyVwtNUVW_gDdIk8YbS5en00JlLNtB5",
+                  "display_order": 1
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "dd8ba3f3-b916-4e54-939c-aeb4dddf2040",
+          "day_number": 2,
+          "title": "週三 - 摧伏瞋心",
+          "tasks": [
+            {
+              "id": "a712da80-d2e0-4a26-a338-f71431370512",
+              "title": "今日智慧",
+              "description": "關於摧伏瞋心的每日智慧",
+              "display_order": 1,
+              "estimated_time": 1,
+              "subtasks": [
+                {
+                  "id": "a712da80-d2e0-4a26-a338-f71431370513",
+                  "content_type": "TEXT",
+                  "content": "是故我應於此敵\n毀其糧秣令無餘\n唯除如是為我害\n此敵更無他事業",
+                  "display_order": 1
+                }
+              ]
+            },
+            {
+              "id": "01ab5623-9f1b-41be-943c-8a1ef4a540f9",
+              "title": "深入了解",
+              "description": "深入了解如何徹底摧伏瞋心",
+              "display_order": 2,
+              "estimated_time": 13,
+              "subtasks": [
+                {
+                  "id": "01ab5623-9f1b-41be-943c-8a1ef4a540fa",
+                  "content_type": "VIDEO",
+                  "content": "https://www.youtube.com/watch?v=bGaxZDOlHAQ",
+                  "display_order": 1
+                }
+              ]
+            },
+            {
+              "id": "309f9686-af6f-47b7-ab85-cf98a1004f63",
+              "title": "融入生活",
+              "description": "將智慧融入日常生活的實踐",
+              "display_order": 3,
+              "estimated_time": 1,
+              "subtasks": [
+                {
+                  "id": "309f9686-af6f-47b7-ab85-cf98a1004f64",
+                  "content_type": "VIDEO",
+                  "content": "https://www.youtube.com/watch?v=O4e1x4p2E7Q",
+                  "display_order": 1
+                }
+              ]
+            },
+            {
+              "id": "3841209d-ceb5-472e-926e-d18c9c0384da",
+              "title": "今日任務",
+              "description": "今日的實踐任務",
+              "display_order": 4,
+              "estimated_time": 1,
+              "subtasks": [
+                {
+                  "id": "3841209d-ceb5-472e-926e-d18c9c0384db",
+                  "content_type": "IMAGE",
+                  "content": "https://drive.google.com/uc?export=view&id=1uR8FuL-ym27wPv9Hw7hM53r0MoPiQ8yV",
+                  "display_order": 1
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "skip": 0,
+  "limit": 20,
+  "total": 6
+}
