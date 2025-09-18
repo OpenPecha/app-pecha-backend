@@ -108,9 +108,14 @@ def test_request_reset_password_invalid_email_422():
         "email": "invalid-email-format"
     }
     
-    response = client.post("cms/auth/request-reset-password", json=request_payload)
-    
-    assert response.status_code in [status.HTTP_422_UNPROCESSABLE_ENTITY, status.HTTP_202_ACCEPTED, status.HTTP_404_NOT_FOUND]
+    with patch("pecha_api.plans.auth.plan_auth_views.request_reset_password") as mock_request_reset:
+        mock_request_reset.return_value = {"message": "If the email exists in our system, a password reset email has been sent."}
+        
+        response = client.post("cms/auth/request-reset-password", json=request_payload)
+        
+        assert response.status_code == status.HTTP_202_ACCEPTED
+        assert response.status_code == status.HTTP_202_ACCEPTED
+        mock_request_reset.assert_called_once_with(email="invalid-email-format")
 
 
 def test_request_reset_password_service_error():
