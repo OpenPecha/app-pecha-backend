@@ -12,6 +12,7 @@ from pecha_api.plans.public.plan_models import PlanDaysResponse, PlanDayBasic
 
 async def get_published_plans(
     search: Optional[str] = None, 
+    language: Optional[str] = None,
     sort_by: str = "title", 
     sort_order: str = "asc", 
     skip: int = 0, 
@@ -32,6 +33,10 @@ async def get_published_plans(
     # Apply search filter
     if search:
         published_plans = [p for p in published_plans if search.lower() in p.title.lower()]
+    
+    # Apply language filter
+    if language:
+        published_plans = [p for p in published_plans if p.language.lower() == language.lower()]
     
     # Sort plans
     reverse = sort_order == "desc"
@@ -78,6 +83,7 @@ async def get_published_plan_details(plan_id: UUID) -> PlanDTO:
         description=plan_model.description,
         image_url=plan_model.image_url,
         total_days=plan_model.total_days,
+        language=plan_model.language,
         status=PlanStatus(plan_model.status),
         subscription_count=plan_model.subscription_count
     )

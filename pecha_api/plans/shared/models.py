@@ -30,6 +30,7 @@ class PlanModel(BaseModel):
     description: str
     image_url: str
     total_days: int
+    language: str
     status: str
     subscription_count: int
     days: List[DayModel]

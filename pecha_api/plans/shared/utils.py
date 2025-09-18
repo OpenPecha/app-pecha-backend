@@ -41,6 +41,7 @@ def convert_plan_model_to_dto(plan_model: PlanModel) -> PlanDTO:
         id=UUID(plan_model.id),
         title=plan_model.title,
         description=plan_model.description,
+        language=plan_model.language,
         image_url=plan_model.image_url,
         total_days=plan_model.total_days,
         status=PlanStatus(plan_model.status),
