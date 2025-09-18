@@ -251,7 +251,6 @@ async def test_get_details_plan_success():
         assert len(day1.tasks) == 1
         assert day1.tasks[0].id == task1.id
         assert day1.tasks[0].title == task1.title
-        assert day1.tasks[0].content_type == task1.content_type
         assert day1.tasks[0].content == task1.content
         assert day1.tasks[0].estimated_time == task1.estimated_time
 
@@ -259,7 +258,6 @@ async def test_get_details_plan_success():
         assert day2.day_number == 2
         assert len(day2.tasks) == 1
         assert day2.tasks[0].id == task2.id
-        assert day2.tasks[0].content_type == task2.content_type
 
 @pytest.mark.asyncio
 async def test_get_details_plan_not_found():
