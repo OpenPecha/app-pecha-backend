@@ -2,7 +2,7 @@ import secrets
 from .plan_auth_enums import AuthorStatus
 from .plan_auth_models import CreateAuthorRequest, AuthorDetails, TokenPayload, \
     AuthorVerificationResponse, ResponseError, TokenResponse, AuthorLoginResponse, AuthorInfo
-from pecha_api.plans.authors.plan_author_model import Author, Author_Password_Reset
+from pecha_api.plans.authors.plan_author_model import Author, AuthorPasswordReset
 from pecha_api.db.database import SessionLocal
 from pecha_api.plans.authors.plan_authors_repository import save_author, get_author_by_email, update_author, check_author_exists
 from pecha_api.auth.auth_repository import get_hashed_password, verify_password, create_access_token, create_refresh_token
@@ -203,7 +203,7 @@ def request_reset_password(email: str):
         )
         reset_token = secrets.token_urlsafe(32)
         token_expiry = datetime.now(timezone.utc) + timedelta(minutes=30)
-        password_reset = Author_Password_Reset(
+        password_reset = AuthorPasswordReset(
             email=current_user.email,
             reset_token=reset_token,
             token_expiry=token_expiry
@@ -212,7 +212,7 @@ def request_reset_password(email: str):
             db=db_session,
             password_reset=password_reset
         )
-        reset_link = f"{get('BASE_URL')}/reset-password?token={reset_token}"
+        reset_link = f"{get('WEBUDDHIST_STUDIO_BASE_URL')}/reset-password?token={reset_token}"
         send_reset_email(email=email, reset_link=reset_link)
         return {"message": "If the email exists in our system, a password reset email has been sent."}
     
