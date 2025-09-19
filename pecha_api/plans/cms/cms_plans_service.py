@@ -64,18 +64,14 @@ DUMMY_TASKS = [
     TaskDTO(
         id=uuid4(),
         title="Morning Breathing Exercise",
-        description="Start your day with focused breathing",
-        content_type=ContentType.TEXT,
-        content="Sit comfortably and focus on your breath for 10 minutes...",
-        estimated_time=15
+        estimated_time=15,
+        display_order=1
     ),
     TaskDTO(
         id=uuid4(),
         title="Listen to Dharma Talk",
-        description="Audio teaching on compassion",
-        content_type=ContentType.AUDIO,
-        content="https://example.com/dharma-talk-1.mp3",
-        estimated_time=30
+        estimated_time=30,
+        display_order=2
     )
 ]
 
@@ -214,9 +210,8 @@ def _get_plan_details(db: Session, plan_id: UUID) -> PlanWithDays:
                 TaskDTO(
                     id=task.id,
                     title=task.title,
-                    content_type=task.content_type,
-                    content=task.content,
                     estimated_time=task.estimated_time,
+                    display_order=task.display_order,
                 )
                 for task in tasks_by_item.get(item.id, [])
             ],

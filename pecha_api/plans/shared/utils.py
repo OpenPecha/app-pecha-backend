@@ -61,6 +61,7 @@ def convert_day_model_to_dto(day_model: DayModel) -> PlanDayDTO:
                     id=UUID(task_model.id),
                     title=task_model.title,
                     estimated_time=getattr(task_model, 'estimated_time', None),
+                    display_order=getattr(task_model, 'display_order', None),
                     subtasks=subtasks
                 )
                 tasks.append(task)
