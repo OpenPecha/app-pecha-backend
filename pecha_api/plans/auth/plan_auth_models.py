@@ -55,3 +55,9 @@ class AuthorVerificationResponse(BaseModel):
 class ResponseError(BaseModel):
     error: str
     message: str
+
+class PasswordResetRequest(BaseModel):
+    email: str
+
+class ResetPasswordRequest(BaseModel):
+    password: str

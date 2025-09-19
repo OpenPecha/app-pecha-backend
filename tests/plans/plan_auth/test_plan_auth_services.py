@@ -1,7 +1,8 @@
 import uuid
 import json
+import pytest
 from unittest.mock import patch, MagicMock, ANY
-from datetime import datetime, timezone
+from datetime import datetime, timezone, timedelta
 
 from fastapi import HTTPException
 from fastapi.responses import JSONResponse
@@ -13,8 +14,15 @@ from pecha_api.plans.auth.plan_auth_services import (
     _validate_password,
     _generate_author_verification_token,
     verify_author_email,
+    request_reset_password,
+    update_password,
+    authenticate_author,
+    check_verified_author,
+    authenticate_and_generate_tokens,
+    generate_token_author,
+    generate_author_token_data,
 )
-from pecha_api.plans.auth.plan_auth_models import CreateAuthorRequest, AuthorVerificationResponse
+from pecha_api.plans.auth.plan_auth_models import CreateAuthorRequest, AuthorVerificationResponse, AuthorInfo, TokenResponse, AuthorLoginResponse
 from pecha_api.plans.response_message import (
     PASSWORD_EMPTY,
     PASSWORD_LENGTH_INVALID,
@@ -121,37 +129,19 @@ def test_register_author_duplicate_still_proceeds():
         assert response.message == REGISTRATION_MESSAGE
 
 
-def test__validate_password_empty_password():
-    password = ""
-
-    try:
+@pytest.mark.parametrize("password,expected_error,test_description", [
+    ("", PASSWORD_EMPTY, "empty_password"),
+    ("short", PASSWORD_LENGTH_INVALID, "short_password"),
+])
+def test__validate_password_invalid_cases(password, expected_error, test_description):
+    with pytest.raises(HTTPException) as exc_info:
         _validate_password(password)
-    except HTTPException as e:
-        assert e.status_code == status.HTTP_400_BAD_REQUEST
-        assert e.detail == PASSWORD_EMPTY
+    
+    assert exc_info.value.status_code == status.HTTP_400_BAD_REQUEST
+    assert exc_info.value.detail == expected_error
 
 
-def test__validate_password_short_password():
-    password = "short"
-
-    try:
-        _validate_password(password)
-    except HTTPException as e:
-        assert e.status_code == status.HTTP_400_BAD_REQUEST
-        assert e.detail == PASSWORD_LENGTH_INVALID
-
-
-def test__validate_password_long_password():
-    password = "a" * 21
-
-    try:
-        _validate_password(password)
-    except HTTPException as e:
-        assert e.status_code == status.HTTP_400_BAD_REQUEST
-        assert e.detail == PASSWORD_LENGTH_INVALID
-
-
-def test__validate_password_valid_password():
+def test__validate_password_valid():
     _validate_password("validpass")
 
 
@@ -304,14 +294,7 @@ def test_send_verification_email_sends_email():
             message="rendered_html",
         )
 
-from pecha_api.plans.auth.plan_auth_services import (
-    authenticate_author,
-    check_verified_author,
-    authenticate_and_generate_tokens,
-    generate_token_author,
-    generate_author_token_data,
-)
-from pecha_api.plans.auth.plan_auth_models import AuthorInfo, TokenResponse, AuthorLoginResponse
+
 
 
 def test_authenticate_author_success():
@@ -400,8 +383,278 @@ def test_generate_token_author_builds_response():
         assert result.user.name == "John Doe"
         assert result.user.image_url == "img.png"
 
+def test_request_reset_password_success():
+    email = "john.doe@example.com"
+    
+    mock_author = MagicMock()
+    mock_author.email = email
+    
+    mock_password_reset = MagicMock()
+    
+    with patch("pecha_api.plans.auth.plan_auth_services.SessionLocal") as mock_session_local, \
+         patch("pecha_api.plans.auth.plan_auth_services.get_author_by_email", return_value=mock_author) as mock_get_author, \
+         patch("pecha_api.plans.auth.plan_auth_services.save_password_reset") as mock_save_reset, \
+         patch("pecha_api.plans.auth.plan_auth_services.send_reset_email") as mock_send_email, \
+         patch("pecha_api.plans.auth.plan_auth_services.secrets.token_urlsafe", return_value="test_token_123") as mock_token, \
+         patch("pecha_api.plans.auth.plan_auth_services.get", return_value="https://example.com") as mock_get_config:
+        
+        mock_db_session = _mock_session_local(mock_session_local)
+        
+        result = request_reset_password(email=email)
+        
+        mock_get_author.assert_called_once_with(db=mock_db_session, email=email)
+        mock_save_reset.assert_called_once()
+        mock_send_email.assert_called_once_with(
+            email=email, 
+            reset_link="https://example.com/reset-password?token=test_token_123"
+        )
+        
+        assert result == {"message": "If the email exists in our system, a password reset email has been sent."}
+
+
+def test_request_reset_password_author_not_found():
+    email = "nonexistent@example.com"
+    
+    with patch("pecha_api.plans.auth.plan_auth_services.SessionLocal") as mock_session_local, \
+         patch("pecha_api.plans.auth.plan_auth_services.get_author_by_email") as mock_get_author:
+        
+        _mock_session_local(mock_session_local)
+        mock_get_author.side_effect = HTTPException(status_code=404, detail="Author not found")
+        
+        try:
+            request_reset_password(email=email)
+            assert False, "Expected HTTPException to be raised"
+        except HTTPException as e:
+            assert e.status_code == 404
+            assert e.detail == "Author not found"
+
+
+def test_request_reset_password_database_error():
+    email = "john.doe@example.com"
+    
+    with patch("pecha_api.plans.auth.plan_auth_services.SessionLocal") as mock_session_local, \
+         patch("pecha_api.plans.auth.plan_auth_services.get_author_by_email") as mock_get_author:
+        
+        _mock_session_local(mock_session_local)
+        mock_get_author.side_effect = Exception("Database connection error")
+        
+        try:
+            request_reset_password(email=email)
+            assert False, "Expected Exception to be raised"
+        except Exception as e:
+            assert str(e) == "Database connection error"
+
+
+def test_request_reset_password_email_send_failure():
+    email = "john.doe@example.com"
+    
+    mock_author = MagicMock()
+    mock_author.email = email
+    
+    with patch("pecha_api.plans.auth.plan_auth_services.SessionLocal") as mock_session_local, \
+         patch("pecha_api.plans.auth.plan_auth_services.get_author_by_email", return_value=mock_author), \
+         patch("pecha_api.plans.auth.plan_auth_services.save_password_reset"), \
+         patch("pecha_api.plans.auth.plan_auth_services.send_reset_email") as mock_send_email, \
+         patch("pecha_api.plans.auth.plan_auth_services.secrets.token_urlsafe", return_value="test_token_123"), \
+         patch("pecha_api.plans.auth.plan_auth_services.get", return_value="https://example.com"):
+        
+        _mock_session_local(mock_session_local)
+        mock_send_email.side_effect = Exception("Email service unavailable")
+        
+        try:
+            request_reset_password(email=email)
+            assert False, "Expected Exception to be raised"
+        except Exception as e:
+            assert str(e) == "Email service unavailable"
+
+
+def test_update_password_success():
+    token = "valid_reset_token"
+    new_password = "newpassword123"
+    email = "john.doe@example.com"
+    
+    mock_reset_entry = MagicMock()
+    mock_reset_entry.email = email
+    mock_reset_entry.token_expiry = datetime.now(timezone.utc) + timedelta(minutes=10)  # Valid expiry
+    
+    mock_author = MagicMock()
+    mock_author.email = email
+    mock_author.registration_source = 'email'
+    
+    mock_updated_author = MagicMock()
+    mock_updated_author.email = email
+    mock_updated_author.password = "hashed_new_password"
+    
+    with patch("pecha_api.plans.auth.plan_auth_services.SessionLocal") as mock_session_local, \
+         patch("pecha_api.plans.auth.plan_auth_services.get_password_reset_by_token", return_value=mock_reset_entry) as mock_get_reset, \
+         patch("pecha_api.plans.auth.plan_auth_services.get_author_by_email", return_value=mock_author) as mock_get_author, \
+         patch("pecha_api.plans.auth.plan_auth_services._validate_password") as mock_validate, \
+         patch("pecha_api.plans.auth.plan_auth_services.get_hashed_password", return_value="hashed_new_password") as mock_hash, \
+         patch("pecha_api.plans.auth.plan_auth_services.save_author", return_value=mock_updated_author) as mock_save:
+        
+        mock_db_session = _mock_session_local(mock_session_local)
+        
+        result = update_password(token=token, password=new_password)
+        
+        mock_get_reset.assert_called_once_with(db=mock_db_session, token=token)
+        mock_get_author.assert_called_once_with(db=mock_db_session, email=email)
+        mock_validate.assert_called_once_with(new_password)
+        mock_hash.assert_called_once_with(new_password)
+        mock_save.assert_called_once_with(db=mock_db_session, author=mock_author)
+        
+        assert mock_author.password == "hashed_new_password"
+        assert result == mock_updated_author
+
+
+def test_update_password_invalid_token():
+    token = "invalid_token"
+    new_password = "newpassword123"
+    
+    with patch("pecha_api.plans.auth.plan_auth_services.SessionLocal") as mock_session_local, \
+         patch("pecha_api.plans.auth.plan_auth_services.get_password_reset_by_token", return_value=None) as mock_get_reset:
+        
+        _mock_session_local(mock_session_local)
+        
+        try:
+            update_password(token=token, password=new_password)
+            assert False, "Expected HTTPException to be raised"
+        except HTTPException as e:
+            assert e.status_code == status.HTTP_400_BAD_REQUEST
+            assert e.detail == "Invalid or expired token"
+
+
+def test_update_password_expired_token():
+    token = "expired_token"
+    new_password = "newpassword123"
+    
+    mock_reset_entry = MagicMock()
+    mock_reset_entry.email = "john.doe@example.com"
+    mock_reset_entry.token_expiry = datetime.now(timezone.utc) - timedelta(minutes=10)
+    
+    with patch("pecha_api.plans.auth.plan_auth_services.SessionLocal") as mock_session_local, \
+         patch("pecha_api.plans.auth.plan_auth_services.get_password_reset_by_token", return_value=mock_reset_entry):
+        
+        _mock_session_local(mock_session_local)
+        
+        try:
+            update_password(token=token, password=new_password)
+            assert False, "Expected HTTPException to be raised"
+        except HTTPException as e:
+            assert e.status_code == status.HTTP_400_BAD_REQUEST
+            assert e.detail == "Invalid or expired token"
+
+
+def test_update_password_registration_source_mismatch():
+    token = "valid_reset_token"
+    new_password = "newpassword123"
+    email = "john.doe@example.com"
+    
+    mock_reset_entry = MagicMock()
+    mock_reset_entry.email = email
+    mock_reset_entry.token_expiry = datetime.now(timezone.utc) + timedelta(minutes=10)
+    
+    mock_author = MagicMock()
+    mock_author.email = email
+    mock_author.registration_source = 'google'
+    
+    with patch("pecha_api.plans.auth.plan_auth_services.SessionLocal") as mock_session_local, \
+         patch("pecha_api.plans.auth.plan_auth_services.get_password_reset_by_token", return_value=mock_reset_entry), \
+         patch("pecha_api.plans.auth.plan_auth_services.get_author_by_email", return_value=mock_author):
+        
+        _mock_session_local(mock_session_local)
+        
+        try:
+            update_password(token=token, password=new_password)
+            assert False, "Expected HTTPException to be raised"
+        except HTTPException as e:
+            assert e.status_code == status.HTTP_400_BAD_REQUEST
+            assert e.detail == "Registration Source Mismatch"
+
+
+def test_update_password_weak_password():
+    token = "valid_reset_token"
+    new_password = "weak"  # Too short
+    email = "john.doe@example.com"
+    
+    mock_reset_entry = MagicMock()
+    mock_reset_entry.email = email
+    mock_reset_entry.token_expiry = datetime.now(timezone.utc) + timedelta(minutes=10)
+    
+    mock_author = MagicMock()
+    mock_author.email = email
+    mock_author.registration_source = 'email'
+    
+    with patch("pecha_api.plans.auth.plan_auth_services.SessionLocal") as mock_session_local, \
+         patch("pecha_api.plans.auth.plan_auth_services.get_password_reset_by_token", return_value=mock_reset_entry), \
+         patch("pecha_api.plans.auth.plan_auth_services.get_author_by_email", return_value=mock_author), \
+         patch("pecha_api.plans.auth.plan_auth_services._validate_password") as mock_validate:
+        
+        _mock_session_local(mock_session_local)
+        mock_validate.side_effect = HTTPException(status_code=400, detail="Password must be between 8 and 20 characters")
+        
+        try:
+            update_password(token=token, password=new_password)
+            assert False, "Expected HTTPException to be raised"
+        except HTTPException as e:
+            assert e.status_code == 400
+            assert e.detail == "Password must be between 8 and 20 characters"
+
+
+def test_update_password_author_not_found():
+    token = "valid_reset_token"
+    new_password = "newpassword123"
+    email = "nonexistent@example.com"
+    
+    mock_reset_entry = MagicMock()
+    mock_reset_entry.email = email
+    mock_reset_entry.token_expiry = datetime.now(timezone.utc) + timedelta(minutes=10)
+    
+    with patch("pecha_api.plans.auth.plan_auth_services.SessionLocal") as mock_session_local, \
+         patch("pecha_api.plans.auth.plan_auth_services.get_password_reset_by_token", return_value=mock_reset_entry), \
+         patch("pecha_api.plans.auth.plan_auth_services.get_author_by_email") as mock_get_author:
+        
+        _mock_session_local(mock_session_local)
+        mock_get_author.side_effect = HTTPException(status_code=404, detail="Author not found")
+        
+        try:
+            update_password(token=token, password=new_password)
+            assert False, "Expected HTTPException to be raised"
+        except HTTPException as e:
+            assert e.status_code == 404
+            assert e.detail == "Author not found"
+
+
+def test_update_password_database_save_error():
+    token = "valid_reset_token"
+    new_password = "newpassword123"
+    email = "john.doe@example.com"
+    
+    mock_reset_entry = MagicMock()
+    mock_reset_entry.email = email
+    mock_reset_entry.token_expiry = datetime.now(timezone.utc) + timedelta(minutes=10)
+    
+    mock_author = MagicMock()
+    mock_author.email = email
+    mock_author.registration_source = 'email'
+    
+    with patch("pecha_api.plans.auth.plan_auth_services.SessionLocal") as mock_session_local, \
+         patch("pecha_api.plans.auth.plan_auth_services.get_password_reset_by_token", return_value=mock_reset_entry), \
+         patch("pecha_api.plans.auth.plan_auth_services.get_author_by_email", return_value=mock_author), \
+         patch("pecha_api.plans.auth.plan_auth_services._validate_password"), \
+         patch("pecha_api.plans.auth.plan_auth_services.get_hashed_password", return_value="hashed_password"), \
+         patch("pecha_api.plans.auth.plan_auth_services.save_author") as mock_save:
+        
+        _mock_session_local(mock_session_local)
+        mock_save.side_effect = Exception("Database save failed")
+        
+        try:
+            update_password(token=token, password=new_password)
+            assert False, "Expected Exception to be raised"
+        except Exception as e:
+            assert str(e) == "Database save failed"
+
+
 def test_generate_author_token_data_success():
-    """Test generate_author_token_data with valid author data"""
     author = MagicMock()
     author.email = "john.doe@example.com"
     author.first_name = "John"
@@ -429,84 +682,21 @@ def test_generate_author_token_data_success():
         assert result["iat"] == mock_now
 
 
-def test_generate_author_token_data_missing_email():
-    """Test generate_author_token_data returns None when email is missing"""
+@pytest.mark.parametrize("email,first_name,last_name,test_description", [
+    (None, "John", "Doe", "missing_email"),
+    ("", "John", "Doe", "empty_email"),
+    ("john.doe@example.com", None, "Doe", "missing_first_name"),
+    ("john.doe@example.com", "", "Doe", "empty_first_name"),
+    ("john.doe@example.com", "John", None, "missing_last_name"),
+    ("john.doe@example.com", "John", "", "empty_last_name"),
+    (None, None, None, "all_fields_missing"),
+])
+def test_generate_author_token_data_invalid_inputs(email, first_name, last_name, test_description):
+    """Test that generate_author_token_data returns None for invalid inputs"""
     author = MagicMock()
-    author.email = None
-    author.first_name = "John"
-    author.last_name = "Doe"
-    
-    result = generate_author_token_data(author)
-    
-    assert result is None
-
-
-def test_generate_author_token_data_empty_email():
-    """Test generate_author_token_data returns None when email is empty"""
-    author = MagicMock()
-    author.email = ""
-    author.first_name = "John"
-    author.last_name = "Doe"
-    
-    result = generate_author_token_data(author)
-    
-    assert result is None
-
-
-def test_generate_author_token_data_missing_first_name():
-    """Test generate_author_token_data returns None when first_name is missing"""
-    author = MagicMock()
-    author.email = "john.doe@example.com"
-    author.first_name = None
-    author.last_name = "Doe"
-    
-    result = generate_author_token_data(author)
-    
-    assert result is None
-
-
-def test_generate_author_token_data_empty_first_name():
-    """Test generate_author_token_data returns None when first_name is empty"""
-    author = MagicMock()
-    author.email = "john.doe@example.com"
-    author.first_name = ""
-    author.last_name = "Doe"
-    
-    result = generate_author_token_data(author)
-    
-    assert result is None
-
-
-def test_generate_author_token_data_missing_last_name():
-    """Test generate_author_token_data returns None when last_name is missing"""
-    author = MagicMock()
-    author.email = "john.doe@example.com"
-    author.first_name = "John"
-    author.last_name = None
-    
-    result = generate_author_token_data(author)
-    
-    assert result is None
-
-
-def test_generate_author_token_data_empty_last_name():
-    """Test generate_author_token_data returns None when last_name is empty"""
-    author = MagicMock()
-    author.email = "john.doe@example.com"
-    author.first_name = "John"
-    author.last_name = ""
-    
-    result = generate_author_token_data(author)
-    
-    assert result is None
-
-
-def test_generate_author_token_data_all_fields_missing():
-    """Test generate_author_token_data returns None when all required fields are missing"""
-    author = MagicMock()
-    author.email = None
-    author.first_name = None
-    author.last_name = None
+    author.email = email
+    author.first_name = first_name
+    author.last_name = last_name
     
     result = generate_author_token_data(author)
     
@@ -514,7 +704,6 @@ def test_generate_author_token_data_all_fields_missing():
 
 
 def test_generate_author_token_data_with_whitespace_names():
-    """Test generate_author_token_data handles names with whitespace correctly"""
     author = MagicMock()
     author.email = "john.doe@example.com"
     author.first_name = " John "
