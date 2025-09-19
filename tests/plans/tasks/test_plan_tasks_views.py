@@ -22,10 +22,10 @@ async def test_create_task_success():
         estimated_time=15,
     )
 
+    task_id = uuid.uuid4()
     expected = TaskDTO(
-        id=str(uuid.uuid4()),
+        id=task_id,
         title=request.title,
-        description=request.description,
         content_type=request.content_type,
         content=request.content,
         display_order=1,
@@ -33,6 +33,8 @@ async def test_create_task_success():
     )
 
     creds = _Creds(token="token123")
+    plan_id = uuid.uuid4()
+    day_id = uuid.uuid4()
 
     with patch(
         "pecha_api.plans.tasks.plan_tasks_views.create_new_task",
@@ -42,16 +44,16 @@ async def test_create_task_success():
         resp = await create_task(
             authentication_credential=creds,
             create_task_request=request,
-            plan_id="plan_1",
-            day_id="day_1",
+            plan_id=plan_id,
+            day_id=day_id,
         )
 
         assert mock_create.call_count == 1
         assert mock_create.call_args.kwargs == {
             "token": "token123",
             "create_task_request": request,
-            "plan_id": "plan_1",
-            "day_id": "day_1",
+            "plan_id": plan_id,
+            "day_id": day_id,
         }
 
         assert resp == expected

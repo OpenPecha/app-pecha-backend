@@ -14,7 +14,6 @@ class CreateTaskRequest(BaseModel):
 class TaskDTO(BaseModel):
     id: UUID
     title: str
-    description: Optional[str] = None
     content_type: ContentType
     content: str
     display_order: int
