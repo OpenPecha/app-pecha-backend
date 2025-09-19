@@ -30,6 +30,7 @@ class PlanDTO(BaseModel):
     id: UUID
     title: str
     description: str
+    language: str
     image_url: Optional[str] = None
     total_days: int
     status: PlanStatus
@@ -46,6 +47,7 @@ class TaskDTO(BaseModel):
     id: UUID
     title: Optional[str] = None  # Made optional to support subtasks
     estimated_time: Optional[int] = None
+    display_order: Optional[int] = None
     subtasks: List[SubTaskDTO] = []
 
 class PlanDayDTO(BaseModel):

@@ -33,6 +33,7 @@ DUMMY_PLANS = [
         id=uuid4(),
         title="Introduction to Buddhist Meditation",
         description="A 7-day beginner's guide to Buddhist meditation practices",
+        language="en",
         image_url="https://example.com/meditation.jpg",
         total_days=7,
         status=PlanStatus.PUBLISHED,
@@ -42,6 +43,7 @@ DUMMY_PLANS = [
         id=uuid4(),
         title="The Four Noble Truths Study",
         description="Deep dive into the foundational teachings of Buddhism",
+        language="en",
         image_url="https://example.com/four-truths.jpg",
         total_days=14,
         status=PlanStatus.PUBLISHED,
@@ -51,6 +53,7 @@ DUMMY_PLANS = [
         id=uuid4(),
         title="Mindfulness in Daily Life",
         description="Practical applications of mindfulness for modern living",
+        language="en",
         image_url="https://example.com/mindfulness.jpg",
         total_days=21,
         status=PlanStatus.DRAFT,
@@ -61,18 +64,14 @@ DUMMY_TASKS = [
     TaskDTO(
         id=uuid4(),
         title="Morning Breathing Exercise",
-        description="Start your day with focused breathing",
-        content_type=ContentType.TEXT,
-        content="Sit comfortably and focus on your breath for 10 minutes...",
-        estimated_time=15
+        estimated_time=15,
+        display_order=1
     ),
     TaskDTO(
         id=uuid4(),
         title="Listen to Dharma Talk",
-        description="Audio teaching on compassion",
-        content_type=ContentType.AUDIO,
-        content="https://example.com/dharma-talk-1.mp3",
-        estimated_time=30
+        estimated_time=30,
+        display_order=2
     )
 ]
 
@@ -116,6 +115,7 @@ async def get_filtered_plans(token: str, search: Optional[str], sort_by: str, so
                 id=selected_plan.id,
                 title=selected_plan.title,
                 description=selected_plan.description,
+                language=selected_plan.language.value if selected_plan.language and hasattr(selected_plan.language, 'value') else (selected_plan.language or 'EN'),
                 image_url= generate_presigned_access_url(bucket_name=get("AWS_BUCKET_NAME"), s3_key=selected_plan.image_url),
                 total_days=int(plan_info.total_days or 0),
                 status=PlanStatus(selected_plan.status.value),
@@ -168,6 +168,7 @@ def create_new_plan(token: str, create_plan_request: CreatePlanRequest) -> PlanD
             id=saved_plan.id,
             title=saved_plan.title,
             description=saved_plan.description,
+            language=saved_plan.language.value if hasattr(saved_plan.language, 'value') else saved_plan.language,
             image_url=saved_plan.image_url,
             total_days=total_days,
             status=saved_plan.status,
@@ -209,9 +210,8 @@ def _get_plan_details(db: Session, plan_id: UUID) -> PlanWithDays:
                 TaskDTO(
                     id=task.id,
                     title=task.title,
-                    content_type=task.content_type,
-                    content=task.content,
                     estimated_time=task.estimated_time,
+                    display_order=task.display_order,
                 )
                 for task in tasks_by_item.get(item.id, [])
             ],

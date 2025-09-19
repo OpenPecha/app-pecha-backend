@@ -42,6 +42,7 @@ def test_create_new_plan_success():
     saved_plan.title = request.title
     saved_plan.description = request.description
     saved_plan.image_url = request.image_url
+    saved_plan.language = request.language
     saved_plan.status = PlanStatus.DRAFT
 
     with patch("pecha_api.plans.cms.cms_plans_service.SessionLocal") as mock_session_local, \
@@ -115,6 +116,7 @@ async def test_get_filtered_plans_success():
         id=uuid.uuid4(),
         title="Plan Two",
         description="Description Two",
+        language="en",
         image_url="https://example.com/two.jpg",
         status=PlanStatus.DRAFT,
         author_id=uuid.uuid4(),
@@ -359,6 +361,7 @@ async def test_update_selected_plan_status_invalid_transition():
             id=uuid.uuid4(),
             title="Zero Day Plan",
             description="Should not publish",
+            language="en",
             image_url="https://example.com/zero.jpg",
             total_days=0,
             status=PlanStatus.DRAFT,
