@@ -192,17 +192,20 @@ def _clean_text(content: str, max_lines: int = 4) -> str:
     """
     Clean HTML content to plain text, limit to max_lines, add ellipsis if truncated.
     """
-    soup = BeautifulSoup(content, CONFIG["HTML_PARSER"])
-    for br in soup.find_all(CONFIG["HTML_TAG_BR"]):
-        br.replace_with(CONFIG["HTML_NEWLINE"])
-    for tag in soup.find_all():
-        tag.decompose()
-    text = soup.get_text()
-    lines = text.strip().splitlines()
+    soup = BeautifulSoup(content, "html.parser")
+
+    # Normalize <br> to newlines
+    for br in soup.find_all("br"):
+        br.replace_with("\n")
+
+    # Extract plain text (keeps text inside tags)
+    text = soup.get_text(separator="\n")
+
+    # Limit lines and add ellipsis if needed
+    lines = [line.strip() for line in text.strip().splitlines() if line.strip()]
     if len(lines) > max_lines:
-        lines = lines[:max_lines]
-        lines.append(CONFIG["ELLIPSIS"])
-    return CONFIG["HTML_NEWLINE"].join(lines)
+        lines = lines[:max_lines] + ["..."]
+    return "\n".join(lines)
 
 def _add_logo_to_image(
     img: Image.Image,
