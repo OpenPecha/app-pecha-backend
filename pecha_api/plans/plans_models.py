@@ -43,4 +43,3 @@ class Plan(Base):
               postgresql_using="gin"),
         Index("idx_plans_tags", "tags", postgresql_using="gin"),
     )
-

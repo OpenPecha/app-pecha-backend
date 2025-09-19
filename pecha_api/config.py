@@ -9,6 +9,7 @@ DEFAULTS = dict(
     AWS_SECRET_KEY="",
     AWS_REGION="eu-central-1",
     AWS_BUCKET_NAME="app-pecha-backend",
+    AWS_BUCKET_OWNER="",
     BASE_URL="https://webuddhist.com/",
     CLIENT_ID="",
     COMPRESSED_QUALITY=80,
@@ -23,6 +24,8 @@ DEFAULTS = dict(
     JWT_ISSUER="https://pecha.org",
     JWT_SECRET_KEY="",
     MAX_FILE_SIZE_MB=1,
+    MAX_FILE_SIZE = 5 * 1024 * 1024,
+    ALLOWED_EXTENSIONS = {'.jpg', '.jpeg', '.png', '.webp'},
     MONGO_CONNECTION_STRING="mongodb://admin:pechaAdmin@localhost:27017/pecha?authSource=admin",
 
     WEBUDDHIST_STUDIO_BASE_URL="https://studio.webuddhist.com",

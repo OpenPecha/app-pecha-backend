@@ -1,14 +1,17 @@
 
 from sqlalchemy.exc import IntegrityError
-from sqlalchemy.orm import Session
+from sqlalchemy.orm import Session, joinedload
 from sqlalchemy import func, asc, desc
 from typing import Optional
-from ..plans.plans_models import Plan
+from uuid import UUID
+from pecha_api.plans.plans_models import Plan
 from pecha_api.plans.items.plan_items_models import PlanItem
-from pecha_api.plans.users.user_plan_progress_models import UserPlanProgress
+from pecha_api.plans.users.plan_users_model import UserPlanProgress
 from fastapi import HTTPException
 from starlette import status
 from pecha_api.plans.plans_response_models import PlansRepositoryResponse, PlanWithAggregates
+from uuid import UUID
+
 def save_plan(db: Session, plan: Plan):
     try:
         db.add(plan)
@@ -76,3 +79,9 @@ def get_plans(
     # Total count without pagination/joins
     total = db.query(func.count(Plan.id)).filter(*filters).scalar()
     return PlansRepositoryResponse(plan_info=plan_aggregates, total=total)
+
+def get_plan_by_id(db: Session, plan_id: UUID) -> Plan:
+    return db.query(Plan).filter(Plan.id == plan_id).first()
+
+def get_plan_by_id_with_items_and_tasks(db: Session, plan_id: UUID) -> Plan:
+    return db.query(Plan).filter(Plan.id == plan_id).options(joinedload(Plan.items), joinedload(Plan.tasks)).first()

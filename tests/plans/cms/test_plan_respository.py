@@ -7,11 +7,11 @@ from sqlalchemy.orm import sessionmaker
 from pecha_api.db.database import Base
 from pecha_api.plans.plans_models import Plan
 from pecha_api.plans.items.plan_items_models import PlanItem
-from pecha_api.plans.users.user_plan_progress_models import UserPlanProgress
+from pecha_api.plans.users.plan_users_model import UserPlanProgress
 from pecha_api.plans.authors.plan_author_model import Author
-from pecha_api.plans.plans_repository import save_plan, get_plans
-from pecha_api.plans.plans_response_models import PlansRepositoryResponse, PlanWithAggregates
-
+from pecha_api.plans.cms.cms_plans_repository import save_plan, get_plans
+from pecha_api.plans.plans_response_models import PlansRepositoryResponse
+from pecha_api.users.users_models import Users
 
 DATABASE_URL = os.getenv("TEST_DATABASE_URL")
 if not DATABASE_URL:
@@ -29,14 +29,14 @@ def db():
     # Create only the plans-related tables needed for these tests
     Base.metadata.create_all(
         bind=engine,
-        tables=[Author.__table__, Plan.__table__, PlanItem.__table__, UserPlanProgress.__table__],
+        tables=[Users.__table__, Author.__table__, Plan.__table__, PlanItem.__table__, UserPlanProgress.__table__],
     )
     db = TestingSessionLocal()
     yield db
     db.close()
     Base.metadata.drop_all(
         bind=engine,
-        tables=[Author.__table__, Plan.__table__, PlanItem.__table__, UserPlanProgress.__table__],
+        tables=[Users.__table__, Author.__table__, Plan.__table__, PlanItem.__table__, UserPlanProgress.__table__],
     )
 
 
