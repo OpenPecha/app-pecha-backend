@@ -47,6 +47,7 @@ class TaskDTO(BaseModel):
     id: UUID
     title: Optional[str] = None  # Made optional to support subtasks
     estimated_time: Optional[int] = None
+    display_order: Optional[int] = None
     subtasks: List[SubTaskDTO] = []
 
 class PlanDayDTO(BaseModel):
