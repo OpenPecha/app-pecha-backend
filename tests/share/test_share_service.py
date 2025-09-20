@@ -194,6 +194,7 @@ async def test_generate_segment_content_image_with_segment():
     share_request = ShareRequest(
         text_id="text_1",
         segment_id="seg_1",
+        language="en",
         text_color=TextColor.BLACK,
         bg_color=BgColor.DEFAULT
     )
@@ -240,6 +241,7 @@ async def test_generate_segment_content_image_with_segment():
 async def test_generate_segment_content_image_without_segment():
     share_request = ShareRequest(
         text_id="text_1",
+        language="en",
         text_color=TextColor.BLACK,
         bg_color=BgColor.DEFAULT
     )
