@@ -1,12 +1,13 @@
 from fastapi import APIRouter, Depends, HTTPException
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 
-from .plan_auth_models import CreateAuthorRequest, AuthorDetails, AuthorVerificationResponse, AuthorLoginRequest, AuthorLoginResponse
+from .plan_auth_models import CreateAuthorRequest, AuthorDetails, AuthorVerificationResponse, AuthorLoginRequest, AuthorLoginResponse, PasswordResetRequest, ResetPasswordRequest
 from starlette import status
 from .plan_auth_services import register_author, verify_author_email
 from typing import Annotated
 oauth2_scheme = HTTPBearer()
-from .plan_auth_services import authenticate_and_generate_tokens
+from .plan_auth_services import authenticate_and_generate_tokens, request_reset_password, update_password
+
 
 plan_auth_router = APIRouter(
     prefix="/cms/auth",
@@ -30,3 +31,12 @@ def login_user(author_login_request: AuthorLoginRequest) -> AuthorLoginResponse:
         email=author_login_request.email,
         password=author_login_request.password
     )
+
+@plan_auth_router.post("/request-reset-password", status_code=status.HTTP_202_ACCEPTED)
+async def password_reset_request(reset_request: PasswordResetRequest):
+    return request_reset_password(email=reset_request.email)   
+
+@plan_auth_router.post("/reset-password", status_code=status.HTTP_200_OK)
+def password_reset(reset_password_request: ResetPasswordRequest,
+                   authentication_credential: Annotated[HTTPAuthorizationCredentials, Depends(oauth2_scheme)]):
+    update_password(token=authentication_credential.credentials, password=reset_password_request.password)

@@ -1,10 +1,13 @@
+import secrets
 from .plan_auth_enums import AuthorStatus
 from .plan_auth_models import CreateAuthorRequest, AuthorDetails, TokenPayload, \
-    AuthorVerificationResponse, ResponseError
-from pecha_api.plans.authors.plan_author_model import Author
+    AuthorVerificationResponse, ResponseError, TokenResponse, AuthorLoginResponse, AuthorInfo
+from pecha_api.plans.authors.plan_author_model import Author, AuthorPasswordReset
 from pecha_api.db.database import SessionLocal
 from pecha_api.plans.authors.plan_authors_repository import save_author, get_author_by_email, update_author, check_author_exists
-from pecha_api.auth.auth_repository import get_hashed_password
+from pecha_api.auth.auth_repository import get_hashed_password, verify_password, create_access_token, create_refresh_token
+from pecha_api.auth.password_reset_repository import save_password_reset, get_password_reset_by_token
+from pecha_api.auth.auth_service import send_reset_email
 from fastapi import HTTPException
 from starlette import status
 from datetime import datetime, timedelta, timezone
@@ -23,22 +26,23 @@ from pecha_api.plans.response_message import (
     REGISTRATION_MESSAGE,
     AUTHOR_NOT_VERIFIED,
     AUTHOR_NOT_ACTIVE,
-    INVALID_EMAIL_PASSWORD,
-    AUTHOR_ALREADY_EXISTS,
-    BAD_REQUEST
-
+    INVALID_EMAIL_PASSWORD
 )
 
-from pecha_api.auth.auth_repository import get_hashed_password
+def _get_author_full_name(author: Author) -> str:
+    """Helper function to get author's full name"""
+    return f"{author.first_name} {author.last_name}"
 
-from pecha_api.auth.auth_repository import get_hashed_password, verify_password, create_access_token, create_refresh_token
-from .plan_auth_models import TokenResponse, AuthorLoginResponse, AuthorInfo
-from fastapi.responses import JSONResponse
+
+def _execute_with_session(operation):
+    """Helper function to execute database operations with session management"""
+    with SessionLocal() as db_session:
+        return operation(db_session)
+
 
 def register_author(create_user_request: CreateAuthorRequest) -> AuthorDetails:
     # Check for existing author to return required error shape on duplicates
-    with SessionLocal() as db_session:
-        check_author_exists(db=db_session, email=create_user_request.email)
+    _execute_with_session(lambda db: check_author_exists(db=db, email=create_user_request.email))
     registered_user = _create_user(
         create_user_request=create_user_request
     )
@@ -50,8 +54,7 @@ def _create_user(create_user_request: CreateAuthorRequest) -> AuthorDetails:
     _validate_password(new_author.password)
     hashed_password = get_hashed_password(new_author.password)
     new_author.password = hashed_password
-    with SessionLocal() as db_session:
-        saved_author = save_author(db=db_session, author=new_author)
+    saved_author = _execute_with_session(lambda db: save_author(db=db, author=new_author))
     _send_verification_email(email=saved_author.email)
     return AuthorDetails(
         first_name=saved_author.first_name,
@@ -135,7 +138,7 @@ def verify_author_email(token: str) -> AuthorVerificationResponse:
 
 
 def authenticate_author(email: str, password: str):
-    with SessionLocal() as db_session:
+    def _authenticate_operation(db_session):
         author = get_author_by_email(db=db_session, email=email)
         if not verify_password(
                 plain_password=password,
@@ -147,6 +150,8 @@ def authenticate_author(email: str, password: str):
             )
         check_verified_author(author=author)
         return author
+    
+    return _execute_with_session(_authenticate_operation)
 
 def check_verified_author(author: Author) -> bool:
     if not author.is_verified:
@@ -164,7 +169,7 @@ def generate_author_token_data(author: Author):
         return None
     data = {
         "email": author.email,
-        "name": author.first_name + " " + author.last_name,
+        "name": _get_author_full_name(author),
         "iss": get("JWT_ISSUER"),
         "aud": get("JWT_AUD"),
         "iat": datetime.now(timezone.utc)
@@ -183,8 +188,56 @@ def generate_token_author(author: Author):
     )
     return AuthorLoginResponse(
         user=AuthorInfo(
-            name=author.first_name + " " + author.last_name,
+            name=_get_author_full_name(author),
             image_url=author.image_url
         ),
         auth=token_response
     )
+
+
+def request_reset_password(email: str):
+    def _reset_password_operation(db_session):
+        current_user = get_author_by_email(
+            db=db_session,
+            email=email
+        )
+        reset_token = secrets.token_urlsafe(32)
+        token_expiry = datetime.now(timezone.utc) + timedelta(minutes=30)
+        password_reset = AuthorPasswordReset(
+            email=current_user.email,
+            reset_token=reset_token,
+            token_expiry=token_expiry
+        )
+        save_password_reset(
+            db=db_session,
+            password_reset=password_reset
+        )
+        reset_link = f"{get('WEBUDDHIST_STUDIO_BASE_URL')}/reset-password?token={reset_token}"
+        send_reset_email(email=email, reset_link=reset_link)
+        return {"message": "If the email exists in our system, a password reset email has been sent."}
+    
+    return _execute_with_session(_reset_password_operation)
+
+
+def update_password(token: str, password: str):
+    def _update_password_operation(db_session):
+        reset_entry = get_password_reset_by_token(
+            db=db_session,
+            token=token
+        )
+        if reset_entry is None or reset_entry.token_expiry < datetime.now(timezone.utc):
+            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid or expired token")
+        current_user = get_author_by_email(
+            db=db_session,
+            email=reset_entry.email
+        )
+        if current_user.registration_source != 'email':
+            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Registration Source Mismatch")
+
+        _validate_password(password)
+        hashed_password = get_hashed_password(password)
+        current_user.password = hashed_password
+        updated_user = save_author(db=db_session, author=current_user)
+        return updated_user
+    
+    return _execute_with_session(_update_password_operation)
