@@ -1557,6 +1557,28 @@ async def test_create_sheet_text():
         assert result == "new_text_id"
 
 
+@pytest.mark.asyncio
+async def test_create_sheet_text_title_required_empty():
+    #Test _create_sheet_text_ should fail when title is empty
+    mock_user = type("User", (), {"email": "test@example.com"})
+    with patch("pecha_api.sheets.sheets_service.validate_and_extract_user_details", return_value=mock_user):
+        with pytest.raises(HTTPException) as exc_info:
+            await _create_sheet_text_(title="", token="valid_token", group_id="group_id")
+    assert exc_info.value.status_code == status.HTTP_400_BAD_REQUEST
+    assert exc_info.value.detail == ErrorConstants.SHEET_TITLE_REQUIRED_MESSAGE
+
+
+@pytest.mark.asyncio
+async def test_create_sheet_text_title_required_none():
+    #Test _create_sheet_text_ should fail when title is None
+    mock_user = type("User", (), {"email": "test@example.com"})
+    with patch("pecha_api.sheets.sheets_service.validate_and_extract_user_details", return_value=mock_user):
+        with pytest.raises(HTTPException) as exc_info:
+            await _create_sheet_text_(title=None, token="valid_token", group_id="group_id")  # type: ignore[arg-type]
+    assert exc_info.value.status_code == status.HTTP_400_BAD_REQUEST
+    assert exc_info.value.detail == ErrorConstants.SHEET_TITLE_REQUIRED_MESSAGE
+
+
 # Test cases for _create_sheet_group_ function
 @pytest.mark.asyncio
 async def test_create_sheet_group():
