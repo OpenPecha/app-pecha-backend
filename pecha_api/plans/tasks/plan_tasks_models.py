@@ -35,5 +35,3 @@ class PlanTask(Base):
         Index("idx_tasks_plan_item_order", "plan_item_id", "display_order"),
         Index("idx_tasks_content_type", "content_type"),
     )
-
-
