@@ -6,7 +6,7 @@ from pecha_api.plans.authors.plan_author_model import Author, AuthorPasswordRese
 from pecha_api.db.database import SessionLocal
 from pecha_api.plans.authors.plan_authors_repository import save_author, get_author_by_email, update_author, check_author_exists
 from pecha_api.auth.auth_repository import get_hashed_password, verify_password, create_access_token, create_refresh_token
-from pecha_api.auth.password_reset_repository import save_password_reset, get_password_reset_by_token
+from pecha_api.auth.password_reset_repository import save_password_reset, get_password_reset_by_token_for_author
 from pecha_api.auth.auth_service import send_reset_email
 from fastapi import HTTPException
 from starlette import status
@@ -221,7 +221,7 @@ def request_reset_password(email: str):
 
 def update_password(token: str, password: str):
     def _update_password_operation(db_session):
-        reset_entry = get_password_reset_by_token(
+        reset_entry = get_password_reset_by_token_for_author(
             db=db_session,
             token=token
         )
@@ -231,9 +231,6 @@ def update_password(token: str, password: str):
             db=db_session,
             email=reset_entry.email
         )
-        if current_user.registration_source != 'email':
-            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Registration Source Mismatch")
-
         _validate_password(password)
         hashed_password = get_hashed_password(password)
         current_user.password = hashed_password
