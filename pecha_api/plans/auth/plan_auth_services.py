@@ -231,9 +231,6 @@ def update_password(token: str, password: str):
             db=db_session,
             email=reset_entry.email
         )
-        if current_user.registration_source != 'email':
-            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Registration Source Mismatch")
-
         _validate_password(password)
         hashed_password = get_hashed_password(password)
         current_user.password = hashed_password
