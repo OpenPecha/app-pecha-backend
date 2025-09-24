@@ -21,6 +21,7 @@ from pecha_api.plans.auth.plan_auth_services import (
     authenticate_and_generate_tokens,
     generate_token_author,
     generate_author_token_data,
+    re_verify_email,
 )
 from pecha_api.plans.auth.plan_auth_models import CreateAuthorRequest, AuthorVerificationResponse, AuthorInfo, TokenResponse, AuthorLoginResponse
 from pecha_api.plans.response_message import (
@@ -32,6 +33,7 @@ from pecha_api.plans.response_message import (
     REGISTRATION_MESSAGE, TOKEN_INVALID,
     BAD_REQUEST,
     AUTHOR_ALREADY_EXISTS,
+    EMAIL_IS_SENT,
 )
 from pecha_api.plans.auth.plan_auth_enums import AuthorStatus
 
@@ -280,7 +282,7 @@ def test_send_verification_email_sends_email():
     from pecha_api.plans.auth.plan_auth_services import _send_verification_email
 
     with patch("pecha_api.plans.auth.plan_auth_services._generate_author_verification_token", return_value="tok"), \
-        patch("pecha_api.plans.auth.plan_auth_services.get", side_effect=lambda k: "http://backend" if k == "PECHA_BACKEND_ENDPOINT" else "x"), \
+        patch("pecha_api.plans.auth.plan_auth_services.get", side_effect=lambda k: "http://frontend" if k == "WEBUDDHIST_STUDIO_BASE_URL" else "x"), \
         patch("pecha_api.plans.auth.plan_auth_services.Template.render") as mock_render, \
         patch("pecha_api.plans.auth.plan_auth_services.send_email") as mock_send_email:
         mock_render.return_value = "rendered_html"
@@ -726,3 +728,32 @@ def test_generate_author_token_data_with_whitespace_names():
         assert result is not None
         assert result["name"] == " John   Doe "
         assert result["email"] == "john.doe@example.com"
+
+
+def test_re_verify_email_success():
+    email = "john.doe@example.com"
+    mock_author = MagicMock()
+    with patch("pecha_api.plans.auth.plan_auth_services.SessionLocal") as mock_session_local, \
+         patch("pecha_api.plans.auth.plan_auth_services.get_author_by_email", return_value=mock_author) as mock_get_author, \
+         patch("pecha_api.plans.auth.plan_auth_services._send_verification_email") as mock_send_verification:
+        _mock_session_local(mock_session_local)
+
+        response = re_verify_email(email=email)
+
+        mock_get_author.assert_called_once_with(db=ANY, email=email)
+        mock_send_verification.assert_called_once_with(email=email)
+        assert response.message == EMAIL_IS_SENT
+
+
+def test_re_verify_email_author_not_found():
+    email = "noone@example.com"
+    with patch("pecha_api.plans.auth.plan_auth_services.SessionLocal") as mock_session_local, \
+         patch("pecha_api.plans.auth.plan_auth_services.get_author_by_email", return_value=None):
+        _mock_session_local(mock_session_local)
+
+        try:
+            re_verify_email(email=email)
+            assert False, "Expected HTTPException to be raised"
+        except HTTPException as e:
+            assert e.status_code == status.HTTP_409_CONFLICT
+            assert e.detail == {"error": BAD_REQUEST, "message": AUTHOR_ALREADY_EXISTS}

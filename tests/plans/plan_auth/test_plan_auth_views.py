@@ -6,8 +6,8 @@ from starlette import status
 from pecha_api.app import api
 from pecha_api.plans.auth.plan_auth_models import AuthorDetails
 from pecha_api.plans.auth.plan_auth_enums import AuthorStatus
-from pecha_api.plans.auth.plan_auth_models import AuthorVerificationResponse
-from pecha_api.plans.response_message import EMAIL_VERIFIED_SUCCESS
+from pecha_api.plans.auth.plan_auth_models import AuthorVerificationResponse, EmailReVerificationResponse
+from pecha_api.plans.response_message import EMAIL_VERIFIED_SUCCESS, EMAIL_IS_SENT, BAD_REQUEST, AUTHOR_ALREADY_EXISTS
 
 client = TestClient(api)
 
@@ -255,3 +255,26 @@ def test_reset_password_weak_password_400():
         assert response.status_code == status.HTTP_400_BAD_REQUEST
         data = response.json()
         assert data["detail"] == "Password must be between 8 and 20 characters"
+
+
+def test_email_re_verification_success():
+    email = "john.doe@example.com"
+    expected = EmailReVerificationResponse(message=EMAIL_IS_SENT)
+    with patch("pecha_api.plans.auth.plan_auth_views.re_verify_email", return_value=expected) as mock_reverify:
+        response = client.post("cms/auth/email-re-verification", params={"email": email})
+
+        assert response.status_code == status.HTTP_202_ACCEPTED
+        assert response.json()["message"] == EMAIL_IS_SENT
+        mock_reverify.assert_called_once_with(email=email)
+
+
+def test_email_re_verification_author_not_found_conflict():
+    email = "noone@example.com"
+    from fastapi import HTTPException
+    with patch("pecha_api.plans.auth.plan_auth_views.re_verify_email") as mock_reverify:
+        mock_reverify.side_effect = HTTPException(status_code=409, detail={"error": BAD_REQUEST, "message": AUTHOR_ALREADY_EXISTS})
+
+        response = client.post("cms/auth/email-re-verification", params={"email": email})
+
+        assert response.status_code == status.HTTP_409_CONFLICT
+        assert response.json()["detail"] == {"error": BAD_REQUEST, "message": AUTHOR_ALREADY_EXISTS}
