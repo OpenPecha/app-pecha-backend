@@ -85,6 +85,12 @@ def _generate_author_verification_token(email: str) -> str:
     )
     return jwt.encode(payload.model_dump(), get("JWT_SECRET_KEY"), algorithm=get("JWT_ALGORITHM"))
 
+def re_verify_email(email: str) -> None:
+    author = get_author_by_email(email=email)
+    if not author:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=AUTHOR_NOT_FOUND)
+    _send_verification_email(email=email)
+
 
 def _send_verification_email(email: str) -> None:
     token = _generate_author_verification_token(email=email)
@@ -100,6 +106,8 @@ def _send_verification_email(email: str) -> None:
         subject="Verify your Pecha account",
         message=html_content
     )
+
+
 
 
 def verify_author_email(token: str) -> AuthorVerificationResponse:
