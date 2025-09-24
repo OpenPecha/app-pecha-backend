@@ -61,3 +61,6 @@ class PasswordResetRequest(BaseModel):
 
 class ResetPasswordRequest(BaseModel):
     password: str
+
+class EmailReVerificationResponse(BaseModel):
+    message: str
