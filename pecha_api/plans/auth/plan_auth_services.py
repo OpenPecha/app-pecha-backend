@@ -251,7 +251,7 @@ def re_verify_email(email: str) -> EmailReVerificationResponse:
     with SessionLocal() as db_session:
         author = get_author_by_email(db=db_session, email=email)
         if not author:
-            raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail=ResponseError(error=BAD_REQUEST, message=AUTHOR_NOT_FOUND).model_dump())
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=ResponseError(error=BAD_REQUEST, message=AUTHOR_NOT_FOUND).model_dump())
         _send_verification_email(email=email)
     return EmailReVerificationResponse(message=EMAIL_IS_SENT)
 

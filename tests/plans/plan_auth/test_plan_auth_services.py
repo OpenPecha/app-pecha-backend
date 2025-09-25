@@ -33,6 +33,7 @@ from pecha_api.plans.response_message import (
     REGISTRATION_MESSAGE, TOKEN_INVALID,
     BAD_REQUEST,
     AUTHOR_ALREADY_EXISTS,
+    AUTHOR_NOT_FOUND,
     EMAIL_IS_SENT,
 )
 from pecha_api.plans.auth.plan_auth_enums import AuthorStatus
@@ -88,7 +89,7 @@ def test_register_author_success():
         assert response.message == REGISTRATION_MESSAGE
 
 
-def test_register_author_duplicate_still_proceeds():
+def test_register_author_duplicate_raises_400():
     create_request = CreateAuthorRequest(
         first_name="John",
         last_name="Doe",
@@ -107,28 +108,24 @@ def test_register_author_duplicate_still_proceeds():
     saved_author.created_by = create_request.email
 
     with patch("pecha_api.plans.auth.plan_auth_services.SessionLocal") as mock_session_local, \
-        patch("pecha_api.plans.auth.plan_auth_services.check_author_exists", return_value=True) as mock_check_exists, \
+        patch("pecha_api.plans.auth.plan_auth_services.check_author_exists") as mock_check_exists, \
         patch("pecha_api.plans.auth.plan_auth_services.save_author") as mock_save_author, \
         patch("pecha_api.plans.auth.plan_auth_services.get_hashed_password") as mock_get_hashed_password, \
         patch("pecha_api.plans.auth.plan_auth_services._send_verification_email") as mock_send_email:
         _mock_session_local(mock_session_local)
 
-        mock_save_author.return_value = saved_author
-        mock_get_hashed_password.return_value = "hashed_password123"
+        mock_check_exists.side_effect = HTTPException(status_code=400, detail={"error": BAD_REQUEST, "message": AUTHOR_ALREADY_EXISTS})
 
-        response = register_author(create_user_request=create_request)
+        try:
+            register_author(create_user_request=create_request)
+            assert False, "Expected HTTPException to be raised"
+        except HTTPException as e:
+            assert e.status_code == status.HTTP_400_BAD_REQUEST
+            assert e.detail == {"error": BAD_REQUEST, "message": AUTHOR_ALREADY_EXISTS}
 
-        mock_check_exists.assert_called_once_with(db=ANY, email=create_request.email)
-        mock_get_hashed_password.assert_called_once_with(create_request.password)
-        mock_save_author.assert_called_once_with(db=ANY, author=ANY)
-        mock_send_email.assert_called_once_with(email=create_request.email)
-
-        assert response is not None
-        assert response.first_name == saved_author.first_name
-        assert response.last_name == saved_author.last_name
-        assert response.email == saved_author.email
-        assert response.status == AuthorStatus.PENDING_VERIFICATION
-        assert response.message == REGISTRATION_MESSAGE
+        mock_save_author.assert_not_called()
+        mock_get_hashed_password.assert_not_called()
+        mock_send_email.assert_not_called()
 
 
 @pytest.mark.parametrize("password,expected_error,test_description", [
@@ -755,5 +752,5 @@ def test_re_verify_email_author_not_found():
             re_verify_email(email=email)
             assert False, "Expected HTTPException to be raised"
         except HTTPException as e:
-            assert e.status_code == status.HTTP_409_CONFLICT
-            assert e.detail == {"error": BAD_REQUEST, "message": AUTHOR_ALREADY_EXISTS}
+            assert e.status_code == status.HTTP_404_NOT_FOUND
+            assert e.detail == {"error": BAD_REQUEST, "message": AUTHOR_NOT_FOUND}
