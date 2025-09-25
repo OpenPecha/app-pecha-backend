@@ -11,7 +11,7 @@ class ErrorConstants:
     GROUP_NOT_FOUND_MESSAGE="Group not found"
     VERSION_NOT_FOUND_MESSAGE="Version not found"
     SHORT_URL_GENERATION_FAILED_MESSAGE="Short URL generation failed"
-
+    SHEET_TITLE_REQUIRED_MESSAGE="Sheet title is required"
     # Image Error Messages
     IMAGE_ERROR_MESSAGE = "Only image files are allowed"
     IMAGE_SIZE_ERROR_MESSAGE = "File size exceeds 5MB limit"
