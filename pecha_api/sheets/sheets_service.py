@@ -595,6 +595,8 @@ def _generate_segment_creation_request_payload_(create_sheet_request: CreateShee
 
 async def _create_sheet_text_(title: str, token: str, group_id: str) -> str:
     user_details = validate_and_extract_user_details(token=token)
+    if title is None or title == "":
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=ErrorConstants.SHEET_TITLE_REQUIRED_MESSAGE)
     create_text_request = CreateTextRequest(
         title=title,
         group_id=group_id,

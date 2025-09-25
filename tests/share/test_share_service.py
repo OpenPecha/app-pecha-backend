@@ -26,10 +26,12 @@ from pecha_api.texts.segments.segments_enum import SegmentType
 async def test_get_generated_image_success():
     mock_image_data = b"fake_image_data"
     
-    with patch("anyio.open_file") as mock_open_file:
+    with patch("anyio.open_file", new_callable=AsyncMock) as mock_open_file:
         mock_file = AsyncMock()
         mock_file.read.return_value = mock_image_data
-        mock_open_file.return_value.__aenter__.return_value = mock_file
+        cm = AsyncMock()
+        cm.__aenter__.return_value = mock_file
+        mock_open_file.return_value = cm
         
         response = await get_generated_image()
         
@@ -39,7 +41,7 @@ async def test_get_generated_image_success():
 
 @pytest.mark.asyncio
 async def test_get_generated_image_file_not_found():
-    with patch("anyio.open_file", side_effect=FileNotFoundError()):
+    with patch("anyio.open_file", new_callable=AsyncMock, side_effect=FileNotFoundError()):
         with pytest.raises(FileNotFoundError):
             await get_generated_image()
 
@@ -192,6 +194,7 @@ async def test_generate_segment_content_image_with_segment():
     share_request = ShareRequest(
         text_id="text_1",
         segment_id="seg_1",
+        language="en",
         text_color=TextColor.BLACK,
         bg_color=BgColor.DEFAULT
     )
@@ -238,6 +241,7 @@ async def test_generate_segment_content_image_with_segment():
 async def test_generate_segment_content_image_without_segment():
     share_request = ShareRequest(
         text_id="text_1",
+        language="en",
         text_color=TextColor.BLACK,
         bg_color=BgColor.DEFAULT
     )
@@ -311,7 +315,7 @@ def test_generate_short_url_payload_without_url():
         
         payload = _generate_short_url_payload_(share_request, og_description)
         
-        expected_url = "https://webuddhist.com/chapter?segment_id=seg_123&contentId=content_456&text_id=text_789&contentIndex=1"
+        expected_url = "https://webuddhist.com/chapter?segment_id=seg_123&contentId=content_456&contentIndex=1"
         assert payload["url"] == expected_url
         assert payload["og_title"] == "Pecha"
         assert payload["og_description"] == "Test description"
@@ -349,9 +353,14 @@ def test_generate_url_with_segment_id():
     text_id = "text_789"
     content_index = 2
     
-    result = _generate_url_(content_id, text_id, content_index, segment_id)
+    result = _generate_url_(
+        content_id=content_id,
+        content_index=content_index,
+        text_id=text_id,
+        segment_id=segment_id
+    )
     
-    expected_url = "https://webuddhist.com/chapter?segment_id=seg_123&contentId=content_456&text_id=text_789&contentIndex=2"
+    expected_url = "https://webuddhist.com/chapter?segment_id=seg_123&contentId=content_456&contentIndex=2"
     assert result == expected_url
 
 
@@ -360,7 +369,11 @@ def test_generate_url_without_segment_id():
     text_id = "text_789"
     content_index = 2
     
-    result = _generate_url_(content_id, text_id, content_index)
+    result = _generate_url_(
+        content_id=content_id,
+        content_index=content_index,
+        text_id=text_id
+    )
     
     expected_url = "https://webuddhist.com/chapter?contentId=content_456&text_id=text_789&contentIndex=2"
     assert result == expected_url
