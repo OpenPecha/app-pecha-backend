@@ -6,7 +6,7 @@ from pecha_api.plans.authors.plan_author_model import Author, AuthorPasswordRese
 from pecha_api.db.database import SessionLocal
 from pecha_api.plans.authors.plan_authors_repository import save_author, get_author_by_email, update_author, check_author_exists
 from pecha_api.auth.auth_repository import get_hashed_password, verify_password, create_access_token, create_refresh_token
-from pecha_api.auth.password_reset_repository import save_password_reset, get_password_reset_by_token
+from pecha_api.auth.password_reset_repository import save_password_reset, get_password_reset_by_token_for_author
 from pecha_api.auth.auth_service import send_reset_email
 from fastapi import HTTPException
 from starlette import status
@@ -138,7 +138,7 @@ def verify_author_email(token: str) -> AuthorVerificationResponse:
 
 
 def authenticate_author(email: str, password: str):
-    def _authenticate_operation(db_session):
+    with SessionLocal() as db_session:
         author = get_author_by_email(db=db_session, email=email)
         if not verify_password(
                 plain_password=password,
@@ -150,8 +150,6 @@ def authenticate_author(email: str, password: str):
             )
         check_verified_author(author=author)
         return author
-    
-    return _execute_with_session(_authenticate_operation)
 
 def check_verified_author(author: Author) -> bool:
     if not author.is_verified:
@@ -196,7 +194,7 @@ def generate_token_author(author: Author):
 
 
 def request_reset_password(email: str):
-    def _reset_password_operation(db_session):
+    with SessionLocal() as db_session:
         current_user = get_author_by_email(
             db=db_session,
             email=email
@@ -215,13 +213,11 @@ def request_reset_password(email: str):
         reset_link = f"{get('WEBUDDHIST_STUDIO_BASE_URL')}/reset-password?token={reset_token}"
         send_reset_email(email=email, reset_link=reset_link)
         return {"message": "If the email exists in our system, a password reset email has been sent."}
-    
-    return _execute_with_session(_reset_password_operation)
 
 
 def update_password(token: str, password: str):
-    def _update_password_operation(db_session):
-        reset_entry = get_password_reset_by_token(
+    with SessionLocal() as db_session:
+        reset_entry = get_password_reset_by_token_for_author(
             db=db_session,
             token=token
         )
@@ -231,13 +227,8 @@ def update_password(token: str, password: str):
             db=db_session,
             email=reset_entry.email
         )
-        if current_user.registration_source != 'email':
-            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Registration Source Mismatch")
-
         _validate_password(password)
         hashed_password = get_hashed_password(password)
         current_user.password = hashed_password
         updated_user = save_author(db=db_session, author=current_user)
         return updated_user
-    
-    return _execute_with_session(_update_password_operation)
