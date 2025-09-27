@@ -349,7 +349,6 @@ def test_check_verified_author_not_active():
 
 def test_check_verified_author_valid():
     author = MagicMock(is_verified=True, is_active=True)
-    # Should not raise
     check_verified_author(author)
 
 
@@ -485,7 +484,7 @@ def test_update_password_success():
     mock_updated_author.password = "hashed_new_password"
     
     with patch("pecha_api.plans.auth.plan_auth_services.SessionLocal") as mock_session_local, \
-         patch("pecha_api.plans.auth.plan_auth_services.get_password_reset_by_token", return_value=mock_reset_entry) as mock_get_reset, \
+         patch("pecha_api.plans.auth.plan_auth_services.get_password_reset_by_token_for_author", return_value=mock_reset_entry) as mock_get_reset, \
          patch("pecha_api.plans.auth.plan_auth_services.get_author_by_email", return_value=mock_author) as mock_get_author, \
          patch("pecha_api.plans.auth.plan_auth_services._validate_password") as mock_validate, \
          patch("pecha_api.plans.auth.plan_auth_services.get_hashed_password", return_value="hashed_new_password") as mock_hash, \
@@ -510,7 +509,7 @@ def test_update_password_invalid_token():
     new_password = "newpassword123"
     
     with patch("pecha_api.plans.auth.plan_auth_services.SessionLocal") as mock_session_local, \
-         patch("pecha_api.plans.auth.plan_auth_services.get_password_reset_by_token", return_value=None) as mock_get_reset:
+         patch("pecha_api.plans.auth.plan_auth_services.get_password_reset_by_token_for_author", return_value=None) as mock_get_reset:
         
         _mock_session_local(mock_session_local)
         
@@ -531,7 +530,7 @@ def test_update_password_expired_token():
     mock_reset_entry.token_expiry = datetime.now(timezone.utc) - timedelta(minutes=10)
     
     with patch("pecha_api.plans.auth.plan_auth_services.SessionLocal") as mock_session_local, \
-         patch("pecha_api.plans.auth.plan_auth_services.get_password_reset_by_token", return_value=mock_reset_entry):
+         patch("pecha_api.plans.auth.plan_auth_services.get_password_reset_by_token_for_author", return_value=mock_reset_entry):
         
         _mock_session_local(mock_session_local)
         
@@ -543,7 +542,9 @@ def test_update_password_expired_token():
             assert e.detail == "Invalid or expired token"
 
 
-def test_update_password_registration_source_mismatch():
+def test_update_password_oauth_user_success():
+    """Test that OAuth users (Google, Facebook, etc.) can successfully reset passwords.
+    Registration source validation was removed to allow all users to set passwords."""
     token = "valid_reset_token"
     new_password = "newpassword123"
     email = "john.doe@example.com"
@@ -554,25 +555,36 @@ def test_update_password_registration_source_mismatch():
     
     mock_author = MagicMock()
     mock_author.email = email
-    mock_author.registration_source = 'google'
+    mock_author.registration_source = 'google'  # OAuth user
+    
+    mock_updated_author = MagicMock()
+    mock_updated_author.email = email
+    mock_updated_author.password = "hashed_new_password"
     
     with patch("pecha_api.plans.auth.plan_auth_services.SessionLocal") as mock_session_local, \
-         patch("pecha_api.plans.auth.plan_auth_services.get_password_reset_by_token", return_value=mock_reset_entry), \
-         patch("pecha_api.plans.auth.plan_auth_services.get_author_by_email", return_value=mock_author):
+         patch("pecha_api.plans.auth.plan_auth_services.get_password_reset_by_token_for_author", return_value=mock_reset_entry) as mock_get_reset, \
+         patch("pecha_api.plans.auth.plan_auth_services.get_author_by_email", return_value=mock_author) as mock_get_author, \
+         patch("pecha_api.plans.auth.plan_auth_services._validate_password") as mock_validate, \
+         patch("pecha_api.plans.auth.plan_auth_services.get_hashed_password", return_value="hashed_new_password") as mock_hash, \
+         patch("pecha_api.plans.auth.plan_auth_services.save_author", return_value=mock_updated_author) as mock_save:
         
-        _mock_session_local(mock_session_local)
+        mock_db_session = _mock_session_local(mock_session_local)
         
-        try:
-            update_password(token=token, password=new_password)
-            assert False, "Expected HTTPException to be raised"
-        except HTTPException as e:
-            assert e.status_code == status.HTTP_400_BAD_REQUEST
-            assert e.detail == "Registration Source Mismatch"
+        result = update_password(token=token, password=new_password)
+        
+        mock_get_reset.assert_called_once_with(db=mock_db_session, token=token)
+        mock_get_author.assert_called_once_with(db=mock_db_session, email=email)
+        mock_validate.assert_called_once_with(new_password)
+        mock_hash.assert_called_once_with(new_password)
+        mock_save.assert_called_once_with(db=mock_db_session, author=mock_author)
+        
+        assert mock_author.password == "hashed_new_password"
+        assert result == mock_updated_author
 
 
 def test_update_password_weak_password():
     token = "valid_reset_token"
-    new_password = "weak"  # Too short
+    new_password = "weak"  
     email = "john.doe@example.com"
     
     mock_reset_entry = MagicMock()
@@ -584,7 +596,7 @@ def test_update_password_weak_password():
     mock_author.registration_source = 'email'
     
     with patch("pecha_api.plans.auth.plan_auth_services.SessionLocal") as mock_session_local, \
-         patch("pecha_api.plans.auth.plan_auth_services.get_password_reset_by_token", return_value=mock_reset_entry), \
+         patch("pecha_api.plans.auth.plan_auth_services.get_password_reset_by_token_for_author", return_value=mock_reset_entry), \
          patch("pecha_api.plans.auth.plan_auth_services.get_author_by_email", return_value=mock_author), \
          patch("pecha_api.plans.auth.plan_auth_services._validate_password") as mock_validate:
         
@@ -609,7 +621,7 @@ def test_update_password_author_not_found():
     mock_reset_entry.token_expiry = datetime.now(timezone.utc) + timedelta(minutes=10)
     
     with patch("pecha_api.plans.auth.plan_auth_services.SessionLocal") as mock_session_local, \
-         patch("pecha_api.plans.auth.plan_auth_services.get_password_reset_by_token", return_value=mock_reset_entry), \
+         patch("pecha_api.plans.auth.plan_auth_services.get_password_reset_by_token_for_author", return_value=mock_reset_entry), \
          patch("pecha_api.plans.auth.plan_auth_services.get_author_by_email") as mock_get_author:
         
         _mock_session_local(mock_session_local)
@@ -637,7 +649,7 @@ def test_update_password_database_save_error():
     mock_author.registration_source = 'email'
     
     with patch("pecha_api.plans.auth.plan_auth_services.SessionLocal") as mock_session_local, \
-         patch("pecha_api.plans.auth.plan_auth_services.get_password_reset_by_token", return_value=mock_reset_entry), \
+         patch("pecha_api.plans.auth.plan_auth_services.get_password_reset_by_token_for_author", return_value=mock_reset_entry), \
          patch("pecha_api.plans.auth.plan_auth_services.get_author_by_email", return_value=mock_author), \
          patch("pecha_api.plans.auth.plan_auth_services._validate_password"), \
          patch("pecha_api.plans.auth.plan_auth_services.get_hashed_password", return_value="hashed_password"), \
