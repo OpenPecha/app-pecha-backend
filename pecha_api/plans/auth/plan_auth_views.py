@@ -3,10 +3,11 @@ from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 
 from .plan_auth_models import CreateAuthorRequest, AuthorDetails, AuthorVerificationResponse, AuthorLoginRequest, AuthorLoginResponse, PasswordResetRequest, ResetPasswordRequest
 from starlette import status
-from .plan_auth_services import register_author, verify_author_email
+from .plan_auth_services import register_author, verify_author_email, re_verify_email
 from typing import Annotated
 oauth2_scheme = HTTPBearer()
 from .plan_auth_services import authenticate_and_generate_tokens, request_reset_password, update_password
+from .plan_auth_models import EmailReVerificationResponse
 
 
 plan_auth_router = APIRouter(
@@ -24,6 +25,10 @@ def register_user(create_user_request: CreateAuthorRequest) -> AuthorDetails:
 @plan_auth_router.get("/verify-email", status_code=status.HTTP_200_OK)
 def verify_email(authentication_credential: Annotated[HTTPAuthorizationCredentials, Depends(oauth2_scheme)]) -> AuthorVerificationResponse:
     return verify_author_email(token=authentication_credential.credentials)
+
+@plan_auth_router.post("/email-re-verification", status_code=status.HTTP_202_ACCEPTED, response_model=EmailReVerificationResponse)
+def email_re_verification(email: str):
+    return re_verify_email(email=email)
 
 @plan_auth_router.post("/login", status_code=status.HTTP_200_OK)
 def login_user(author_login_request: AuthorLoginRequest) -> AuthorLoginResponse:

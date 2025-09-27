@@ -1,7 +1,7 @@
 import secrets
 from .plan_auth_enums import AuthorStatus
 from .plan_auth_models import CreateAuthorRequest, AuthorDetails, TokenPayload, \
-    AuthorVerificationResponse, ResponseError, TokenResponse, AuthorLoginResponse, AuthorInfo
+    AuthorVerificationResponse, ResponseError, TokenResponse, AuthorLoginResponse, AuthorInfo, EmailReVerificationResponse
 from pecha_api.plans.authors.plan_author_model import Author, AuthorPasswordReset
 from pecha_api.db.database import SessionLocal
 from pecha_api.plans.authors.plan_authors_repository import save_author, get_author_by_email, update_author, check_author_exists
@@ -26,7 +26,10 @@ from pecha_api.plans.response_message import (
     REGISTRATION_MESSAGE,
     AUTHOR_NOT_VERIFIED,
     AUTHOR_NOT_ACTIVE,
-    INVALID_EMAIL_PASSWORD
+    INVALID_EMAIL_PASSWORD,
+    AUTHOR_NOT_FOUND,
+    BAD_REQUEST,
+    EMAIL_IS_SENT
 )
 
 def _get_author_full_name(author: Author) -> str:
@@ -85,7 +88,6 @@ def _generate_author_verification_token(email: str) -> str:
     )
     return jwt.encode(payload.model_dump(), get("JWT_SECRET_KEY"), algorithm=get("JWT_ALGORITHM"))
 
-
 def _send_verification_email(email: str) -> None:
     token = _generate_author_verification_token(email=email)
     frontend_endpoint = get("WEBUDDHIST_STUDIO_BASE_URL")       
@@ -100,6 +102,8 @@ def _send_verification_email(email: str) -> None:
         subject="Verify your Pecha account",
         message=html_content
     )
+
+
 
 
 def verify_author_email(token: str) -> AuthorVerificationResponse:
@@ -232,3 +236,11 @@ def update_password(token: str, password: str):
         current_user.password = hashed_password
         updated_user = save_author(db=db_session, author=current_user)
         return updated_user
+
+def re_verify_email(email: str) -> EmailReVerificationResponse:
+    with SessionLocal() as db_session:
+        author = get_author_by_email(db=db_session, email=email)
+        if not author:
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=ResponseError(error=BAD_REQUEST, message=AUTHOR_NOT_FOUND).model_dump())
+        _send_verification_email(email=email)
+    return EmailReVerificationResponse(message=EMAIL_IS_SENT)
