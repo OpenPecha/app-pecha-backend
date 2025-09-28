@@ -265,7 +265,7 @@ async def test_generate_segment_content_image_without_segment():
         await _generate_segment_content_image_(share_request)
         
         mock_generate_image.assert_called_once_with(
-            text="Pecha",
+            text="Test Title",
             ref_str="Pecha",
             lang="en",
             text_color=TextColor.BLACK,

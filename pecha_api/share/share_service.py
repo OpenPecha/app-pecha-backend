@@ -62,28 +62,33 @@ def _generate_logo_image_(share_request: ShareRequest):
     )
 
 async def _generate_segment_content_image_(share_request: ShareRequest):
-    segment_text = get("SITE_NAME")
+    main_content_text = get("SITE_NAME")
     reference_text = get("SITE_NAME")
     language = share_request.language
     # If segment_id is provided, get the segment details
     if share_request.segment_id is not None:
         await SegmentUtils.validate_segment_exists(segment_id=share_request.segment_id)
         segment = await get_segment_details_by_id(segment_id=share_request.segment_id)
-        segment_text = segment.content
+        main_content_text = segment.content
 
         text_id = segment.text_id
         text_detail = await TextUtils.get_text_detail_by_id(text_id=text_id)
         reference_text = text_detail.title
         language = text_detail.language
+    elif share_request.text_id is not None:
+        text_detail = await TextUtils.get_text_detail_by_id(text_id=share_request.text_id)
+        main_content_text = text_detail.title
+        language = text_detail.language
 
     generate_segment_image(
-        text=segment_text,
+        text=main_content_text,
         ref_str=reference_text,
         lang=language,
         text_color=share_request.text_color,
         bg_color=share_request.bg_color,
         logo_path=LOGO_PATH
     )
+
 
 
 def _generate_short_url_payload_(share_request: ShareRequest, og_description: str) -> dict:
