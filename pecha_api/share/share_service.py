@@ -26,13 +26,13 @@ DEFAULT_OG_DESCRIPTION = get("SITE_NAME")
 PECHA_FRONTEND_ENDPOINT = "https://webuddhist.com/chapter"
 
 async def get_generated_image():
-    try:    
+    try:
         image_path = IMAGE_PATH
         async with await anyio.open_file(image_path, "rb") as file:
             image_bytes = await file.read()
 
         return StreamingResponse(io.BytesIO(image_bytes), media_type=MEDIA_TYPE)
-    
+
     except HTTPException as error:
         raise HTTPException(
             status_code=error.status_code,
@@ -44,50 +44,50 @@ async def generate_short_url(share_request: ShareRequest) -> ShortUrlResponse:
     if share_request.logo:
         _generate_logo_image_(share_request=share_request)
 
-    
-    await _generate_segment_content_image_(share_request=share_request)
-        
-    payload = _generate_short_url_payload_(share_request=share_request, og_description=og_description)
 
+    await _generate_segment_content_image_(share_request=share_request)
+
+    payload = _generate_short_url_payload_(share_request=share_request, og_description=og_description)
     short_url: ShortUrlResponse = await get_short_url(payload=payload)
- 
+
     return short_url
 
 
 
 def _generate_logo_image_(share_request: ShareRequest):
     generate_segment_image(
-        text_color=share_request.text_color, 
-        bg_color=share_request.bg_color, 
+        text_color=share_request.text_color,
+        bg_color=share_request.bg_color,
         logo_path=LOGO_PATH
     )
 
 async def _generate_segment_content_image_(share_request: ShareRequest):
-
     segment_text = get("SITE_NAME")
-    text_detail = await TextUtils.get_text_detail_by_id(text_id=share_request.text_id)
-    reference_text = text_detail.title
-    language = text_detail.language
-    
+    reference_text = get("SITE_NAME")
+    language = share_request.language
     # If segment_id is provided, get the segment details
     if share_request.segment_id is not None:
         await SegmentUtils.validate_segment_exists(segment_id=share_request.segment_id)
         segment = await get_segment_details_by_id(segment_id=share_request.segment_id)
         segment_text = segment.content
 
+        text_id = segment.text_id
+        text_detail = await TextUtils.get_text_detail_by_id(text_id=text_id)
+        reference_text = text_detail.title
+        language = text_detail.language
+
     generate_segment_image(
-        text=segment_text, 
-        ref_str=reference_text, 
-        lang=share_request.language, 
-        text_color=share_request.text_color, 
-        bg_color=share_request.bg_color, 
+        text=segment_text,
+        ref_str=reference_text,
+        lang=language,
+        text_color=share_request.text_color,
+        bg_color=share_request.bg_color,
         logo_path=LOGO_PATH
     )
 
 
 def _generate_short_url_payload_(share_request: ShareRequest, og_description: str) -> dict:
 
-    image_url = None
     if share_request.url is None:
         share_request.url = _generate_url_(
             segment_id=share_request.segment_id,
@@ -101,7 +101,6 @@ def _generate_short_url_payload_(share_request: ShareRequest, og_description: st
         image_url = f"{pecha_backend_endpoint}/share/image?segment_id={share_request.segment_id}&language={share_request.language}&logo={share_request.logo}"
     else:
         image_url = f"{pecha_backend_endpoint}/share/image?text_id={share_request.text_id}&language={share_request.language}&logo={share_request.logo}"
-    
     payload = {
         "url": share_request.url,
         "og_title": DEFAULT_OG_DESCRIPTION,
@@ -114,9 +113,9 @@ def _generate_short_url_payload_(share_request: ShareRequest, og_description: st
 def _generate_url_(
         content_id: str,
         content_index: int,
-        text_id: str | None = None,
+        text_id: str,
         segment_id: str | None = None,
 ) -> str:
     if segment_id is None:
         return f"{PECHA_FRONTEND_ENDPOINT}?contentId={content_id}&text_id={text_id}&contentIndex={content_index}"
-    return f"{PECHA_FRONTEND_ENDPOINT}?segment_id={segment_id}&contentId={content_id}&contentIndex={content_index}"
+    return f"{PECHA_FRONTEND_ENDPOINT}?segment_id={segment_id}&contentId={content_id}&text_id={text_id}&contentIndex={content_index}"
