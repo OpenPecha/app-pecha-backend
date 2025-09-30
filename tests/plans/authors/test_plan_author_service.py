@@ -6,8 +6,8 @@ from jose.exceptions import JWTClaimsError
 from jwt import ExpiredSignatureError
 from starlette import status
 
-from pecha_api.plans.authors.plan_author_service import validate_and_extract_author_details
-from pecha_api.plans.authors.plan_author_model import Author
+from pecha_api.plans.authors.plan_authors_service import validate_and_extract_author_details
+from pecha_api.plans.authors.plan_authors_model import Author
 from pecha_api.error_contants import ErrorConstants
 import jose
 

@@ -10,7 +10,7 @@ from pecha_api.plans.response_message import (
     BAD_REQUEST,
 )
 from pecha_api.plans.auth.plan_auth_models import ResponseError
-from pecha_api.plans.authors.plan_author_model import Author
+from pecha_api.plans.authors.plan_authors_model import Author
 
 
 def save_author(db: Session, author: Author):

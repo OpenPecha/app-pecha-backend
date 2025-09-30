@@ -8,7 +8,7 @@ from pecha_api.plans.cms.cms_plans_repository import save_plan, get_plan_by_id
 from pecha_api.plans.items.plan_items_repository import save_plan_items
 from pecha_api.plans.users.plan_users_progress_repository import get_plan_progress
 
-from pecha_api.plans.authors.plan_author_service import validate_and_extract_author_details
+from pecha_api.plans.authors.plan_authors_service import validate_and_extract_author_details
 from pecha_api.plans.plans_enums import LanguageCode, PlanStatus, ContentType
 from pecha_api.plans.plans_response_models import PlansResponse, PlanDTO, CreatePlanRequest, TaskDTO, PlanDayDTO, \
     PlanWithDays, \
