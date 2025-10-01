@@ -25,7 +25,9 @@ from pecha_api.image_utils import ImageUtils
 
 from .user_cache_service import (
     get_user_info_cache,
-    set_user_info_cache
+    set_user_info_cache,
+    update_user_info_cache,
+    update_user_avatar_cache
 )
 
 from pecha_api.cache.cache_enums import CacheType
@@ -93,6 +95,7 @@ def update_user_info(token: str, user_info_request: UserInfoRequest) -> Users:
                 db_session.add(current_user)
                 update_social_profiles(user=current_user,social_profiles=user_info_request.social_profiles)
                 updated_user = update_user(db=db_session, user=current_user)
+                update_user_info_cache(token=token, data=updated_user, cache_type=CacheType.USER_INFO)
                 return updated_user
             except Exception as e:
                 db_session.rollback()
@@ -140,6 +143,7 @@ def upload_user_image(token: str, file: UploadFile) -> str:
         current_user.avatar_url = Utils.extract_s3_key(presigned_url=presigned_url)
         with SessionLocal() as db_session:
             update_user(db=db_session, user=current_user)
+            update_user_avatar_cache(token=token, data=current_user, cache_type=CacheType.USER_INFO)
             return presigned_url
 
 
