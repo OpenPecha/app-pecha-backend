@@ -39,3 +39,14 @@ async def update_user_info_cache(token: str, data: UserInfoResponse, cache_type:
         return True
     # If update failed (e.g., key missing), delete existing cache entry to avoid stale data
     return await delete_cache(hash_key=hashed_key)
+
+async def update_user_avatar_cache(token: str, data: UserInfoResponse, cache_type: CacheType = None) -> bool:
+    payload = [token, cache_type]
+    hashed_key: str = Utils.generate_hash_key(payload = payload)
+    cache_time_out = config.get_int("CACHE_TEXT_TIMEOUT")
+    # Try to update existing cache entry
+    is_updated: bool = await update_cache(hash_key=hashed_key, value=data, cache_time_out=cache_time_out)
+    if is_updated:
+        return True
+    # If update failed (e.g., key missing), delete existing cache entry to avoid stale data
+    return await delete_cache(hash_key=hashed_key)
