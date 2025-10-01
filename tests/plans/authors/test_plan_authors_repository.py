@@ -1,4 +1,6 @@
+import uuid
 from unittest.mock import MagicMock
+from uuid import UUID
 
 import pytest
 from sqlalchemy.exc import IntegrityError
@@ -14,6 +16,7 @@ from pecha_api.plans.authors.plan_authors_repository import (
 )
 from fastapi import HTTPException
 from pecha_api.plans.response_message import AUTHOR_NOT_FOUND, AUTHOR_UPDATE_INVALID, AUTHOR_ALREADY_EXISTS, BAD_REQUEST
+from tests.plans.image_upload.test_media_services import UUID_PATH
 
 
 def _make_session_mock() -> Session:
@@ -71,21 +74,22 @@ def test_get_author_by_email_not_found_raises_404():
 def test_get_author_by_id_returns_author_when_found():
     db = _make_session_mock()
     expected_author = MagicMock(name="AuthorInstance")
-    db.query.return_value.filter.return_value.first.return_value = expected_author
+    db.query.return_value.options.return_value.filter.return_value.first.return_value = expected_author
 
-    result = get_author_by_id(db=db, author_id="123e4567-e89b-12d3-a456-426614174000")
+    result = get_author_by_id(db=db, author_id=uuid.UUID("123e4567-e89b-12d3-a456-426614174000"))
 
     assert result is expected_author
     db.query.assert_called_once()
-    db.query.return_value.filter.assert_called_once()
+    db.query.return_value.options.assert_called_once()
+    db.query.return_value.options.return_value.filter.assert_called_once()
 
 
 def test_get_author_by_id_not_found_raises_404():
     db = _make_session_mock()
-    db.query.return_value.filter.return_value.first.return_value = None
+    db.query.return_value.options.return_value.filter.return_value.first.return_value = None
 
     with pytest.raises(HTTPException) as exc:
-        get_author_by_id(db=db, author_id="123e4567-e89b-12d3-a456-426614174999")
+        get_author_by_id(db=db, author_id=uuid.UUID("123e4567-e89b-12d3-a456-426614174999"))
 
     assert exc.value.status_code == status.HTTP_404_NOT_FOUND
     assert exc.value.detail == AUTHOR_NOT_FOUND
