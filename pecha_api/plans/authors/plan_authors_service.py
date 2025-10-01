@@ -13,16 +13,15 @@ from pecha_api.auth.auth_repository import validate_token
 from pecha_api.db.database import SessionLocal
 from pecha_api.error_contants import ErrorConstants
 from pecha_api.plans.authors.plan_authors_model import Author
-from pecha_api.plans.authors.plan_authors_repository import get_author_by_email, get_author_by_id
+from pecha_api.plans.authors.plan_authors_repository import get_author_by_email, get_author_by_id, get_all_authors
 import jose
 
-from pecha_api.plans.authors.plan_authors_response_models import AuthorInfoResponse, SocialMediaProfile
+from pecha_api.plans.authors.plan_authors_response_models import AuthorInfoResponse, SocialMediaProfile,AuthorsResponse
 from pecha_api.plans.plans_response_models import PlansResponse
 from pecha_api.plans.shared.utils import load_plans_from_json
 from pecha_api.uploads.S3_utils import generate_presigned_access_url
-from pecha_api.users.users_enums import SocialProfile
 from pecha_api.users.users_service import get_social_profile
-
+from pecha_api.plans.public.plan_service import convert_plan_model_to_dto
 
 def validate_and_extract_author_details(token: str) -> Author:
     try:
@@ -49,13 +48,32 @@ def validate_and_extract_author_details(token: str) -> Author:
         logging.debug(f"exception: {jwt_exception}")
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail=ErrorConstants.TOKEN_ERROR_MESSAGE)
 
+async def get_authors() -> AuthorsResponse:
+    with SessionLocal() as db_session:
+        authors = get_all_authors(db=db_session)
+        authors_response = [AuthorInfoResponse(
+            id=author.id,
+            firstname=author.first_name,
+            lastname=author.last_name,
+            email=author.email,
+            avatar_url=generate_presigned_access_url(bucket_name=get("AWS_BUCKET_NAME"), s3_key= author.image_url),
+            bio=author.bio,
+            social_profiles=_get_author_social_profile(author=author)
+        ) for author in authors]
+        return AuthorsResponse(
+            authors=authors_response,
+            skip=0,
+            limit=20,
+            total=len(authors)
+        )
 
 async def get_selected_author_details(author_id: UUID) -> AuthorInfoResponse:
     author = await _get_author_details_by_id(author_id=author_id)
     social_media_profiles = _get_author_social_profile(author=author)
     return AuthorInfoResponse(
-        firstname=author.firstname,
-        lastname=author.lastname,
+        id=author.id,
+        firstname=author.first_name,
+        lastname=author.last_name,
         email=author.email,
         avatar_url=generate_presigned_access_url(bucket_name=get("AWS_BUCKET_NAME"), s3_key= author.image_url),
         bio=author.bio,
@@ -67,9 +85,15 @@ async def get_plans_by_author(author_id: UUID,skip: int = 0,
     await _get_author_details_by_id(author_id=author_id)
     # Load plans from JSON file
     plan_listing = load_plans_from_json()
+    # Filter only published plans and convert to DTOs
+    published_plans = [
+        convert_plan_model_to_dto(p) 
+        for p in plan_listing.plans 
+        if p.status == "PUBLISHED"
+    ]
      # Apply pagination
-    total = len(plan_listing)
-    paginated_plans = plan_listing[skip:skip + limit]
+    total = len(published_plans)
+    paginated_plans = published_plans[skip:skip + limit]
     
     return PlansResponse(
         plans=paginated_plans,
