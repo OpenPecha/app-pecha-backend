@@ -386,15 +386,12 @@ def test_request_reset_password_success():
     
     mock_author = MagicMock()
     mock_author.email = email
-    
-    mock_password_reset = MagicMock()
-    
     with patch("pecha_api.plans.auth.plan_auth_services.SessionLocal") as mock_session_local, \
          patch("pecha_api.plans.auth.plan_auth_services.get_author_by_email", return_value=mock_author) as mock_get_author, \
          patch("pecha_api.plans.auth.plan_auth_services.save_password_reset") as mock_save_reset, \
          patch("pecha_api.plans.auth.plan_auth_services.send_reset_email") as mock_send_email, \
-         patch("pecha_api.plans.auth.plan_auth_services.secrets.token_urlsafe", return_value="test_token_123") as mock_token, \
-         patch("pecha_api.plans.auth.plan_auth_services.get", return_value="https://example.com") as mock_get_config:
+         patch("pecha_api.plans.auth.plan_auth_services.secrets.token_urlsafe", return_value="test_token_123"), \
+         patch("pecha_api.plans.auth.plan_auth_services.get", return_value="https://example.com"):
         
         mock_db_session = _mock_session_local(mock_session_local)
         
@@ -404,7 +401,7 @@ def test_request_reset_password_success():
         mock_save_reset.assert_called_once()
         mock_send_email.assert_called_once_with(
             email=email, 
-            reset_link="https://example.com/reset-password?token=test_token_123"
+            reset_link="https://example.com/reset-password?token=test_token_123&email=john.doe@example.com"
         )
         
         assert result == {"message": "If the email exists in our system, a password reset email has been sent."}
