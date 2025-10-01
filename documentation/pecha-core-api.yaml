@@ -1,0 +1,3831 @@
+openapi: '3.1.0'
+info:
+  title: 'Pecha API'
+  description: 'This is the API documentation for Pecha application'
+  version: '0.1.0'
+servers:
+  -
+    url: '/api/v1'
+paths:
+  /sheets:
+    get:
+      tags:
+        - 'Sheets'
+      summary: 'Get Sheets'
+      operationId: 'get_sheets_sheets_get'
+      security:
+        -
+          HTTPBearer:
+      parameters:
+        -
+          name: 'language'
+          in: 'query'
+          required: False
+          schema:
+            anyOf:
+              -
+                type: 'string'
+              -
+                type: 'null'
+            title: 'Language'
+        -
+          name: 'email'
+          in: 'query'
+          required: False
+          schema:
+            anyOf:
+              -
+                type: 'string'
+              -
+                type: 'null'
+            title: 'Email'
+        -
+          name: 'sort_by'
+          in: 'query'
+          required: False
+          schema:
+            anyOf:
+              -
+                $ref: '#/components/schemas/SortBy'
+              -
+                type: 'null'
+            title: 'Sort By'
+        -
+          name: 'sort_order'
+          in: 'query'
+          required: False
+          schema:
+            anyOf:
+              -
+                $ref: '#/components/schemas/SortOrder'
+              -
+                type: 'null'
+            title: 'Sort Order'
+        -
+          name: 'skip'
+          in: 'query'
+          required: False
+          schema:
+            type: 'integer'
+            default: 0
+            title: 'Skip'
+        -
+          name: 'limit'
+          in: 'query'
+          required: False
+          schema:
+            type: 'integer'
+            default: 10
+            title: 'Limit'
+      responses:
+        200:
+          description: 'Successful Response'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SheetDTOResponse'
+        422:
+          description: 'Validation Error'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+    post:
+      tags:
+        - 'Sheets'
+      summary: 'Create Sheet'
+      operationId: 'create_sheet_sheets_post'
+      security:
+        -
+          HTTPBearer:
+      requestBody:
+        required: True
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateSheetRequest'
+      responses:
+        201:
+          description: 'Successful Response'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SheetIdResponse'
+        422:
+          description: 'Validation Error'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+  /sheets/{sheet_id}:
+    get:
+      tags:
+        - 'Sheets'
+      summary: 'Get Sheet'
+      operationId: 'get_sheet_sheets__sheet_id__get'
+      parameters:
+        -
+          name: 'sheet_id'
+          in: 'path'
+          required: True
+          schema:
+            type: 'string'
+            title: 'Sheet Id'
+        -
+          name: 'skip'
+          in: 'query'
+          required: False
+          schema:
+            type: 'integer'
+            default: 0
+            title: 'Skip'
+        -
+          name: 'limit'
+          in: 'query'
+          required: False
+          schema:
+            type: 'integer'
+            default: 10
+            title: 'Limit'
+      responses:
+        200:
+          description: 'Successful Response'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SheetDetailDTO'
+        422:
+          description: 'Validation Error'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+    put:
+      tags:
+        - 'Sheets'
+      summary: 'Update Sheet'
+      operationId: 'update_sheet_sheets__sheet_id__put'
+      security:
+        -
+          HTTPBearer:
+      parameters:
+        -
+          name: 'sheet_id'
+          in: 'path'
+          required: True
+          schema:
+            type: 'string'
+            title: 'Sheet Id'
+      requestBody:
+        required: True
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateSheetRequest'
+      responses:
+        200:
+          description: 'Successful Response'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SheetIdResponse'
+        422:
+          description: 'Validation Error'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+    delete:
+      tags:
+        - 'Sheets'
+      summary: 'Delete Sheet'
+      operationId: 'delete_sheet_sheets__sheet_id__delete'
+      security:
+        -
+          HTTPBearer:
+      parameters:
+        -
+          name: 'sheet_id'
+          in: 'path'
+          required: True
+          schema:
+            type: 'string'
+            title: 'Sheet Id'
+      responses:
+        204:
+          description: 'Successful Response'
+        422:
+          description: 'Validation Error'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+  /sheets/upload:
+    post:
+      tags:
+        - 'Sheets'
+      summary: 'Upload Sheet Image'
+      operationId: 'upload_sheet_image_sheets_upload_post'
+      parameters:
+        -
+          name: 'sheet_id'
+          in: 'query'
+          required: False
+          schema:
+            anyOf:
+              -
+                type: 'string'
+              -
+                type: 'null'
+            title: 'Sheet Id'
+      requestBody:
+        required: True
+        content:
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/Body_upload_sheet_image_sheets_upload_post'
+      responses:
+        201:
+          description: 'Successful Response'
+          content:
+            application/json:
+              schema:
+        422:
+          description: 'Validation Error'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+  /collections:
+    get:
+      tags:
+        - 'collections'
+      summary: 'Read Collection'
+      operationId: 'read_collection_collections_get'
+      parameters:
+        -
+          name: 'parent_id'
+          in: 'query'
+          required: False
+          schema:
+            anyOf:
+              -
+                type: 'string'
+              -
+                type: 'null'
+            description: 'Filter topics by title prefix'
+            title: 'Parent Id'
+          description: 'Filter topics by title prefix'
+        -
+          name: 'language'
+          in: 'query'
+          required: False
+          schema:
+            anyOf:
+              -
+                type: 'string'
+              -
+                type: 'null'
+            title: 'Language'
+        -
+          name: 'skip'
+          in: 'query'
+          required: False
+          schema:
+            type: 'integer'
+            minimum: 0
+            description: 'Number of records to skip'
+            default: 0
+            title: 'Skip'
+          description: 'Number of records to skip'
+        -
+          name: 'limit'
+          in: 'query'
+          required: False
+          schema:
+            type: 'integer'
+            maximum: 100
+            minimum: 1
+            description: 'Number of records to return'
+            default: 10
+            title: 'Limit'
+          description: 'Number of records to return'
+      responses:
+        200:
+          description: 'Successful Response'
+          content:
+            application/json:
+              schema:
+        422:
+          description: 'Validation Error'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+    post:
+      tags:
+        - 'collections'
+      summary: 'Create Collection'
+      operationId: 'create_collection_collections_post'
+      security:
+        -
+          HTTPBearer:
+      parameters:
+        -
+          name: 'language'
+          in: 'query'
+          required: True
+          schema:
+            anyOf:
+              -
+                type: 'string'
+              -
+                type: 'null'
+            title: 'Language'
+      requestBody:
+        required: True
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateCollectionRequest'
+      responses:
+        201:
+          description: 'Successful Response'
+          content:
+            application/json:
+              schema:
+        422:
+          description: 'Validation Error'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+  /collections/{collection_id}:
+    put:
+      tags:
+        - 'collections'
+      summary: 'Update Collection By Id'
+      operationId: 'update_collection_by_id_collections__collection_id__put'
+      security:
+        -
+          HTTPBearer:
+      parameters:
+        -
+          name: 'collection_id'
+          in: 'path'
+          required: True
+          schema:
+            type: 'string'
+            title: 'Collection Id'
+        -
+          name: 'language'
+          in: 'query'
+          required: True
+          schema:
+            anyOf:
+              -
+                type: 'string'
+              -
+                type: 'null'
+            title: 'Language'
+      requestBody:
+        required: True
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateCollectionRequest'
+      responses:
+        202:
+          description: 'Successful Response'
+          content:
+            application/json:
+              schema:
+        422:
+          description: 'Validation Error'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+    delete:
+      tags:
+        - 'collections'
+      summary: 'Delete Collection By Id'
+      operationId: 'delete_collection_by_id_collections__collection_id__delete'
+      security:
+        -
+          HTTPBearer:
+      parameters:
+        -
+          name: 'collection_id'
+          in: 'path'
+          required: True
+          schema:
+            type: 'string'
+            title: 'Collection Id'
+      responses:
+        204:
+          description: 'Successful Response'
+        422:
+          description: 'Validation Error'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+  /terms:
+    get:
+      tags:
+        - 'Terms'
+      summary: 'Read Terms'
+      operationId: 'read_terms_terms_get'
+      parameters:
+        -
+          name: 'parent_id'
+          in: 'query'
+          required: False
+          schema:
+            anyOf:
+              -
+                type: 'string'
+              -
+                type: 'null'
+            description: 'Filter topics by title prefix'
+            title: 'Parent Id'
+          description: 'Filter topics by title prefix'
+        -
+          name: 'language'
+          in: 'query'
+          required: False
+          schema:
+            anyOf:
+              -
+                type: 'string'
+              -
+                type: 'null'
+            title: 'Language'
+        -
+          name: 'skip'
+          in: 'query'
+          required: False
+          schema:
+            type: 'integer'
+            minimum: 0
+            description: 'Number of records to skip'
+            default: 0
+            title: 'Skip'
+          description: 'Number of records to skip'
+        -
+          name: 'limit'
+          in: 'query'
+          required: False
+          schema:
+            type: 'integer'
+            maximum: 100
+            minimum: 1
+            description: 'Number of records to return'
+            default: 10
+            title: 'Limit'
+          description: 'Number of records to return'
+      responses:
+        200:
+          description: 'Successful Response'
+          content:
+            application/json:
+              schema:
+        422:
+          description: 'Validation Error'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+    post:
+      tags:
+        - 'Terms'
+      summary: 'Create Terms'
+      operationId: 'create_terms_terms_post'
+      security:
+        -
+          HTTPBearer:
+      parameters:
+        -
+          name: 'language'
+          in: 'query'
+          required: True
+          schema:
+            anyOf:
+              -
+                type: 'string'
+              -
+                type: 'null'
+            title: 'Language'
+      requestBody:
+        required: True
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateTermRequest'
+      responses:
+        201:
+          description: 'Successful Response'
+          content:
+            application/json:
+              schema:
+        422:
+          description: 'Validation Error'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+  /terms{term_id}:
+    put:
+      tags:
+        - 'Terms'
+      summary: 'Update Term By Id'
+      operationId: 'update_term_by_id_terms_term_id__put'
+      security:
+        -
+          HTTPBearer:
+      parameters:
+        -
+          name: 'term_id'
+          in: 'path'
+          required: True
+          schema:
+            type: 'string'
+            title: 'Term Id'
+        -
+          name: 'language'
+          in: 'query'
+          required: True
+          schema:
+            anyOf:
+              -
+                type: 'string'
+              -
+                type: 'null'
+            title: 'Language'
+      requestBody:
+        required: True
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateTermRequest'
+      responses:
+        202:
+          description: 'Successful Response'
+          content:
+            application/json:
+              schema:
+        422:
+          description: 'Validation Error'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+  /terms/terms{term_id}:
+    delete:
+      tags:
+        - 'Terms'
+      summary: 'Delete Term By Id'
+      operationId: 'delete_term_by_id_terms_terms_term_id__delete'
+      security:
+        -
+          HTTPBearer:
+      parameters:
+        -
+          name: 'term_id'
+          in: 'path'
+          required: True
+          schema:
+            type: 'string'
+            title: 'Term Id'
+      responses:
+        204:
+          description: 'Successful Response'
+        422:
+          description: 'Validation Error'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+  /texts:
+    get:
+      tags:
+        - 'Texts'
+      summary: 'Get Text'
+      operationId: 'get_text_texts_get'
+      parameters:
+        -
+          name: 'text_id'
+          in: 'query'
+          required: False
+          schema:
+            anyOf:
+              -
+                type: 'string'
+              -
+                type: 'null'
+            title: 'Text Id'
+        -
+          name: 'collection_id'
+          in: 'query'
+          required: False
+          schema:
+            anyOf:
+              -
+                type: 'string'
+              -
+                type: 'null'
+            title: 'Collection Id'
+        -
+          name: 'language'
+          in: 'query'
+          required: False
+          schema:
+            type: 'string'
+            title: 'Language'
+        -
+          name: 'skip'
+          in: 'query'
+          required: False
+          schema:
+            type: 'integer'
+            default: 0
+            title: 'Skip'
+        -
+          name: 'limit'
+          in: 'query'
+          required: False
+          schema:
+            type: 'integer'
+            default: 10
+            title: 'Limit'
+      responses:
+        200:
+          description: 'Successful Response'
+          content:
+            application/json:
+              schema:
+        422:
+          description: 'Validation Error'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+    post:
+      tags:
+        - 'Texts'
+      summary: 'Create Text'
+      operationId: 'create_text_texts_post'
+      security:
+        -
+          HTTPBearer:
+      requestBody:
+        required: True
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateTextRequest'
+      responses:
+        201:
+          description: 'Successful Response'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TextDTO'
+        422:
+          description: 'Validation Error'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+  /texts/{text_id}/versions:
+    get:
+      tags:
+        - 'Texts'
+      summary: 'Get Versions'
+      operationId: 'get_versions_texts__text_id__versions_get'
+      parameters:
+        -
+          name: 'text_id'
+          in: 'path'
+          required: True
+          schema:
+            type: 'string'
+            title: 'Text Id'
+        -
+          name: 'language'
+          in: 'query'
+          required: False
+          schema:
+            type: 'string'
+            title: 'Language'
+        -
+          name: 'skip'
+          in: 'query'
+          required: False
+          schema:
+            type: 'integer'
+            default: 0
+            title: 'Skip'
+        -
+          name: 'limit'
+          in: 'query'
+          required: False
+          schema:
+            type: 'integer'
+            default: 10
+            title: 'Limit'
+      responses:
+        200:
+          description: 'Successful Response'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TextVersionResponse'
+        422:
+          description: 'Validation Error'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+  /texts/{text_id}/contents:
+    get:
+      tags:
+        - 'Texts'
+      summary: 'Get Contents'
+      operationId: 'get_contents_texts__text_id__contents_get'
+      parameters:
+        -
+          name: 'text_id'
+          in: 'path'
+          required: True
+          schema:
+            type: 'string'
+            title: 'Text Id'
+        -
+          name: 'language'
+          in: 'query'
+          required: False
+          schema:
+            type: 'string'
+            title: 'Language'
+        -
+          name: 'skip'
+          in: 'query'
+          required: False
+          schema:
+            type: 'integer'
+            default: 0
+            title: 'Skip'
+        -
+          name: 'limit'
+          in: 'query'
+          required: False
+          schema:
+            type: 'integer'
+            default: 10
+            title: 'Limit'
+      responses:
+        200:
+          description: 'Successful Response'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TableOfContentResponse'
+        422:
+          description: 'Validation Error'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+  /texts/{text_id}/details:
+    post:
+      tags:
+        - 'Texts'
+      summary: 'Get Contents With Details'
+      operationId: 'get_contents_with_details_texts__text_id__details_post'
+      parameters:
+        -
+          name: 'text_id'
+          in: 'path'
+          required: True
+          schema:
+            type: 'string'
+            title: 'Text Id'
+      requestBody:
+        required: True
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TextDetailsRequest'
+      responses:
+        200:
+          description: 'Successful Response'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DetailTableOfContentResponse'
+        422:
+          description: 'Validation Error'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+  /texts/table-of-content:
+    post:
+      tags:
+        - 'Texts'
+      summary: 'Create Table Of Content Request'
+      operationId: 'create_table_of_content_request_texts_table_of_content_post'
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TableOfContent-Input'
+        required: True
+      responses:
+        200:
+          description: 'Successful Response'
+          content:
+            application/json:
+              schema:
+        422:
+          description: 'Validation Error'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+      security:
+        -
+          HTTPBearer:
+  /groups/{group_id}:
+    get:
+      tags:
+        - 'Groups'
+      summary: 'Get Group By Id'
+      operationId: 'get_group_by_id_groups__group_id__get'
+      parameters:
+        -
+          name: 'group_id'
+          in: 'path'
+          required: True
+          schema:
+            type: 'string'
+            title: 'Group Id'
+      responses:
+        200:
+          description: 'Successful Response'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GroupDTO'
+        422:
+          description: 'Validation Error'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+  /groups:
+    post:
+      tags:
+        - 'Groups'
+      summary: 'Create Group'
+      operationId: 'create_group_groups_post'
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateGroupRequest'
+        required: True
+      responses:
+        201:
+          description: 'Successful Response'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GroupDTO'
+        422:
+          description: 'Validation Error'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+      security:
+        -
+          HTTPBearer:
+  /segments:
+    post:
+      tags:
+        - 'Segments'
+      summary: 'Create Segment'
+      operationId: 'create_segment_segments_post'
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateSegmentRequest'
+        required: True
+      responses:
+        201:
+          description: 'Successful Response'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SegmentResponse'
+        422:
+          description: 'Validation Error'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+      security:
+        -
+          HTTPBearer:
+  /segments/{segment_id}:
+    get:
+      tags:
+        - 'Segments'
+      summary: 'Get Segment'
+      operationId: 'get_segment_segments__segment_id__get'
+      parameters:
+        -
+          name: 'segment_id'
+          in: 'path'
+          required: True
+          schema:
+            type: 'string'
+            title: 'Segment Id'
+        -
+          name: 'text_details'
+          in: 'query'
+          required: False
+          schema:
+            type: 'boolean'
+            default: False
+            title: 'Text Details'
+      responses:
+        200:
+          description: 'Successful Response'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SegmentDTO'
+        422:
+          description: 'Validation Error'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+  /segments/{segment_id}/info:
+    get:
+      tags:
+        - 'Segments'
+      summary: 'Get Info For Segment'
+      operationId: 'get_info_for_segment_segments__segment_id__info_get'
+      parameters:
+        -
+          name: 'segment_id'
+          in: 'path'
+          required: True
+          schema:
+            type: 'string'
+            title: 'Segment Id'
+      responses:
+        200:
+          description: 'Successful Response'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SegmentInfoResponse'
+        422:
+          description: 'Validation Error'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+  /segments/{segment_id}/root_text:
+    get:
+      tags:
+        - 'Segments'
+      summary: 'Get Root Text For Segment'
+      operationId: 'get_root_text_for_segment_segments__segment_id__root_text_get'
+      parameters:
+        -
+          name: 'segment_id'
+          in: 'path'
+          required: True
+          schema:
+            type: 'string'
+            title: 'Segment Id'
+      responses:
+        200:
+          description: 'Successful Response'
+          content:
+            application/json:
+              schema:
+        422:
+          description: 'Validation Error'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+  /segments/{segment_id}/translations:
+    get:
+      tags:
+        - 'Segments'
+      summary: 'Get Translations For Segment'
+      operationId: 'get_translations_for_segment_segments__segment_id__translations_get'
+      parameters:
+        -
+          name: 'segment_id'
+          in: 'path'
+          required: True
+          schema:
+            type: 'string'
+            title: 'Segment Id'
+      responses:
+        200:
+          description: 'Successful Response'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SegmentTranslationsResponse'
+        422:
+          description: 'Validation Error'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+  /segments/{segment_id}/commentaries:
+    get:
+      tags:
+        - 'Segments'
+      summary: 'Get Commentaries For Segment'
+      operationId: 'get_commentaries_for_segment_segments__segment_id__commentaries_get'
+      parameters:
+        -
+          name: 'segment_id'
+          in: 'path'
+          required: True
+          schema:
+            type: 'string'
+            title: 'Segment Id'
+      responses:
+        200:
+          description: 'Successful Response'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SegmentCommentariesResponse'
+        422:
+          description: 'Validation Error'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+  /topics:
+    get:
+      tags:
+        - 'Topics'
+      summary: 'Read Topics'
+      operationId: 'read_topics_topics_get'
+      parameters:
+        -
+          name: 'parent_id'
+          in: 'query'
+          required: False
+          schema:
+            anyOf:
+              -
+                type: 'string'
+              -
+                type: 'null'
+            description: 'Filter topics by title prefix'
+            title: 'Parent Id'
+          description: 'Filter topics by title prefix'
+        -
+          name: 'language'
+          in: 'query'
+          required: False
+          schema:
+            anyOf:
+              -
+                type: 'string'
+              -
+                type: 'null'
+            title: 'Language'
+        -
+          name: 'search'
+          in: 'query'
+          required: False
+          schema:
+            anyOf:
+              -
+                type: 'string'
+              -
+                type: 'null'
+            title: 'Search'
+        -
+          name: 'hierarchy'
+          in: 'query'
+          required: False
+          schema:
+            type: 'boolean'
+            default: True
+            title: 'Hierarchy'
+        -
+          name: 'skip'
+          in: 'query'
+          required: False
+          schema:
+            type: 'integer'
+            minimum: 0
+            description: 'Number of records to skip'
+            default: 0
+            title: 'Skip'
+          description: 'Number of records to skip'
+        -
+          name: 'limit'
+          in: 'query'
+          required: False
+          schema:
+            type: 'integer'
+            maximum: 100
+            minimum: 1
+            description: 'Number of records to return'
+            default: 10
+            title: 'Limit'
+          description: 'Number of records to return'
+      responses:
+        200:
+          description: 'Successful Response'
+          content:
+            application/json:
+              schema:
+        422:
+          description: 'Validation Error'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+    post:
+      tags:
+        - 'Topics'
+      summary: 'Create Topic'
+      operationId: 'create_topic_topics_post'
+      security:
+        -
+          HTTPBearer:
+      parameters:
+        -
+          name: 'language'
+          in: 'query'
+          required: False
+          schema:
+            anyOf:
+              -
+                type: 'string'
+              -
+                type: 'null'
+            title: 'Language'
+      requestBody:
+        required: True
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateTopicRequest'
+      responses:
+        201:
+          description: 'Successful Response'
+          content:
+            application/json:
+              schema:
+        422:
+          description: 'Validation Error'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+  /users/info:
+    get:
+      tags:
+        - 'User Profile'
+      summary: 'Get User Information'
+      operationId: 'get_user_information_users_info_get'
+      responses:
+        200:
+          description: 'Successful Response'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserInfoResponse'
+      security:
+        -
+          HTTPBearer:
+    post:
+      tags:
+        - 'User Profile'
+      summary: 'Update User Information'
+      operationId: 'update_user_information_users_info_post'
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UserInfoRequest'
+        required: True
+      responses:
+        201:
+          description: 'Successful Response'
+          content:
+            application/json:
+              schema:
+        422:
+          description: 'Validation Error'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+      security:
+        -
+          HTTPBearer:
+  /users/upload:
+    post:
+      tags:
+        - 'User Profile'
+      summary: 'Upload User Avatar Image'
+      operationId: 'upload_user_avatar_image_users_upload_post'
+      requestBody:
+        content:
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/Body_upload_user_avatar_image_users_upload_post'
+        required: True
+      responses:
+        201:
+          description: 'Successful Response'
+          content:
+            application/json:
+              schema:
+        422:
+          description: 'Validation Error'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+      security:
+        -
+          HTTPBearer:
+  /users/{username}:
+    get:
+      tags:
+        - 'User Profile'
+      summary: 'Get User Basic Info by Username'
+      operationId: 'get_user_basic_info_users__username__get'
+      parameters:
+        -
+          name: 'username'
+          in: 'path'
+          required: True
+          schema:
+            type: 'string'
+            pattern: '^[a-zA-Z0-9_-]+$'
+            minLength: 3
+            maxLength: 30
+            title: 'Username'
+      responses:
+        200:
+          description: 'Successful Response'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserBasicInfoResponse'
+        404:
+          description: 'User not found'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+        422:
+          description: 'Validation Error'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+  /users/{username}/follow:
+    post:
+      tags:
+        - 'User Following'
+      summary: 'Follow User'
+      operationId: 'follow_user_users__username__follow_post'
+      parameters:
+        -
+          name: 'username'
+          in: 'path'
+          required: True
+          schema:
+            type: 'string'
+            pattern: '^[a-zA-Z0-9_-]+$'
+            minLength: 3
+            maxLength: 30
+            title: 'Username'
+      responses:
+        201:
+          description: 'Successfully followed user'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/FollowResponse'
+        400:
+          description: 'Bad Request - Cannot follow yourself'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+        404:
+          description: 'User not found'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+        409:
+          description: 'Already following this user'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+        422:
+          description: 'Validation Error'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+      security:
+        -
+          HTTPBearer:
+    delete:
+      tags:
+        - 'User Following'
+      summary: 'Unfollow User'
+      operationId: 'unfollow_user_users__username__follow_delete'
+      parameters:
+        -
+          name: 'username'
+          in: 'path'
+          required: True
+          schema:
+            type: 'string'
+            pattern: '^[a-zA-Z0-9_-]+$'
+            minLength: 3
+            maxLength: 30
+            title: 'Username'
+      responses:
+        204:
+          description: 'Successfully unfollowed user'
+        404:
+          description: 'Not following this user or user not found'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+        422:
+          description: 'Validation Error'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+      security:
+        -
+          HTTPBearer:
+  /users/{username}/followers:
+    get:
+      tags:
+        - 'User Following'
+      summary: 'Get User Followers'
+      operationId: 'get_user_followers_users__username__followers_get'
+      parameters:
+        -
+          name: 'username'
+          in: 'path'
+          required: True
+          schema:
+            type: 'string'
+            pattern: '^[a-zA-Z0-9_-]+$'
+            minLength: 3
+            maxLength: 30
+            title: 'Username'
+        -
+          name: 'skip'
+          in: 'query'
+          required: False
+          schema:
+            type: 'integer'
+            minimum: 0
+            default: 0
+            title: 'Skip'
+          description: 'Number of records to skip'
+        -
+          name: 'limit'
+          in: 'query'
+          required: False
+          schema:
+            type: 'integer'
+            minimum: 1
+            maximum: 50
+            default: 20
+            title: 'Limit'
+          description: 'Number of records to return'
+      responses:
+        200:
+          description: 'Successful Response'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/FollowersResponse'
+        404:
+          description: 'User not found'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+        422:
+          description: 'Validation Error'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+  /users/{username}/following:
+    get:
+      tags:
+        - 'User Following'
+      summary: 'Get Users Being Followed'
+      operationId: 'get_user_following_users__username__following_get'
+      parameters:
+        -
+          name: 'username'
+          in: 'path'
+          required: True
+          schema:
+            type: 'string'
+            pattern: '^[a-zA-Z0-9_-]+$'
+            minLength: 3
+            maxLength: 30
+            title: 'Username'
+        -
+          name: 'skip'
+          in: 'query'
+          required: False
+          schema:
+            type: 'integer'
+            minimum: 0
+            default: 0
+            title: 'Skip'
+          description: 'Number of records to skip'
+        -
+          name: 'limit'
+          in: 'query'
+          required: False
+          schema:
+            type: 'integer'
+            minimum: 1
+            maximum: 50
+            default: 20
+            title: 'Limit'
+          description: 'Number of records to return'
+      responses:
+        200:
+          description: 'Successful Response'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/FollowingResponse'
+        404:
+          description: 'User not found'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+        422:
+          description: 'Validation Error'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+  /users/me/following:
+    get:
+      tags:
+        - 'User Following'
+      summary: 'Get My Following List'
+      operationId: 'get_my_following_users_me_following_get'
+      parameters:
+        -
+          name: 'skip'
+          in: 'query'
+          required: False
+          schema:
+            type: 'integer'
+            minimum: 0
+            default: 0
+            title: 'Skip'
+          description: 'Number of records to skip'
+        -
+          name: 'limit'
+          in: 'query'
+          required: False
+          schema:
+            type: 'integer'
+            minimum: 1
+            maximum: 50
+            default: 20
+            title: 'Limit'
+          description: 'Number of records to return'
+      responses:
+        200:
+          description: 'Successful Response'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/FollowingResponse'
+        422:
+          description: 'Validation Error'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+      security:
+        -
+          HTTPBearer:
+  /users/me/following/{username}:
+    get:
+      tags:
+        - 'User Following'
+      summary: 'Check Follow Status'
+      operationId: 'get_follow_status_users_me_following__username__get'
+      parameters:
+        -
+          name: 'username'
+          in: 'path'
+          required: True
+          schema:
+            type: 'string'
+            pattern: '^[a-zA-Z0-9_-]+$'
+            minLength: 3
+            maxLength: 30
+            title: 'Username'
+      responses:
+        200:
+          description: 'Successful Response'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/FollowStatusResponse'
+        404:
+          description: 'User not found'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+        422:
+          description: 'Validation Error'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+      security:
+        -
+          HTTPBearer:
+  /mappings:
+    post:
+      tags:
+        - 'Text Mapping'
+      summary: 'Create Text Mapping'
+      operationId: 'create_text_mapping_mappings_post'
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TextMappingRequest'
+        required: True
+      responses:
+        201:
+          description: 'Successful Response'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SegmentResponse'
+        422:
+          description: 'Validation Error'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+      security:
+        -
+          HTTPBearer:
+    delete:
+      tags:
+        - 'Text Mapping'
+      summary: 'Delete Text Mapping'
+      operationId: 'delete_text_mapping_mappings_delete'
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TextMappingRequest'
+        required: True
+      responses:
+        204:
+          description: 'Successful Response'
+        422:
+          description: 'Validation Error'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+      security:
+        -
+          HTTPBearer:
+  /search:
+    get:
+      tags:
+        - 'Search'
+      summary: 'Search'
+      operationId: 'search_search_get'
+      parameters:
+        -
+          name: 'query'
+          in: 'query'
+          required: False
+          schema:
+            type: 'string'
+            description: 'Search query'
+            title: 'Query'
+          description: 'Search query'
+        -
+          name: 'search_type'
+          in: 'query'
+          required: False
+          schema:
+            $ref: '#/components/schemas/SearchType'
+            description: 'Search type (SOURCE / SHEET)'
+          description: 'Search type (SOURCE / SHEET)'
+        -
+          name: 'text_id'
+          in: 'query'
+          required: False
+          schema:
+            anyOf:
+              -
+                type: 'string'
+              -
+                type: 'null'
+            description: 'Text ID where the search is to be performed'
+            title: 'Text Id'
+          description: 'Text ID where the search is to be performed'
+        -
+          name: 'skip'
+          in: 'query'
+          required: False
+          schema:
+            type: 'integer'
+            default: 0
+            title: 'Skip'
+        -
+          name: 'limit'
+          in: 'query'
+          required: False
+          schema:
+            type: 'integer'
+            default: 10
+            title: 'Limit'
+      responses:
+        200:
+          description: 'Successful Response'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SearchResponse'
+        422:
+          description: 'Validation Error'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+  /share/image:
+    get:
+      tags:
+        - 'Share'
+      summary: 'Get Image'
+      operationId: 'get_image_share_image_get'
+      parameters:
+        -
+          name: 'segment_id'
+          in: 'query'
+          required: False
+          schema:
+            anyOf:
+              -
+                type: 'string'
+              -
+                type: 'null'
+            title: 'Segment Id'
+      responses:
+        200:
+          description: 'Successful Response'
+          content:
+            application/json:
+              schema:
+        422:
+          description: 'Validation Error'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+  /share:
+    post:
+      tags:
+        - 'Share'
+      summary: 'Get Short Url'
+      operationId: 'get_short_url_share_post'
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ShareRequest'
+        required: True
+      responses:
+        201:
+          description: 'Successful Response'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ShortUrlResponse'
+        422:
+          description: 'Validation Error'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+  /props:
+    get:
+      summary: 'Get Props'
+      operationId: 'get_props_props_get'
+      responses:
+        200:
+          description: 'Successful Response'
+          content:
+            application/json:
+              schema:
+  /health:
+    get:
+      summary: 'Get Health'
+      operationId: 'get_health_health_get'
+      responses:
+        204:
+          description: 'Successful Response'
+components:
+  schemas:
+    BgColor:
+      type: 'string'
+      enum:
+        - 'DEFAULT'
+        - 'black'
+      title: 'BgColor'
+    Body_upload_sheet_image_sheets_upload_post:
+      properties:
+        file:
+          type: 'string'
+          format: 'binary'
+          title: 'File'
+      type: 'object'
+      required:
+        - 'file'
+      title: 'Body_upload_sheet_image_sheets_upload_post'
+    Body_upload_user_avatar_image_users_upload_post:
+      properties:
+        file:
+          type: 'string'
+          format: 'binary'
+          title: 'File'
+      type: 'object'
+      required:
+        - 'file'
+      title: 'Body_upload_user_avatar_image_users_upload_post'
+    ContentType:
+      type: 'string'
+      enum:
+        - 'TEXT'
+        - 'AUDIO'
+        - 'VIDEO'
+        - 'IMAGE'
+        - 'SOURCE_REFERENCE'
+      title: 'ContentType'
+    CreateCollectionRequest:
+      properties:
+        slug:
+          type: 'string'
+          title: 'Slug'
+        titles:
+          additionalProperties:
+            type: 'string'
+          type: 'object'
+          title: 'Titles'
+        descriptions:
+          additionalProperties:
+            type: 'string'
+          type: 'object'
+          title: 'Descriptions'
+        parent_id:
+          anyOf:
+            -
+              type: 'string'
+            -
+              type: 'null'
+          title: 'Parent Id'
+      type: 'object'
+      required:
+        - 'slug'
+        - 'titles'
+        - 'descriptions'
+        - 'parent_id'
+      title: 'CreateCollectionRequest'
+    CreateGroupRequest:
+      properties:
+        type:
+          $ref: '#/components/schemas/GroupType'
+      type: 'object'
+      required:
+        - 'type'
+      title: 'CreateGroupRequest'
+    CreateSegment:
+      properties:
+        content:
+          type: 'string'
+          title: 'Content'
+        type:
+          $ref: '#/components/schemas/SegmentType'
+        mapping:
+          anyOf:
+            -
+              items:
+                $ref: '#/components/schemas/Mapping'
+              type: 'array'
+            -
+              type: 'null'
+          title: 'Mapping'
+          default:
+      type: 'object'
+      required:
+        - 'content'
+        - 'type'
+      title: 'CreateSegment'
+    CreateSegmentRequest:
+      properties:
+        text_id:
+          type: 'string'
+          title: 'Text Id'
+        segments:
+          items:
+            $ref: '#/components/schemas/CreateSegment'
+          type: 'array'
+          title: 'Segments'
+      type: 'object'
+      required:
+        - 'text_id'
+        - 'segments'
+      title: 'CreateSegmentRequest'
+    CreateSheetRequest:
+      properties:
+        title:
+          anyOf:
+            -
+              type: 'string'
+            -
+              type: 'null'
+          title: 'Title'
+          default: ''
+        source:
+          items:
+            $ref: '#/components/schemas/Source'
+          type: 'array'
+          title: 'Source'
+        is_published:
+          type: 'boolean'
+          title: 'Is Published'
+          default: False
+      type: 'object'
+      required:
+        - 'source'
+      title: 'CreateSheetRequest'
+    CreateTermRequest:
+      properties:
+        slug:
+          type: 'string'
+          title: 'Slug'
+        titles:
+          additionalProperties:
+            type: 'string'
+          type: 'object'
+          title: 'Titles'
+        descriptions:
+          additionalProperties:
+            type: 'string'
+          type: 'object'
+          title: 'Descriptions'
+        parent_id:
+          anyOf:
+            -
+              type: 'string'
+            -
+              type: 'null'
+          title: 'Parent Id'
+      type: 'object'
+      required:
+        - 'slug'
+        - 'titles'
+        - 'descriptions'
+        - 'parent_id'
+      title: 'CreateTermRequest'
+    CreateTextRequest:
+      properties:
+        title:
+          type: 'string'
+          title: 'Title'
+        language:
+          anyOf:
+            -
+              type: 'string'
+            -
+              type: 'null'
+          title: 'Language'
+        isPublished:
+          type: 'boolean'
+          title: 'Ispublished'
+          default: False
+        group_id:
+          type: 'string'
+          title: 'Group Id'
+        published_by:
+          type: 'string'
+          title: 'Published By'
+        type:
+          $ref: '#/components/schemas/TextType'
+        categories:
+          anyOf:
+            -
+              items:
+                type: 'string'
+              type: 'array'
+            -
+              type: 'null'
+          title: 'Categories'
+        views:
+          anyOf:
+            -
+              type: 'integer'
+            -
+              type: 'null'
+          title: 'Views'
+          default: 0
+      type: 'object'
+      required:
+        - 'title'
+        - 'group_id'
+        - 'published_by'
+        - 'type'
+      title: 'CreateTextRequest'
+    CreateTopicRequest:
+      properties:
+        titles:
+          additionalProperties:
+            type: 'string'
+          type: 'object'
+          title: 'Titles'
+        parent_id:
+          anyOf:
+            -
+              type: 'string'
+            -
+              type: 'null'
+          title: 'Parent Id'
+        default_language:
+          type: 'string'
+          title: 'Default Language'
+      type: 'object'
+      required:
+        - 'titles'
+        - 'parent_id'
+        - 'default_language'
+      title: 'CreateTopicRequest'
+    DetailSection:
+      properties:
+        id:
+          type: 'string'
+          title: 'Id'
+        title:
+          type: 'string'
+          title: 'Title'
+        section_number:
+          type: 'integer'
+          title: 'Section Number'
+        parent_id:
+          anyOf:
+            -
+              type: 'string'
+            -
+              type: 'null'
+          title: 'Parent Id'
+        segments:
+          items:
+            $ref: '#/components/schemas/DetailTextSegment'
+          type: 'array'
+          title: 'Segments'
+          default:
+        sections:
+          anyOf:
+            -
+              items:
+                $ref: '#/components/schemas/DetailSection'
+              type: 'array'
+            -
+              type: 'null'
+          title: 'Sections'
+        created_date:
+          anyOf:
+            -
+              type: 'string'
+            -
+              type: 'null'
+          title: 'Created Date'
+        updated_date:
+          anyOf:
+            -
+              type: 'string'
+            -
+              type: 'null'
+          title: 'Updated Date'
+        published_date:
+          anyOf:
+            -
+              type: 'string'
+            -
+              type: 'null'
+          title: 'Published Date'
+      type: 'object'
+      required:
+        - 'id'
+        - 'title'
+        - 'section_number'
+      title: 'DetailSection'
+    DetailTableOfContent:
+      properties:
+        id:
+          type: 'string'
+          title: 'Id'
+        text_id:
+          type: 'string'
+          title: 'Text Id'
+        sections:
+          items:
+            $ref: '#/components/schemas/DetailSection'
+          type: 'array'
+          title: 'Sections'
+      type: 'object'
+      required:
+        - 'id'
+        - 'text_id'
+        - 'sections'
+      title: 'DetailTableOfContent'
+    DetailTableOfContentResponse:
+      properties:
+        text_detail:
+          $ref: '#/components/schemas/TextDTO'
+        content:
+          $ref: '#/components/schemas/DetailTableOfContent'
+        size:
+          type: 'integer'
+          title: 'Size'
+        pagination_direction:
+          $ref: '#/components/schemas/PaginationDirection'
+        current_segment_position:
+          type: 'integer'
+          title: 'Current Segment Position'
+        total_segments:
+          type: 'integer'
+          title: 'Total Segments'
+      type: 'object'
+      required:
+        - 'text_detail'
+        - 'content'
+        - 'size'
+        - 'pagination_direction'
+        - 'current_segment_position'
+        - 'total_segments'
+      title: 'DetailTableOfContentResponse'
+    DetailTextSegment:
+      properties:
+        segment_id:
+          type: 'string'
+          title: 'Segment Id'
+        segment_number:
+          anyOf:
+            -
+              type: 'integer'
+            -
+              type: 'null'
+          title: 'Segment Number'
+        content:
+          anyOf:
+            -
+              type: 'string'
+            -
+              type: 'null'
+          title: 'Content'
+        translation:
+          anyOf:
+            -
+              $ref: '#/components/schemas/Translation'
+            -
+              type: 'null'
+      type: 'object'
+      required:
+        - 'segment_id'
+      title: 'DetailTextSegment'
+    DifficultyLevel:
+      type: 'string'
+      enum:
+        - 'BEGINNER'
+        - 'INTERMEDIATE'
+        - 'ADVANCED'
+      title: 'DifficultyLevel'
+    GroupDTO:
+      properties:
+        id:
+          type: 'string'
+          title: 'Id'
+        type:
+          type: 'string'
+          title: 'Type'
+      type: 'object'
+      required:
+        - 'id'
+        - 'type'
+      title: 'GroupDTO'
+    GroupType:
+      type: 'string'
+      enum:
+        - 'text'
+        - 'commentary'
+        - 'sheet'
+      title: 'GroupType'
+    HTTPValidationError:
+      properties:
+        detail:
+          items:
+            $ref: '#/components/schemas/ValidationError'
+          type: 'array'
+          title: 'Detail'
+      type: 'object'
+      title: 'HTTPValidationError'
+    Mapping:
+      properties:
+        text_id:
+          type: 'string'
+          title: 'Text Id'
+        segments:
+          items:
+            type: 'string'
+          type: 'array'
+          title: 'Segments'
+      type: 'object'
+      required:
+        - 'text_id'
+        - 'segments'
+      title: 'Mapping'
+    MappingResponse:
+      properties:
+        text_id:
+          type: 'string'
+          title: 'Text Id'
+        segments:
+          items:
+            type: 'string'
+          type: 'array'
+          title: 'Segments'
+      type: 'object'
+      required:
+        - 'text_id'
+        - 'segments'
+      title: 'MappingResponse'
+    MappingsModel:
+      properties:
+        parent_text_id:
+          type: 'string'
+          title: 'Parent Text Id'
+        segments:
+          items:
+            type: 'string'
+          type: 'array'
+          title: 'Segments'
+      type: 'object'
+      required:
+        - 'parent_text_id'
+        - 'segments'
+      title: 'MappingsModel'
+    PaginationDirection:
+      type: 'string'
+      enum:
+        - 'next'
+        - 'previous'
+      title: 'PaginationDirection'
+    ParentSegment:
+      properties:
+        segment_id:
+          type: 'string'
+          title: 'Segment Id'
+        content:
+          type: 'string'
+          title: 'Content'
+      type: 'object'
+      required:
+        - 'segment_id'
+        - 'content'
+      title: 'ParentSegment'
+    Publisher:
+      properties:
+        name:
+          type: 'string'
+          title: 'Name'
+        username:
+          type: 'string'
+          title: 'Username'
+        email:
+          type: 'string'
+          title: 'Email'
+        avatar_url:
+          anyOf:
+            -
+              type: 'string'
+            -
+              type: 'null'
+          title: 'Avatar Url'
+      type: 'object'
+      required:
+        - 'name'
+        - 'username'
+        - 'email'
+      title: 'Publisher'
+    RelatedText:
+      properties:
+        commentaries:
+          anyOf:
+            -
+              type: 'integer'
+            -
+              type: 'null'
+          title: 'Commentaries'
+          default: 0
+        root_text:
+          anyOf:
+            -
+              type: 'integer'
+            -
+              type: 'null'
+          title: 'Root Text'
+          default: 0
+      type: 'object'
+      title: 'RelatedText'
+    Resources:
+      properties:
+        sheets:
+          type: 'integer'
+          title: 'Sheets'
+      type: 'object'
+      required:
+        - 'sheets'
+      title: 'Resources'
+    Search:
+      properties:
+        text:
+          anyOf:
+            -
+              type: 'string'
+            -
+              type: 'null'
+          title: 'Text'
+        type:
+          anyOf:
+            -
+              $ref: '#/components/schemas/SearchType'
+            -
+              type: 'null'
+      type: 'object'
+      title: 'Search'
+    SearchResponse:
+      properties:
+        search:
+          $ref: '#/components/schemas/Search'
+        sources:
+          anyOf:
+            -
+              items:
+                $ref: '#/components/schemas/SourceResultItem'
+              type: 'array'
+            -
+              type: 'null'
+          title: 'Sources'
+          default:
+        sheets:
+          anyOf:
+            -
+              items:
+                $ref: '#/components/schemas/SheetResultItem'
+              type: 'array'
+            -
+              type: 'null'
+          title: 'Sheets'
+          default:
+        skip:
+          type: 'integer'
+          title: 'Skip'
+        limit:
+          type: 'integer'
+          title: 'Limit'
+        total:
+          type: 'integer'
+          title: 'Total'
+      type: 'object'
+      required:
+        - 'search'
+        - 'skip'
+        - 'limit'
+        - 'total'
+      title: 'SearchResponse'
+    SearchType:
+      type: 'string'
+      enum:
+        - 'SOURCE'
+        - 'SHEET'
+      title: 'SearchType'
+    Section-Input:
+      properties:
+        id:
+          type: 'string'
+          title: 'Id'
+        title:
+          anyOf:
+            -
+              type: 'string'
+            -
+              type: 'null'
+          title: 'Title'
+        section_number:
+          type: 'integer'
+          title: 'Section Number'
+        parent_id:
+          anyOf:
+            -
+              type: 'string'
+            -
+              type: 'null'
+          title: 'Parent Id'
+        segments:
+          items:
+            $ref: '#/components/schemas/TextSegment'
+          type: 'array'
+          title: 'Segments'
+          default:
+        sections:
+          anyOf:
+            -
+              items:
+                $ref: '#/components/schemas/Section-Input'
+              type: 'array'
+            -
+              type: 'null'
+          title: 'Sections'
+        created_date:
+          anyOf:
+            -
+              type: 'string'
+            -
+              type: 'null'
+          title: 'Created Date'
+        updated_date:
+          anyOf:
+            -
+              type: 'string'
+            -
+              type: 'null'
+          title: 'Updated Date'
+        published_date:
+          anyOf:
+            -
+              type: 'string'
+            -
+              type: 'null'
+          title: 'Published Date'
+      type: 'object'
+      required:
+        - 'id'
+        - 'section_number'
+      title: 'Section'
+    Section-Output:
+      properties:
+        id:
+          type: 'string'
+          title: 'Id'
+        title:
+          anyOf:
+            -
+              type: 'string'
+            -
+              type: 'null'
+          title: 'Title'
+        section_number:
+          type: 'integer'
+          title: 'Section Number'
+        parent_id:
+          anyOf:
+            -
+              type: 'string'
+            -
+              type: 'null'
+          title: 'Parent Id'
+        segments:
+          items:
+            $ref: '#/components/schemas/TextSegment'
+          type: 'array'
+          title: 'Segments'
+          default:
+        sections:
+          anyOf:
+            -
+              items:
+                $ref: '#/components/schemas/Section-Output'
+              type: 'array'
+            -
+              type: 'null'
+          title: 'Sections'
+        created_date:
+          anyOf:
+            -
+              type: 'string'
+            -
+              type: 'null'
+          title: 'Created Date'
+        updated_date:
+          anyOf:
+            -
+              type: 'string'
+            -
+              type: 'null'
+          title: 'Updated Date'
+        published_date:
+          anyOf:
+            -
+              type: 'string'
+            -
+              type: 'null'
+          title: 'Published Date'
+      type: 'object'
+      required:
+        - 'id'
+        - 'section_number'
+      title: 'Section'
+    SegmentCommentariesResponse:
+      properties:
+        parent_segment:
+          $ref: '#/components/schemas/ParentSegment'
+        commentaries:
+          items:
+            $ref: '#/components/schemas/SegmentCommentry'
+          type: 'array'
+          title: 'Commentaries'
+      type: 'object'
+      required:
+        - 'parent_segment'
+        - 'commentaries'
+      title: 'SegmentCommentariesResponse'
+    SegmentCommentry:
+      properties:
+        segment_id:
+          type: 'string'
+          title: 'Segment Id'
+        text_id:
+          type: 'string'
+          title: 'Text Id'
+        title:
+          type: 'string'
+          title: 'Title'
+        content:
+          type: 'string'
+          title: 'Content'
+        language:
+          type: 'string'
+          title: 'Language'
+        count:
+          type: 'integer'
+          title: 'Count'
+      type: 'object'
+      required:
+        - 'segment_id'
+        - 'text_id'
+        - 'title'
+        - 'content'
+        - 'language'
+        - 'count'
+      title: 'SegmentCommentry'
+    SegmentDTO:
+      properties:
+        id:
+          type: 'string'
+          title: 'Id'
+        text_id:
+          type: 'string'
+          title: 'Text Id'
+        content:
+          type: 'string'
+          title: 'Content'
+        type:
+          $ref: '#/components/schemas/SegmentType'
+        mapping:
+          anyOf:
+            -
+              items:
+                $ref: '#/components/schemas/MappingResponse'
+              type: 'array'
+            -
+              type: 'null'
+          title: 'Mapping'
+        text:
+          anyOf:
+            -
+              $ref: '#/components/schemas/TextDTO'
+            -
+              type: 'null'
+      type: 'object'
+      required:
+        - 'id'
+        - 'text_id'
+        - 'content'
+        - 'type'
+      title: 'SegmentDTO'
+    SegmentInfo:
+      properties:
+        segment_id:
+          type: 'string'
+          title: 'Segment Id'
+        translations:
+          anyOf:
+            -
+              type: 'integer'
+            -
+              type: 'null'
+          title: 'Translations'
+          default: 0
+        related_text:
+          $ref: '#/components/schemas/RelatedText'
+        resources:
+          $ref: '#/components/schemas/Resources'
+      type: 'object'
+      required:
+        - 'segment_id'
+        - 'related_text'
+        - 'resources'
+      title: 'SegmentInfo'
+    SegmentInfoResponse:
+      properties:
+        segment_info:
+          $ref: '#/components/schemas/SegmentInfo'
+      type: 'object'
+      required:
+        - 'segment_info'
+      title: 'SegmentInfoResponse'
+    SegmentMatch:
+      properties:
+        segment_id:
+          type: 'string'
+          title: 'Segment Id'
+        content:
+          type: 'string'
+          title: 'Content'
+      type: 'object'
+      required:
+        - 'segment_id'
+        - 'content'
+      title: 'SegmentMatch'
+    SegmentResponse:
+      properties:
+        segments:
+          items:
+            $ref: '#/components/schemas/SegmentDTO'
+          type: 'array'
+          title: 'Segments'
+      type: 'object'
+      required:
+        - 'segments'
+      title: 'SegmentResponse'
+    SegmentTranslation:
+      properties:
+        segment_id:
+          type: 'string'
+          title: 'Segment Id'
+        text_id:
+          type: 'string'
+          title: 'Text Id'
+        title:
+          type: 'string'
+          title: 'Title'
+        source:
+          type: 'string'
+          title: 'Source'
+        language:
+          type: 'string'
+          title: 'Language'
+        content:
+          type: 'string'
+          title: 'Content'
+      type: 'object'
+      required:
+        - 'segment_id'
+        - 'text_id'
+        - 'title'
+        - 'source'
+        - 'language'
+        - 'content'
+      title: 'SegmentTranslation'
+    SegmentTranslationsResponse:
+      properties:
+        parent_segment:
+          $ref: '#/components/schemas/ParentSegment'
+        translations:
+          items:
+            $ref: '#/components/schemas/SegmentTranslation'
+          type: 'array'
+          title: 'Translations'
+      type: 'object'
+      required:
+        - 'parent_segment'
+        - 'translations'
+      title: 'SegmentTranslationsResponse'
+    SegmentType:
+      type: 'string'
+      enum:
+        - 'source'
+        - 'content'
+        - 'audio'
+        - 'image'
+        - 'video'
+      title: 'SegmentType'
+    ShareRequest:
+      properties:
+        logo:
+          type: 'boolean'
+          title: 'Logo'
+          default: False
+        segment_id:
+          anyOf:
+            -
+              type: 'string'
+            -
+              type: 'null'
+          title: 'Segment Id'
+        content_id:
+          anyOf:
+            -
+              type: 'string'
+            -
+              type: 'null'
+          title: 'Content Id'
+        text_id:
+          anyOf:
+            -
+              type: 'string'
+            -
+              type: 'null'
+          title: 'Text Id'
+        content_index:
+          anyOf:
+            -
+              type: 'integer'
+            -
+              type: 'null'
+          title: 'Content Index'
+        language:
+          anyOf:
+            -
+              type: 'string'
+            -
+              type: 'null'
+          title: 'Language'
+        url:
+          anyOf:
+            -
+              type: 'string'
+            -
+              type: 'null'
+          title: 'Url'
+        text_color:
+          anyOf:
+            -
+              $ref: '#/components/schemas/TextColor'
+            -
+              type: 'null'
+          default: 'DEFAULT'
+        bg_color:
+          anyOf:
+            -
+              $ref: '#/components/schemas/BgColor'
+            -
+              type: 'null'
+          default: 'DEFAULT'
+        tags:
+          anyOf:
+            -
+              type: 'string'
+            -
+              type: 'null'
+          title: 'Tags'
+      type: 'object'
+      title: 'ShareRequest'
+    SheetDTO:
+      properties:
+        id:
+          type: 'string'
+          title: 'Id'
+        title:
+          type: 'string'
+          title: 'Title'
+        summary:
+          type: 'string'
+          title: 'Summary'
+        published_date:
+          type: 'string'
+          title: 'Published Date'
+        time_passed:
+          type: 'string'
+          title: 'Time Passed'
+        views:
+          type: 'integer'
+          title: 'Views'
+        is_published:
+          type: 'boolean'
+          title: 'Is Published'
+        likes:
+          anyOf:
+            -
+              items:
+                type: 'string'
+              type: 'array'
+            -
+              type: 'null'
+          title: 'Likes'
+          default:
+        publisher:
+          $ref: '#/components/schemas/Publisher'
+        language:
+          anyOf:
+            -
+              type: 'string'
+            -
+              type: 'null'
+          title: 'Language'
+      type: 'object'
+      required:
+        - 'id'
+        - 'title'
+        - 'summary'
+        - 'published_date'
+        - 'time_passed'
+        - 'views'
+        - 'is_published'
+        - 'publisher'
+      title: 'SheetDTO'
+    SheetDTOResponse:
+      properties:
+        sheets:
+          items:
+            $ref: '#/components/schemas/SheetDTO'
+          type: 'array'
+          title: 'Sheets'
+        skip:
+          type: 'integer'
+          title: 'Skip'
+        limit:
+          type: 'integer'
+          title: 'Limit'
+        total:
+          type: 'integer'
+          title: 'Total'
+      type: 'object'
+      required:
+        - 'sheets'
+        - 'skip'
+        - 'limit'
+        - 'total'
+      title: 'SheetDTOResponse'
+    SheetDetailDTO:
+      properties:
+        id:
+          type: 'string'
+          title: 'Id'
+        sheet_title:
+          type: 'string'
+          title: 'Sheet Title'
+        created_date:
+          type: 'string'
+          title: 'Created Date'
+        publisher:
+          $ref: '#/components/schemas/Publisher'
+        content:
+          anyOf:
+            -
+              $ref: '#/components/schemas/SheetSection'
+            -
+              type: 'null'
+        views:
+          type: 'integer'
+          title: 'Views'
+          default: 0
+        is_published:
+          type: 'boolean'
+          title: 'Is Published'
+        skip:
+          type: 'integer'
+          title: 'Skip'
+        limit:
+          type: 'integer'
+          title: 'Limit'
+        total:
+          type: 'integer'
+          title: 'Total'
+      type: 'object'
+      required:
+        - 'id'
+        - 'sheet_title'
+        - 'created_date'
+        - 'publisher'
+        - 'is_published'
+        - 'skip'
+        - 'limit'
+        - 'total'
+      title: 'SheetDetailDTO'
+    SheetIdResponse:
+      properties:
+        sheet_id:
+          type: 'string'
+          title: 'Sheet Id'
+      type: 'object'
+      required:
+        - 'sheet_id'
+      title: 'SheetIdResponse'
+    SheetResultItem:
+      properties:
+        sheet_title:
+          type: 'string'
+          title: 'Sheet Title'
+        sheet_summary:
+          type: 'string'
+          title: 'Sheet Summary'
+        publisher_id:
+          type: 'integer'
+          title: 'Publisher Id'
+        sheet_id:
+          type: 'integer'
+          title: 'Sheet Id'
+        publisher_name:
+          type: 'string'
+          title: 'Publisher Name'
+        publisher_url:
+          type: 'string'
+          title: 'Publisher Url'
+        publisher_image:
+          type: 'string'
+          title: 'Publisher Image'
+        publisher_position:
+          type: 'string'
+          title: 'Publisher Position'
+        publisher_organization:
+          type: 'string'
+          title: 'Publisher Organization'
+      type: 'object'
+      required:
+        - 'sheet_title'
+        - 'sheet_summary'
+        - 'publisher_id'
+        - 'sheet_id'
+        - 'publisher_name'
+        - 'publisher_url'
+        - 'publisher_image'
+        - 'publisher_position'
+        - 'publisher_organization'
+      title: 'SheetResultItem'
+    SheetSection:
+      properties:
+        title:
+          anyOf:
+            -
+              type: 'string'
+            -
+              type: 'null'
+          title: 'Title'
+        section_number:
+          type: 'integer'
+          title: 'Section Number'
+        parent_id:
+          anyOf:
+            -
+              type: 'string'
+            -
+              type: 'null'
+          title: 'Parent Id'
+        segments:
+          items:
+            $ref: '#/components/schemas/SheetSegment'
+          type: 'array'
+          title: 'Segments'
+      type: 'object'
+      required:
+        - 'section_number'
+        - 'segments'
+      title: 'SheetSection'
+    SheetSegment:
+      properties:
+        segment_id:
+          type: 'string'
+          title: 'Segment Id'
+        segment_number:
+          type: 'integer'
+          title: 'Segment Number'
+        content:
+          anyOf:
+            -
+              type: 'string'
+            -
+              type: 'null'
+          title: 'Content'
+        key:
+          anyOf:
+            -
+              type: 'string'
+            -
+              type: 'null'
+          title: 'Key'
+        text_title:
+          anyOf:
+            -
+              type: 'string'
+            -
+              type: 'null'
+          title: 'Text Title'
+        language:
+          anyOf:
+            -
+              type: 'string'
+            -
+              type: 'null'
+          title: 'Language'
+        type:
+          $ref: '#/components/schemas/SegmentType'
+      type: 'object'
+      required:
+        - 'segment_id'
+        - 'segment_number'
+        - 'type'
+      title: 'SheetSegment'
+    ShortUrlResponse:
+      properties:
+        shortUrl:
+          type: 'string'
+          title: 'Shorturl'
+      type: 'object'
+      required:
+        - 'shortUrl'
+      title: 'ShortUrlResponse'
+    SocialMediaProfile:
+      properties:
+        account:
+          $ref: '#/components/schemas/SocialProfile'
+        url:
+          type: 'string'
+          title: 'Url'
+      type: 'object'
+      required:
+        - 'account'
+        - 'url'
+      title: 'SocialMediaProfile'
+    SocialProfile:
+      type: 'string'
+      enum:
+        - 'email'
+        - 'x.com'
+        - 'facebook'
+        - 'youtube'
+        - 'linkedin'
+      title: 'SocialProfile'
+    SortBy:
+      type: 'string'
+      enum:
+        - 'created_date'
+        - 'published_date'
+      title: 'SortBy'
+    SortOrder:
+      type: 'string'
+      enum:
+        - 'asc'
+        - 'desc'
+      title: 'SortOrder'
+    Source:
+      properties:
+        position:
+          type: 'integer'
+          title: 'Position'
+        type:
+          $ref: '#/components/schemas/SegmentType'
+        content:
+          type: 'string'
+          title: 'Content'
+      type: 'object'
+      required:
+        - 'position'
+        - 'type'
+        - 'content'
+      title: 'Source'
+    SourceResultItem:
+      properties:
+        text:
+          $ref: '#/components/schemas/TextIndex'
+        segment_match:
+          items:
+            $ref: '#/components/schemas/SegmentMatch'
+          type: 'array'
+          title: 'Segment Match'
+      type: 'object'
+      required:
+        - 'text'
+        - 'segment_match'
+      title: 'SourceResultItem'
+    TableOfContent-Input:
+      properties:
+        id:
+          anyOf:
+            -
+              type: 'string'
+            -
+              type: 'null'
+          title: 'Id'
+        text_id:
+          type: 'string'
+          title: 'Text Id'
+        sections:
+          items:
+            $ref: '#/components/schemas/Section-Input'
+          type: 'array'
+          title: 'Sections'
+      type: 'object'
+      required:
+        - 'text_id'
+        - 'sections'
+      title: 'TableOfContent'
+    TableOfContent-Output:
+      properties:
+        id:
+          anyOf:
+            -
+              type: 'string'
+            -
+              type: 'null'
+          title: 'Id'
+        text_id:
+          type: 'string'
+          title: 'Text Id'
+        sections:
+          items:
+            $ref: '#/components/schemas/Section-Output'
+          type: 'array'
+          title: 'Sections'
+      type: 'object'
+      required:
+        - 'text_id'
+        - 'sections'
+      title: 'TableOfContent'
+    TableOfContentResponse:
+      properties:
+        text_detail:
+          $ref: '#/components/schemas/TextDTO'
+        contents:
+          items:
+            $ref: '#/components/schemas/TableOfContent-Output'
+          type: 'array'
+          title: 'Contents'
+      type: 'object'
+      required:
+        - 'text_detail'
+        - 'contents'
+      title: 'TableOfContentResponse'
+    TextColor:
+      type: 'string'
+      enum:
+        - 'DEFAULT'
+        - 'black'
+      title: 'TextColor'
+    TextDTO:
+      properties:
+        id:
+          type: 'string'
+          title: 'Id'
+        title:
+          type: 'string'
+          title: 'Title'
+        language:
+          anyOf:
+            -
+              type: 'string'
+            -
+              type: 'null'
+          title: 'Language'
+        group_id:
+          type: 'string'
+          title: 'Group Id'
+        type:
+          type: 'string'
+          title: 'Type'
+        summary:
+          anyOf:
+            -
+              type: 'string'
+            -
+              type: 'null'
+          title: 'Summary'
+          default: ''
+        is_published:
+          type: 'boolean'
+          title: 'Is Published'
+        created_date:
+          type: 'string'
+          title: 'Created Date'
+        updated_date:
+          type: 'string'
+          title: 'Updated Date'
+        published_date:
+          type: 'string'
+          title: 'Published Date'
+        published_by:
+          type: 'string'
+          title: 'Published By'
+        categories:
+          anyOf:
+            -
+              items:
+                type: 'string'
+              type: 'array'
+            -
+              type: 'null'
+          title: 'Categories'
+        views:
+          anyOf:
+            -
+              type: 'integer'
+            -
+              type: 'null'
+          title: 'Views'
+          default: 0
+        likes:
+          anyOf:
+            -
+              items:
+                type: 'string'
+              type: 'array'
+            -
+              type: 'null'
+          title: 'Likes'
+          default:
+      type: 'object'
+      required:
+        - 'id'
+        - 'title'
+        - 'group_id'
+        - 'type'
+        - 'is_published'
+        - 'created_date'
+        - 'updated_date'
+        - 'published_date'
+        - 'published_by'
+      title: 'TextDTO'
+    TextDetailsRequest:
+      properties:
+        content_id:
+          anyOf:
+            -
+              type: 'string'
+            -
+              type: 'null'
+          title: 'Content Id'
+        version_id:
+          anyOf:
+            -
+              type: 'string'
+            -
+              type: 'null'
+          title: 'Version Id'
+        segment_id:
+          anyOf:
+            -
+              type: 'string'
+            -
+              type: 'null'
+          title: 'Segment Id'
+        section_id:
+          anyOf:
+            -
+              type: 'string'
+            -
+              type: 'null'
+          title: 'Section Id'
+        size:
+          type: 'integer'
+          title: 'Size'
+          default: 20
+        direction:
+          $ref: '#/components/schemas/PaginationDirection'
+          default: 'next'
+      type: 'object'
+      title: 'TextDetailsRequest'
+    TextIndex:
+      properties:
+        text_id:
+          type: 'string'
+          title: 'Text Id'
+        language:
+          type: 'string'
+          title: 'Language'
+        title:
+          type: 'string'
+          title: 'Title'
+        published_date:
+          type: 'string'
+          title: 'Published Date'
+      type: 'object'
+      required:
+        - 'text_id'
+        - 'language'
+        - 'title'
+        - 'published_date'
+      title: 'TextIndex'
+    TextMapping:
+      properties:
+        text_id:
+          type: 'string'
+          title: 'Text Id'
+        segment_id:
+          type: 'string'
+          title: 'Segment Id'
+        mappings:
+          items:
+            $ref: '#/components/schemas/MappingsModel'
+          type: 'array'
+          title: 'Mappings'
+      type: 'object'
+      required:
+        - 'text_id'
+        - 'segment_id'
+        - 'mappings'
+      title: 'TextMapping'
+    TextMappingRequest:
+      properties:
+        text_mappings:
+          items:
+            $ref: '#/components/schemas/TextMapping'
+          type: 'array'
+          title: 'Text Mappings'
+      type: 'object'
+      required:
+        - 'text_mappings'
+      title: 'TextMappingRequest'
+    TextSegment:
+      properties:
+        segment_id:
+          type: 'string'
+          title: 'Segment Id'
+        segment_number:
+          type: 'integer'
+          title: 'Segment Number'
+      type: 'object'
+      required:
+        - 'segment_id'
+        - 'segment_number'
+      title: 'TextSegment'
+    TextType:
+      type: 'string'
+      enum:
+        - 'commentary'
+        - 'version'
+        - 'sheet'
+      title: 'TextType'
+    TextVersion:
+      properties:
+        id:
+          type: 'string'
+          title: 'Id'
+        title:
+          type: 'string'
+          title: 'Title'
+        parent_id:
+          anyOf:
+            -
+              type: 'string'
+            -
+              type: 'null'
+          title: 'Parent Id'
+        priority:
+          anyOf:
+            -
+              type: 'integer'
+            -
+              type: 'null'
+          title: 'Priority'
+        language:
+          type: 'string'
+          title: 'Language'
+        type:
+          type: 'string'
+          title: 'Type'
+        group_id:
+          anyOf:
+            -
+              type: 'string'
+            -
+              type: 'null'
+          title: 'Group Id'
+        table_of_contents:
+          items:
+            type: 'string'
+          type: 'array'
+          title: 'Table Of Contents'
+          default:
+        is_published:
+          type: 'boolean'
+          title: 'Is Published'
+        created_date:
+          type: 'string'
+          title: 'Created Date'
+        updated_date:
+          type: 'string'
+          title: 'Updated Date'
+        published_date:
+          type: 'string'
+          title: 'Published Date'
+        published_by:
+          type: 'string'
+          title: 'Published By'
+      type: 'object'
+      required:
+        - 'id'
+        - 'title'
+        - 'language'
+        - 'type'
+        - 'is_published'
+        - 'created_date'
+        - 'updated_date'
+        - 'published_date'
+        - 'published_by'
+      title: 'TextVersion'
+    TextVersionResponse:
+      properties:
+        text:
+          anyOf:
+            -
+              $ref: '#/components/schemas/TextDTO'
+            -
+              type: 'null'
+        versions:
+          anyOf:
+            -
+              items:
+                $ref: '#/components/schemas/TextVersion'
+              type: 'array'
+            -
+              type: 'null'
+          title: 'Versions'
+      type: 'object'
+      title: 'TextVersionResponse'
+    Translation:
+      properties:
+        text_id:
+          type: 'string'
+          title: 'Text Id'
+        language:
+          type: 'string'
+          title: 'Language'
+        content:
+          type: 'string'
+          title: 'Content'
+      type: 'object'
+      required:
+        - 'text_id'
+        - 'language'
+        - 'content'
+      title: 'Translation'
+    UpdateCollectionRequest:
+      properties:
+        titles:
+          additionalProperties:
+            type: 'string'
+          type: 'object'
+          title: 'Titles'
+        descriptions:
+          additionalProperties:
+            type: 'string'
+          type: 'object'
+          title: 'Descriptions'
+      type: 'object'
+      required:
+        - 'titles'
+        - 'descriptions'
+      title: 'UpdateCollectionRequest'
+    UpdateTermRequest:
+      properties:
+        titles:
+          additionalProperties:
+            type: 'string'
+          type: 'object'
+          title: 'Titles'
+        descriptions:
+          additionalProperties:
+            type: 'string'
+          type: 'object'
+          title: 'Descriptions'
+      type: 'object'
+      required:
+        - 'titles'
+        - 'descriptions'
+      title: 'UpdateTermRequest'
+    UserInfoRequest:
+      properties:
+        firstname:
+          type: 'string'
+          title: 'Firstname'
+        lastname:
+          type: 'string'
+          title: 'Lastname'
+        title:
+          anyOf:
+            -
+              type: 'string'
+            -
+              type: 'null'
+          title: 'Title'
+        organization:
+          anyOf:
+            -
+              type: 'string'
+            -
+              type: 'null'
+          title: 'Organization'
+        location:
+          anyOf:
+            -
+              type: 'string'
+            -
+              type: 'null'
+          title: 'Location'
+        educations:
+          items:
+            type: 'string'
+          type: 'array'
+          title: 'Educations'
+        avatar_url:
+          anyOf:
+            -
+              type: 'string'
+            -
+              type: 'null'
+          title: 'Avatar Url'
+        about_me:
+          anyOf:
+            -
+              type: 'string'
+            -
+              type: 'null'
+          title: 'About Me'
+        social_profiles:
+          items:
+            $ref: '#/components/schemas/SocialMediaProfile'
+          type: 'array'
+          title: 'Social Profiles'
+      type: 'object'
+      required:
+        - 'firstname'
+        - 'lastname'
+        - 'educations'
+        - 'social_profiles'
+      title: 'UserInfoRequest'
+    UserInfoResponse:
+      properties:
+        firstname:
+          type: 'string'
+          title: 'Firstname'
+        lastname:
+          type: 'string'
+          title: 'Lastname'
+        username:
+          type: 'string'
+          title: 'Username'
+        email:
+          type: 'string'
+          title: 'Email'
+        title:
+          anyOf:
+            -
+              type: 'string'
+            -
+              type: 'null'
+          title: 'Title'
+        organization:
+          anyOf:
+            -
+              type: 'string'
+            -
+              type: 'null'
+          title: 'Organization'
+        location:
+          anyOf:
+            -
+              type: 'string'
+            -
+              type: 'null'
+          title: 'Location'
+        educations:
+          items:
+            type: 'string'
+          type: 'array'
+          title: 'Educations'
+        avatar_url:
+          anyOf:
+            -
+              type: 'string'
+            -
+              type: 'null'
+          title: 'Avatar Url'
+        about_me:
+          anyOf:
+            -
+              type: 'string'
+            -
+              type: 'null'
+          title: 'About Me'
+        followers:
+          type: 'integer'
+          title: 'Followers'
+        following:
+          type: 'integer'
+          title: 'Following'
+        social_profiles:
+          items:
+            $ref: '#/components/schemas/SocialMediaProfile'
+          type: 'array'
+          title: 'Social Profiles'
+      type: 'object'
+      required:
+        - 'firstname'
+        - 'lastname'
+        - 'username'
+        - 'email'
+        - 'educations'
+        - 'followers'
+        - 'following'
+        - 'social_profiles'
+      title: 'UserInfoResponse'
+    ValidationError:
+      properties:
+        loc:
+          items:
+            anyOf:
+              -
+                type: 'string'
+              -
+                type: 'integer'
+          type: 'array'
+          title: 'Location'
+        msg:
+          type: 'string'
+          title: 'Message'
+        type:
+          type: 'string'
+          title: 'Error Type'
+      type: 'object'
+      required:
+        - 'loc'
+        - 'msg'
+        - 'type'
+      title: 'ValidationError'
+    UserBasicInfoResponse:
+      properties:
+        id:
+          type: 'string'
+          format: 'uuid'
+          title: 'Id'
+          description: 'User ID'
+        username:
+          type: 'string'
+          title: 'Username'
+          description: 'Username'
+        firstname:
+          type: 'string'
+          title: 'Firstname'
+          description: 'First name'
+        lastname:
+          type: 'string'
+          title: 'Lastname'
+          description: 'Last name'
+        title:
+          anyOf:
+            -
+              type: 'string'
+            -
+              type: 'null'
+          title: 'Title'
+          description: 'Professional title'
+        organization:
+          anyOf:
+            -
+              type: 'string'
+            -
+              type: 'null'
+          title: 'Organization'
+          description: 'Organization name'
+        location:
+          anyOf:
+            -
+              type: 'string'
+            -
+              type: 'null'
+          title: 'Location'
+          description: 'Location'
+        avatar_url:
+          anyOf:
+            -
+              type: 'string'
+            -
+              type: 'null'
+          title: 'Avatar Url'
+          description: 'Profile picture URL'
+        about_me:
+          anyOf:
+            -
+              type: 'string'
+            -
+              type: 'null'
+          title: 'About Me'
+          description: 'User bio/description'
+        followers:
+          type: 'integer'
+          title: 'Followers'
+          description: 'Number of followers'
+        following:
+          type: 'integer'
+          title: 'Following'
+          description: 'Number of users being followed'
+        is_active:
+          type: 'boolean'
+          title: 'Is Active'
+          description: 'Whether the user account is active'
+        created_at:
+          type: 'string'
+          format: 'date-time'
+          title: 'Created At'
+          description: 'When the user account was created'
+      type: 'object'
+      required:
+        - 'id'
+        - 'username'
+        - 'firstname'
+        - 'lastname'
+        - 'followers'
+        - 'following'
+        - 'is_active'
+        - 'created_at'
+      title: 'UserBasicInfoResponse'
+    FollowResponse:
+      properties:
+        message:
+          type: 'string'
+          title: 'Message'
+          description: 'Success message'
+        is_following:
+          type: 'boolean'
+          title: 'Is Following'
+          description: 'Whether the user is now following the target user'
+        follower_count:
+          type: 'integer'
+          title: 'Follower Count'
+          description: 'Total number of followers for the target user'
+      type: 'object'
+      required:
+        - 'message'
+        - 'is_following'
+        - 'follower_count'
+      title: 'FollowResponse'
+    FollowStatusResponse:
+      properties:
+        is_following:
+          type: 'boolean'
+          title: 'Is Following'
+          description: 'Whether the current user follows the target user'
+        is_mutual:
+          type: 'boolean'
+          title: 'Is Mutual'
+          description: 'Whether both users follow each other'
+      type: 'object'
+      required:
+        - 'is_following'
+        - 'is_mutual'
+      title: 'FollowStatusResponse'
+    UserFollowInfo:
+      properties:
+        id:
+          type: 'string'
+          format: 'uuid'
+          title: 'Id'
+          description: 'User ID'
+        username:
+          type: 'string'
+          title: 'Username'
+          description: 'Username'
+        firstname:
+          type: 'string'
+          title: 'Firstname'
+          description: 'First name'
+        lastname:
+          type: 'string'
+          title: 'Lastname'
+          description: 'Last name'
+        avatar_url:
+          anyOf:
+            -
+              type: 'string'
+            -
+              type: 'null'
+          title: 'Avatar Url'
+          description: 'Profile picture URL'
+        followed_at:
+          type: 'string'
+          format: 'date-time'
+          title: 'Followed At'
+          description: 'When the follow relationship was created'
+      type: 'object'
+      required:
+        - 'id'
+        - 'username'
+        - 'firstname'
+        - 'lastname'
+        - 'followed_at'
+      title: 'UserFollowInfo'
+    FollowersResponse:
+      properties:
+        followers:
+          items:
+            $ref: '#/components/schemas/UserFollowInfo'
+          type: 'array'
+          title: 'Followers'
+          description: 'List of users following this user'
+        total_count:
+          type: 'integer'
+          title: 'Total Count'
+          description: 'Total number of followers'
+        has_more:
+          type: 'boolean'
+          title: 'Has More'
+          description: 'Whether there are more followers to load'
+      type: 'object'
+      required:
+        - 'followers'
+        - 'total_count'
+        - 'has_more'
+      title: 'FollowersResponse'
+    FollowingResponse:
+      properties:
+        following:
+          items:
+            $ref: '#/components/schemas/UserFollowInfo'
+          type: 'array'
+          title: 'Following'
+          description: 'List of users being followed'
+        total_count:
+          type: 'integer'
+          title: 'Total Count'
+          description: 'Total number of users being followed'
+        has_more:
+          type: 'boolean'
+          title: 'Has More'
+          description: 'Whether there are more users to load'
+      type: 'object'
+      required:
+        - 'following'
+        - 'total_count'
+        - 'has_more'
+      title: 'FollowingResponse'
+  securitySchemes:
+    HTTPBearer:
+      type: 'http'
+      scheme: 'bearer'

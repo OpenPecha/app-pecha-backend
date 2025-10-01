@@ -91,7 +91,6 @@ async def test_generate_short_url_for_segment_content_success():
     share_request = ShareRequest(
         url="https://pecha.io/share/123",
         segment_id="id_1",
-        text_id="text_1",
         language="en",
     )
     mock_short_url_response = ShortUrlResponse(
@@ -266,8 +265,8 @@ async def test_generate_segment_content_image_without_segment():
         await _generate_segment_content_image_(share_request)
         
         mock_generate_image.assert_called_once_with(
-            text="Pecha",
-            ref_str="Test Title",
+            text="Test Title",
+            ref_str="Pecha",
             lang="en",
             text_color=TextColor.BLACK,
             bg_color=BgColor.DEFAULT,
@@ -315,7 +314,7 @@ def test_generate_short_url_payload_without_url():
         
         payload = _generate_short_url_payload_(share_request, og_description)
         
-        expected_url = "https://webuddhist.com/chapter?segment_id=seg_123&contentId=content_456&contentIndex=1"
+        expected_url = "https://webuddhist.com/chapter?segment_id=seg_123&contentId=content_456&text_id=text_789&contentIndex=1"
         assert payload["url"] == expected_url
         assert payload["og_title"] == "Pecha"
         assert payload["og_description"] == "Test description"
@@ -360,7 +359,7 @@ def test_generate_url_with_segment_id():
         segment_id=segment_id
     )
     
-    expected_url = "https://webuddhist.com/chapter?segment_id=seg_123&contentId=content_456&contentIndex=2"
+    expected_url = "https://webuddhist.com/chapter?segment_id=seg_123&contentId=content_456&text_id=text_789&contentIndex=2"
     assert result == expected_url
 
 
