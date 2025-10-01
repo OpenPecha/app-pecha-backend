@@ -1,0 +1,335 @@
+openapi: '3.1.0'
+info:
+  title: 'Pecha Authentication API'
+  description: 'This is the authentication API documentation for Pecha application'
+  version: '0.1.0'
+servers:
+  -
+    url: '/api/v1'
+paths:
+  /auth/register:
+    post:
+      tags:
+        - 'Authentications'
+      summary: 'Register User'
+      operationId: 'register_user_auth_register_post'
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateUserRequest'
+        required: True
+      responses:
+        201:
+          description: 'Successful Response'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserLoginResponse'
+        422:
+          description: 'Validation Error'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+  /auth/social_register:
+    post:
+      tags:
+        - 'Authentications'
+      summary: 'Register User'
+      operationId: 'register_user_auth_social_register_post'
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateSocialUserRequest'
+        required: True
+      responses:
+        201:
+          description: 'Successful Response'
+          content:
+            application/json:
+              schema:
+        422:
+          description: 'Validation Error'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+  /auth/login:
+    post:
+      tags:
+        - 'Authentications'
+      summary: 'Login User'
+      operationId: 'login_user_auth_login_post'
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UserLoginRequest'
+        required: True
+      responses:
+        200:
+          description: 'Successful Response'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserLoginResponse'
+        422:
+          description: 'Validation Error'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+  /auth/refresh-token:
+    post:
+      tags:
+        - 'Authentications'
+      summary: 'Refresh Token'
+      operationId: 'refresh_token_auth_refresh_token_post'
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RefreshTokenRequest'
+        required: True
+      responses:
+        200:
+          description: 'Successful Response'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RefreshTokenResponse'
+        422:
+          description: 'Validation Error'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+  /auth/request-reset-password:
+    post:
+      tags:
+        - 'Authentications'
+      summary: 'Password Reset Request'
+      operationId: 'password_reset_request_auth_request_reset_password_post'
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PasswordResetRequest'
+        required: True
+      responses:
+        202:
+          description: 'Successful Response'
+          content:
+            application/json:
+              schema:
+        422:
+          description: 'Validation Error'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+  /auth/reset-password:
+    post:
+      tags:
+        - 'Authentications'
+      summary: 'Password Reset'
+      operationId: 'password_reset_auth_reset_password_post'
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ResetPasswordRequest'
+        required: True
+      responses:
+        200:
+          description: 'Successful Response'
+          content:
+            application/json:
+              schema:
+        422:
+          description: 'Validation Error'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+      security:
+        -
+          HTTPBearer:
+components:
+  securitySchemes:
+    HTTPBearer:
+      type: 'http'
+      scheme: 'bearer'
+  schemas:
+    CreateUserRequest:
+      properties:
+        firstname:
+          type: 'string'
+          title: 'Firstname'
+        lastname:
+          type: 'string'
+          title: 'Lastname'
+        email:
+          type: 'string'
+          title: 'Email'
+        password:
+          type: 'string'
+          title: 'Password'
+      type: 'object'
+      required:
+        - 'firstname'
+        - 'lastname'
+        - 'email'
+        - 'password'
+      title: 'CreateUserRequest'
+    CreateSocialUserRequest:
+      properties:
+        create_user_request:
+          $ref: '#/components/schemas/CreateUserRequest'
+        platform:
+          $ref: '#/components/schemas/RegistrationSource'
+      type: 'object'
+      required:
+        - 'create_user_request'
+        - 'platform'
+      title: 'CreateSocialUserRequest'
+    UserLoginRequest:
+      properties:
+        email:
+          type: 'string'
+          title: 'Email'
+        password:
+          type: 'string'
+          title: 'Password'
+      type: 'object'
+      required:
+        - 'email'
+        - 'password'
+      title: 'UserLoginRequest'
+    UserLoginResponse:
+      properties:
+        user:
+          $ref: '#/components/schemas/UserInfo'
+        auth:
+          $ref: '#/components/schemas/TokenResponse'
+      type: 'object'
+      required:
+        - 'user'
+        - 'auth'
+      title: 'UserLoginResponse'
+    RefreshTokenRequest:
+      properties:
+        token:
+          type: 'string'
+          title: 'Token'
+      type: 'object'
+      required:
+        - 'token'
+      title: 'RefreshTokenRequest'
+    RefreshTokenResponse:
+      properties:
+        access_token:
+          type: 'string'
+          title: 'Access Token'
+        token_type:
+          type: 'string'
+          title: 'Token Type'
+      type: 'object'
+      required:
+        - 'access_token'
+        - 'token_type'
+      title: 'RefreshTokenResponse'
+    PasswordResetRequest:
+      properties:
+        email:
+          type: 'string'
+          title: 'Email'
+      type: 'object'
+      required:
+        - 'email'
+      title: 'PasswordResetRequest'
+    ResetPasswordRequest:
+      properties:
+        password:
+          type: 'string'
+          title: 'Password'
+      type: 'object'
+      required:
+        - 'password'
+      title: 'ResetPasswordRequest'
+    RegistrationSource:
+      type: 'string'
+      enum:
+        - 'google-oauth2'
+        - 'facebook'
+        - 'apple'
+        - 'email'
+        - 'auth0'
+      title: 'RegistrationSource'
+    UserInfo:
+      properties:
+        name:
+          type: 'string'
+          title: 'Name'
+        avatar_url:
+          anyOf:
+            -
+              type: 'string'
+            -
+              type: 'null'
+          title: 'Avatar Url'
+      type: 'object'
+      required:
+        - 'name'
+      title: 'UserInfo'
+    TokenResponse:
+      properties:
+        access_token:
+          type: 'string'
+          title: 'Access Token'
+        refresh_token:
+          type: 'string'
+          title: 'Refresh Token'
+        token_type:
+          type: 'string'
+          title: 'Token Type'
+      type: 'object'
+      required:
+        - 'access_token'
+        - 'refresh_token'
+        - 'token_type'
+      title: 'TokenResponse'
+    HTTPValidationError:
+      properties:
+        detail:
+          items:
+            $ref: '#/components/schemas/ValidationError'
+          type: 'array'
+          title: 'Detail'
+      type: 'object'
+      title: 'HTTPValidationError'
+    ValidationError:
+      properties:
+        loc:
+          items:
+            anyOf:
+              -
+                type: 'string'
+              -
+                type: 'integer'
+          type: 'array'
+          title: 'Location'
+        msg:
+          type: 'string'
+          title: 'Message'
+        type:
+          type: 'string'
+          title: 'Error Type'
+      type: 'object'
+      required:
+        - 'loc'
+        - 'msg'
+        - 'type'
+      title: 'ValidationError'
