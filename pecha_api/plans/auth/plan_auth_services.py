@@ -214,7 +214,7 @@ def request_reset_password(email: str):
             db=db_session,
             password_reset=password_reset
         )
-        reset_link = f"{get('WEBUDDHIST_STUDIO_BASE_URL')}/reset-password?token={reset_token}"
+        reset_link = f"{get('WEBUDDHIST_STUDIO_BASE_URL')}/reset-password?token={reset_token}&email={email}"
         send_reset_email(email=email, reset_link=reset_link)
         return {"message": "If the email exists in our system, a password reset email has been sent."}
 
