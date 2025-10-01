@@ -1,8 +1,7 @@
-from typing import Annotated
 from uuid import UUID
 
-from fastapi import APIRouter, Depends
-from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
+from fastapi import APIRouter
+from fastapi.security import HTTPBearer
 from starlette import status
 
 from db import database
@@ -24,4 +23,8 @@ def get_db():
 
 @author_router.get("{author_id}", status_code=status.HTTP_200_OK)
 async def get_author_information(author_id: UUID)  -> AuthorInfoResponse:
+    return await get_selected_author_details(author_id=author_id)
+
+@author_router.get("{author_id}/plans", status_code=status.HTTP_200_OK)
+async def get_plans_by_author(author_id: UUID)  -> AuthorInfoResponse:
     return await get_selected_author_details(author_id=author_id)

@@ -2,7 +2,7 @@ from typing import Optional, List
 
 from pydantic import BaseModel
 
-from users.users_enums import SocialProfile
+from pecha_api.users.users_enums import SocialProfile
 
 
 class SocialMediaProfile(BaseModel):
