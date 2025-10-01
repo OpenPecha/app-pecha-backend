@@ -9,6 +9,12 @@
       "language": "bo",
       "status": "PUBLISHED",
       "subscription_count": 15,
+      "author": {
+        "id": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
+        "firstname": "Tenzin",
+        "lastname": "Norbu",
+        "image_url": "https://drive.google.com/uc?export=view&id=1author1_profile_image"
+      },
       "days": [
         {
           "id": "13d62085-044b-4671-9e9b-44fa4f04601a",
@@ -677,6 +683,12 @@
       "language": "bo",
       "status": "PUBLISHED",
       "subscription_count": 18,
+      "author": {
+        "id": "b2c3d4e5-f6g7-8901-bcde-f23456789012",
+        "firstname": "Lobsang",
+        "lastname": "Tenzin",
+        "image_url": "https://drive.google.com/uc?export=view&id=1author2_profile_image"
+      },
       "days": [
         {
           "id": "e39d10d9-aa88-429f-a741-15893ea27d94",
@@ -935,6 +947,12 @@
       "language": "en",
       "status": "PUBLISHED",
       "subscription_count": 32,
+      "author": {
+        "id": "c3d4e5f6-g7h8-9012-cdef-345678901234",
+        "firstname": "Sarah",
+        "lastname": "Johnson",
+        "image_url": "https://drive.google.com/uc?export=view&id=1author3_profile_image"
+      },
       "days": [
         {
           "id": "df452b4f-a168-4cc4-94ea-bcbcb65d737a",
@@ -1357,6 +1375,12 @@
       "language": "zh",
       "status": "PUBLISHED",
       "subscription_count": 28,
+      "author": {
+        "id": "d4e5f6g7-h8i9-0123-defg-456789012345",
+        "firstname": "Li",
+        "lastname": "Wei",
+        "image_url": "https://drive.google.com/uc?export=view&id=1author4_profile_image"
+      },
       "days": [
         {
           "id": "3f39a09b-d50c-45be-8a03-96ed3dd2b7c3",
@@ -1943,6 +1967,12 @@
       "language": "zh",
       "status": "PUBLISHED",
       "subscription_count": 32,
+      "author": {
+        "id": "e5f6g7h8-i9j0-1234-efgh-567890123456",
+        "firstname": "Zhang",
+        "lastname": "Ming",
+        "image_url": "https://drive.google.com/uc?export=view&id=1author5_profile_image"
+      },
       "days": [
         {
           "id": "7b8450cf-8cdc-4d35-9d95-6f08eaada6e4",
@@ -2365,6 +2395,12 @@
       "language": "zh",
       "status": "PUBLISHED",
       "subscription_count": 24,
+      "author": {
+        "id": "f6g7h8i9-j0k1-2345-fghi-678901234567",
+        "firstname": "Wang",
+        "lastname": "Xiu",
+        "image_url": "https://drive.google.com/uc?export=view&id=1author6_profile_image"
+      },
       "days": [
         {
           "id": "0f2cff9d-d28d-4cc1-a749-a62ab30c8f41",
@@ -2511,6 +2547,12 @@
       "language": "zh",
       "status": "PUBLISHED",
       "subscription_count": 15,
+      "author": {
+        "id": "g7h8i9j0-k1l2-3456-ghij-789012345678",
+        "firstname": "Chen",
+        "lastname": "Lu",
+        "image_url": "https://drive.google.com/uc?export=view&id=1author7_profile_image"
+      },
       "days": [
         {
           "id": "84cf60d0-28ed-4b6b-87ce-3e413a3ba3db",
