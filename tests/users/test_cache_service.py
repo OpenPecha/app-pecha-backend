@@ -96,7 +96,7 @@ async def test_update_user_info_cache_updates_existing():
 
 
 @pytest.mark.asyncio
-async def test_update_user_info_cache_sets_when_missing():
+async def test_update_user_info_cache_deletes_when_update_fails():
     mock_cache_data = UserInfoResponse(
         username="username_1",
         email="email_1",
@@ -112,13 +112,13 @@ async def test_update_user_info_cache_sets_when_missing():
     with patch("pecha_api.users.user_cache_service.Utils.generate_hash_key", return_value="hashed_key"), \
          patch("pecha_api.users.user_cache_service.config.get_int", return_value=123), \
          patch("pecha_api.users.user_cache_service.update_cache", new_callable=AsyncMock, return_value=False) as mock_update, \
-         patch("pecha_api.users.user_cache_service.set_cache", new_callable=AsyncMock, return_value=True) as mock_set:
+         patch("pecha_api.users.user_cache_service.delete_cache", new_callable=AsyncMock, return_value=True) as mock_delete:
 
         result = await update_user_info_cache(token="token", data=mock_cache_data, cache_type=CacheType.USER_INFO)
 
         assert result is True
         mock_update.assert_awaited_once_with(hash_key="hashed_key", value=mock_cache_data, cache_time_out=123)
-        mock_set.assert_awaited_once_with(hash_key="hashed_key", value=mock_cache_data, cache_time_out=123)
+        mock_delete.assert_awaited_once_with(hash_key="hashed_key")
 
 
 @pytest.mark.asyncio

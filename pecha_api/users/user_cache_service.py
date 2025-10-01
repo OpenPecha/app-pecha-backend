@@ -37,5 +37,5 @@ async def update_user_info_cache(token: str, data: UserInfoResponse, cache_type:
     is_updated: bool = await update_cache(hash_key=hashed_key, value=data, cache_time_out=cache_time_out)
     if is_updated:
         return True
-    # If update failed (e.g., key missing), set the cache value
-    return await set_cache(hash_key=hashed_key, value=data, cache_time_out=cache_time_out)
+    # If update failed (e.g., key missing), delete existing cache entry to avoid stale data
+    return await delete_cache(hash_key=hashed_key)
