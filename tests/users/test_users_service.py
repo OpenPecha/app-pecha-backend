@@ -19,6 +19,7 @@ import io
 import PIL.Image
 
 
+@pytest.mark.asyncio
 async def test_get_user_info_success():
     token = "valid_token"
     user = Users(
@@ -45,6 +46,7 @@ async def test_get_user_info_success():
         assert response.email == "john.doe@example.com"
 
 
+@pytest.mark.asyncio
 async def test_get_user_info_with_social_accounts():
     token = "valid_token"
     user = Users(
@@ -79,15 +81,16 @@ async def test_get_user_info_with_social_accounts():
         assert response.social_profiles[1].url == "http://linkedin.com/in/johndoe"
 
 
-def test_get_user_info_invalid_token():
+@pytest.mark.asyncio
+async def test_get_user_info_invalid_token():
     token = "invalid_token"
 
-    with patch("pecha_api.users.users_service.validate_token", return_value={"email": None}):
-        try:
-            get_user_info(token)
-        except HTTPException as e:
-            assert e.status_code == status.HTTP_401_UNAUTHORIZED
-            assert e.detail == 'Invalid or no token found'
+    with patch("pecha_api.users.users_service.get_user_info_cache", new_callable=AsyncMock, return_value=None), \
+         patch("pecha_api.users.users_service.validate_token", return_value={"email": None}):
+        with pytest.raises(HTTPException) as exc_info:
+            await get_user_info(token)
+        assert exc_info.value.status_code == status.HTTP_401_UNAUTHORIZED
+        assert exc_info.value.detail == 'Invalid or no token found'
 
 
 def test_update_user_info_success():
@@ -242,7 +245,7 @@ def test_validate_and_compress_image_file_too_large():
     file_content = io.BytesIO(b"fake_image_data" * 1024 * 1024 * 6)  # 6 MB
     file = UploadFile(filename="test.jpg", file=file_content)
 
-    with patch("pecha_api.users.users_service.get_int", return_value=5), \
+    with patch("pecha_api.image_utils.get_int", return_value=5), \
             pytest.raises(HTTPException) as exc_info:
         image_utils = ImageUtils()
         image_utils.validate_and_compress_image(file=file, content_type="image/jpeg")
@@ -254,8 +257,8 @@ def test_validate_and_compress_image_processing_failure():
     file_content = io.BytesIO(b"fake_image_data")
     file = UploadFile(filename="test.jpg", file=file_content)
 
-    with patch("pecha_api.users.users_service.get_int", side_effect=[5, 75]), \
-            patch("pecha_api.users.users_service.Image.open", side_effect=Exception("Processing error")), \
+    with patch("pecha_api.image_utils.get_int", side_effect=[5, 75]), \
+            patch("pecha_api.image_utils.Image.open", side_effect=Exception("Processing error")), \
             pytest.raises(HTTPException) as exc_info:
         image_utils = ImageUtils()
         image_utils.validate_and_compress_image(file=file, content_type="image/jpeg")
