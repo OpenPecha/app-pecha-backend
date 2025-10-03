@@ -10,10 +10,10 @@
       "status": "PUBLISHED",
       "subscription_count": 15,
       "author": {
-        "id": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
+        "id": "b6c0dbb8-a65e-4b63-ae1a-985d5c094672",
         "firstname": "Tenzin",
-        "lastname": "Norbu",
-        "image_url": "https://drive.google.com/uc?export=view&id=1author1_profile_image"
+        "lastname": "Samten",
+        "image_url": "https://i.pravatar.cc/200"
       },
       "days": [
         {
@@ -684,10 +684,10 @@
       "status": "PUBLISHED",
       "subscription_count": 18,
       "author": {
-        "id": "b2c3d4e5-f6g7-8901-bcde-f23456789012",
-        "firstname": "Lobsang",
-        "lastname": "Tenzin",
-        "image_url": "https://drive.google.com/uc?export=view&id=1author2_profile_image"
+        "id": "fe2ab50f-fa1e-4343-8ec7-6a0c2901be00",
+        "firstname": "Tenzin",
+        "lastname": "Delek",
+        "image_url": "https://i.pravatar.cc/200"
       },
       "days": [
         {
@@ -948,10 +948,10 @@
       "status": "PUBLISHED",
       "subscription_count": 32,
       "author": {
-        "id": "c3d4e5f6-g7h8-9012-cdef-345678901234",
-        "firstname": "Sarah",
-        "lastname": "Johnson",
-        "image_url": "https://drive.google.com/uc?export=view&id=1author3_profile_image"
+        "id": "1f4b3d58-d1b0-4c89-a60a-e736a9089294",
+        "firstname": "Lobsang",
+        "lastname": "Sandup",
+        "image_url": "https://i.pravatar.cc/200"
       },
       "days": [
         {
@@ -1376,10 +1376,10 @@
       "status": "PUBLISHED",
       "subscription_count": 28,
       "author": {
-        "id": "d4e5f6g7-h8i9-0123-defg-456789012345",
-        "firstname": "Li",
-        "lastname": "Wei",
-        "image_url": "https://drive.google.com/uc?export=view&id=1author4_profile_image"
+        "id": "1f4b3d58-d1b0-4c89-a60a-e736a9089294",
+        "firstname": "Lobsang",
+        "lastname": "Sandup",
+        "image_url": "https://i.pravatar.cc/200"
       },
       "days": [
         {
@@ -1968,10 +1968,10 @@
       "status": "PUBLISHED",
       "subscription_count": 32,
       "author": {
-        "id": "e5f6g7h8-i9j0-1234-efgh-567890123456",
-        "firstname": "Zhang",
-        "lastname": "Ming",
-        "image_url": "https://drive.google.com/uc?export=view&id=1author5_profile_image"
+        "id": "53d3b953-4e6f-4345-80b5-6ecb457fc14a",
+        "firstname": "Lungsang",
+        "lastname": "Tenzin",
+        "image_url": "https://i.pravatar.cc/200"
       },
       "days": [
         {
@@ -2396,10 +2396,10 @@
       "status": "PUBLISHED",
       "subscription_count": 24,
       "author": {
-        "id": "f6g7h8i9-j0k1-2345-fghi-678901234567",
-        "firstname": "Wang",
-        "lastname": "Xiu",
-        "image_url": "https://drive.google.com/uc?export=view&id=1author6_profile_image"
+        "id": "53d3b953-4e6f-4345-80b5-6ecb457fc14a",
+        "firstname": "Lungsang",
+        "lastname": "Tenzin",
+        "image_url": "https://i.pravatar.cc/200"
       },
       "days": [
         {
@@ -2539,7 +2539,7 @@
       ]
     },
     {
-      "id": "a0372e74-9535-45a8-aa00-ddc6615a593d",
+      "id": "6f86b2e0-9319-4b71-8529-120547015511",
       "title": "DIY簡簡單單做煙供",
       "description": "DIY簡簡單單做煙供",
       "image_url": "https://drive.google.com/uc?export=view&id=1AV3d1P_gsMOF9Us79LpIey23UkRz7-ao",
@@ -2548,32 +2548,32 @@
       "status": "PUBLISHED",
       "subscription_count": 15,
       "author": {
-        "id": "g7h8i9j0-k1l2-3456-ghij-789012345678",
-        "firstname": "Chen",
-        "lastname": "Lu",
-        "image_url": "https://drive.google.com/uc?export=view&id=1author7_profile_image"
+        "id": "53d3b953-4e6f-4345-80b5-6ecb457fc14a",
+        "firstname": "Lungsang",
+        "lastname": "Tenzin",
+        "image_url": "https://i.pravatar.cc/200"
       },
       "days": [
         {
-          "id": "84cf60d0-28ed-4b6b-87ce-3e413a3ba3db",
+          "id": "eb8bf324-d9a4-43de-a74a-738aa965cd5a",
           "day_number": 1,
           "title": "週五 - 超越惡趣",
           "tasks": [
             {
-              "id": "d3278e87-a15a-4745-ab9d-95124930f1d7",
+              "id": "1355c043-d35b-4091-9fbe-ff5a3c3a2a69",
               "title": "今日偈誦",
               "description": "今日偈誦",
               "display_order": 1,
               "estimated_time": 3,
               "subtasks": [
                 {
-                  "id": "a5ffe24d-b9de-4578-b604-2c9da71b5744",
+                  "id": "57cd8026-01a2-48aa-ad75-0e94391e6f09",
                   "content_type": "TEXT",
                   "content": "讓樣康 (灑淨) 嗡阿吽 (三遍)\n六字真言神力故，薰煙化雲成妙供\n三寶怙主與護法，一切具德應供客\n六道眾生⾷餘者，所有悲施應供客\n業債命債諸債主，我悉敬獻此煙供\n飽足欣喜而解冤，共與不共善成就\n三輪體空普迴向",
                   "display_order": 1
                 },
                 {
-                  "id": "dbe296f2-22d6-4ada-a9e0-f0b4492f2505",
+                  "id": "be1c30fc-3848-48b9-8d28-7461a1a9e22d",
                   "content_type": "IMAGE",
                   "content": "https://drive.google.com/uc?export=view&id=1dzfVNVAFX3K9E2XS7RizwdQCdfwfAf-n",
                   "display_order": 2
@@ -2581,13 +2581,13 @@
               ]
             },
             {
-              "id": "f2260467-5b07-41bd-949a-27184d75ffe3",
+              "id": "ed5ee861-75e3-4bf3-9d8e-8b05579b2bcb",
               "title": "深入了解",
               "description": "深入了解",
               "display_order": 2,
               "subtasks": [
                 {
-                  "id": "12e94e87-3820-4f32-8080-2e331b8e0274",
+                  "id": "6291daf1-25f5-4dce-a690-6e0b3ffa8ff0",
                   "content_type": "VIDEO",
                   "content": "https://www.youtube.com/watch?v=JMYxDJ7RW1w",
                   "display_order": 1
@@ -2596,14 +2596,14 @@
               "estimated_time": 4
             },
             {
-              "id": "faa69ea5-0c82-4d37-9737-5e9522f842c9",
+              "id": "297c9034-5a9c-452a-8b59-7bdd38da6658",
               "title": "教學",
               "description": "教學",
               "display_order": 3,
               "estimated_time": 3,
               "subtasks": [
                 {
-                  "id": "e1bb8be0-cefc-4c35-9364-512b622222f1",
+                  "id": "142512a8-4645-4584-9460-b2e1c29e9b16",
                   "content_type": "VIDEO",
                   "content": "https://www.youtube.com/watch?v=3xpab3s7-a0",
                   "display_order": 1
@@ -2611,13 +2611,13 @@
               ]
             },
             {
-              "id": "1129980a-0935-4d04-a1b5-bf25bdb6e300",
+              "id": "3cb41e0d-d536-4f95-bbdc-04b628c9baa6",
               "title": "真實故事",
               "description": "真實故事",
               "display_order": 4,
               "subtasks": [
                 {
-                  "id": "ca1eb1f2-2099-4455-99ed-82502e7517ec",
+                  "id": "d874b082-0473-4709-9d87-c7cab13baa4e",
                   "content_type": "VIDEO",
                   "content": "https://www.youtube.com/watch?v=eRRp3BiBuE0",
                   "display_order": 1
@@ -2626,16 +2626,368 @@
               "estimated_time": 4
             },
             {
-              "id": "f56c4549-3e70-4c8e-85ea-ee592a4b712c",
+              "id": "76bbc11c-7b43-4606-9bae-5267cccc8941",
               "title": "觀想",
               "description": "觀想",
               "display_order": 5,
               "subtasks": [
                 {
-                  "id": "fa8c1137-3848-4d95-b43d-246828ec0946",
+                  "id": "2577e1ff-3902-4d17-acca-1ecc5cb10e2b",
                   "display_order": 1,
                   "content_type": "IMAGE",
                   "content": "https://drive.google.com/uc?export=view&id=1Bdp50NH-me9fU6rbxASBTYJOUhSreFIe"
+                }
+              ],
+              "estimated_time": 2
+            }
+          ]
+        },
+        {
+          "id": "ad05fa70-afb1-4682-9307-c25780e30244",
+          "day_number": 2,
+          "title": "",
+          "tasks": [
+            {
+              "id": "20e76f54-dfd3-44f1-9c66-a1b1a678a944",
+              "title": "今日偈誦",
+              "description": "今日偈誦",
+              "display_order": 1,
+              "estimated_time": 3,
+              "subtasks": [
+                {
+                  "id": "8d0c1422-05a8-4420-b590-a627b76b1910",
+                  "content_type": "TEXT",
+                  "content": "讓樣康 (灑淨) 嗡阿吽 (三遍)\n六字真言神力故，薰煙化雲成妙供\n三寶怙主與護法，一切具德應供客\n六道眾生⾷餘者，所有悲施應供客\n業債命債諸債主，我悉敬獻此煙供\n飽足欣喜而解冤，共與不共善成就\n三輪體空普迴向",
+                  "display_order": 1
+                },
+                {
+                  "id": "2d75d8a1-572e-4f80-b138-05da4dd4349f",
+                  "content_type": "IMAGE",
+                  "content": "https://drive.google.com/uc?export=view&id=1dzfVNVAFX3K9E2XS7RizwdQCdfwfAf-n",
+                  "display_order": 2
+                }
+              ]
+            },
+            {
+              "id": "70b6f976-6719-411a-8256-4075e93b9e26",
+              "title": "深入了解",
+              "description": "深入了解",
+              "display_order": 2,
+              "subtasks": [
+                {
+                  "id": "c945e2e1-beb3-4718-bba0-3237d0263bfa",
+                  "content_type": "VIDEO",
+                  "content": "https://www.youtube.com/watch?v=0YoNkWZhvwo",
+                  "display_order": 1
+                }
+              ],
+              "estimated_time": 4
+            },
+            {
+              "id": "c5c6012a-2ae4-4844-b8dc-e0862ad88631",
+              "title": "教學",
+              "description": "教學",
+              "display_order": 3,
+              "estimated_time": 3,
+              "subtasks": [
+                {
+                  "id": "094a9d8f-4f7a-4f65-b3bf-95aa0a4cdfee",
+                  "content_type": "VIDEO",
+                  "content": "https://www.youtube.com/watch?v=3xpab3s7-a0",
+                  "display_order": 1
+                }
+              ]
+            },
+            {
+              "id": "d335e519-89aa-469e-be06-f0fbafdc02e5",
+              "title": "真實故事",
+              "description": "真實故事",
+              "display_order": 4,
+              "subtasks": [
+                {
+                  "id": "b14a83c9-63ee-437e-a47f-d2b4b6292e50",
+                  "content_type": "VIDEO",
+                  "content": "https://www.youtube.com/watch?v=ft-w5RoFyXI",
+                  "display_order": 1
+                }
+              ],
+              "estimated_time": 4
+            },
+            {
+              "id": "dfd76ea8-6d7c-49c4-b643-a602f84be922",
+              "title": "觀想",
+              "description": "觀想",
+              "display_order": 5,
+              "subtasks": [
+                {
+                  "id": "13fccac3-e5f5-410e-917c-896dea291f56",
+                  "display_order": 1,
+                  "content_type": "IMAGE",
+                  "content": "https://drive.google.com/uc?export=view&id=15fJiqSC4UFW5iF4mvAU6bsjpaHPt0FlK"
+                }
+              ],
+              "estimated_time": 2
+            }
+          ]
+        },
+        {
+          "id": "2470c049-6629-4d70-9242-163e543ab287",
+          "day_number": 3,
+          "title": "",
+          "tasks": [
+            {
+              "id": "b86db2d4-de2d-4437-a80c-da5c57e06efc",
+              "title": "今日偈誦",
+              "description": "今日偈誦",
+              "display_order": 1,
+              "estimated_time": 3,
+              "subtasks": [
+                {
+                  "id": "8963a5ab-eb8e-4b41-a631-4ef65a3e2073",
+                  "content_type": "TEXT",
+                  "content": "讓樣康 (灑淨) 嗡阿吽 (三遍)\n六字真言神力故，薰煙化雲成妙供\n三寶怙主與護法，一切具德應供客\n六道眾生⾷餘者，所有悲施應供客\n業債命債諸債主，我悉敬獻此煙供\n飽足欣喜而解冤，共與不共善成就\n三輪體空普迴向",
+                  "display_order": 1
+                },
+                {
+                  "id": "b5b871ec-9480-4213-b6b5-b24920440139",
+                  "content_type": "IMAGE",
+                  "content": "https://drive.google.com/uc?export=view&id=1dzfVNVAFX3K9E2XS7RizwdQCdfwfAf-n",
+                  "display_order": 2
+                }
+              ]
+            },
+            {
+              "id": "3d734f64-0acc-4321-9af7-5e772cf6a03b",
+              "title": "深入了解",
+              "description": "深入了解",
+              "display_order": 2,
+              "subtasks": [
+                {
+                  "id": "9aff3043-b4ee-4d47-a096-4b32073e65c3",
+                  "content_type": "VIDEO",
+                  "content": "https://www.youtube.com/watch?v=_bwCUqrOnDQ",
+                  "display_order": 1
+                }
+              ],
+              "estimated_time": 4
+            },
+            {
+              "id": "03b565b7-1148-4d7f-a4bf-16ad02fb62a1",
+              "title": "教學",
+              "description": "教學",
+              "display_order": 3,
+              "estimated_time": 3,
+              "subtasks": [
+                {
+                  "id": "52822ae7-abd0-4be8-85c5-c878de6e9ed3",
+                  "content_type": "VIDEO",
+                  "content": "https://www.youtube.com/watch?v=3xpab3s7-a0",
+                  "display_order": 1
+                }
+              ]
+            },
+            {
+              "id": "7ca753a5-c04c-4a6a-96a0-5ec7b7d6530b",
+              "title": "真實故事",
+              "description": "真實故事",
+              "display_order": 4,
+              "subtasks": [
+                {
+                  "id": "ad3dedac-24ca-4f28-9e61-fe5f434e377b",
+                  "content_type": "VIDEO",
+                  "content": "https://www.youtube.com/watch?v=LCMqxikZteI",
+                  "display_order": 1
+                }
+              ],
+              "estimated_time": 4
+            },
+            {
+              "id": "a754a4d8-6918-4ab8-b743-2fe7285301af",
+              "title": "觀想",
+              "description": "觀想",
+              "display_order": 5,
+              "subtasks": [
+                {
+                  "id": "2c29c530-76c8-4ed5-b4b2-a61977016589",
+                  "display_order": 1,
+                  "content_type": "IMAGE",
+                  "content": "https://drive.google.com/uc?export=view&id=1JTSU3cBlTyPTZIkTYWQOsDZZyC54MBca"
+                }
+              ],
+              "estimated_time": 2
+            }
+          ]
+        },
+        {
+          "id": "e3c2bee6-8901-41eb-877d-a618bdd2c498",
+          "day_number": 4,
+          "title": "",
+          "tasks": [
+            {
+              "id": "ae9964cb-5e03-479e-a885-ef6af7569c45",
+              "title": "今日偈誦",
+              "description": "今日偈誦",
+              "display_order": 1,
+              "estimated_time": 3,
+              "subtasks": [
+                {
+                  "id": "9c878b29-249e-46d5-a867-5ba8df893f25",
+                  "content_type": "TEXT",
+                  "content": "讓樣康 (灑淨) 嗡阿吽 (三遍)\n六字真言神力故，薰煙化雲成妙供\n三寶怙主與護法，一切具德應供客\n六道眾生⾷餘者，所有悲施應供客\n業債命債諸債主，我悉敬獻此煙供\n飽足欣喜而解冤，共與不共善成就\n三輪體空普迴向",
+                  "display_order": 1
+                },
+                {
+                  "id": "be62e039-bb58-46cf-8bf5-38fb0df35a5f",
+                  "content_type": "IMAGE",
+                  "content": "https://drive.google.com/uc?export=view&id=1dzfVNVAFX3K9E2XS7RizwdQCdfwfAf-n",
+                  "display_order": 2
+                }
+              ]
+            },
+            {
+              "id": "eea855ab-9e6b-4b4b-a79a-490d9a84f72c",
+              "title": "深入了解",
+              "description": "深入了解",
+              "display_order": 2,
+              "subtasks": [
+                {
+                  "id": "02c1f2a1-2dc9-459e-be6a-c126a0cdbf42",
+                  "content_type": "VIDEO",
+                  "content": "https://www.youtube.com/watch?v=D_UG4RBQ1-g",
+                  "display_order": 1
+                }
+              ],
+              "estimated_time": 4
+            },
+            {
+              "id": "61248195-0acd-4bb5-80ab-0f9bdb636407",
+              "title": "教學",
+              "description": "教學",
+              "display_order": 3,
+              "estimated_time": 3,
+              "subtasks": [
+                {
+                  "id": "4ca16446-c475-498a-badc-e7caa89c2699",
+                  "content_type": "VIDEO",
+                  "content": "https://www.youtube.com/watch?v=3xpab3s7-a0",
+                  "display_order": 1
+                }
+              ]
+            },
+            {
+              "id": "8f0453f9-2f93-455d-8b85-dc5c7c037d42",
+              "title": "真實故事",
+              "description": "真實故事",
+              "display_order": 4,
+              "subtasks": [
+                {
+                  "id": "b3d41de5-fb3a-4161-85ec-04d9fe5638ea",
+                  "content_type": "VIDEO",
+                  "content": "https://www.youtube.com/watch?v=x3ifRZogB5I",
+                  "display_order": 1
+                }
+              ],
+              "estimated_time": 4
+            },
+            {
+              "id": "8bcfc4c3-eb29-4c34-bbe8-371f2583cedf",
+              "title": "觀想",
+              "description": "觀想",
+              "display_order": 5,
+              "subtasks": [
+                {
+                  "id": "6b3a26c2-3921-4ea2-bb21-efe96bb6d41e",
+                  "display_order": 1,
+                  "content_type": "IMAGE",
+                  "content": "https://drive.google.com/uc?export=view&id=1pUG2oKNds7IyoEOkw-9K3VlG191Z91UW"
+                }
+              ],
+              "estimated_time": 2
+            }
+          ]
+        },
+        {
+          "id": "09e9642d-7b97-492e-a6dd-3c3bc250706a",
+          "day_number": 5,
+          "title": "",
+          "tasks": [
+            {
+              "id": "59ab8b28-900e-45ca-a2ac-5750f40baba4",
+              "title": "今日偈誦",
+              "description": "今日偈誦",
+              "display_order": 1,
+              "estimated_time": 3,
+              "subtasks": [
+                {
+                  "id": "65241a83-83cd-446a-aff6-c9326c88bb34",
+                  "content_type": "TEXT",
+                  "content": "讓樣康 (灑淨) 嗡阿吽 (三遍)\n六字真言神力故，薰煙化雲成妙供\n三寶怙主與護法，一切具德應供客\n六道眾生⾷餘者，所有悲施應供客\n業債命債諸債主，我悉敬獻此煙供\n飽足欣喜而解冤，共與不共善成就\n三輪體空普迴向",
+                  "display_order": 1
+                },
+                {
+                  "id": "5aae3065-3d4d-4f61-9d8e-9d2cb48a3312",
+                  "content_type": "IMAGE",
+                  "content": "https://drive.google.com/uc?export=view&id=1dzfVNVAFX3K9E2XS7RizwdQCdfwfAf-n",
+                  "display_order": 2
+                }
+              ]
+            },
+            {
+              "id": "9fbbbc58-c8c0-4581-89ba-e7f3883d1264",
+              "title": "深入了解",
+              "description": "深入了解",
+              "display_order": 2,
+              "subtasks": [
+                {
+                  "id": "c688b009-5a04-4e28-84dd-81f7ea17ac30",
+                  "content_type": "VIDEO",
+                  "content": "https://www.youtube.com/watch?v=thtTebJoLKI",
+                  "display_order": 1
+                }
+              ],
+              "estimated_time": 4
+            },
+            {
+              "id": "f96d8955-1cc8-4077-ab54-b6e94fb5efb0",
+              "title": "教學",
+              "description": "教學",
+              "display_order": 3,
+              "estimated_time": 3,
+              "subtasks": [
+                {
+                  "id": "f4928b05-8f4c-409b-a378-8842e9643579",
+                  "content_type": "VIDEO",
+                  "content": "https://www.youtube.com/watch?v=3xpab3s7-a0",
+                  "display_order": 1
+                }
+              ]
+            },
+            {
+              "id": "89185850-6beb-4679-ba46-9310f613535d",
+              "title": "真實故事",
+              "description": "真實故事",
+              "display_order": 4,
+              "subtasks": [
+                {
+                  "id": "1525f195-39ab-4632-a386-769a032f4dd5",
+                  "content_type": "VIDEO",
+                  "content": "https://www.youtube.com/watch?v=zRb7GlTT_qI",
+                  "display_order": 1
+                }
+              ],
+              "estimated_time": 4
+            },
+            {
+              "id": "691fad04-9b63-4565-b56a-84837d9f0b72",
+              "title": "觀想",
+              "description": "觀想",
+              "display_order": 5,
+              "subtasks": [
+                {
+                  "id": "d5171620-d9aa-44e3-95c6-14afb0e51af3",
+                  "display_order": 1,
+                  "content_type": "IMAGE",
+                  "content": "https://drive.google.com/uc?export=view&id=1Q9RgUxOD-J82lsVb-xcIq-wY6MdWdmcH"
                 }
               ],
               "estimated_time": 2
