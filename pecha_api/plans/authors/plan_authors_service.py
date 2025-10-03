@@ -85,11 +85,11 @@ async def get_plans_by_author(author_id: UUID,skip: int = 0,
     await _get_author_details_by_id(author_id=author_id)
     # Load plans from JSON file
     plan_listing = load_plans_from_json()
-    # Filter only published plans and convert to DTOs
+    # Filter published plans by author_id and convert to DTOs
     published_plans = [
         convert_plan_model_to_dto(p) 
         for p in plan_listing.plans 
-        if p.status == "PUBLISHED"
+        if p.status == "PUBLISHED" and p.author and p.author.id == str(author_id)
     ]
      # Apply pagination
     total = len(published_plans)
