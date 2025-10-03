@@ -5,9 +5,21 @@ from jose import JWTError
 from jose.exceptions import JWTClaimsError
 from jwt import ExpiredSignatureError
 from starlette import status
+from uuid import uuid4
+from typing import List
 
-from pecha_api.plans.authors.plan_authors_service import validate_and_extract_author_details
-from pecha_api.plans.authors.plan_authors_model import Author
+from pecha_api.plans.authors.plan_authors_service import (
+    validate_and_extract_author_details,
+    get_author_details,
+    update_author_info
+)
+from pecha_api.plans.authors.plan_authors_model import Author, AuthorSocialMediaAccount
+from pecha_api.plans.authors.plan_authors_response_models import (
+    AuthorInfoResponse,
+    AuthorInfoRequest,
+    SocialMediaProfile
+)
+from pecha_api.users.users_enums import SocialProfile
 from pecha_api.error_contants import ErrorConstants
 import jose
 

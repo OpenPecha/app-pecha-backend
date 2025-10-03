@@ -78,7 +78,7 @@ def update_social_profiles(author: Author, social_profiles: List[SocialMediaProf
             ))
 
 async def update_author_info(token: str, author_info_request: AuthorInfoRequest) -> Author:
-    current_author = await validate_and_extract_author_details(token=token)
+    current_author = validate_and_extract_author_details(token=token)
     current_author.first_name = author_info_request.firstname
     current_author.last_name = author_info_request.lastname
     current_author.bio = author_info_request.bio
