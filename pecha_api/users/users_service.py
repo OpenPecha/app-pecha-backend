@@ -42,7 +42,7 @@ async def get_user_info(token: str) -> UserInfoResponse:
     await set_user_info_cache(token=token, data=user_info_response, cache_type=CacheType.USER_INFO)
     return user_info_response
 
-def get_user_info_by_username(username: str) -> Optional[UserInfoResponse]:
+async def get_user_info_by_username(username: str) -> Optional[UserInfoResponse]:
     with SessionLocal() as db_session:
         user = get_user_by_username(db=db_session, username=username)
         db_session.close()
