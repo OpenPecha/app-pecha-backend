@@ -47,7 +47,7 @@ async def get_authors() -> AuthorsResponse:
         )
 
 async def get_author_details(token: str) -> AuthorInfoResponse:
-    author = await validate_and_extract_author_details(token=token)
+    author = validate_and_extract_author_details(token=token)
     social_media_profiles = _get_author_social_profile(author=author)
     return AuthorInfoResponse(
         id=author.id,
@@ -144,7 +144,7 @@ def _get_author_social_profile(author: Author) -> List[SocialMediaProfile]:
         social_media_profiles.append(social_media_profile)
     return social_media_profiles
 
-async def validate_and_extract_author_details(token: str) -> Author:
+def validate_and_extract_author_details(token: str) -> Author:
     try:
         payload = validate_token(token)
         email = payload.get("email")
