@@ -77,10 +77,10 @@ def update_social_profiles(author: Author, social_profiles: List[SocialMediaProf
                 profile_url=url
             ))
 
-def update_author_info(token: str, author_info_request: AuthorInfoRequest) -> Author:
-    current_author = validate_and_extract_author_details(token=token)
-    current_author.firstname = author_info_request.firstname
-    current_author.lastname = author_info_request.lastname
+async def update_author_info(token: str, author_info_request: AuthorInfoRequest) -> Author:
+    current_author = await validate_and_extract_author_details(token=token)
+    current_author.first_name = author_info_request.firstname
+    current_author.last_name = author_info_request.lastname
     current_author.bio = author_info_request.bio
     current_author.image_url = Utils.extract_s3_key(presigned_url=author_info_request.avatar_url)
     with SessionLocal() as db_session:
@@ -144,7 +144,7 @@ def _get_author_social_profile(author: Author) -> List[SocialMediaProfile]:
         social_media_profiles.append(social_media_profile)
     return social_media_profiles
 
-def validate_and_extract_author_details(token: str) -> Author:
+async def validate_and_extract_author_details(token: str) -> Author:
     try:
         payload = validate_token(token)
         email = payload.get("email")

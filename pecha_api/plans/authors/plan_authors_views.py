@@ -25,9 +25,9 @@ async def get_author_information(authentication_credential: Annotated[HTTPAuthor
     return await get_author_details(token=authentication_credential.credentials)
 
 @author_router.post("/info", status_code=status.HTTP_201_CREATED)
-def update_author_information(authentication_credential: Annotated[HTTPAuthorizationCredentials, Depends(oauth2_scheme)],
+async def update_author_information(authentication_credential: Annotated[HTTPAuthorizationCredentials, Depends(oauth2_scheme)],
                             author_info_request: AuthorInfoRequest):
-    return update_author_info(token=authentication_credential.credentials, author_info_request=author_info_request)
+    return await update_author_info(token=authentication_credential.credentials, author_info_request=author_info_request)
 
 @author_router.get("/{author_id}", status_code=status.HTTP_200_OK)
 async def get_author_information(author_id: UUID)  -> AuthorInfoResponse:
