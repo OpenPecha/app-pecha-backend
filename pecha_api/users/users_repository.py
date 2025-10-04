@@ -1,4 +1,4 @@
-
+from typing import List
 from sqlalchemy.exc import InvalidRequestError, IntegrityError
 from sqlalchemy.orm import Session
 from .users_models import Users, SocialMediaAccount
@@ -48,7 +48,6 @@ def get_user_by_username(db: Session, username: str) -> Users:
     return user
 
 
-def get_user_social_account(db: Session, user_id: str) -> SocialMediaAccount:
-    social_accounts = db.query(SocialMediaAccount).filter(SocialMediaAccount.user_id == user_id)
+def get_user_social_account(db: Session, user_id: str) -> List[SocialMediaAccount]:
+    social_accounts = db.query(SocialMediaAccount).filter(SocialMediaAccount.user_id == user_id).all()
     return social_accounts
-
