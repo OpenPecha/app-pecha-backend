@@ -1,5 +1,12 @@
-from typing import List
+from typing import List, Optional
 from pydantic import BaseModel
+
+
+class AuthorModel(BaseModel):
+    id: str
+    firstname: str
+    lastname: str
+    image_url: str
 
 
 class SubTaskModel(BaseModel):
@@ -7,6 +14,7 @@ class SubTaskModel(BaseModel):
     content_type: str
     content: str
     display_order: int
+
 
 class TaskModel(BaseModel):
     id: str
@@ -33,6 +41,7 @@ class PlanModel(BaseModel):
     language: str
     status: str
     subscription_count: int
+    author: Optional[AuthorModel] = None
     days: List[DayModel]
 
 

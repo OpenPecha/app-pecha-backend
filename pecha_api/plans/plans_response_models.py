@@ -26,6 +26,12 @@ class UpdatePlanRequest(BaseModel):
 class PlanStatusUpdate(BaseModel):
     status: PlanStatus
 
+class AuthorDTO(BaseModel):
+    id: str
+    firstname: str
+    lastname: str
+    image_url: str
+
 class PlanDTO(BaseModel):
     id: UUID
     title: str
@@ -35,6 +41,7 @@ class PlanDTO(BaseModel):
     total_days: int
     status: PlanStatus
     subscription_count: int
+    author: Optional[AuthorDTO] = None
 
 class SubTaskDTO(BaseModel):
     """Subtask model for tasks without titles but with different content types"""

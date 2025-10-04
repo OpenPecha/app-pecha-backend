@@ -105,7 +105,7 @@ def test_validate_and_compress_image_file_too_large():
     file_content = io.BytesIO(b"fake_image_data" * 1024 * 1024 * 6)  # 6 MB
     file = UploadFile(filename="test.jpg", file=file_content)
 
-    with patch("pecha_api.users.users_service.get_int", return_value=5), \
+    with patch("pecha_api.config.get_int", return_value=5), \
             pytest.raises(HTTPException) as exc_info:
         image_utils = ImageUtils()
         image_utils.validate_and_compress_image(file=file, content_type="image/jpeg")
@@ -117,8 +117,7 @@ def test_validate_and_compress_image_processing_failure():
     file_content = io.BytesIO(b"fake_image_data")
     file = UploadFile(filename="test.jpg", file=file_content)
 
-    with patch("pecha_api.users.users_service.get_int", side_effect=[5, 75]), \
-            patch("pecha_api.users.users_service.Image.open", side_effect=Exception("Processing error")), \
+    with patch("pecha_api.config.get_int", side_effect=[5, 75]), \
             pytest.raises(HTTPException) as exc_info:
         image_utils = ImageUtils()
         image_utils.validate_and_compress_image(file=file, content_type="image/jpeg")
