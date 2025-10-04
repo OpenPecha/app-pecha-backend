@@ -3,7 +3,7 @@ import os
 from typing import List
 from uuid import UUID
 from pecha_api.plans.plans_enums import PlanStatus, ContentType
-from pecha_api.plans.plans_response_models import PlanDTO, PlanDayDTO, TaskDTO
+from pecha_api.plans.plans_response_models import PlanDTO, PlanDayDTO, TaskDTO, AuthorDTO
 from pecha_api.plans.shared.models import PlanListingModel, PlanModel, DayModel
 from pecha_api.plans.plans_response_models import SubTaskDTO
 from pecha_api.plans.shared.models import TaskModel, SubTaskModel
@@ -37,6 +37,16 @@ def load_plans_from_json() -> PlanListingModel:
 
 def convert_plan_model_to_dto(plan_model: PlanModel) -> PlanDTO:
     """Convert PlanModel to PlanDTO"""
+    # Handle author conversion with null safety
+    author_dto = None
+    if hasattr(plan_model, 'author') and plan_model.author:
+        author_dto = AuthorDTO(
+            id=plan_model.author.id,
+            firstname=plan_model.author.firstname,
+            lastname=plan_model.author.lastname,
+            image_url=plan_model.author.image_url
+        )
+    
     return PlanDTO(
         id=UUID(plan_model.id),
         title=plan_model.title,
@@ -45,7 +55,8 @@ def convert_plan_model_to_dto(plan_model: PlanModel) -> PlanDTO:
         image_url=plan_model.image_url,
         total_days=plan_model.total_days,
         status=PlanStatus(plan_model.status),
-        subscription_count=plan_model.subscription_count
+        subscription_count=plan_model.subscription_count,
+        author=author_dto
     )
 
 

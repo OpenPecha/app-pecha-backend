@@ -16,7 +16,6 @@ from unittest.mock import patch, MagicMock, AsyncMock
 from fastapi import HTTPException, UploadFile
 from pecha_api.users.users_service import upload_user_image
 import io
-import PIL.Image
 
 
 @pytest.mark.asyncio
@@ -36,8 +35,6 @@ async def test_get_user_info_success():
     )
 
     with patch("pecha_api.users.users_service.validate_token", return_value={"email": "john.doe@example.com"}), \
-        patch("pecha_api.users.users_service.get_user_info_cache", new_callable=AsyncMock, return_value=None), \
-        patch("pecha_api.users.users_service.set_user_info_cache", new_callable=AsyncMock, return_value=None), \
             patch("pecha_api.users.users_service.get_user_by_email", return_value=user):
         response = await get_user_info(token)
         assert response.firstname == "John"
@@ -66,8 +63,6 @@ async def test_get_user_info_with_social_accounts():
     )
 
     with patch("pecha_api.users.users_service.validate_token", return_value={"email": "john.doe@example.com"}), \
-        patch("pecha_api.users.users_service.get_user_info_cache", new_callable=AsyncMock, return_value=None), \
-        patch("pecha_api.users.users_service.set_user_info_cache", new_callable=AsyncMock, return_value=None), \
             patch("pecha_api.users.users_service.get_user_by_email", return_value=user):
         response = await get_user_info(token)
         assert response.firstname == "John"
@@ -85,8 +80,7 @@ async def test_get_user_info_with_social_accounts():
 async def test_get_user_info_invalid_token():
     token = "invalid_token"
 
-    with patch("pecha_api.users.users_service.get_user_info_cache", new_callable=AsyncMock, return_value=None), \
-         patch("pecha_api.users.users_service.validate_token", return_value={"email": None}):
+    with patch("pecha_api.users.users_service.validate_token", return_value={"email": None}):
         with pytest.raises(HTTPException) as exc_info:
             await get_user_info(token)
         assert exc_info.value.status_code == status.HTTP_401_UNAUTHORIZED
@@ -556,36 +550,8 @@ async def test_get_user_info_cache_none_success():
     )
     token = "valid_token"
 
-    with patch("pecha_api.users.users_service.get_user_info_cache", new_callable=AsyncMock, return_value=None), \
-        patch("pecha_api.users.users_service.validate_and_extract_user_details", return_value=mock_user), \
-        patch("pecha_api.users.users_service.generate_user_info_response", return_value=mock_user_info_response), \
-        patch("pecha_api.users.users_service.set_user_info_cache", new_callable=AsyncMock, return_value=None):
-
-        response = await get_user_info(token)
-
-        assert response is not None
-        assert isinstance(response, UserInfoResponse)
-        assert response.firstname == "tenzin"
-        assert response.lastname == "tenzin"
-        assert response.username == "tenzin123"
-
-
-@pytest.mark.asyncio
-async def test_get_user_info_cache_not_none_success():
-
-    mock_user_info_response = UserInfoResponse(
-        firstname="tenzin",
-        lastname="tenzin",
-        username="tenzin123",
-        email="tenzin@gmail.com",
-        educations=[],
-        followers=0,
-        following=0,
-        social_profiles=[]
-    )
-    token = "valid_token"
-
-    with patch("pecha_api.users.users_service.get_user_info_cache", new_callable=AsyncMock, return_value=mock_user_info_response):
+    with patch("pecha_api.users.users_service.validate_and_extract_user_details", return_value=mock_user), \
+        patch("pecha_api.users.users_service.generate_user_info_response", return_value=mock_user_info_response):
 
         response = await get_user_info(token)
 

@@ -6,8 +6,8 @@ from jose.exceptions import JWTClaimsError
 from jwt import ExpiredSignatureError
 from starlette import status
 
-from pecha_api.plans.authors.plan_author_service import validate_and_extract_author_details
-from pecha_api.plans.authors.plan_author_model import Author
+from pecha_api.plans.authors.plan_authors_service import validate_and_extract_author_details
+from pecha_api.plans.authors.plan_authors_model import Author
 from pecha_api.error_contants import ErrorConstants
 import jose
 
@@ -15,9 +15,9 @@ import jose
 class TestValidateAndExtractAuthorDetails:
     """Test cases for validate_and_extract_author_details function."""
 
-    @patch('pecha_api.plans.authors.plan_author_service.SessionLocal')
-    @patch('pecha_api.plans.authors.plan_author_service.get_author_by_email')
-    @patch('pecha_api.plans.authors.plan_author_service.validate_token')
+    @patch('pecha_api.plans.authors.plan_authors_service.SessionLocal')
+    @patch('pecha_api.plans.authors.plan_authors_service.get_author_by_email')
+    @patch('pecha_api.plans.authors.plan_authors_service.validate_token')
     def test_validate_and_extract_author_details_success(
         self, 
         mock_validate_token, 
@@ -42,7 +42,7 @@ class TestValidateAndExtractAuthorDetails:
         mock_validate_token.assert_called_once_with(token)
         mock_get_author_by_email.assert_called_once_with(db=mock_db_session, email="test@example.com")
 
-    @patch('pecha_api.plans.authors.plan_author_service.validate_token')
+    @patch('pecha_api.plans.authors.plan_authors_service.validate_token')
     def test_validate_and_extract_author_details_missing_email(
         self, 
         mock_validate_token
@@ -59,7 +59,7 @@ class TestValidateAndExtractAuthorDetails:
         assert exc_info.value.status_code == status.HTTP_401_UNAUTHORIZED
         assert exc_info.value.detail == ErrorConstants.TOKEN_ERROR_MESSAGE
 
-    @patch('pecha_api.plans.authors.plan_author_service.validate_token')
+    @patch('pecha_api.plans.authors.plan_authors_service.validate_token')
     def test_validate_and_extract_author_details_none_email(
         self, 
         mock_validate_token
@@ -76,7 +76,7 @@ class TestValidateAndExtractAuthorDetails:
         assert exc_info.value.status_code == status.HTTP_401_UNAUTHORIZED
         assert exc_info.value.detail == ErrorConstants.TOKEN_ERROR_MESSAGE
 
-    @patch('pecha_api.plans.authors.plan_author_service.validate_token')
+    @patch('pecha_api.plans.authors.plan_authors_service.validate_token')
     def test_validate_and_extract_author_details_expired_signature_error(
         self, 
         mock_validate_token
@@ -93,7 +93,7 @@ class TestValidateAndExtractAuthorDetails:
         assert exc_info.value.status_code == status.HTTP_401_UNAUTHORIZED
         assert exc_info.value.detail == ErrorConstants.TOKEN_ERROR_MESSAGE
 
-    @patch('pecha_api.plans.authors.plan_author_service.validate_token')
+    @patch('pecha_api.plans.authors.plan_authors_service.validate_token')
     def test_validate_and_extract_author_details_jose_expired_signature_error(
         self, 
         mock_validate_token
@@ -110,7 +110,7 @@ class TestValidateAndExtractAuthorDetails:
         assert exc_info.value.status_code == status.HTTP_401_UNAUTHORIZED
         assert exc_info.value.detail == ErrorConstants.TOKEN_ERROR_MESSAGE
 
-    @patch('pecha_api.plans.authors.plan_author_service.validate_token')
+    @patch('pecha_api.plans.authors.plan_authors_service.validate_token')
     def test_validate_and_extract_author_details_jwt_claims_error(
         self, 
         mock_validate_token
@@ -127,7 +127,7 @@ class TestValidateAndExtractAuthorDetails:
         assert exc_info.value.status_code == status.HTTP_401_UNAUTHORIZED
         assert exc_info.value.detail == ErrorConstants.TOKEN_ERROR_MESSAGE
 
-    @patch('pecha_api.plans.authors.plan_author_service.validate_token')
+    @patch('pecha_api.plans.authors.plan_authors_service.validate_token')
     def test_validate_and_extract_author_details_value_error(
         self, 
         mock_validate_token
@@ -144,7 +144,7 @@ class TestValidateAndExtractAuthorDetails:
         assert exc_info.value.status_code == status.HTTP_401_UNAUTHORIZED
         assert exc_info.value.detail == ErrorConstants.TOKEN_ERROR_MESSAGE
 
-    @patch('pecha_api.plans.authors.plan_author_service.validate_token')
+    @patch('pecha_api.plans.authors.plan_authors_service.validate_token')
     def test_validate_and_extract_author_details_jwt_error(
         self, 
         mock_validate_token
@@ -161,9 +161,9 @@ class TestValidateAndExtractAuthorDetails:
         assert exc_info.value.status_code == status.HTTP_401_UNAUTHORIZED
         assert exc_info.value.detail == ErrorConstants.TOKEN_ERROR_MESSAGE
 
-    @patch('pecha_api.plans.authors.plan_author_service.SessionLocal')
-    @patch('pecha_api.plans.authors.plan_author_service.get_author_by_email')
-    @patch('pecha_api.plans.authors.plan_author_service.validate_token')
+    @patch('pecha_api.plans.authors.plan_authors_service.SessionLocal')
+    @patch('pecha_api.plans.authors.plan_authors_service.get_author_by_email')
+    @patch('pecha_api.plans.authors.plan_authors_service.validate_token')
     def test_validate_and_extract_author_details_database_error(
         self, 
         mock_validate_token, 
@@ -183,9 +183,9 @@ class TestValidateAndExtractAuthorDetails:
 
         assert str(exc_info.value) == "Database connection error"
 
-    @patch('pecha_api.plans.authors.plan_author_service.SessionLocal')
-    @patch('pecha_api.plans.authors.plan_author_service.get_author_by_email')
-    @patch('pecha_api.plans.authors.plan_author_service.validate_token')
+    @patch('pecha_api.plans.authors.plan_authors_service.SessionLocal')
+    @patch('pecha_api.plans.authors.plan_authors_service.get_author_by_email')
+    @patch('pecha_api.plans.authors.plan_authors_service.validate_token')
     def test_validate_and_extract_author_details_author_not_found(
         self, 
         mock_validate_token, 
@@ -211,9 +211,9 @@ class TestValidateAndExtractAuthorDetails:
         assert exc_info.value.status_code == status.HTTP_404_NOT_FOUND
         assert exc_info.value.detail == "User not found"
 
-    @patch('pecha_api.plans.authors.plan_author_service.SessionLocal')
-    @patch('pecha_api.plans.authors.plan_author_service.get_author_by_email')
-    @patch('pecha_api.plans.authors.plan_author_service.validate_token')
+    @patch('pecha_api.plans.authors.plan_authors_service.SessionLocal')
+    @patch('pecha_api.plans.authors.plan_authors_service.get_author_by_email')
+    @patch('pecha_api.plans.authors.plan_authors_service.validate_token')
     def test_validate_and_extract_author_details_logging_debug_called(
         self, 
         mock_validate_token, 
@@ -226,15 +226,15 @@ class TestValidateAndExtractAuthorDetails:
         mock_validate_token.side_effect = ValueError("Invalid token format")
 
         # Act & Assert
-        with patch('pecha_api.plans.authors.plan_author_service.logging.debug') as mock_logging:
+        with patch('pecha_api.plans.authors.plan_authors_service.logging.debug') as mock_logging:
             with pytest.raises(HTTPException):
                 validate_and_extract_author_details(token)
             
             mock_logging.assert_called_once_with("exception: Invalid token format")
 
-    @patch('pecha_api.plans.authors.plan_author_service.SessionLocal')
-    @patch('pecha_api.plans.authors.plan_author_service.get_author_by_email')
-    @patch('pecha_api.plans.authors.plan_author_service.validate_token')
+    @patch('pecha_api.plans.authors.plan_authors_service.SessionLocal')
+    @patch('pecha_api.plans.authors.plan_authors_service.get_author_by_email')
+    @patch('pecha_api.plans.authors.plan_authors_service.validate_token')
     def test_validate_and_extract_author_details_database_session_context_manager(
         self, 
         mock_validate_token, 
