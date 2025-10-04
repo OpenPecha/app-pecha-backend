@@ -628,7 +628,6 @@ async def test_fetch_user_by_email_success():
         assert response.lastname == "tenzin"
         assert response.username == "tenzin123"
 
-@pytest.mark.asyncio
 def test_validate_user_exists_success():
     token = "valid_token"
     with patch("pecha_api.users.users_service.validate_and_extract_user_details", return_value=True):
@@ -637,7 +636,6 @@ def test_validate_user_exists_success():
 
         assert response is True
 
-@pytest.mark.asyncio
 def test_validate_user_exists_false():
     token = "invalid_token"
     with patch("pecha_api.users.users_service.validate_and_extract_user_details", return_value=False):

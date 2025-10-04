@@ -1,5 +1,7 @@
 from unittest.mock import patch
+from typing import Optional
 
+from fastapi import HTTPException
 from fastapi.testclient import TestClient
 from pecha_api.app import api
 from pecha_api.users.user_response_models import UserInfoResponse
@@ -105,7 +107,7 @@ def test_get_user_detail_by_username_success():
     with patch("pecha_api.users.users_views.get_user_info_by_username") as mock_get_user_info:
         mock_get_user_info.return_value = user_info_response
         
-        response = client.get("/users/profile/jane.smith")
+        response = client.get("/users/jane.smith")
         
         assert response.status_code == 200
         response_data = response.json()
@@ -125,12 +127,13 @@ def test_get_user_detail_by_username_success():
 
 def test_get_user_detail_by_username_not_found():
     with patch("pecha_api.users.users_views.get_user_info_by_username") as mock_get_user_info:
-        mock_get_user_info.return_value = None
+        mock_get_user_info.side_effect = HTTPException(status_code=404, detail="User not found")
         
-        response = client.get("/users/profile/nonexistent.user")
+        response = client.get("/users/nonexistent.user")
         
-        assert response.status_code == 200
-        assert response.json() is None
+        assert response.status_code == 404
+        assert response.json()["detail"] == "User not found"
+        
         mock_get_user_info.assert_called_once_with("nonexistent.user")
 
 
@@ -154,7 +157,7 @@ def test_get_user_detail_by_username_with_special_characters():
     with patch("pecha_api.users.users_views.get_user_info_by_username") as mock_get_user_info:
         mock_get_user_info.return_value = user_info_response
         
-        response = client.get("/users/profile/test.user-123")
+        response = client.get("/users/test.user-123")
         
         assert response.status_code == 200
         response_data = response.json()
