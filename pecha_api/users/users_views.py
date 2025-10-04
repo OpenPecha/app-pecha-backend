@@ -26,8 +26,8 @@ def get_db():
 async def get_user_information(authentication_credential: Annotated[HTTPAuthorizationCredentials, Depends(oauth2_scheme)])  -> UserInfoResponse:
     return await get_user_info(token=authentication_credential.credentials)
 
-@user_router.get("/profile/{username}", status_code=status.HTTP_200_OK)  
-async def get_user_detail_by_username(username:str):
+@user_router.get("/{username}", status_code=status.HTTP_200_OK, response_model=UserInfoResponse)  
+async def get_user_detail_by_username(username:str) -> UserInfoResponse:    
     return await get_user_info_by_username(username)
 
 
