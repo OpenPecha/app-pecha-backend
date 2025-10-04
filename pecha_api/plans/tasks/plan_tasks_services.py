@@ -1,6 +1,6 @@
 from pecha_api.plans.tasks.plan_tasks_response_model import CreateTaskRequest, TaskDTO
 from pecha_api.plans.tasks.plan_tasks_repository import save_task
-from pecha_api.plans.authors.plan_author_service import validate_and_extract_author_details
+from pecha_api.plans.authors.plan_authors_service import validate_and_extract_author_details
 from uuid import UUID
 from pecha_api.db.database import SessionLocal
 from pecha_api.plans.items.plan_items_repository import get_plan_item

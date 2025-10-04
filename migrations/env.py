@@ -6,7 +6,7 @@ from sqlalchemy import pool
 from alembic import context
 from pecha_api.db.database import Base
 from pecha_api.plans.plans_models import Plan
-from pecha_api.plans.authors.plan_author_model import Author
+from pecha_api.plans.authors.plan_authors_model import Author
 from pecha_api.plans.items.plan_items_models import PlanItem
 from pecha_api.plans.tasks.plan_tasks_models import PlanTask
 from pecha_api.plans.reviews.plan_reviews_models import PlanReview

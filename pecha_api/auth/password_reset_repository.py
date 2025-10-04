@@ -1,7 +1,7 @@
 from typing import Optional
 from sqlalchemy.orm import Session
 from ..users.users_models import PasswordReset
-from ..plans.authors.plan_author_model import AuthorPasswordReset
+from ..plans.authors.plan_authors_model import AuthorPasswordReset
 
 
 def save_password_reset(db: Session, password_reset: PasswordReset) -> PasswordReset:
