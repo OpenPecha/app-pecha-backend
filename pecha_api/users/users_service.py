@@ -25,6 +25,11 @@ async def get_user_info(token: str) -> UserInfoResponse:
     user_info_response = generate_user_info_response(user=current_user)
     return user_info_response
 
+async def get_user_info_by_username(username: str) -> UserInfoResponse:
+    with SessionLocal() as db_session:
+        user = get_user_by_username(db=db_session, username=username)
+        db_session.close()
+    return generate_user_info_response(user=user)    
 
 def fetch_user_by_email(email: str) -> Optional[UserInfoResponse]:
     with SessionLocal() as db_session:
