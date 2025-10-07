@@ -38,3 +38,13 @@ def get_tasks_by_item_ids(db: Session, plan_item_ids: List[UUID]) -> List[PlanTa
     )
 
     return tasks
+
+def get_task_by_id(db: Session, task_id: UUID) -> PlanTask:
+    return db.query(PlanTask).filter(PlanTask.id == task_id).first()
+
+def update_task_day(db: Session, task_id: UUID, target_day_id: UUID, display_order: int) -> PlanTask:
+    task = get_task_by_id(db=db, task_id=task_id)
+    task.plan_item_id = target_day_id
+    task.display_order = display_order
+    db.commit()
+    return task
