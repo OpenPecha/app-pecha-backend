@@ -25,6 +25,8 @@ class Author(Base):
     deleted_at = Column(DateTime(timezone=True))
     deleted_by = Column(String(255))
 
+    # Relationship with author social media accounts
+    social_media_accounts = relationship("AuthorSocialMediaAccount", back_populates="author", cascade="all, delete-orphan")
 
     __table_args__ = (
         Index("idx_authors_verified", "is_verified", postgresql_where=text("is_verified = TRUE")),
@@ -36,3 +38,17 @@ class AuthorPasswordReset(Base):
     email = Column(String, ForeignKey("authors.email", ondelete="CASCADE"), nullable=False)
     reset_token = Column(String(255), nullable=False, unique=True, index=True)
     token_expiry = Column(DateTime(timezone=True), nullable=False)
+
+
+class AuthorSocialMediaAccount(Base):
+    __tablename__ = "author_social_media_accounts"
+    
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid4)
+    author_id = Column(UUID(as_uuid=True), ForeignKey('authors.id', ondelete='CASCADE'), nullable=False)
+    platform_name = Column(String(100), nullable=False)
+    profile_url = Column(String(255), nullable=False)
+    created_at = Column(DateTime(timezone=True), default=datetime.now(_datetime.timezone.utc))
+    updated_at = Column(DateTime(timezone=True), default=datetime.now(_datetime.timezone.utc))
+    
+    # Relationship back to author
+    author = relationship("Author", back_populates="social_media_accounts")

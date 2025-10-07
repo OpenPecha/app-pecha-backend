@@ -6,7 +6,7 @@ from typing import Optional
 from ...config import get, get_int
 from ...image_utils import ImageUtils
 from ...uploads.S3_utils import upload_bytes, generate_presigned_access_url
-from ...plans.authors.plan_author_service import validate_and_extract_author_details
+from ...plans.authors.plan_authors_service import validate_and_extract_author_details
 from .media_response_models import PlanUploadResponse
 from ...plans.response_message import (
     IMAGE_UPLOAD_SUCCESS,

@@ -3,7 +3,7 @@ from .plan_items_repository import save_plan_item, get_last_day_number
 from pecha_api.plans.cms.cms_plans_repository import get_plan_by_id
 from .plan_items_models import PlanItem
 from .plan_items_response_models import ItemDTO
-from pecha_api.plans.authors.plan_author_service import validate_and_extract_author_details
+from pecha_api.plans.authors.plan_authors_service import validate_and_extract_author_details
 from pecha_api.db.database import SessionLocal
 
 def create_plan_item(token: str, plan_id: UUID) -> ItemDTO:
