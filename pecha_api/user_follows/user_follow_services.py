@@ -5,7 +5,7 @@ from .user_follows_model import UserFollow
 from ..db import database
 from ..users.users_repository import get_user_by_username   
 from ..users.users_service import validate_and_extract_user_details
-from .user_follow_repository import post_user_follow, get_user_follow_count,is_user_following_target_user
+from .user_follow_repository import create_user_follow, get_user_follow_count,is_user_following_target_user
 
 
 def post_user_follow(token: str, following_username: str) -> FollowUserResponse:
@@ -21,7 +21,7 @@ def post_user_follow(token: str, following_username: str) -> FollowUserResponse:
         existing_follow = is_user_following_target_user(follower_id=current_user.id, following_id=target_user.id)
 
         if existing_follow is None:
-            post_user_follow(follower_id=current_user.id, following_id=target_user.id)
+            create_user_follow(follower_id=current_user.id, following_id=target_user.id)
         follower_count = get_user_follow_count(following_id=target_user.id)
 
         return FollowUserResponse(

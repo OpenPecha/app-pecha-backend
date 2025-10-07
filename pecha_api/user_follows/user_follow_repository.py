@@ -1,7 +1,7 @@
 from ..db import database
 from .user_follows_model import UserFollow
 
-def post_user_follow(follower_id: str, following_id: str) -> UserFollow:
+def create_user_follow(follower_id: str, following_id: str) -> UserFollow:
     with database.SessionLocal() as db_session:
         new_follow = UserFollow(follower_id=follower_id, following_id=following_id)
         db_session.add(new_follow)
