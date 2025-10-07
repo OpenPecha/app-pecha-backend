@@ -223,6 +223,11 @@ def _get_plan_details(db: Session, plan_id: UUID) -> PlanWithDays:
         id=plan.id,
         title=plan.title,
         description=plan.description or "",
+        language=plan.language,
+        image_url=plan.image_url,
+        total_days=len(items),
+        difficulty_level=plan.difficulty_level,
+        tags=plan.tags,
         days=day_dtos,
     )
     
