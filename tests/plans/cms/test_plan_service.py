@@ -182,10 +182,14 @@ async def test_get_filtered_plans_success():
         assert p1.total_days == 5
         assert p1.status == PlanStatus.PUBLISHED
         assert p1.subscription_count == 2
+        # language fallback to default when missing on plan
+        assert p1.language == "EN"
 
         p2 = resp.plans[1]
         assert p2.id == plan2.id
         assert p2.status == PlanStatus.DRAFT
+        # language preserved when provided on plan
+        assert p2.language == "en"
 
 
 @pytest.mark.asyncio
@@ -246,6 +250,7 @@ async def test_get_details_plan_success():
         assert response.id == plan.id
         assert response.title == plan.title
         assert response.description == plan.description
+        assert response.total_days == 2
         assert len(response.days) == 2
 
         day1 = next(d for d in response.days if d.id == item1.id)
