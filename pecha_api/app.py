@@ -24,6 +24,7 @@ from pecha_api.plans.public import plan_views as public_plans_views
 from pecha_api.plans.users import plan_users_views as user_plans_views
 from pecha_api.plans.media import media_views
 from pecha_api.plans.items import plan_items_views
+from pecha_api.user_follows import user_follow_views
 
 import uvicorn
 
@@ -54,6 +55,7 @@ api.include_router(public_plans_views.public_plans_router)
 api.include_router(user_plans_views.user_progress_router)
 api.include_router(plan_items_views.items_router)
 api.include_router(plan_tasks_views.plans_router)
+api.include_router(user_follow_views.user_follow_router)
 
 api.add_middleware(
     CORSMiddleware,
