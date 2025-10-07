@@ -55,6 +55,8 @@ api.include_router(public_plans_views.public_plans_router)
 api.include_router(user_plans_views.user_progress_router)
 api.include_router(plan_items_views.items_router)
 api.include_router(plan_tasks_views.plans_router)
+api.include_router(plan_authors_views.author_router)
+api.include_router(user_follow_views.user_follow_router)
 
 api.add_middleware(
     CORSMiddleware,
