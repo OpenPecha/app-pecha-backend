@@ -5,7 +5,7 @@ from uuid import UUID
 from starlette import status
 
 from pecha_api.plans.tasks.plan_tasks_response_model import CreateTaskRequest, TaskDTO
-from pecha_api.plans.tasks.plan_tasks_services import create_new_task
+from pecha_api.plans.tasks.plan_tasks_services import create_new_task, delete_task_by_id
 
 oauth2_scheme = HTTPBearer()
 # Create router for plan endpoints
@@ -29,3 +29,15 @@ async def create_task(
         day_id=day_id,
     )
     return new_task
+
+@plans_router.delete("/{plan_id}/day/{day_id}/tasks/{task_id}", status_code=status.HTTP_204_NO_CONTENT)
+async def delete_task(
+    task_id: UUID,
+    plan_id: UUID,
+    day_id: UUID,
+    authentication_credential: Annotated[HTTPAuthorizationCredentials, Depends(oauth2_scheme)],
+):
+    await delete_task_by_id(
+        task_id=task_id,
+        token=authentication_credential.credentials
+    )   

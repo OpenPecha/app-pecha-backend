@@ -1,11 +1,15 @@
+from redis.asyncio import ResponseError
 from pecha_api.plans.tasks.plan_tasks_response_model import CreateTaskRequest, TaskDTO
-from pecha_api.plans.tasks.plan_tasks_repository import save_task
+from pecha_api.plans.tasks.plan_tasks_repository import save_task, get_task_by_id, delete_task
 from pecha_api.plans.authors.plan_authors_service import validate_and_extract_author_details
 from uuid import UUID
 from pecha_api.db.database import SessionLocal
 from pecha_api.plans.items.plan_items_repository import get_plan_item
 from pecha_api.plans.tasks.plan_tasks_models import PlanTask
 from sqlalchemy import func
+from pecha_api.plans.response_message import BAD_REQUEST
+from fastapi import HTTPException
+from starlette import status
 
 
 async def create_new_task(token: str, create_task_request: CreateTaskRequest, plan_id: UUID, day_id: UUID) -> TaskDTO:
@@ -38,3 +42,12 @@ async def create_new_task(token: str, create_task_request: CreateTaskRequest, pl
         display_order=saved_task.display_order,
         estimated_time=saved_task.estimated_time,
     )
+
+async def delete_task_by_id(task_id: UUID, token: str):
+    current_author = validate_and_extract_author_details(token=token)
+    
+    with SessionLocal() as db:
+        task = get_task_by_id(db=db, task_id=task_id)
+        if task.created_by != current_author.email:
+            raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail=ResponseError(error=BAD_REQUEST, message="You are not authorized to delete this task").model_dump())
+        delete_task(db=db, task_id=task_id)
