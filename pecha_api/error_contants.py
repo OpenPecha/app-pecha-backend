@@ -26,4 +26,6 @@ class ErrorConstants:
     INVALID_S3_URL="Invalid S3 URL"
 
     PLAN_NOT_FOUND ="Plan not found"
+    USER_NOT_FOUND ="User not found"
+    BAD_REQUEST_FOLLOW_YOURSELF ="Bad Request - Cannot follow yourself"
 

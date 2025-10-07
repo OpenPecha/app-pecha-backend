@@ -5,6 +5,7 @@ from fastapi import HTTPException
 from starlette import status
 
 from pecha_api.user_follows.user_follow_services import post_user_follow
+from pecha_api.error_contants import ErrorConstants
 
 
 def _mock_session_cm():
@@ -42,7 +43,7 @@ def test_post_user_follow_success_already_following():
     with patch("pecha_api.user_follows.user_follow_services.validate_and_extract_user_details", return_value=current_user), \
          patch("pecha_api.user_follows.user_follow_services.database.SessionLocal", return_value=_mock_session_cm()), \
          patch("pecha_api.user_follows.user_follow_services.get_user_by_username", return_value=target_user), \
-         patch("pecha_api.user_follows.user_follow_services.is_user_following_target_user", return_value=True), \
+         patch("pecha_api.user_follows.user_follow_services.is_user_following_target_user", return_value=object()), \
          patch("pecha_api.user_follows.user_follow_services.create_user_follow") as mock_create_follow, \
          patch("pecha_api.user_follows.user_follow_services.get_user_follow_count", return_value=7):
 
@@ -65,7 +66,7 @@ def test_post_user_follow_user_not_found():
             post_user_follow(token="tkn", following_username="missing")
 
         assert exc.value.status_code == status.HTTP_404_NOT_FOUND
-        assert exc.value.detail == "User not found"
+        assert exc.value.detail == ErrorConstants.USER_NOT_FOUND
 
 
 def test_post_user_follow_cannot_follow_self():
@@ -80,6 +81,6 @@ def test_post_user_follow_cannot_follow_self():
             post_user_follow(token="tkn", following_username="self")
 
         assert exc.value.status_code == status.HTTP_400_BAD_REQUEST
-        assert exc.value.detail == "Bad Request - Cannot follow yourself"
+        assert exc.value.detail == ErrorConstants.BAD_REQUEST_FOLLOW_YOURSELF
 
 
