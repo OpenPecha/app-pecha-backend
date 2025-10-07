@@ -1,6 +1,6 @@
 from pecha_api.plans.tasks.plan_tasks_response_model import CreateTaskRequest, TaskDTO, UpdateTaskDayRequest, UpdatedTaskDayResponse
 from pecha_api.plans.tasks.plan_tasks_repository import save_task, update_task_day
-from pecha_api.plans.authors.plan_author_service import validate_and_extract_author_details
+from pecha_api.plans.authors.plan_authors_service import validate_and_extract_author_details
 from uuid import UUID
 from fastapi import HTTPException
 from pecha_api.db.database import SessionLocal

@@ -142,7 +142,7 @@ def test_reset_password_success():
     token = "valid_reset_token"
     
     # Mock the updated author object that would be returned
-    from pecha_api.plans.authors.plan_author_model import Author
+    from pecha_api.plans.authors.plan_authors_model import Author
     updated_author = Author(
         first_name="John",
         last_name="Doe", 

@@ -15,7 +15,7 @@ from pecha_api.plans.response_message import (
     UNEXPECTED_ERROR_UPLOAD,
     AUTHOR_NOT_FOUND
 )
-from pecha_api.plans.authors.plan_author_model import Author
+from pecha_api.plans.authors.plan_authors_model import Author
 
 
 # Test Data Constants

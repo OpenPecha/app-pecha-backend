@@ -7,7 +7,7 @@ from pecha_api.image_utils import ImageUtils
 from pecha_api.utils import Utils
 from pecha_api.users.users_service import get_user_info, update_user_info, \
     validate_and_extract_user_details, verify_admin_access, get_social_profile, update_social_profiles, \
-    get_publisher_info_by_username, fetch_user_by_email, validate_user_exists
+    get_publisher_info_by_username, fetch_user_by_email, validate_user_exists, get_user_info_by_username
 from pecha_api.users.user_response_models import UserInfoRequest, SocialMediaProfile, PublisherInfoResponse, \
     UserInfoResponse
 from pecha_api.users.users_models import Users, SocialMediaAccount
@@ -16,7 +16,6 @@ from unittest.mock import patch, MagicMock, AsyncMock
 from fastapi import HTTPException, UploadFile
 from pecha_api.users.users_service import upload_user_image
 import io
-import PIL.Image
 
 
 @pytest.mark.asyncio
@@ -36,8 +35,6 @@ async def test_get_user_info_success():
     )
 
     with patch("pecha_api.users.users_service.validate_token", return_value={"email": "john.doe@example.com"}), \
-        patch("pecha_api.users.users_service.get_user_info_cache", new_callable=AsyncMock, return_value=None), \
-        patch("pecha_api.users.users_service.set_user_info_cache", new_callable=AsyncMock, return_value=None), \
             patch("pecha_api.users.users_service.get_user_by_email", return_value=user):
         response = await get_user_info(token)
         assert response.firstname == "John"
@@ -66,8 +63,6 @@ async def test_get_user_info_with_social_accounts():
     )
 
     with patch("pecha_api.users.users_service.validate_token", return_value={"email": "john.doe@example.com"}), \
-        patch("pecha_api.users.users_service.get_user_info_cache", new_callable=AsyncMock, return_value=None), \
-        patch("pecha_api.users.users_service.set_user_info_cache", new_callable=AsyncMock, return_value=None), \
             patch("pecha_api.users.users_service.get_user_by_email", return_value=user):
         response = await get_user_info(token)
         assert response.firstname == "John"
@@ -85,8 +80,7 @@ async def test_get_user_info_with_social_accounts():
 async def test_get_user_info_invalid_token():
     token = "invalid_token"
 
-    with patch("pecha_api.users.users_service.get_user_info_cache", new_callable=AsyncMock, return_value=None), \
-         patch("pecha_api.users.users_service.validate_token", return_value={"email": None}):
+    with patch("pecha_api.users.users_service.validate_token", return_value={"email": None}):
         with pytest.raises(HTTPException) as exc_info:
             await get_user_info(token)
         assert exc_info.value.status_code == status.HTTP_401_UNAUTHORIZED
@@ -556,36 +550,8 @@ async def test_get_user_info_cache_none_success():
     )
     token = "valid_token"
 
-    with patch("pecha_api.users.users_service.get_user_info_cache", new_callable=AsyncMock, return_value=None), \
-        patch("pecha_api.users.users_service.validate_and_extract_user_details", return_value=mock_user), \
-        patch("pecha_api.users.users_service.generate_user_info_response", return_value=mock_user_info_response), \
-        patch("pecha_api.users.users_service.set_user_info_cache", new_callable=AsyncMock, return_value=None):
-
-        response = await get_user_info(token)
-
-        assert response is not None
-        assert isinstance(response, UserInfoResponse)
-        assert response.firstname == "tenzin"
-        assert response.lastname == "tenzin"
-        assert response.username == "tenzin123"
-
-
-@pytest.mark.asyncio
-async def test_get_user_info_cache_not_none_success():
-
-    mock_user_info_response = UserInfoResponse(
-        firstname="tenzin",
-        lastname="tenzin",
-        username="tenzin123",
-        email="tenzin@gmail.com",
-        educations=[],
-        followers=0,
-        following=0,
-        social_profiles=[]
-    )
-    token = "valid_token"
-
-    with patch("pecha_api.users.users_service.get_user_info_cache", new_callable=AsyncMock, return_value=mock_user_info_response):
+    with patch("pecha_api.users.users_service.validate_and_extract_user_details", return_value=mock_user), \
+        patch("pecha_api.users.users_service.generate_user_info_response", return_value=mock_user_info_response):
 
         response = await get_user_info(token)
 
@@ -628,7 +594,6 @@ async def test_fetch_user_by_email_success():
         assert response.lastname == "tenzin"
         assert response.username == "tenzin123"
 
-@pytest.mark.asyncio
 def test_validate_user_exists_success():
     token = "valid_token"
     with patch("pecha_api.users.users_service.validate_and_extract_user_details", return_value=True):
@@ -637,7 +602,6 @@ def test_validate_user_exists_success():
 
         assert response is True
 
-@pytest.mark.asyncio
 def test_validate_user_exists_false():
     token = "invalid_token"
     with patch("pecha_api.users.users_service.validate_and_extract_user_details", return_value=False):
@@ -645,3 +609,159 @@ def test_validate_user_exists_false():
         response = validate_user_exists(token)
 
         assert response is False
+
+
+@pytest.mark.asyncio
+async def test_get_user_info_by_username_success():
+    username = "johndoe"
+    mock_user = Users(
+        id="123e4567-e89b-12d3-a456-426614174000",
+        firstname="John",
+        lastname="Doe",
+        username="johndoe",
+        email="john.doe@example.com",
+        title="Senior Developer",
+        organization="Tech Corp",
+        location="San Francisco",
+        education="Computer Science, Software Engineering",
+        avatar_url="images/profile_images/user_123.jpg",
+        about_me="Experienced developer with passion for clean code.",
+        social_media_accounts=[]
+    )
+    
+    expected_response = UserInfoResponse(
+        firstname="John",
+        lastname="Doe",
+        username="johndoe",
+        email="john.doe@example.com",
+        title="Senior Developer",
+        organization="Tech Corp",
+        location="San Francisco",
+        educations=["Computer Science", " Software Engineering"],
+        avatar_url="https://example.com/presigned_avatar.jpg",
+        about_me="Experienced developer with passion for clean code.",
+        followers=0,
+        following=0,
+        social_profiles=[]
+    )
+    
+    with patch("pecha_api.users.users_service.SessionLocal") as mock_session, \
+         patch("pecha_api.users.users_service.get_user_by_username", return_value=mock_user) as mock_get_user, \
+         patch("pecha_api.users.users_service.generate_user_info_response", return_value=expected_response) as mock_generate:
+        
+        mock_db_session = MagicMock()
+        mock_session.return_value.__enter__.return_value = mock_db_session
+        mock_session.return_value.__exit__.return_value = None
+        
+        result = await get_user_info_by_username(username)
+        
+        assert result == expected_response
+        assert result.username == "johndoe"
+        assert result.firstname == "John"
+        assert result.lastname == "Doe"
+        assert result.email == "john.doe@example.com"
+        
+        mock_get_user.assert_called_once_with(db=mock_db_session, username=username)
+        mock_generate.assert_called_once_with(user=mock_user)
+        mock_db_session.close.assert_called_once()
+
+
+@pytest.mark.asyncio
+async def test_get_user_info_by_username_user_not_found():
+    username = "nonexistent_user"
+    
+    with patch("pecha_api.users.users_service.SessionLocal") as mock_session, \
+         patch("pecha_api.users.users_service.get_user_by_username", return_value=None) as mock_get_user, \
+         patch("pecha_api.users.users_service.generate_user_info_response", return_value=None) as mock_generate:
+        
+        mock_db_session = MagicMock()
+        mock_session.return_value.__enter__.return_value = mock_db_session
+        mock_session.return_value.__exit__.return_value = None
+        
+        result = await get_user_info_by_username(username)
+        
+        assert result is None
+        
+        mock_get_user.assert_called_once_with(db=mock_db_session, username=username)
+        mock_generate.assert_called_once_with(user=None)
+        mock_db_session.close.assert_called_once()
+
+
+@pytest.mark.asyncio
+async def test_get_user_info_by_username_with_social_profiles():
+    username = "socialuser"
+    mock_social_account = SocialMediaAccount(
+        platform_name="LINKEDIN",
+        profile_url="https://linkedin.com/in/johndoe"
+    )
+    
+    mock_user = Users(
+        id="456e7890-e89b-12d3-a456-426614174001",
+        firstname="Social",
+        lastname="User",
+        username="socialuser",
+        email="social.user@example.com",
+        title="Marketing Manager",
+        organization="Social Corp",
+        location="New York",
+        education="Marketing, Business",
+        avatar_url="images/profile_images/social_123.jpg",
+        about_me="Social media enthusiast.",
+        social_media_accounts=[mock_social_account]
+    )
+    
+    expected_social_profile = SocialMediaProfile(
+        account=SocialProfile.LINKEDIN,
+        url="https://linkedin.com/in/johndoe"
+    )
+    
+    expected_response = UserInfoResponse(
+        firstname="Social",
+        lastname="User",
+        username="socialuser",
+        email="social.user@example.com",
+        title="Marketing Manager",
+        organization="Social Corp",
+        location="New York",
+        educations=["Marketing", " Business"],
+        avatar_url="https://example.com/presigned_social_avatar.jpg",
+        about_me="Social media enthusiast.",
+        followers=0,
+        following=0,
+        social_profiles=[expected_social_profile]
+    )
+    
+    with patch("pecha_api.users.users_service.SessionLocal") as mock_session, \
+         patch("pecha_api.users.users_service.get_user_by_username", return_value=mock_user) as mock_get_user, \
+         patch("pecha_api.users.users_service.generate_user_info_response", return_value=expected_response) as mock_generate:
+        
+        mock_db_session = MagicMock()
+        mock_session.return_value.__enter__.return_value = mock_db_session
+        mock_session.return_value.__exit__.return_value = None
+        
+        result = await get_user_info_by_username(username)
+        
+        assert result == expected_response
+        assert result.username == "socialuser"
+        assert len(result.social_profiles) == 1
+        assert result.social_profiles[0].account == SocialProfile.LINKEDIN
+        mock_get_user.assert_called_once_with(db=mock_db_session, username=username)
+        mock_generate.assert_called_once_with(user=mock_user)
+        mock_db_session.close.assert_called_once()
+
+
+@pytest.mark.asyncio
+async def test_get_user_info_by_username_database_error():
+    username = "erroruser"
+    
+    with patch("pecha_api.users.users_service.SessionLocal") as mock_session, \
+         patch("pecha_api.users.users_service.get_user_by_username", side_effect=Exception("Database connection error")) as mock_get_user:
+        
+        mock_db_session = MagicMock()
+        mock_session.return_value.__enter__.return_value = mock_db_session
+        mock_session.return_value.__exit__.return_value = None
+        
+        with pytest.raises(Exception, match="Database connection error"):
+            await get_user_info_by_username(username)
+        
+        mock_get_user.assert_called_once_with(db=mock_db_session, username=username)
