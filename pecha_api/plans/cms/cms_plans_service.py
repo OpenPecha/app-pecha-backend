@@ -223,11 +223,17 @@ def _get_plan_details(db: Session, plan_id: UUID) -> PlanWithDays:
         id=plan.id,
         title=plan.title,
         description=plan.description or "",
-        language=plan.language,
+        language=(
+            plan.language.value if plan.language and hasattr(plan.language, "value")
+            else (plan.language or "EN")
+        ),
         image_url=plan.image_url,
         total_days=len(items),
-        difficulty_level=plan.difficulty_level,
-        tags=plan.tags,
+        difficulty_level=(
+            plan.difficulty_level.value if plan.difficulty_level and hasattr(plan.difficulty_level, "value")
+            else (plan.difficulty_level or "BEGINNER")
+        ),
+        tags=plan.tags or [],
         days=day_dtos,
     )
     
