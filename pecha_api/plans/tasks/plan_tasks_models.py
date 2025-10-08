@@ -2,7 +2,6 @@ from sqlalchemy import Column, Integer, DateTime, Boolean, Text, ForeignKey, Ind
 from sqlalchemy.orm import relationship
 from uuid import uuid4
 from ...db.database import Base
-from ..plans_enums import ContentTypeEnum
 from _datetime import datetime
 import _datetime
 
@@ -14,8 +13,6 @@ class PlanTask(Base):
     plan_item_id = Column(UUID(as_uuid=True), ForeignKey('items.id', ondelete='CASCADE'), nullable=False)
 
     title = Column(Text, nullable=True)
-    content_type = Column(ContentTypeEnum, nullable=False)
-    content = Column(Text, nullable=True)
 
     display_order = Column(Integer, nullable=False)
     estimated_time = Column(Integer, nullable=True)  # minutes
@@ -33,5 +30,4 @@ class PlanTask(Base):
 
     __table_args__ = (
         Index("idx_tasks_plan_item_order", "plan_item_id", "display_order"),
-        Index("idx_tasks_content_type", "content_type"),
     )

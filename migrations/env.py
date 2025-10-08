@@ -9,6 +9,7 @@ from pecha_api.plans.plans_models import Plan
 from pecha_api.plans.authors.plan_authors_model import Author
 from pecha_api.plans.items.plan_items_models import PlanItem
 from pecha_api.plans.tasks.plan_tasks_models import PlanTask
+from pecha_api.plans.tasks.plan_sub_tasks_models import PlanSubTask
 from pecha_api.plans.reviews.plan_reviews_models import PlanReview
 from pecha_api.plans.favorites.favorites_models import Favorite
 from pecha_api.plans.users.plan_users_model import UserPlanProgress
