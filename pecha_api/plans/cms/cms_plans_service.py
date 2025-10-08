@@ -223,6 +223,11 @@ def _get_plan_details(db: Session, plan_id: UUID) -> PlanWithDays:
         id=plan.id,
         title=plan.title,
         description=plan.description or "",
+        language=plan.language or "EN",
+        image_url=generate_presigned_access_url(bucket_name=get("AWS_BUCKET_NAME"), s3_key=plan.image_url),
+        total_days=len(items),
+        difficulty_level=plan.difficulty_level,
+        tags=plan.tags or [],
         days=day_dtos,
     )
     

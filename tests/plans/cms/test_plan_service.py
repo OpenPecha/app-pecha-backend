@@ -182,10 +182,14 @@ async def test_get_filtered_plans_success():
         assert p1.total_days == 5
         assert p1.status == PlanStatus.PUBLISHED
         assert p1.subscription_count == 2
+        # language fallback to default when missing on plan
+        assert p1.language == "EN"
 
         p2 = resp.plans[1]
         assert p2.id == plan2.id
         assert p2.status == PlanStatus.DRAFT
+        # language preserved when provided on plan
+        assert p2.language == "en"
 
 
 @pytest.mark.asyncio
@@ -199,6 +203,9 @@ async def test_get_details_plan_success():
         author_id=uuid.uuid4(),
         created_by="tester@example.com",
     )
+    # Ensure required fields used by service/DTO are present
+    plan.difficulty_level = "BEGINNER"
+    plan.tags = ["mindfulness"]
 
     item1 = PlanItem(id=uuid.uuid4(), plan_id=plan.id, day_number=1, created_by="tester@example.com")
     item2 = PlanItem(id=uuid.uuid4(), plan_id=plan.id, day_number=2, created_by="tester@example.com")
@@ -228,12 +235,16 @@ async def test_get_details_plan_success():
         patch("pecha_api.plans.cms.cms_plans_service.get_plan_by_id") as mock_get_plan_by_id, \
         patch("pecha_api.plans.cms.cms_plans_service.get_plan_items_by_plan_id") as mock_get_plan_items_by_plan_id, \
         patch("pecha_api.plans.cms.cms_plans_service.get_tasks_by_item_ids") as mock_get_tasks_by_item_ids, \
-        patch("pecha_api.plans.cms.cms_plans_service.validate_and_extract_author_details") as mock_validate_author:
+        patch("pecha_api.plans.cms.cms_plans_service.validate_and_extract_author_details") as mock_validate_author, \
+        patch("pecha_api.plans.cms.cms_plans_service.generate_presigned_access_url") as mock_presign, \
+        patch("pecha_api.plans.cms.cms_plans_service.get") as mock_get_config:
         db_session = _mock_session_local(mock_session_local)
         mock_validate_author.return_value = MagicMock()
         mock_get_plan_by_id.return_value = plan
         mock_get_plan_items_by_plan_id.return_value = [item1, item2]
         mock_get_tasks_by_item_ids.return_value = [task1, task2]
+        mock_presign.side_effect = lambda bucket_name, s3_key: s3_key
+        mock_get_config.return_value = "dummy-bucket"
 
         response = await get_details_plan(token="dummy-token", plan_id=plan.id)
 
@@ -246,7 +257,10 @@ async def test_get_details_plan_success():
         assert response.id == plan.id
         assert response.title == plan.title
         assert response.description == plan.description
+        assert response.total_days == 2
         assert len(response.days) == 2
+        # Image URL should be the same as input since we stub presign to echo key
+        assert response.image_url == plan.image_url
 
         day1 = next(d for d in response.days if d.id == item1.id)
         assert day1.day_number == 1
