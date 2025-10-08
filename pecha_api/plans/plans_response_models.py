@@ -66,6 +66,11 @@ class PlanWithDays(BaseModel):
     id: UUID
     title: str
     description: str
+    language: str
+    image_url: Optional[str] = None
+    total_days: int
+    difficulty_level: str
+    tags: List[str]
     days: List[PlanDayDTO]
 
 class PlansResponse(BaseModel):
