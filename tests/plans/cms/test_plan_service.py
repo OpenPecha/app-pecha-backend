@@ -4,7 +4,7 @@ from unittest.mock import patch, MagicMock, ANY
 from fastapi import HTTPException
 
 import pecha_api.plans.cms.cms_plans_service as plans_service
-from pecha_api.plans.plans_enums import DifficultyLevel, PlanStatus, ContentType
+from pecha_api.plans.plans_enums import DifficultyLevel, PlanStatus
 from pecha_api.plans.plans_models import Plan
 from pecha_api.plans.items.plan_items_models import PlanItem
 from pecha_api.plans.tasks.plan_tasks_models import PlanTask
@@ -214,8 +214,6 @@ async def test_get_details_plan_success():
         id=uuid.uuid4(),
         plan_item_id=item1.id,
         title="Morning Practice",
-        content_type=ContentType.TEXT,
-        content="Breathe for 10 minutes",
         display_order=1,
         estimated_time=10,
         created_by="tester@example.com",
@@ -224,8 +222,6 @@ async def test_get_details_plan_success():
         id=uuid.uuid4(),
         plan_item_id=item2.id,
         title="Listen Audio",
-        content_type=ContentType.AUDIO,
-        content="https://example.com/audio.mp3",
         display_order=1,
         estimated_time=20,
         created_by="tester@example.com",

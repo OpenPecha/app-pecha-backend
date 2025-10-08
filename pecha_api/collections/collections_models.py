@@ -8,7 +8,7 @@ class Collection(Document):
     slug: str
     titles: Dict[str, str]  # Dictionary with language_id as key and title as value
     descriptions: Dict[str,str] = Field(default=dict)
-    parent_id: Optional[PydanticObjectId] = None
+    parent_id: Optional[str] = None
     has_sub_child: bool = False
 
     class Settings:
@@ -25,15 +25,15 @@ class Collection(Document):
         indexes = [("slug", 1)]
 
     @classmethod
-    async def get_by_id(cls, parent_id: PydanticObjectId) -> "Collection":
+    async def get_by_id(cls, parent_id: str) -> "Collection":
         return await cls.find({"parent_id": parent_id})
 
     @classmethod
-    async def get_children_by_id(cls, parent_id: PydanticObjectId,skip: int, limit: int) -> List["Collection"]:
+    async def get_children_by_id(cls, parent_id: str,skip: int, limit: int) -> List["Collection"]:
         return await cls.find({"parent_id": parent_id}).skip(skip).limit(limit).to_list()
 
     @classmethod
-    async def count_children(cls, parent_id: PydanticObjectId) -> int:
+    async def count_children(cls, parent_id: str) -> int:
         """
         Count total number of children for a given parent
         """

@@ -27,3 +27,7 @@ class ErrorConstants:
 
     PLAN_NOT_FOUND ="Plan not found"
 
+    USER_NOT_FOUND = "User not found"
+    USER_ALREADY_EXISTS = "User with this email or username already exists"
+    USER_UPDATE_ISSUE = "User update issue"
+    INVALID_UPDATE_REQUEST = "Invalid update request"
