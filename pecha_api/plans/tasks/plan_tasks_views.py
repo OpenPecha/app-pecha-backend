@@ -30,7 +30,7 @@ async def create_task(
     )
     return new_task
 
-@plans_router.delete("/{plan_id}/day/{day_id}/tasks/{task_id}", status_code=status.HTTP_204_NO_CONTENT)
+@plans_router.delete("/tasks/{task_id}", status_code=status.HTTP_204_NO_CONTENT)
 async def delete_task(
     task_id: UUID,
     authentication_credential: Annotated[HTTPAuthorizationCredentials, Depends(oauth2_scheme)],

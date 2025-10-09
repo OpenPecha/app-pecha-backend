@@ -49,5 +49,5 @@ async def delete_task_by_id(task_id: UUID, token: str):
     with SessionLocal() as db:
         task = get_task_by_id(db=db, task_id=task_id)
         if task.created_by != current_author.email:
-            raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail=ResponseError(error=BAD_REQUEST, message=UNAUTHORIZED_TASK_DELETE).model_dump())
+            raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail=ResponseError(error=BAD_REQUEST, message=UNAUTHORIZED_TASK_DELETE))
         delete_task(db=db, task_id=task_id)
