@@ -37,6 +37,7 @@ def create_user(create_user_request: CreateUserRequest, registration_source: Reg
     logging.debug(f"Creating user with first name: {create_user_request.firstname}")
     new_user = Users(**create_user_request.model_dump())
     new_user.is_admin = False
+    
     username = generate_and_validate_username(first_name=create_user_request.firstname,
                                               last_name=create_user_request.lastname)
     new_user.username = username
@@ -185,7 +186,12 @@ def send_reset_email(email: str, reset_link: str):
 
 def validate_username(username: str) -> bool:
     with SessionLocal() as db_session:
-        user = get_user_by_username(db=db_session, username=username)
+        try:
+            user = get_user_by_username(db=db_session, username=username)
+        except HTTPException as e:
+            if e.status_code == status.HTTP_404_NOT_FOUND:
+                return True
+            print(f"Error: {e}")
         return user is None
 
 

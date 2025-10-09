@@ -51,18 +51,19 @@ def test_save_author_integrity_error_raises_404_and_rolls_back():
 def test_get_author_by_email_returns_author_when_found():
     db = _make_session_mock()
     expected_author = MagicMock(name="AuthorInstance")
-    db.query.return_value.filter.return_value.first.return_value = expected_author
+    db.query.return_value.options.return_value.filter.return_value.first.return_value = expected_author
 
     result = get_author_by_email(db=db, email="john.doe@example.com")
 
     assert result is expected_author
     db.query.assert_called_once()
-    db.query.return_value.filter.assert_called_once()
+    db.query.return_value.options.assert_called_once()
+    db.query.return_value.options.return_value.filter.assert_called_once()
 
 
 def test_get_author_by_email_not_found_raises_404():
     db = _make_session_mock()
-    db.query.return_value.filter.return_value.first.return_value = None
+    db.query.return_value.options.return_value.filter.return_value.first.return_value = None
 
     with pytest.raises(HTTPException) as exc:
         get_author_by_email(db=db, email="missing@example.com")

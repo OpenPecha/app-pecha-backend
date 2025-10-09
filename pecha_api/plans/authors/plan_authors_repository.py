@@ -30,7 +30,7 @@ def get_all_authors(db: Session) -> List[Author]:
     return authors
 
 def get_author_by_email(db: Session, email: str) -> Author:
-    author = db.query(Author).filter(Author.email == email).first()
+    author = db.query(Author).options(joinedload(Author.social_media_accounts)).filter(Author.email == email).first()
     if author is None:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=AUTHOR_NOT_FOUND)
     return author

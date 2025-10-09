@@ -70,8 +70,8 @@ def test_save_user_integrity_error(db):
     save_user(db, user1)
     with pytest.raises(HTTPException) as exc_info:
         save_user(db, user2)
-    assert exc_info.value.status_code == status.HTTP_404_NOT_FOUND
-    assert exc_info.value.detail == "User not found"
+    assert exc_info.value.status_code == status.HTTP_409_CONFLICT
+    assert exc_info.value.detail == "User with this email or username already exists"
 
 
 def test_get_user_by_email(db):
@@ -122,9 +122,9 @@ def test_get_user_social_account(db):
     db.commit()
     fetched_social_accounts = get_user_social_account(db, saved_user.id)
     assert fetched_social_accounts is not None
-    assert fetched_social_accounts.count() == 1
-    assert fetched_social_accounts.first().platform_name == "linkedin"
-    assert fetched_social_accounts.first().profile_url == "http://linkedin.com/in/johndoe"
+    assert len(fetched_social_accounts) == 1
+    assert fetched_social_accounts[0].platform_name == "linkedin"
+    assert fetched_social_accounts[0].profile_url == "http://linkedin.com/in/johndoe"
 
 
 def test_get_user_by_email_not_found(db):
@@ -163,7 +163,14 @@ def test_update_user_invalid_request(db):
     with pytest.raises(HTTPException) as exc_info:
         update_user(db, user)
     assert exc_info.value.status_code == status.HTTP_400_BAD_REQUEST
-    assert exc_info.value.detail == "User update issue"
+    assert exc_info.value.detail == "Invalid update request"
+
+
+def test_get_user_by_username_not_found(db):
+    with pytest.raises(HTTPException) as exc_info:
+        get_user_by_username(db, "nonexistent_username")
+    assert exc_info.value.status_code == status.HTTP_404_NOT_FOUND
+    assert exc_info.value.detail == "User not found"
 
 
 def test_update_user_integrity_error(db):

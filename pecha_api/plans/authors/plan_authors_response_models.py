@@ -9,6 +9,13 @@ class SocialMediaProfile(BaseModel):
     account: SocialProfile
     url: str
 
+class AuthorInfoRequest(BaseModel):
+    firstname: str
+    lastname: str
+    avatar_url: Optional[str] = None
+    bio: Optional[str] = None
+    social_profiles: List[SocialMediaProfile]
+
 class AuthorInfoResponse(BaseModel):
     id: UUID
     firstname: str
