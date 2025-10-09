@@ -52,8 +52,7 @@ async def change_task_day_service(token: str, task_id: UUID, update_task_request
         display_order = _get_max_display_order(plan_item_id=update_task_request.target_day_id) + 1
 
         targeted_day = get_plan_item_by_id(db=db, day_id=update_task_request.target_day_id)
-        if targeted_day.id == update_task_request.target_day_id:
-            raise HTTPException(status_code=404, detail=ResponseError(error=BAD_REQUEST, message=TASK_SAME_DAY_NOT_ALLOWED).model_dump())
+
         if not targeted_day:
             raise HTTPException(status_code=404, detail=ResponseError(error=BAD_REQUEST, message=PLAN_DAY_NOT_FOUND).model_dump())
 

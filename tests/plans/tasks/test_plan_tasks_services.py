@@ -4,7 +4,7 @@ from types import SimpleNamespace
 from unittest.mock import patch, MagicMock
 
 from pecha_api.plans.plans_enums import ContentType
-from pecha_api.plans.response_message import BAD_REQUEST, TASK_SAME_DAY_NOT_ALLOWED
+from pecha_api.plans.response_message import BAD_REQUEST, PLAN_DAY_NOT_FOUND
 from pecha_api.plans.tasks.plan_tasks_response_model import (
     CreateTaskRequest,
     TaskDTO,
@@ -178,7 +178,7 @@ async def test_change_task_day_service_success():
 
 
 @pytest.mark.asyncio
-async def test_change_task_day_service_same_day_error():
+async def test_change_task_day_service_day_not_found_error():
     token = "tok"
     task_id = uuid.uuid4()
     target_day_id = uuid.uuid4()
@@ -189,8 +189,6 @@ async def test_change_task_day_service_same_day_error():
     db_mock = MagicMock()
     session_cm = MagicMock()
     session_cm.__enter__.return_value = db_mock
-
-    targeted_day = SimpleNamespace(id=target_day_id)  # same id triggers error
 
     with patch(
         "pecha_api.plans.tasks.plan_tasks_services.validate_and_extract_author_details",
@@ -203,7 +201,7 @@ async def test_change_task_day_service_same_day_error():
         return_value=2,
     ), patch(
         "pecha_api.plans.tasks.plan_tasks_services.get_plan_item_by_id",
-        return_value=targeted_day,
+        return_value=None,
     ):
         with pytest.raises(Exception) as exc:
             await change_task_day_service(
@@ -218,5 +216,5 @@ async def test_change_task_day_service_same_day_error():
         assert isinstance(exc.value, HTTPException)
         assert exc.value.status_code == 404
         assert exc.value.detail["error"] == BAD_REQUEST
-        assert exc.value.detail["message"] == TASK_SAME_DAY_NOT_ALLOWED
+        assert exc.value.detail["message"] == PLAN_DAY_NOT_FOUND
 
