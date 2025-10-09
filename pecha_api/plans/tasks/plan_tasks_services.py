@@ -1,4 +1,3 @@
-from redis.asyncio import ResponseError
 from pecha_api.plans.tasks.plan_tasks_response_model import CreateTaskRequest, TaskDTO
 from pecha_api.plans.tasks.plan_tasks_repository import save_task, get_task_by_id, delete_task
 from pecha_api.plans.authors.plan_authors_service import validate_and_extract_author_details
@@ -10,6 +9,7 @@ from sqlalchemy import func
 from pecha_api.plans.response_message import BAD_REQUEST, UNAUTHORIZED_TASK_DELETE
 from fastapi import HTTPException
 from starlette import status
+from pecha_api.plans.auth.plan_auth_models import ResponseError
 
 
 async def create_new_task(token: str, create_task_request: CreateTaskRequest, plan_id: UUID, day_id: UUID) -> TaskDTO:
@@ -49,5 +49,5 @@ async def delete_task_by_id(task_id: UUID, token: str):
     with SessionLocal() as db:
         task = get_task_by_id(db=db, task_id=task_id)
         if task.created_by != current_author.email:
-            raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail=ResponseError(error=BAD_REQUEST, message=UNAUTHORIZED_TASK_DELETE))
+            raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail=ResponseError(error=BAD_REQUEST, message=UNAUTHORIZED_TASK_DELETE).model_dump())
         delete_task(db=db, task_id=task_id)
