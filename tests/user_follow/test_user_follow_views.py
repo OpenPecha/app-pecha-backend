@@ -10,17 +10,16 @@ client = TestClient(api)
 
 
 def test_follow_user_success():
-    expected_response = {"message": "success", "is_following": True, "follower_count": 5}
     with patch("pecha_api.user_follows.user_follow_views.post_user_follow") as mock_post_follow:
-        mock_post_follow.return_value = expected_response
+        mock_post_follow.return_value = None
         response = client.post(
             "/users/follow",
             json={"username": "target.user"},
             headers={"Authorization": "Bearer testtoken"},
         )
 
-    assert response.status_code == 201
-    assert response.json() == expected_response
+    assert response.status_code == 204
+    assert response.text == ""
 
 
 def test_follow_user_user_not_found():
