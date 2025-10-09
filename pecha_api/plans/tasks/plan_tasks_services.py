@@ -1,4 +1,4 @@
-from redis.asyncio import ResponseError
+from pecha_api.plans.auth.plan_auth_models import ResponseError
 from pecha_api.plans.tasks.plan_tasks_response_model import CreateTaskRequest, TaskDTO
 from pecha_api.plans.tasks.plan_tasks_repository import save_task, get_task_by_id, delete_task
 from pecha_api.plans.authors.plan_authors_service import validate_and_extract_author_details
