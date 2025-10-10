@@ -7,15 +7,11 @@ from uuid import UUID
 class CreateTaskRequest(BaseModel):
     title: str
     description: Optional[str] = None
-    content_type: ContentType
-    content: str
     estimated_time: Optional[int] = None
 
 class TaskDTO(BaseModel):
     id: UUID
     title: str
-    content_type: ContentType
-    content: str
     display_order: int
     estimated_time: Optional[int] = None
 
