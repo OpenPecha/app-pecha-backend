@@ -1,8 +1,8 @@
 from sqlalchemy import Column, Integer, DateTime, Boolean, Text, ForeignKey, Index, UUID, String
 from sqlalchemy.orm import relationship
 from uuid import uuid4
-from ...db.database import Base
-from ..plans_enums import ContentTypeEnum
+from pecha_api.db.database import Base
+from pecha_api.plans.plans_enums import ContentTypeEnum
 from _datetime import datetime
 import _datetime
 
