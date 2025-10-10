@@ -25,8 +25,6 @@ async def create_new_task(token: str, create_task_request: CreateTaskRequest, pl
         new_task = PlanTask(
             plan_item_id=plan_item.id,
             title=create_task_request.title,
-            content_type=create_task_request.content_type,
-            content=create_task_request.content,
             display_order=display_order,
             estimated_time=create_task_request.estimated_time,
             created_by=current_author.email,
@@ -37,8 +35,6 @@ async def create_new_task(token: str, create_task_request: CreateTaskRequest, pl
     return TaskDTO(
         id=saved_task.id,
         title=saved_task.title,
-        content_type=saved_task.content_type,
-        content=saved_task.content,
         display_order=saved_task.display_order,
         estimated_time=saved_task.estimated_time,
     )

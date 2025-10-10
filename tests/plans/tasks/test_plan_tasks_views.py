@@ -3,7 +3,6 @@ import pytest
 from unittest.mock import patch, AsyncMock
 from fastapi import HTTPException
 
-from pecha_api.plans.plans_enums import ContentType
 from pecha_api.plans.tasks.plan_tasks_response_model import CreateTaskRequest, TaskDTO
 from pecha_api.plans.tasks.plan_tasks_views import create_task, delete_task
 
@@ -18,8 +17,6 @@ async def test_create_task_success():
     request = CreateTaskRequest(
         title="Read intro",
         description="Do reading",
-        content_type=ContentType.TEXT,
-        content="Intro content",
         estimated_time=15,
     )
 
@@ -27,8 +24,6 @@ async def test_create_task_success():
     expected = TaskDTO(
         id=task_id,
         title=request.title,
-        content_type=request.content_type,
-        content=request.content,
         display_order=1,
         estimated_time=request.estimated_time,
     )
