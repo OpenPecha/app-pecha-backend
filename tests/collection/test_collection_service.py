@@ -11,9 +11,11 @@ from fastapi import HTTPException
 @pytest.mark.asyncio
 async def test_get_all_collections():
     with patch("pecha_api.collections.collections_service.verify_admin_access", return_value=True), \
+            patch("pecha_api.collections.collections_service.get_collections_cache", new_callable=AsyncMock, return_value=None), \
             patch("pecha_api.collections.collections_service.get_collections_by_parent",
                   new_callable=AsyncMock) as mock_get_collections_by_parent, \
-            patch("pecha_api.collections.collections_service.get_child_count", new_callable=AsyncMock, return_value=2):
+            patch("pecha_api.collections.collections_service.get_child_count", new_callable=AsyncMock, return_value=2), \
+            patch("pecha_api.collections.collections_service.set_collections_cache", new_callable=AsyncMock):
         mock_get_collections_by_parent.return_value = [
             AsyncMock(id="id_1", titles={"en": "Collection 1"}, slug="collection-1",parent_id=None, has_sub_child=False),
             AsyncMock(id="id_2", titles={"en": "Collection 2"}, descriptions={"en": "Description 2"}, slug="collection-2",parent_id=None,has_sub_child=False)

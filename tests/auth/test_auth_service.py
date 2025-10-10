@@ -19,7 +19,8 @@ from pecha_api.auth.auth_service import (
     _validate_password,
     validate_username,
     generate_username,
-    generate_and_validate_username
+    generate_and_validate_username,
+    retrieve_client_info
 )
 from pecha_api.auth.auth_models import CreateUserRequest
 from pecha_api.auth.auth_enums import RegistrationSource
@@ -744,3 +745,26 @@ def test_generate_and_validate_username_retry():
 
         assert mock_validate_username.call_count == 2
         assert username.startswith("john_doe.")
+
+
+def test_validate_username_returns_true_on_404():
+    username = "maybe_new_user"
+
+    with patch('pecha_api.auth.auth_service.get_user_by_username') as mock_get_user_by_username:
+        mock_get_user_by_username.side_effect = HTTPException(status_code=status.HTTP_404_NOT_FOUND,
+                                                              detail="Not Found")
+
+        result = validate_username(username)
+
+        mock_get_user_by_username.assert_called_once_with(db=ANY, username=username)
+        assert result is True
+
+
+def test_retrieve_client_info():
+    with patch('pecha_api.auth.auth_service.get') as mock_get:
+        mock_get.side_effect = ["test-client-id", "test-domain"]
+
+        props = retrieve_client_info()
+
+        assert props.client_id == "test-client-id"
+        assert props.domain == "test-domain"

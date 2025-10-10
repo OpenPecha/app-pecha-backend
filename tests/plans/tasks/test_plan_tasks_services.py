@@ -57,9 +57,22 @@ async def test_create_new_task_builds_and_saves_with_incremented_display_order()
         "pecha_api.plans.tasks.plan_tasks_services._get_max_display_order",
         return_value=5,
     ) as mock_get_max, patch(
+        "pecha_api.plans.tasks.plan_tasks_services.PlanTask",
+    ) as MockPlanTask, patch(
         "pecha_api.plans.tasks.plan_tasks_services.save_task",
         return_value=saved,
     ) as mock_save:
+        # Return a prebuilt task instance from the mocked constructor
+        constructed_task = SimpleNamespace(
+            plan_item_id=plan_item.id,
+            title=request.title,
+            content_type=request.content_type,
+            content=request.content,
+            display_order=6,
+            estimated_time=request.estimated_time,
+            created_by="author@example.com",
+        )
+        MockPlanTask.return_value = constructed_task
         resp = await create_new_task(
             token="token123",
             create_task_request=request,
@@ -80,18 +93,24 @@ async def test_create_new_task_builds_and_saves_with_incremented_display_order()
         assert mock_get_max.call_count == 1
         assert mock_get_max.call_args.kwargs == {"plan_item_id": plan_item.id}
 
-        # save called with constructed task
+        # constructor called with expected arguments
+        ctor_kwargs = MockPlanTask.call_args.kwargs
+        assert ctor_kwargs == {
+            "plan_item_id": plan_item.id,
+            "title": request.title,
+            "content_type": request.content_type,
+            "content": request.content,
+            "display_order": 6,
+            "estimated_time": request.estimated_time,
+            "created_by": "author@example.com",
+        }
+
+        # save called with constructed task instance
         assert mock_save.call_count == 1
         save_kwargs = mock_save.call_args.kwargs
         assert save_kwargs["db"] is db_mock
         new_task = save_kwargs["new_task"]
-        assert new_task.plan_item_id == plan_item.id
-        assert new_task.title == request.title
-        assert new_task.content_type == request.content_type
-        assert new_task.content == request.content
-        assert new_task.display_order == 6
-        assert new_task.estimated_time == request.estimated_time
-        assert new_task.created_by == "author@example.com"
+        assert new_task is constructed_task
 
         # response mapping
         expected = TaskDTO(
