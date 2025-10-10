@@ -4,8 +4,8 @@ from typing import Annotated
 from uuid import UUID
 from starlette import status
 
-from pecha_api.plans.tasks.plan_tasks_response_model import CreateTaskRequest, TaskDTO
-from pecha_api.plans.tasks.plan_tasks_services import create_new_task
+from pecha_api.plans.tasks.plan_tasks_response_model import CreateTaskRequest, TaskDTO, UpdateTaskDayRequest, UpdatedTaskDayResponse
+from pecha_api.plans.tasks.plan_tasks_services import create_new_task, change_task_day_service
 
 oauth2_scheme = HTTPBearer()
 # Create router for plan endpoints
@@ -29,3 +29,15 @@ async def create_task(
         day_id=day_id,
     )
     return new_task
+
+@plans_router.put("/task/{task_id}", response_model=UpdatedTaskDayResponse)
+async def change_task_day(
+        authentication_credential: Annotated[HTTPAuthorizationCredentials, Depends(oauth2_scheme)],
+        task_id: UUID,
+        update_task_request: UpdateTaskDayRequest,
+)-> UpdatedTaskDayResponse:
+    return await change_task_day_service(
+        token=authentication_credential.credentials,
+        task_id=task_id,
+        update_task_request=update_task_request,
+    )

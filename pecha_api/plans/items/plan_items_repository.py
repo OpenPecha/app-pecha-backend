@@ -28,6 +28,9 @@ def save_plan_items(db: Session, plan_items: List[PlanItem]):
         )
 
 
+def get_plan_item_by_id(db: Session, day_id: UUID) -> PlanItem:
+    return db.query(PlanItem).filter(PlanItem.id == day_id).first()
+
 def get_plan_item(db: Session, plan_id: UUID, day_id: UUID) -> PlanItem:
     plan_item = (
         db.query(PlanItem)

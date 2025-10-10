@@ -1,10 +1,16 @@
 import uuid
 import pytest
 from types import SimpleNamespace
-from unittest.mock import MagicMock
+from unittest.mock import MagicMock, patch
 from sqlalchemy.exc import IntegrityError
 
-from pecha_api.plans.tasks.plan_tasks_repository import save_task, get_tasks_by_item_ids
+from pecha_api.plans.response_message import BAD_REQUEST
+from pecha_api.plans.tasks.plan_tasks_repository import (
+    save_task,
+    get_tasks_by_item_ids,
+    get_task_by_id,
+    update_task_day,
+)
 
 
 def test_save_task_success_sets_id_and_returns_object():
@@ -35,7 +41,12 @@ def test_save_task_integrity_error_rolls_back_and_raises_http_exception():
         save_task(db=db, new_task=SimpleNamespace())
 
     assert db.rollback.call_count == 1
-    assert "fail" in str(exc.value)
+    from fastapi import HTTPException  # local import for assertion
+
+    assert isinstance(exc.value, HTTPException)
+    assert exc.value.status_code == 400
+    assert exc.value.detail["error"] == BAD_REQUEST
+    assert "fail" in exc.value.detail["message"]
 
 
 def test_get_tasks_by_item_ids_empty_returns_empty_mapping():
@@ -55,4 +66,38 @@ def test_get_tasks_by_item_ids_queries_and_returns_list():
     assert result == expected
     assert db.query.call_count == 1
 
+
+def test_get_task_by_id_queries_by_id():
+    db = MagicMock()
+    expected = SimpleNamespace(id=123)
+    db.query.return_value.filter.return_value.first.return_value = expected
+
+    task_id = uuid.uuid4()
+    result = get_task_by_id(db=db, task_id=task_id)
+
+    assert result is expected
+    # verify filter used with correct condition object (we can't evaluate equality easily)
+    assert db.query.call_count == 1
+
+
+def test_update_task_day_updates_and_commits():
+    db = MagicMock()
+    task_id = uuid.uuid4()
+    target_day_id = uuid.uuid4()
+
+    task_obj = SimpleNamespace(id=task_id, plan_item_id=uuid.uuid4(), display_order=1)
+
+    with patch(
+        "pecha_api.plans.tasks.plan_tasks_repository.get_task_by_id",
+        return_value=task_obj,
+    ) as mock_get:
+        result = update_task_day(db=db, task_id=task_id, target_day_id=target_day_id, display_order=5)
+
+        assert mock_get.call_count == 1
+        assert mock_get.call_args.kwargs == {"db": db, "task_id": task_id}
+
+        assert task_obj.plan_item_id == target_day_id
+        assert task_obj.display_order == 5
+        assert db.commit.call_count == 1
+        assert result is task_obj
 
