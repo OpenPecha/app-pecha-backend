@@ -1,6 +1,7 @@
 from typing import Optional
 
 from starlette import status
+from beanie import PydanticObjectId
 
 from pecha_api.error_contants import ErrorConstants
 from pecha_api.utils import Utils
@@ -20,7 +21,7 @@ from ..users.users_service import verify_admin_access
 from fastapi import HTTPException
 
 
-async def get_all_collections(language: str, parent_id: Optional[str], skip: int, limit: int) -> CollectionsResponse:
+async def get_all_collections(language: str, parent_id: Optional[PydanticObjectId], skip: int, limit: int) -> CollectionsResponse:
     if language is None:
         language = get("DEFAULT_LANGUAGE")
     

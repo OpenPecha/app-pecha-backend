@@ -15,7 +15,7 @@ async def test_get_all_collections():
             patch("pecha_api.collections.collections_service.get_collections_by_parent",
                   new_callable=AsyncMock) as mock_get_collections_by_parent, \
             patch("pecha_api.collections.collections_service.get_child_count", new_callable=AsyncMock, return_value=2), \
-            patch("pecha_api.collections.collections_service.set_collections_cache", new_callable=AsyncMock):
+            patch("pecha_api.collections.collections_service.set_collections_cache", new_callable=AsyncMock) as mock_set_collections_cache:
         mock_get_collections_by_parent.return_value = [
             AsyncMock(id="id_1", titles={"en": "Collection 1"}, slug="collection-1",parent_id=None, has_sub_child=False),
             AsyncMock(id="id_2", titles={"en": "Collection 2"}, descriptions={"en": "Description 2"}, slug="collection-2",parent_id=None,has_sub_child=False)
@@ -25,6 +25,7 @@ async def test_get_all_collections():
         assert len(response.collections) == 2
         assert response.collections[0].title == "Collection 1"
         assert response.collections[1].has_child == False
+        mock_set_collections_cache.assert_called_once()
 
 
 @pytest.mark.asyncio

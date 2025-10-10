@@ -3,7 +3,6 @@ import pytest
 from types import SimpleNamespace
 from unittest.mock import patch, MagicMock
 
-from pecha_api.plans.plans_enums import ContentType
 from pecha_api.plans.response_message import BAD_REQUEST, PLAN_DAY_NOT_FOUND
 from pecha_api.plans.tasks.plan_tasks_response_model import (
     CreateTaskRequest,
@@ -19,8 +18,6 @@ async def test_create_new_task_builds_and_saves_with_incremented_display_order()
     request = CreateTaskRequest(
         title="Read intro",
         description="Do reading",
-        content_type=ContentType.TEXT,
-        content="Intro content",
         estimated_time=15,
     )
 
@@ -38,8 +35,6 @@ async def test_create_new_task_builds_and_saves_with_incremented_display_order()
     saved = SimpleNamespace(
         id=uuid.uuid4(),
         title=request.title,
-        content_type=request.content_type,
-        content=request.content,
         display_order=6,  # max(5) + 1
         estimated_time=request.estimated_time,
     )
@@ -66,8 +61,6 @@ async def test_create_new_task_builds_and_saves_with_incremented_display_order()
         constructed_task = SimpleNamespace(
             plan_item_id=plan_item.id,
             title=request.title,
-            content_type=request.content_type,
-            content=request.content,
             display_order=6,
             estimated_time=request.estimated_time,
             created_by="author@example.com",
@@ -98,8 +91,6 @@ async def test_create_new_task_builds_and_saves_with_incremented_display_order()
         assert ctor_kwargs == {
             "plan_item_id": plan_item.id,
             "title": request.title,
-            "content_type": request.content_type,
-            "content": request.content,
             "display_order": 6,
             "estimated_time": request.estimated_time,
             "created_by": "author@example.com",
@@ -116,8 +107,6 @@ async def test_create_new_task_builds_and_saves_with_incremented_display_order()
         expected = TaskDTO(
             id=saved.id,
             title=saved.title,
-            content_type=saved.content_type,
-            content=saved.content,
             display_order=saved.display_order,
             estimated_time=saved.estimated_time,
         )
