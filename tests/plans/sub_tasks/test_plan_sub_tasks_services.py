@@ -1,0 +1,174 @@
+import uuid
+import pytest
+from types import SimpleNamespace
+from unittest.mock import patch, MagicMock
+
+from pecha_api.plans.tasks.sub_tasks.plan_sub_tasks_response_model import (
+    SubTaskDTO,
+    SubTaskRequest,
+    SubTaskRequestFields,
+    SubTaskResponse,
+)
+from pecha_api.plans.tasks.sub_tasks.plan_sub_tasks_services import create_new_sub_tasks
+from pecha_api.plans.response_message import BAD_REQUEST
+
+
+@pytest.mark.asyncio
+async def test_create_new_sub_tasks_builds_and_saves_with_incremented_display_order():
+    request = SubTaskRequest(
+        sub_tasks=[
+            SubTaskRequestFields(content_type="TEXT", content="First"),
+            SubTaskRequestFields(content_type="TEXT", content="Second"),
+        ]
+    )
+
+    task_id = uuid.uuid4()
+
+    # Mock DB session as context manager
+    db_mock = MagicMock()
+    session_cm = MagicMock()
+    session_cm.__enter__.return_value = db_mock
+
+    saved_items = [
+        SimpleNamespace(
+            id=uuid.uuid4(), content_type="TEXT", content="First", display_order=6
+        ),
+        SimpleNamespace(
+            id=uuid.uuid4(), content_type="TEXT", content="Second", display_order=7
+        ),
+    ]
+
+    with patch(
+        "pecha_api.plans.tasks.sub_tasks.plan_sub_tasks_services.validate_and_extract_author_details",
+        return_value=SimpleNamespace(email="author@example.com"),
+    ) as mock_validate, patch(
+        "pecha_api.plans.tasks.sub_tasks.plan_sub_tasks_services.SessionLocal",
+        return_value=session_cm,
+    ) as mock_session, patch(
+        "pecha_api.plans.tasks.sub_tasks.plan_sub_tasks_services.get_task_by_id",
+        return_value=SimpleNamespace(id=task_id),
+    ) as mock_get_task, patch(
+        "pecha_api.plans.tasks.sub_tasks.plan_sub_tasks_services.get_max_display_order_for_sub_task",
+        return_value=5,
+    ) as mock_get_max, patch(
+        "pecha_api.plans.tasks.sub_tasks.plan_sub_tasks_services.PlanSubTask",
+    ) as MockPlanSubTask, patch(
+        "pecha_api.plans.tasks.sub_tasks.plan_sub_tasks_services.save_sub_tasks_bulk",
+        return_value=saved_items,
+    ) as mock_save:
+        # build return instances for each call
+        constructed_1 = SimpleNamespace(
+            task_id=task_id,
+            content_type="TEXT",
+            content="First",
+            display_order=6,
+            created_by="author@example.com",
+        )
+        constructed_2 = SimpleNamespace(
+            task_id=task_id,
+            content_type="TEXT",
+            content="Second",
+            display_order=7,
+            created_by="author@example.com",
+        )
+
+        MockPlanSubTask.side_effect = [constructed_1, constructed_2]
+
+        resp = await create_new_sub_tasks(
+            token="token123",
+            create_task_request=request,
+            task_id=task_id,
+        )
+
+        assert mock_validate.call_count == 1
+        assert mock_validate.call_args.kwargs == {"token": "token123"}
+
+        assert mock_session.call_count == 1
+        assert mock_get_task.call_count == 1
+
+        assert mock_get_max.call_count == 1
+        assert mock_get_max.call_args.kwargs == {"db": db_mock, "task_id": task_id}
+
+        # constructor called twice with expected args
+        call1 = MockPlanSubTask.call_args_list[0].kwargs
+        call2 = MockPlanSubTask.call_args_list[1].kwargs
+        assert call1 == {
+            "task_id": task_id,
+            "content_type": "TEXT",
+            "content": "First",
+            "display_order": 6,
+            "created_by": "author@example.com",
+        }
+        assert call2 == {
+            "task_id": task_id,
+            "content_type": "TEXT",
+            "content": "Second",
+            "display_order": 7,
+            "created_by": "author@example.com",
+        }
+
+        assert mock_save.call_count == 1
+        save_kwargs = mock_save.call_args.kwargs
+        assert save_kwargs["db"] is db_mock
+        # verify the same constructed instances were passed
+        assert save_kwargs["sub_tasks"] == [constructed_1, constructed_2]
+
+        # response mapping
+        expected = SubTaskResponse(
+            data=[
+                SubTaskDTO(
+                    id=saved_items[0].id,
+                    content_type=saved_items[0].content_type,
+                    content=saved_items[0].content,
+                    display_order=saved_items[0].display_order,
+                ),
+                SubTaskDTO(
+                    id=saved_items[1].id,
+                    content_type=saved_items[1].content_type,
+                    content=saved_items[1].content,
+                    display_order=saved_items[1].display_order,
+                ),
+            ]
+        )
+
+        assert resp == expected
+
+
+@pytest.mark.asyncio
+async def test_create_new_sub_tasks_task_not_found_raises_http_exception():
+    request = SubTaskRequest(
+        sub_tasks=[SubTaskRequestFields(content_type="TEXT", content="First")]
+    )
+
+    task_id = uuid.uuid4()
+
+    db_mock = MagicMock()
+    session_cm = MagicMock()
+    session_cm.__enter__.return_value = db_mock
+
+    with patch(
+        "pecha_api.plans.tasks.sub_tasks.plan_sub_tasks_services.validate_and_extract_author_details",
+        return_value=SimpleNamespace(email="author@example.com"),
+    ), patch(
+        "pecha_api.plans.tasks.sub_tasks.plan_sub_tasks_services.SessionLocal",
+        return_value=session_cm,
+    ), patch(
+        "pecha_api.plans.tasks.sub_tasks.plan_sub_tasks_services.get_task_by_id",
+        return_value=None,
+    ):
+        from fastapi import HTTPException
+
+        with pytest.raises(HTTPException) as exc:
+            await create_new_sub_tasks(
+                token="token123",
+                create_task_request=request,
+                task_id=task_id,
+            )
+
+        assert exc.value.status_code == 400
+        detail = exc.value.detail
+        assert detail["error"] == BAD_REQUEST
+        # message is set from ErrorConstants.TASK_NOT_FOUND; validate presence
+        assert "not found" in detail["message"].lower()
+
+
