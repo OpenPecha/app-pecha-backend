@@ -43,18 +43,17 @@ jobs:
       - name: Set image name and tag
         id: set-tag
         run: |
+          echo "IMAGE_NAME=webuddhist" >> $GITHUB_ENV
+          echo "image_name=webuddhist" >> $GITHUB_OUTPUT
+          
           if [[ -n "${{ github.ref }}" && "${{ github.ref }}" =~ ^refs/tags/ ]]; then
             tagNumber=$(echo "${{ github.ref }}" | sed 's#refs/tags/##')
-            echo "IMAGE_NAME=$tagNumber" >> $GITHUB_ENV
             echo "IMAGE_TAG=$tagNumber" >> $GITHUB_ENV
-            echo "image_name=$tagNumber" >> $GITHUB_OUTPUT
             echo "image_tag=$tagNumber" >> $GITHUB_OUTPUT
           else
             calculatedSha=$(git rev-parse --short ${{ github.sha }})
             tagNumber=${{ github.run_id }}-$calculatedSha
-            echo "IMAGE_NAME=pecha-backend" >> $GITHUB_ENV
             echo "IMAGE_TAG=$tagNumber" >> $GITHUB_ENV
-            echo "image_name=pecha-backend" >> $GITHUB_OUTPUT
             echo "image_tag=$tagNumber" >> $GITHUB_OUTPUT
           fi
       - name: Confirm image name and tag
@@ -105,4 +104,3 @@ jobs:
         uses: SonarSource/sonarqube-scan-action@v5
         env:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
-          SONAR_HOST_URL: ${{ secrets.SONAR_HOST_URL }}
