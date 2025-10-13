@@ -33,3 +33,4 @@ class ErrorConstants:
     USER_ALREADY_EXISTS = "User with this email or username already exists"
     USER_UPDATE_ISSUE = "User update issue"
     INVALID_UPDATE_REQUEST = "Invalid update request"
+    TASK_NOT_FOUND = "Task not found"
