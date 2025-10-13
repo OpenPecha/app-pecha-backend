@@ -6,7 +6,7 @@ from pecha_api.db.database import SessionLocal
 from pecha_api.plans.items.plan_items_repository import get_plan_item
 from pecha_api.plans.tasks.plan_tasks_models import PlanTask
 from sqlalchemy import func
-from pecha_api.plans.response_message import BAD_REQUEST, UNAUTHORIZED_TASK_DELETE
+from pecha_api.plans.response_message import FORBIDDEN, UNAUTHORIZED_TASK_DELETE
 from fastapi import HTTPException
 from starlette import status
 from pecha_api.plans.auth.plan_auth_models import ResponseError
@@ -45,5 +45,5 @@ async def delete_task_by_id(task_id: UUID, token: str):
     with SessionLocal() as db:
         task = get_task_by_id(db=db, task_id=task_id)
         if task.created_by != current_author.email:
-            raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail=ResponseError(error=BAD_REQUEST, message=UNAUTHORIZED_TASK_DELETE).model_dump())
+            raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail=ResponseError(error=FORBIDDEN, message=UNAUTHORIZED_TASK_DELETE).model_dump())
         delete_task(db=db, task_id=task_id)

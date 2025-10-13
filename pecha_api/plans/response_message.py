@@ -24,10 +24,10 @@ INVALID_FILE_FORMAT = "Invalid file format. Only JPEG, PNG, and WebP images are 
 FILE_TOO_LARGE = "File size exceeds 5MB limit"
 AUTHOR_ALREADY_EXISTS = "Author already exists"
 BAD_REQUEST = "Bad request"
+FORBIDDEN = "Forbidden"
 PLAN_DAY_NOT_FOUND = "Plan day not found"
 PLAN_NOT_FOUND = "Plan not found"
 EMAIL_IS_SENT = "Email is sent. Please check your email to verify your account."
 
 TASK_NOT_FOUND = "Task not found"
-TASK_DELETE_SUCCESS = "Task deleted successfully"
 UNAUTHORIZED_TASK_DELETE = "You are not authorized to delete this task"
