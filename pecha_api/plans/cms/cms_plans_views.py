@@ -6,7 +6,7 @@ from starlette import status
 from typing import Annotated
 
 from pecha_api.plans.plans_response_models import PlansResponse, PlanDTO, CreatePlanRequest, PlanWithDays, UpdatePlanRequest, \
-    PlanStatusUpdate, PlanDayTasksResponse
+    PlanStatusUpdate, PlanDayDTO
 from pecha_api.plans.cms.cms_plans_service import get_filtered_plans, create_new_plan, get_details_plan, update_plan_details, \
     delete_selected_plan, update_selected_plan_status, get_plan_day_details
 from pecha_api.plans.plans_enums import SortBy, SortOrder
@@ -87,7 +87,7 @@ async def update_plan_status(
         plan_status_update=plan_status_update
     )
 
-@cms_plans_router.get("/{plan_id}/days/{day_number}", status_code=status.HTTP_200_OK, response_model=PlanDayTasksResponse)
+@cms_plans_router.get("/{plan_id}/days/{day_number}", status_code=status.HTTP_200_OK, response_model=PlanDayDTO)
 async def get_plan_day_content(authentication_credential: Annotated[HTTPAuthorizationCredentials, Depends(oauth2_scheme)],
                            plan_id: UUID, day_number: int):
     return await get_plan_day_details(

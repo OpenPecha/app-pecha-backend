@@ -12,7 +12,7 @@ from pecha_api.plans.authors.plan_authors_service import validate_and_extract_au
 from pecha_api.plans.plans_enums import LanguageCode, PlanStatus, ContentType
 from pecha_api.plans.plans_response_models import PlansResponse, PlanDTO, CreatePlanRequest, TaskDTO, PlanDayDTO, \
     PlanWithDays, \
-    UpdatePlanRequest, PlanStatusUpdate, PlansRepositoryResponse, PlanWithAggregates, PlanDayTasksResponse, SubTaskDTO
+    UpdatePlanRequest, PlanStatusUpdate, PlansRepositoryResponse, PlanWithAggregates, SubTaskDTO
     
 from pecha_api.plans.cms.cms_plans_repository import get_plans
 from pecha_api.plans.items.plan_items_repository import get_plan_items_by_plan_id, get_plan_day_with_tasks_and_subtasks

@@ -3,7 +3,7 @@ import pytest
 from unittest.mock import patch, AsyncMock
 
 from pecha_api.plans.plans_enums import DifficultyLevel, PlanStatus
-from pecha_api.plans.plans_response_models import CreatePlanRequest, PlanDTO, PlansResponse, PlanDayTasksResponse
+from pecha_api.plans.plans_response_models import CreatePlanRequest, PlanDTO, PlansResponse, PlanDayDTO
 from pecha_api.plans.cms.cms_plans_views import create_plan, get_plans, get_plan_day_content
 
 
@@ -140,7 +140,7 @@ async def test_get_plan_day_content_success():
     plan_id = uuid.uuid4()
     day_number = 3
 
-    expected = PlanDayTasksResponse(
+    expected = PlanDayDTO(
         id=uuid.uuid4(),
         day_number=day_number,
         tasks=[],
