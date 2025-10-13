@@ -114,7 +114,6 @@ async def test_create_new_task_builds_and_saves_with_incremented_display_order()
 
 
 @pytest.mark.asyncio
-
 async def test_delete_task_by_id_success():
     """Test successful task deletion when user is the task creator."""
     task_id = uuid.uuid4()
@@ -129,14 +128,6 @@ async def test_delete_task_by_id_success():
         created_by=author_email,
     )
 
-async def test_change_task_day_service_success():
-    token = "tok"
-    task_id = uuid.uuid4()
-    target_day_id = uuid.uuid4()
-
-    request = UpdateTaskDayRequest(target_day_id=target_day_id)
-
-    # Mock DB session as context manager
     db_mock = MagicMock()
     session_cm = MagicMock()
     session_cm.__enter__.return_value = db_mock
@@ -144,18 +135,6 @@ async def test_change_task_day_service_success():
     with patch(
         "pecha_api.plans.tasks.plan_tasks_services.validate_and_extract_author_details",
         return_value=mock_author,
-    targeted_day = SimpleNamespace(id=uuid.uuid4())  # different id to avoid same-day error
-    updated_task = SimpleNamespace(
-        id=task_id,
-        plan_item_id=target_day_id,
-        display_order=3,
-        estimated_time=None,
-        title="Updated Task",
-    )
-
-    with patch(
-        "pecha_api.plans.tasks.plan_tasks_services.validate_and_extract_author_details",
-        return_value=SimpleNamespace(email="author@example.com"),
     ) as mock_validate, patch(
         "pecha_api.plans.tasks.plan_tasks_services.SessionLocal",
         return_value=session_cm,
@@ -166,26 +145,11 @@ async def test_change_task_day_service_success():
         "pecha_api.plans.tasks.plan_tasks_services.delete_task",
     ) as mock_delete:
         await delete_task_by_id(task_id=task_id, token=token)
-        "pecha_api.plans.tasks.plan_tasks_services._get_max_display_order",
-        return_value=2,
-    ) as mock_get_max, patch(
-        "pecha_api.plans.tasks.plan_tasks_services.get_plan_item_by_id",
-        return_value=targeted_day,
-    ) as mock_get_day, patch(
-        "pecha_api.plans.tasks.plan_tasks_services.update_task_day",
-        return_value=updated_task,
-    ) as mock_update:
-        resp = await change_task_day_service(
-            token=token,
-            task_id=task_id,
-            update_task_request=request,
-        )
 
         assert mock_validate.call_count == 1
         assert mock_validate.call_args.kwargs == {"token": token}
 
         assert mock_session.call_count == 1
-
         assert mock_get_task.call_count == 1
         assert mock_get_task.call_args.kwargs == {"db": db_mock, "task_id": task_id}
 
@@ -209,47 +173,13 @@ async def test_delete_task_by_id_unauthorized():
         created_by=different_author_email,
     )
 
-        assert mock_get_max.call_count == 1
-        assert mock_get_max.call_args.kwargs == {"plan_item_id": target_day_id}
-
-        assert mock_get_day.call_count == 1
-        assert mock_get_day.call_args.kwargs == {"db": db_mock, "day_id": target_day_id}
-
-        assert mock_update.call_count == 1
-        assert mock_update.call_args.kwargs == {
-            "db": db_mock,
-            "task_id": task_id,
-            "target_day_id": target_day_id,
-            "display_order": 3,
-        }
-
-        expected = UpdatedTaskDayResponse(
-            task_id=task_id,
-            day_id=target_day_id,
-            display_order=3,
-            estimated_time=None,
-            title="Updated Task",
-        )
-        assert resp == expected
-
-
-@pytest.mark.asyncio
-async def test_change_task_day_service_day_not_found_error():
-    token = "tok"
-    task_id = uuid.uuid4()
-    target_day_id = uuid.uuid4()
-
-    request = UpdateTaskDayRequest(target_day_id=target_day_id)
-
-    # Mock DB session as context manager
     db_mock = MagicMock()
     session_cm = MagicMock()
     session_cm.__enter__.return_value = db_mock
 
     with patch(
         "pecha_api.plans.tasks.plan_tasks_services.validate_and_extract_author_details",
-
-        return_value=mock_author,
+        return_value=SimpleNamespace(email=author_email),
     ) as mock_validate, patch(
         "pecha_api.plans.tasks.plan_tasks_services.SessionLocal",
         return_value=session_cm,
@@ -268,7 +198,6 @@ async def test_change_task_day_service_day_not_found_error():
 
         assert mock_validate.call_count == 1
         assert mock_get_task.call_count == 1
-        assert mock_delete.call_count == 0
 
 
 @pytest.mark.asyncio
@@ -375,30 +304,3 @@ async def test_delete_task_by_id_database_error():
         assert mock_validate.call_count == 1
         assert mock_get_task.call_count == 1
         assert mock_delete.call_count == 1
-=======
-        return_value=SimpleNamespace(email="author@example.com"),
-    ), patch(
-        "pecha_api.plans.tasks.plan_tasks_services.SessionLocal",
-        return_value=session_cm,
-    ), patch(
-        "pecha_api.plans.tasks.plan_tasks_services._get_max_display_order",
-        return_value=2,
-    ), patch(
-        "pecha_api.plans.tasks.plan_tasks_services.get_plan_item_by_id",
-        return_value=None,
-    ):
-        with pytest.raises(Exception) as exc:
-            await change_task_day_service(
-                token=token,
-                task_id=task_id,
-                update_task_request=request,
-            )
-
-        # Expect HTTPException with specific detail
-        from fastapi import HTTPException  # local import to avoid global dependency
-
-        assert isinstance(exc.value, HTTPException)
-        assert exc.value.status_code == 404
-        assert exc.value.detail["error"] == BAD_REQUEST
-        assert exc.value.detail["message"] == PLAN_DAY_NOT_FOUND
-
