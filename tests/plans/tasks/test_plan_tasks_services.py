@@ -185,7 +185,7 @@ async def test_delete_task_by_id_unauthorized():
             await delete_task_by_id(task_id=task_id, token=token)
 
         assert exc_info.value.status_code == 403
-        assert exc_info.value.detail["error"] == "Bad request"
+        assert exc_info.value.detail["error"] == "Forbidden"
         assert exc_info.value.detail["message"] == "You are not authorized to delete this task"
 
         assert mock_validate.call_count == 1
