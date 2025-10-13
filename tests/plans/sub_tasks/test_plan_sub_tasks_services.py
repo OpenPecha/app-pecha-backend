@@ -15,14 +15,14 @@ from pecha_api.plans.response_message import BAD_REQUEST
 
 @pytest.mark.asyncio
 async def test_create_new_sub_tasks_builds_and_saves_with_incremented_display_order():
+    task_id = uuid.uuid4()
     request = SubTaskRequest(
+        task_id=task_id,
         sub_tasks=[
             SubTaskRequestFields(content_type="TEXT", content="First"),
             SubTaskRequestFields(content_type="TEXT", content="Second"),
         ]
     )
-
-    task_id = uuid.uuid4()
 
     # Mock DB session as context manager
     db_mock = MagicMock()
@@ -77,7 +77,6 @@ async def test_create_new_sub_tasks_builds_and_saves_with_incremented_display_or
         resp = await create_new_sub_tasks(
             token="token123",
             create_task_request=request,
-            task_id=task_id,
         )
 
         assert mock_validate.call_count == 1
@@ -115,7 +114,7 @@ async def test_create_new_sub_tasks_builds_and_saves_with_incremented_display_or
 
         # response mapping
         expected = SubTaskResponse(
-            data=[
+            sub_tasks=[
                 SubTaskDTO(
                     id=saved_items[0].id,
                     content_type=saved_items[0].content_type,
@@ -136,11 +135,11 @@ async def test_create_new_sub_tasks_builds_and_saves_with_incremented_display_or
 
 @pytest.mark.asyncio
 async def test_create_new_sub_tasks_task_not_found_raises_http_exception():
+    task_id = uuid.uuid4()
     request = SubTaskRequest(
+        task_id=task_id,
         sub_tasks=[SubTaskRequestFields(content_type="TEXT", content="First")]
     )
-
-    task_id = uuid.uuid4()
 
     db_mock = MagicMock()
     session_cm = MagicMock()
@@ -162,7 +161,6 @@ async def test_create_new_sub_tasks_task_not_found_raises_http_exception():
             await create_new_sub_tasks(
                 token="token123",
                 create_task_request=request,
-                task_id=task_id,
             )
 
         assert exc.value.status_code == 400

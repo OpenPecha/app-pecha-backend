@@ -11,6 +11,7 @@ class SubTaskRequestFields(BaseModel):
 
 
 class SubTaskRequest(BaseModel):
+    task_id: UUID
     sub_tasks: List[SubTaskRequestFields]
 
 
@@ -21,4 +22,4 @@ class SubTaskDTO(BaseModel):
     display_order: int
 
 class SubTaskResponse(BaseModel):
-    data: List[SubTaskDTO]
+    sub_tasks: List[SubTaskDTO]

@@ -18,16 +18,17 @@ class _Creds:
 
 @pytest.mark.asyncio
 async def test_create_sub_tasks_success():
+    task_id = uuid.uuid4()
     request = SubTaskRequest(
+        task_id=task_id,
         sub_tasks=[
             SubTaskRequestFields(content_type="TEXT", content="First"),
             SubTaskRequestFields(content_type="TEXT", content="Second"),
         ]
     )
 
-    task_id = uuid.uuid4()
     expected = SubTaskResponse(
-        data=[
+        sub_tasks=[
             SubTaskDTO(id=uuid.uuid4(), content_type="TEXT", content="First", display_order=1),
             SubTaskDTO(id=uuid.uuid4(), content_type="TEXT", content="Second", display_order=2),
         ]
@@ -43,14 +44,12 @@ async def test_create_sub_tasks_success():
         resp = await create_sub_tasks(
             authentication_credential=creds,
             create_task_request=request,
-            task_id=task_id,
         )
 
         assert mock_create.call_count == 1
         assert mock_create.call_args.kwargs == {
             "token": "token123",
             "create_task_request": request,
-            "task_id": task_id,
         }
 
         assert resp == expected

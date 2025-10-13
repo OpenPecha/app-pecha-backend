@@ -22,25 +22,25 @@ from pecha_api.plans.tasks.sub_tasks.plan_sub_tasks_response_model import (
 )
 from pecha_api.error_contants import ErrorConstants
 
-async def create_new_sub_tasks(token: str, create_task_request: SubTaskRequest, task_id: UUID) -> SubTaskResponse:
+async def create_new_sub_tasks(token: str, create_task_request: SubTaskRequest) -> SubTaskResponse:
     current_author = validate_and_extract_author_details(token=token)
 
     with SessionLocal() as db:
-        task = get_task_by_id(db=db, task_id=task_id)
+        task = get_task_by_id(db=db, task_id=create_task_request.task_id)
         if not task:
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
                 detail=ResponseError(error=BAD_REQUEST, message=ErrorConstants.TASK_NOT_FOUND).model_dump(),
             )
 
-        next_display_order = get_max_display_order_for_sub_task(db=db, task_id=task_id) + 1
+        next_display_order = get_max_display_order_for_sub_task(db=db, task_id=create_task_request.task_id) + 1
 
         new_sub_tasks: List[PlanSubTask] = []
         for index, sub in enumerate(create_task_request.sub_tasks, start=0):
             
             new_sub_tasks.append(
                 PlanSubTask(
-                    task_id=task_id,
+                    task_id=create_task_request.task_id,
                     content_type=sub.content_type,
                     content=sub.content,
                     display_order=next_display_order + index,
@@ -48,7 +48,7 @@ async def create_new_sub_tasks(token: str, create_task_request: SubTaskRequest, 
                 )
             )
 
-        saved = save_sub_tasks_bulk(db=db, sub_tasks=new_sub_tasks)
+        saved_sub_tasks = save_sub_tasks_bulk(db=db, sub_tasks=new_sub_tasks)
         created_sub_tasks=[
                 SubTaskDTO(
                     id=item.id,
@@ -56,8 +56,8 @@ async def create_new_sub_tasks(token: str, create_task_request: SubTaskRequest, 
                     content=item.content,
                     display_order=item.display_order,
                 )
-                for item in saved
+                for item in saved_sub_tasks
             ]
         return SubTaskResponse(
-            data=created_sub_tasks,
+            sub_tasks=created_sub_tasks,
         )
