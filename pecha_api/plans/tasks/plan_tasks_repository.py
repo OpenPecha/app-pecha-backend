@@ -53,3 +53,11 @@ def delete_task(db: Session, task_id: UUID):
     except Exception as e:
         db.rollback()
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=ResponseError(error=BAD_REQUEST, message=str(e)).model_dump())
+    return db.query(PlanTask).filter(PlanTask.id == task_id).first()
+
+def update_task_day(db: Session, task_id: UUID, target_day_id: UUID, display_order: int) -> PlanTask:
+    task = get_task_by_id(db=db, task_id=task_id)
+    task.plan_item_id = target_day_id
+    task.display_order = display_order
+    db.commit()
+    return task

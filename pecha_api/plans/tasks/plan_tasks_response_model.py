@@ -15,4 +15,12 @@ class TaskDTO(BaseModel):
     display_order: int
     estimated_time: Optional[int] = None
 
+class UpdatedTaskDayResponse(BaseModel):
+    task_id: UUID
+    title: str
+    day_id: UUID
+    display_order: int
+    estimated_time: Optional[int] = None
 
+class UpdateTaskDayRequest(BaseModel):
+    target_day_id: UUID
