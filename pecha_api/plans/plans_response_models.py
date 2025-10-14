@@ -27,7 +27,7 @@ class PlanStatusUpdate(BaseModel):
     status: PlanStatus
 
 class AuthorDTO(BaseModel):
-    id: str
+    id: UUID
     firstname: str
     lastname: str
     image_url: str

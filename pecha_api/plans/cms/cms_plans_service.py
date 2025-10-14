@@ -4,7 +4,7 @@ from typing import Optional, List, Dict
 from starlette import status
 from pecha_api.plans.plans_models import Plan
 from pecha_api.plans.items.plan_items_models import PlanItem
-from pecha_api.plans.cms.cms_plans_repository import save_plan, get_plan_by_id
+from pecha_api.plans.cms.cms_plans_repository import save_plan, get_plan_by_id, get_plans_by_author_id
 from pecha_api.plans.items.plan_items_repository import save_plan_items
 from pecha_api.plans.users.plan_users_progress_repository import get_plan_progress
 
@@ -12,9 +12,8 @@ from pecha_api.plans.authors.plan_authors_service import validate_and_extract_au
 from pecha_api.plans.plans_enums import LanguageCode, PlanStatus, ContentType
 from pecha_api.plans.plans_response_models import PlansResponse, PlanDTO, CreatePlanRequest, TaskDTO, PlanDayDTO, \
     PlanWithDays, \
-    UpdatePlanRequest, PlanStatusUpdate, PlansRepositoryResponse, PlanWithAggregates
+    UpdatePlanRequest, PlanStatusUpdate, PlansRepositoryResponse, PlanWithAggregates, AuthorDTO
     
-from pecha_api.plans.cms.cms_plans_repository import get_plans
 from pecha_api.plans.items.plan_items_repository import get_plan_items_by_plan_id
 from pecha_api.plans.tasks.plan_tasks_repository import get_tasks_by_item_ids
 from pecha_api.plans.tasks.plan_tasks_models import PlanTask
@@ -93,10 +92,11 @@ DUMMY_DAYS = [
 
 async def get_filtered_plans(token: str, search: Optional[str], sort_by: str, sort_order: str, skip: int, limit: int) -> PlansResponse:
     # Validate token and author context (authorization can be extended later)
-    validate_and_extract_author_details(token=token)
+    current_author = validate_and_extract_author_details(token=token)
     with SessionLocal() as db_session:
-        plan_repository_response : PlansRepositoryResponse = get_plans(
+        plan_repository_response : PlansRepositoryResponse = get_plans_by_author_id(
             db=db_session,
+            author_id=current_author.id,
             search=search,
             sort_by=sort_by,
             sort_order=sort_order,
@@ -120,6 +120,17 @@ async def get_filtered_plans(token: str, search: Optional[str], sort_by: str, so
                 total_days=int(plan_info.total_days or 0),
                 status=PlanStatus(selected_plan.status.value),
                 subscription_count=int(plan_info.subscription_count or 0),
+                author=AuthorDTO(
+                    id=selected_plan.author_id,
+                    firstname=selected_plan.author.first_name,
+                    lastname=selected_plan.author.last_name,
+                    image_url=(
+                        generate_presigned_access_url(
+                            bucket_name=get("AWS_BUCKET_NAME"),
+                            s3_key=selected_plan.author.image_url
+                        )
+                    )
+                )
             )
         )
 
