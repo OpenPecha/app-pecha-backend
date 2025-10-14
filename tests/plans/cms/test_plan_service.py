@@ -10,7 +10,7 @@ from pecha_api.plans.items.plan_items_models import PlanItem
 from pecha_api.plans.tasks.plan_tasks_models import PlanTask
 from pecha_api.plans.plans_response_models import (
     CreatePlanRequest, UpdatePlanRequest, PlanStatusUpdate,
-    PlanDTO,PlanWithAggregates, PlansRepositoryResponse
+    PlanDTO,PlanWithAggregates, PlansRepositoryResponse, AuthorDTO
 )
 from pecha_api.plans.cms.cms_plans_service import (
     create_new_plan, get_filtered_plans, get_details_plan,
@@ -132,14 +132,25 @@ async def test_get_filtered_plans_success():
         total=2,
     )
 
+    # attach minimal author relation attributes used by service when mapping AuthorDTO
+    plan1.author = MagicMock()
+    plan1.author.first_name = "A"
+    plan1.author.last_name = "Author"
+    plan1.author.image_url = "authors/a.jpg"
+    plan2.author = MagicMock()
+    plan2.author.first_name = "B"
+    plan2.author.last_name = "Author"
+    plan2.author.image_url = "authors/b.jpg"
+
     with patch("pecha_api.plans.cms.cms_plans_service.SessionLocal") as mock_session_local, \
-        patch("pecha_api.plans.cms.cms_plans_service.get_plans") as mock_get_plans, \
+        patch("pecha_api.plans.cms.cms_plans_service.get_plans_by_author_id") as mock_get_plans_by_author_id, \
         patch("pecha_api.plans.cms.cms_plans_service.validate_and_extract_author_details") as mock_validate_author, \
         patch("pecha_api.plans.cms.cms_plans_service.generate_presigned_access_url") as mock_presign, \
         patch("pecha_api.plans.cms.cms_plans_service.get") as mock_get_config:
         db_session = _mock_session_local(mock_session_local)
-        mock_get_plans.return_value = repo_response
-        mock_validate_author.return_value = MagicMock()
+        mock_get_plans_by_author_id.return_value = repo_response
+        # author.id is used in service to pass author_id to repository
+        mock_validate_author.return_value = MagicMock(id=uuid.uuid4())
         # Return the original key so assertions comparing to plan.image_url still pass
         mock_presign.side_effect = lambda bucket_name, s3_key: s3_key
         mock_get_config.return_value = "dummy-bucket"
@@ -156,10 +167,11 @@ async def test_get_filtered_plans_success():
         mock_validate_author.assert_called_once_with(token="dummy-token")
 
         # verify repository interaction
-        mock_get_plans.assert_called_once()
-        called_kwargs = mock_get_plans.call_args.kwargs
+        mock_get_plans_by_author_id.assert_called_once()
+        called_kwargs = mock_get_plans_by_author_id.call_args.kwargs
         assert called_kwargs == {
             "db": db_session,
+            "author_id": mock_validate_author.return_value.id,
             "search": "plan",
             "sort_by": "created_at",
             "sort_order": "desc",
@@ -184,12 +196,25 @@ async def test_get_filtered_plans_success():
         assert p1.subscription_count == 2
         # language fallback to default when missing on plan
         assert p1.language == "EN"
+        # author DTO mapping
+        assert p1.author == AuthorDTO(
+            id=plan1.author_id,
+            firstname="A",
+            lastname="Author",
+            image_url=plan1.author.image_url,
+        )
 
         p2 = resp.plans[1]
         assert p2.id == plan2.id
         assert p2.status == PlanStatus.DRAFT
         # language preserved when provided on plan
         assert p2.language == "en"
+        assert p2.author == AuthorDTO(
+            id=plan2.author_id,
+            firstname="B",
+            lastname="Author",
+            image_url=plan2.author.image_url,
+        )
 
 
 @pytest.mark.asyncio
