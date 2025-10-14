@@ -1,5 +1,6 @@
-from pecha_api.plans.tasks.plan_tasks_repository import save_task, get_task_by_id, delete_task
-from pecha_api.plans.tasks.plan_tasks_response_model import CreateTaskRequest, TaskDTO, UpdateTaskDayRequest, UpdatedTaskDayResponse
+from pecha_api.plans.tasks.plan_tasks_repository import save_task, get_task_by_id, delete_task, update_task_day
+from pecha_api.plans.tasks.plan_tasks_response_model import CreateTaskRequest, TaskDTO, UpdateTaskDayRequest, UpdatedTaskDayResponse, GetTaskResponse
+from pecha_api.plans.tasks.sub_tasks.plan_sub_tasks_response_model import SubTaskDTO
 from pecha_api.plans.authors.plan_authors_service import validate_and_extract_author_details
 from uuid import UUID
 from fastapi import HTTPException
@@ -71,4 +72,28 @@ async def change_task_day_service(token: str, task_id: UUID, update_task_request
             display_order=task.display_order, 
             estimated_time=task.estimated_time,
             title=task.title,
+        )
+
+async def get_task_subtasks_service(task_id: UUID, token: str) -> GetTaskResponse:
+    validate_and_extract_author_details(token=token)
+
+    with SessionLocal() as db:
+        task = get_task_by_id(db=db, task_id=task_id)
+        
+        subtasks_dto = [
+            SubTaskDTO(
+                id=sub_task.id,
+                content_type=sub_task.content_type,
+                content=sub_task.content,
+                display_order=sub_task.display_order,
+            )
+            for sub_task in task.sub_tasks
+        ]
+
+        return GetTaskResponse(
+            id=task.id,
+            title=task.title,
+            display_order=task.display_order,
+            estimated_time=task.estimated_time,
+            subtasks=subtasks_dto,
         )
