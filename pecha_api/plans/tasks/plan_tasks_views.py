@@ -14,18 +14,16 @@ plans_router = APIRouter(
 )
 
 
-@plans_router.post("/{plan_id}/day/{day_id}/tasks", status_code=status.HTTP_201_CREATED, response_model=TaskDTO)
+@plans_router.post("", status_code=status.HTTP_201_CREATED, response_model=TaskDTO)
 async def create_task(
         authentication_credential: Annotated[HTTPAuthorizationCredentials, Depends(oauth2_scheme)],
         create_task_request: CreateTaskRequest,
-        plan_id: UUID,
-        day_id: UUID,
 ):
     new_task: TaskDTO = await create_new_task(
         token=authentication_credential.credentials,
         create_task_request=create_task_request,
-        plan_id=plan_id,
-        day_id=day_id,
+        plan_id=create_task_request.plan_id,
+        day_id=create_task_request.day_id,
     )
     return new_task
 
