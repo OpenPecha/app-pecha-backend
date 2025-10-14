@@ -1,5 +1,5 @@
+from pecha_api.plans.tasks.plan_tasks_repository import save_task, get_task_by_id, delete_task
 from pecha_api.plans.tasks.plan_tasks_response_model import CreateTaskRequest, TaskDTO, UpdateTaskDayRequest, UpdatedTaskDayResponse
-from pecha_api.plans.tasks.plan_tasks_repository import save_task, update_task_day
 from pecha_api.plans.authors.plan_authors_service import validate_and_extract_author_details
 from uuid import UUID
 from fastapi import HTTPException
@@ -7,7 +7,9 @@ from pecha_api.db.database import SessionLocal
 from pecha_api.plans.items.plan_items_repository import get_plan_item, get_plan_item_by_id
 from pecha_api.plans.tasks.plan_tasks_models import PlanTask
 from sqlalchemy import func
-from pecha_api.plans.response_message import PLAN_DAY_NOT_FOUND, BAD_REQUEST, TASK_SAME_DAY_NOT_ALLOWED
+from fastapi import HTTPException
+from starlette import status
+from pecha_api.plans.response_message import PLAN_DAY_NOT_FOUND, BAD_REQUEST, TASK_SAME_DAY_NOT_ALLOWED, FORBIDDEN, UNAUTHORIZED_TASK_DELETE
 from pecha_api.plans.auth.plan_auth_models import ResponseError
 
 def _get_max_display_order(plan_item_id: UUID) -> int:
@@ -41,6 +43,15 @@ async def create_new_task(token: str, create_task_request: CreateTaskRequest, pl
         estimated_time=saved_task.estimated_time,
     )
 
+async def delete_task_by_id(task_id: UUID, token: str):
+    current_author = validate_and_extract_author_details(token=token)
+    
+    with SessionLocal() as db:
+        task = get_task_by_id(db=db, task_id=task_id)
+        if task.created_by != current_author.email:
+            raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail=ResponseError(error=FORBIDDEN, message=UNAUTHORIZED_TASK_DELETE).model_dump())
+        delete_task(db=db, task_id=task_id)
+        
 async def change_task_day_service(token: str, task_id: UUID, update_task_request: UpdateTaskDayRequest) -> UpdatedTaskDayResponse:
     validate_and_extract_author_details(token=token)
 

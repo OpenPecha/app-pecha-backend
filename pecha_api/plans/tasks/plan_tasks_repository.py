@@ -13,7 +13,7 @@ from pecha_api.plans.items.plan_items_repository import get_plan_item
 from pecha_api.plans.tasks.plan_tasks_models import PlanTask
 from pecha_api.plans.tasks.plan_tasks_response_model import CreateTaskRequest, TaskDTO
 from pecha_api.plans.auth.plan_auth_models import ResponseError
-from pecha_api.plans.response_message import BAD_REQUEST
+from pecha_api.plans.response_message import BAD_REQUEST, TASK_NOT_FOUND 
 
 
 def save_task(db: Session, new_task: PlanTask):
@@ -40,6 +40,19 @@ def get_tasks_by_item_ids(db: Session, plan_item_ids: List[UUID]) -> List[PlanTa
     return tasks
 
 def get_task_by_id(db: Session, task_id: UUID) -> PlanTask:
+    task = db.query(PlanTask).filter(PlanTask.id == task_id).first()
+    if not task:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=ResponseError(error=BAD_REQUEST, message=TASK_NOT_FOUND).model_dump())
+    return task
+
+def delete_task(db: Session, task_id: UUID):
+    task = get_task_by_id(db=db, task_id=task_id)
+    try:
+        db.delete(task)
+        db.commit()
+    except Exception as e:
+        db.rollback()
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=ResponseError(error=BAD_REQUEST, message=str(e)).model_dump())
     return db.query(PlanTask).filter(PlanTask.id == task_id).first()
 
 def update_task_day(db: Session, task_id: UUID, target_day_id: UUID, display_order: int) -> PlanTask:
