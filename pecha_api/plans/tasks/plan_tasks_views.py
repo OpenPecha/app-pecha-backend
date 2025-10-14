@@ -9,7 +9,7 @@ from pecha_api.plans.tasks.plan_tasks_services import create_new_task, change_ta
 oauth2_scheme = HTTPBearer()
 # Create router for plan endpoints
 plans_router = APIRouter(
-    prefix="/cms/plan",
+    prefix="/cms/tasks",
     tags=["Task"]
 )
 
@@ -29,7 +29,7 @@ async def create_task(
     )
     return new_task
 
-@plans_router.delete("/tasks/{task_id}", status_code=status.HTTP_204_NO_CONTENT)
+@plans_router.delete("/{task_id}", status_code=status.HTTP_204_NO_CONTENT)
 async def delete_task(
     task_id: UUID,
     authentication_credential: Annotated[HTTPAuthorizationCredentials, Depends(oauth2_scheme)],
@@ -39,7 +39,7 @@ async def delete_task(
         token=authentication_credential.credentials
     )   
 
-@plans_router.put("/task/{task_id}", response_model=UpdatedTaskDayResponse)
+@plans_router.put("/{task_id}", response_model=UpdatedTaskDayResponse)
 async def change_task_day(
         authentication_credential: Annotated[HTTPAuthorizationCredentials, Depends(oauth2_scheme)],
         task_id: UUID,
