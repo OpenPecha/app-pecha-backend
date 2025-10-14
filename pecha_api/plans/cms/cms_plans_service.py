@@ -18,6 +18,7 @@ from pecha_api.plans.cms.cms_plans_repository import get_plans
 from pecha_api.plans.items.plan_items_repository import get_plan_items_by_plan_id, get_plan_day_with_tasks_and_subtasks
 from pecha_api.plans.tasks.plan_tasks_repository import get_tasks_by_item_ids
 from pecha_api.plans.tasks.plan_tasks_models import PlanTask
+from pecha_api.plans.tasks.sub_tasks.plan_sub_tasks_models import PlanSubTask
 from sqlalchemy.orm import Session
 
 from pecha_api.db.database import SessionLocal
@@ -279,6 +280,19 @@ async def delete_selected_plan(token:str,plan_id: UUID):
     # In real implementation, check if plan exists and handle foreign key constraints
     return
 
+def _get_task_subtasks_dto(subtasks: List[PlanSubTask]) -> List[SubTaskDTO]:
+
+    subtasks_dto = [SubTaskDTO(
+        id=subtask.id,
+            content_type=subtask.content_type,
+            content=subtask.content,
+            display_order=subtask.display_order,
+        )
+        for subtask in subtasks
+    ]
+    
+    return subtasks_dto
+
 async def get_plan_day_details(token:str,plan_id: UUID, day_number: int) -> PlanDayDTO:
     validate_and_extract_author_details(token=token)
     with SessionLocal() as db:
@@ -292,15 +306,7 @@ async def get_plan_day_details(token:str,plan_id: UUID, day_number: int) -> Plan
                     title=task.title,
                     estimated_time=task.estimated_time,
                     display_order=task.display_order,
-                    subtasks=[
-                        SubTaskDTO(
-                            id=subtask.id,
-                            content_type=subtask.content_type,
-                            content=subtask.content,
-                            display_order=subtask.display_order,
-                        )
-                        for subtask in task.sub_tasks
-                    ]
+                    subtasks=_get_task_subtasks_dto(task.sub_tasks)
                 )
                 for task in plan_item.tasks
             ]

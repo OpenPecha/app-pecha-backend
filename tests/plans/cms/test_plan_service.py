@@ -347,6 +347,41 @@ async def test_get_plan_day_details_not_found():
         assert exc_info.value.status_code == 404
         assert exc_info.value.detail == {"error": "Bad request", "message": "Plan day not found"}
 @pytest.mark.asyncio
+async def test_get_plan_day_details_no_subtasks():
+    plan_id = uuid.uuid4()
+    day_number = 2
+
+    task = MagicMock()
+    task.id = uuid.uuid4()
+    task.title = "Reading Practice"
+    task.estimated_time = 5
+    task.display_order = 1
+    task.sub_tasks = []
+
+    plan_item = MagicMock()
+    plan_item.id = uuid.uuid4()
+    plan_item.day_number = day_number
+    plan_item.tasks = [task]
+
+    with patch("pecha_api.plans.cms.cms_plans_service.SessionLocal") as mock_session_local, \
+        patch("pecha_api.plans.cms.cms_plans_service.get_plan_day_with_tasks_and_subtasks") as mock_get_day, \
+        patch("pecha_api.plans.cms.cms_plans_service.validate_and_extract_author_details") as mock_validate_author:
+        _ = _mock_session_local(mock_session_local)
+        mock_validate_author.return_value = MagicMock()
+        mock_get_day.return_value = plan_item
+
+        resp = await get_plan_day_details(token="tkn", plan_id=plan_id, day_number=day_number)
+
+        assert resp.id == plan_item.id
+        assert resp.day_number == day_number
+        assert len(resp.tasks) == 1
+        t = resp.tasks[0]
+        assert t.id == task.id
+        assert t.title == task.title
+        assert t.display_order == task.display_order
+        assert t.estimated_time == task.estimated_time
+        assert t.subtasks == []
+@pytest.mark.asyncio
 async def test_get_details_plan_not_found():
     non_existent_id = uuid.uuid4()
 
