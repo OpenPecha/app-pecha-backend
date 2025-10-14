@@ -9,8 +9,16 @@ from pecha_api.plans.tasks.plan_tasks_response_model import (
     TaskDTO,
     UpdateTaskDayRequest,
     UpdatedTaskDayResponse,
+    GetTaskResponse,
 )
-from pecha_api.plans.tasks.plan_tasks_services import create_new_task, change_task_day_service, delete_task_by_id
+from pecha_api.plans.tasks.sub_tasks.plan_sub_tasks_response_model import SubTaskDTO
+from pecha_api.plans.plans_enums import ContentType
+from pecha_api.plans.tasks.plan_tasks_services import (
+    create_new_task,
+    change_task_day_service,
+    delete_task_by_id,
+    get_task_subtasks_service,
+)
 
 
 @pytest.mark.asyncio
@@ -306,3 +314,216 @@ async def test_delete_task_by_id_database_error():
         assert mock_validate.call_count == 1
         assert mock_get_task.call_count == 1
         assert mock_delete.call_count == 1
+
+
+@pytest.mark.asyncio
+async def test_change_task_day_service_success():
+    task_id = uuid.uuid4()
+    target_day_id = uuid.uuid4()
+
+    request = UpdateTaskDayRequest(target_day_id=target_day_id)
+
+    db_mock = MagicMock()
+    session_cm = MagicMock()
+    session_cm.__enter__.return_value = db_mock
+
+    updated_task = SimpleNamespace(
+        id=task_id,
+        plan_item_id=target_day_id,
+        display_order=3,
+        estimated_time=None,
+        title="Moved Task",
+    )
+
+    with patch(
+        "pecha_api.plans.tasks.plan_tasks_services.validate_and_extract_author_details",
+    ) as mock_validate, patch(
+        "pecha_api.plans.tasks.plan_tasks_services.SessionLocal",
+        return_value=session_cm,
+    ), patch(
+        "pecha_api.plans.tasks.plan_tasks_services._get_max_display_order",
+        return_value=2,
+    ) as mock_get_max, patch(
+        "pecha_api.plans.tasks.plan_tasks_services.get_plan_item_by_id",
+        return_value=SimpleNamespace(id=target_day_id),
+    ) as mock_get_day, patch(
+        "pecha_api.plans.tasks.plan_tasks_services.update_task_day",
+        return_value=updated_task,
+    ) as mock_update:
+        resp = await change_task_day_service(
+            token="token456",
+            task_id=task_id,
+            update_task_request=request,
+        )
+
+        assert mock_validate.call_count == 1
+        assert mock_get_max.call_count == 1
+        assert mock_get_max.call_args.kwargs == {"plan_item_id": target_day_id}
+        assert mock_get_day.call_count == 1
+        assert mock_get_day.call_args.kwargs == {"db": db_mock, "day_id": target_day_id}
+        assert mock_update.call_count == 1
+        assert mock_update.call_args.kwargs == {
+            "db": db_mock,
+            "task_id": task_id,
+            "target_day_id": target_day_id,
+            "display_order": 3,
+        }
+
+        expected = UpdatedTaskDayResponse(
+            task_id=updated_task.id,
+            day_id=updated_task.plan_item_id,
+            display_order=updated_task.display_order,
+            estimated_time=updated_task.estimated_time,
+            title=updated_task.title,
+        )
+        assert resp == expected
+
+
+@pytest.mark.asyncio
+async def test_change_task_day_service_day_not_found():
+    task_id = uuid.uuid4()
+    target_day_id = uuid.uuid4()
+    request = UpdateTaskDayRequest(target_day_id=target_day_id)
+
+    db_mock = MagicMock()
+    session_cm = MagicMock()
+    session_cm.__enter__.return_value = db_mock
+
+    with patch(
+        "pecha_api.plans.tasks.plan_tasks_services.validate_and_extract_author_details",
+    ) as mock_validate, patch(
+        "pecha_api.plans.tasks.plan_tasks_services.SessionLocal",
+        return_value=session_cm,
+    ), patch(
+        "pecha_api.plans.tasks.plan_tasks_services._get_max_display_order",
+        return_value=5,
+    ) as mock_get_max, patch(
+        "pecha_api.plans.tasks.plan_tasks_services.get_plan_item_by_id",
+        return_value=None,
+    ) as mock_get_day:
+        with pytest.raises(HTTPException) as exc_info:
+            await change_task_day_service(
+                token="token456",
+                task_id=task_id,
+                update_task_request=request,
+            )
+
+        assert exc_info.value.status_code == 404
+        assert exc_info.value.detail["error"] == BAD_REQUEST
+        assert exc_info.value.detail["message"] == PLAN_DAY_NOT_FOUND
+        assert mock_validate.call_count == 1
+        assert mock_get_max.call_count == 1
+        assert mock_get_day.call_count == 1
+
+
+@pytest.mark.asyncio
+async def test_get_task_subtasks_service_success():
+    task_id = uuid.uuid4()
+
+    subtask1 = SimpleNamespace(
+        id=uuid.uuid4(),
+        content_type=ContentType.TEXT,
+        content="Read page 1",
+        display_order=1,
+    )
+    subtask2 = SimpleNamespace(
+        id=uuid.uuid4(),
+        content_type=ContentType.VIDEO,
+        content="Watch intro video",
+        display_order=2,
+    )
+
+    mock_task = SimpleNamespace(
+        id=task_id,
+        title="Sample Task",
+        display_order=2,
+        estimated_time=30,
+        sub_tasks=[subtask1, subtask2],
+    )
+
+    db_mock = MagicMock()
+    session_cm = MagicMock()
+    session_cm.__enter__.return_value = db_mock
+
+    with patch(
+        "pecha_api.plans.tasks.plan_tasks_services.validate_and_extract_author_details",
+    ) as mock_validate, patch(
+        "pecha_api.plans.tasks.plan_tasks_services.SessionLocal",
+        return_value=session_cm,
+    ), patch(
+        "pecha_api.plans.tasks.plan_tasks_services.get_task_by_id",
+        return_value=mock_task,
+    ) as mock_get_task:
+        resp = await get_task_subtasks_service(task_id=task_id, token="token789")
+
+        assert mock_validate.call_count == 1
+        assert mock_get_task.call_count == 1
+        assert mock_get_task.call_args.kwargs == {"db": db_mock, "task_id": task_id}
+
+        expected = GetTaskResponse(
+            id=mock_task.id,
+            title=mock_task.title,
+            display_order=mock_task.display_order,
+            estimated_time=mock_task.estimated_time,
+            subtasks=[
+                SubTaskDTO(
+                    id=subtask1.id,
+                    content_type=subtask1.content_type,
+                    content=subtask1.content,
+                    display_order=subtask1.display_order,
+                ),
+                SubTaskDTO(
+                    id=subtask2.id,
+                    content_type=subtask2.content_type,
+                    content=subtask2.content,
+                    display_order=subtask2.display_order,
+                ),
+            ],
+        )
+        assert resp == expected
+
+
+@pytest.mark.asyncio
+async def test_get_task_subtasks_service_invalid_token():
+    task_id = uuid.uuid4()
+
+    with patch(
+        "pecha_api.plans.tasks.plan_tasks_services.validate_and_extract_author_details",
+        side_effect=HTTPException(status_code=401, detail={"error": "UNAUTHORIZED", "message": "Invalid token"}),
+    ) as mock_validate, patch(
+        "pecha_api.plans.tasks.plan_tasks_services.SessionLocal",
+    ) as mock_session, patch(
+        "pecha_api.plans.tasks.plan_tasks_services.get_task_by_id",
+    ) as mock_get_task:
+        with pytest.raises(HTTPException) as exc_info:
+            await get_task_subtasks_service(task_id=task_id, token="invalid")
+
+        assert exc_info.value.status_code == 401
+        assert mock_validate.call_count == 1
+        assert mock_session.call_count == 0
+        assert mock_get_task.call_count == 0
+
+
+@pytest.mark.asyncio
+async def test_get_task_subtasks_service_task_not_found():
+    task_id = uuid.uuid4()
+
+    db_mock = MagicMock()
+    session_cm = MagicMock()
+    session_cm.__enter__.return_value = db_mock
+
+    with patch(
+        "pecha_api.plans.tasks.plan_tasks_services.validate_and_extract_author_details",
+    ) as mock_validate, patch(
+        "pecha_api.plans.tasks.plan_tasks_services.SessionLocal",
+        return_value=session_cm,
+    ), patch(
+        "pecha_api.plans.tasks.plan_tasks_services.get_task_by_id",
+        side_effect=HTTPException(status_code=404, detail={"error": "NOT_FOUND", "message": "Task not found"}),
+    ) as mock_get_task:
+        with pytest.raises(HTTPException) as exc_info:
+            await get_task_subtasks_service(task_id=task_id, token="token789")
+
+        assert exc_info.value.status_code == 404
+        assert mock_validate.call_count == 1
+        assert mock_get_task.call_count == 1
