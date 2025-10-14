@@ -15,14 +15,16 @@ from pecha_api.plans.tasks.plan_tasks_services import create_new_task, change_ta
 
 @pytest.mark.asyncio
 async def test_create_new_task_builds_and_saves_with_incremented_display_order():
+    plan_id = uuid.uuid4()
+    day_id = uuid.uuid4()
+    
     request = CreateTaskRequest(
+        plan_id=plan_id,
+        day_id=day_id,
         title="Read intro",
         description="Do reading",
         estimated_time=15,
     )
-
-    plan_id = uuid.uuid4()
-    day_id = uuid.uuid4()
 
     # Mock DB session as context manager
     db_mock = MagicMock()
