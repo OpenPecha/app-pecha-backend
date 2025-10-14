@@ -34,3 +34,4 @@ class ErrorConstants:
     USER_UPDATE_ISSUE = "User update issue"
     INVALID_UPDATE_REQUEST = "Invalid update request"
     TASK_NOT_FOUND = "Task not found"
+    SUB_TASK_NOT_FOUND = "Sub task not found"

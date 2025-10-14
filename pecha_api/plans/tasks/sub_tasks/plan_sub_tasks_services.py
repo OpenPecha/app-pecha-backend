@@ -19,6 +19,8 @@ from pecha_api.plans.tasks.sub_tasks.plan_sub_tasks_response_model import (
     SubTaskDTO,
     SubTaskRequest,
     SubTaskResponse,
+    UpdateSubTaskRequest,
+    UpdateSubTaskResponse,
 )
 from pecha_api.error_contants import ErrorConstants
 
@@ -61,3 +63,13 @@ async def create_new_sub_tasks(token: str, create_task_request: SubTaskRequest) 
         return SubTaskResponse(
             sub_tasks=created_sub_tasks,
         )
+
+async def update_sub_task_by_id(token: str, sub_task_id: UUID, update_sub_task_request: UpdateSubTaskRequest) -> UpdateSubTaskResponse:
+    current_author = validate_and_extract_author_details(token=token)
+
+    with SessionLocal() as db:
+        sub_task = get_sub_task_by_id(db=db, sub_task_id=sub_task_id)
+        if not sub_task:
+            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=ResponseError(error=BAD_REQUEST, message=ErrorConstants.SUB_TASK_NOT_FOUND).model_dump())
+
+        sub_task = update_sub_task(db=db, sub_task_id=sub_task_id, update_sub_task_request=update_sub_task_request)
