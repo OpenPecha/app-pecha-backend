@@ -27,6 +27,7 @@ class PlanTask(Base):
     deleted_by = Column(String(255))
 
     plan_item = relationship("PlanItem", backref="tasks")
+    sub_tasks = relationship("PlanSubTask", back_populates="task", cascade="all, delete-orphan")
 
     __table_args__ = (
         Index("idx_tasks_plan_item_order", "plan_item_id", "display_order"),
