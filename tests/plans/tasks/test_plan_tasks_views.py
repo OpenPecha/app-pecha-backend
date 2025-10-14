@@ -13,7 +13,12 @@ class _Creds:
 
 @pytest.mark.asyncio
 async def test_create_task_success():
+    plan_id = uuid.uuid4()
+    day_id = uuid.uuid4()
+    
     request = CreateTaskRequest(
+        plan_id=plan_id,
+        day_id=day_id,
         title="Read intro",
         description="Do reading",
         estimated_time=15,
@@ -28,8 +33,6 @@ async def test_create_task_success():
     )
 
     creds = _Creds(token="token123")
-    plan_id = uuid.uuid4()
-    day_id = uuid.uuid4()
 
     with patch(
         "pecha_api.plans.tasks.plan_tasks_views.create_new_task",
@@ -39,8 +42,6 @@ async def test_create_task_success():
         resp = await create_task(
             authentication_credential=creds,
             create_task_request=request,
-            plan_id=plan_id,
-            day_id=day_id,
         )
 
         assert mock_create.call_count == 1
@@ -166,6 +167,7 @@ async def test_delete_task_database_error():
 
         assert mock_delete.call_count == 1
 
+@pytest.mark.asyncio
 async def test_change_task_day_success():
     task_id = uuid.uuid4()
     target_day_id = uuid.uuid4()
