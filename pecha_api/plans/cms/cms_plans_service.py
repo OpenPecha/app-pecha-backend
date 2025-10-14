@@ -4,7 +4,7 @@ from typing import Optional, List, Dict
 from starlette import status
 from pecha_api.plans.plans_models import Plan
 from pecha_api.plans.items.plan_items_models import PlanItem
-from pecha_api.plans.cms.cms_plans_repository import save_plan, get_plan_by_id
+from pecha_api.plans.cms.cms_plans_repository import save_plan, get_plan_by_id, update_plan
 from pecha_api.plans.items.plan_items_repository import save_plan_items
 from pecha_api.plans.users.plan_users_progress_repository import get_plan_progress
 
@@ -27,6 +27,8 @@ from uuid import uuid4, UUID
 from fastapi import HTTPException
 from pecha_api.plans.auth.plan_auth_models import ResponseError
 from pecha_api.plans.response_message import BAD_REQUEST, PLAN_NOT_FOUND
+from datetime import datetime, timezone
+from sqlalchemy import func
 
 DUMMY_PLANS = [
     PlanDTO(
@@ -231,24 +233,70 @@ def _get_plan_details(db: Session, plan_id: UUID) -> PlanWithDays:
         days=day_dtos,
     )
     
-async def update_plan_details(token:str,plan_id: UUID, update_plan_request: UpdatePlanRequest) -> PlanDTO:
-    """Update plan metadata"""
-    # Find plan by ID
-    #   current_author = validate_and_extract_author_details(token=token)
-    plan = next((p for p in DUMMY_PLANS if p.id == plan_id), None)
-    if not plan:
-        raise HTTPException(status_code=404, detail="Plan not found")
-
-    # Update fields if provided
-    if update_plan_request.title is not None:
-        plan.title = update_plan_request.title
-    if update_plan_request.description is not None:
-        plan.description = update_plan_request.description
-    if update_plan_request.total_days is not None:
-        plan.total_days = update_plan_request.total_days
-    if update_plan_request.image_url is not None:
-        plan.image_url = update_plan_request.image_url
-    return plan
+async def update_plan_details(token: str, plan_id: UUID, update_plan_request: UpdatePlanRequest) -> PlanDTO:
+    author_details = validate_and_extract_author_details(token=token)
+    
+    with SessionLocal() as db:
+        plan = get_plan_by_id(db, plan_id)
+        
+        if not plan:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail=PLAN_NOT_FOUND
+            )
+        
+        # if str(plan.author_id) != author_details.id:
+        #     raise HTTPException(
+        #         status_code=status.HTTP_403_FORBIDDEN,
+        #         detail="You are not authorized to update this plan"
+        #     )
+            
+        if update_plan_request.title is not None:
+            plan.title = update_plan_request.title
+        if update_plan_request.description is not None:
+            plan.description = update_plan_request.description
+        if update_plan_request.difficulty_level is not None:
+            plan.difficulty_level = update_plan_request.difficulty_level
+        if update_plan_request.image_url is not None:
+            plan.image_url = update_plan_request.image_url
+        if update_plan_request.tags is not None:
+            plan.tags = update_plan_request.tags
+        
+        plan.updated_at = datetime.now(timezone.utc)
+        plan.updated_by = author_details.email
+        
+        plan = update_plan(db, plan)
+        
+        # Generate presigned URL for image if exists
+        image_url = None
+        if plan.image_url:
+            try:
+                bucket_name = get("AWS_BUCKET_NAME")
+                image_url = generate_presigned_access_url(bucket_name, plan.image_url)
+            except Exception:
+                image_url = plan.image_url
+        
+        # Get total days count from plan items
+        total_days = len(plan.items) if hasattr(plan, 'items') and plan.items else 0
+        
+        # # Get subscription count
+        # subscription_count = db.query(func.count(func.distinct(UserPlanProgress.user_id))).filter(
+        #     UserPlanProgress.plan_id == plan_id
+        # ).scalar() or 0
+        
+        # Return updated plan as DTO
+        return PlanDTO(
+            id=plan.id,
+            title=plan.title,
+            description=plan.description or "",
+            difficulty_level=plan.difficulty_level,
+            # language=plan.language.value if hasattr(plan.language, 'value') else str(plan.language),
+            image_url=image_url,
+            total_days=total_days,
+            tags=plan.tags or [],
+            # status=plan.status,
+            # subscription_count=subscription_count
+        )
 
 async def update_selected_plan_status(token:str,plan_id: UUID, plan_status_update: PlanStatusUpdate) -> PlanDTO:
     """Update plan status"""
