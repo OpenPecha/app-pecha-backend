@@ -12,7 +12,7 @@ class CreatePlanRequest(BaseModel):
     difficulty_level: DifficultyLevel
     total_days: int
     language: str
-    image_url: Optional[str] = None
+    image_url: str
     tags: Optional[List[str]] = []
 
 class UpdatePlanRequest(BaseModel):
@@ -38,7 +38,8 @@ class PlanDTO(BaseModel):
     description: str
     language: str
     difficulty_level: Optional[DifficultyLevel] = None
-    image_url: Optional[str] = None
+    url: str
+    key: str
     total_days: int
     tags: Optional[List[str]] = []
     status: PlanStatus

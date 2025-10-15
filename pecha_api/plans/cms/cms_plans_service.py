@@ -23,7 +23,7 @@ from sqlalchemy.orm import Session
 
 from pecha_api.db.database import SessionLocal
 from pecha_api.config import get
-from pecha_api.uploads.S3_utils import generate_presigned_access_url
+from pecha_api.uploads.S3_utils import upload_bytes, generate_presigned_access_url
 from uuid import uuid4, UUID
 from fastapi import HTTPException
 from pecha_api.plans.auth.plan_auth_models import ResponseError
@@ -292,20 +292,24 @@ async def update_plan_details(token: str, plan_id: UUID, update_plan_request: Up
                     db.delete(item_to_delete)
                 db.commit()
         
-        image_url = None
-        if plan.image_url:
-            try:
-                bucket_name = get("AWS_BUCKET_NAME")
-                image_url = generate_presigned_access_url(bucket_name, plan.image_url)
-            except Exception:
-                image_url = plan.image_url
-        
         updated_items = get_plan_items_by_plan_id(db, plan_id)
         total_days = len(updated_items)
         
         subscription_count = db.query(func.count(func.distinct(UserPlanProgress.user_id))).filter(
             UserPlanProgress.plan_id == plan_id
         ).scalar() or 0
+
+        upload_key = upload_bytes(
+            bucket_name=get("AWS_BUCKET_NAME"),
+            s3_key=plan.image_url,
+            file=plan.image_url,
+            content_type=plan.image_url
+        )
+
+        presigned_url = generate_presigned_access_url(
+            bucket_name=get("AWS_BUCKET_NAME"),
+            s3_key=upload_key
+        )
         
         return PlanDTO(
             id=plan.id,
@@ -313,7 +317,8 @@ async def update_plan_details(token: str, plan_id: UUID, update_plan_request: Up
             description=plan.description or "",
             language=plan.language.value if hasattr(plan.language, 'value') else str(plan.language),
             difficulty_level=plan.difficulty_level,
-            image_url=image_url,
+            url=presigned_url,
+            key=upload_key,
             total_days=total_days,
             tags=plan.tags or [],
             status=plan.status,
