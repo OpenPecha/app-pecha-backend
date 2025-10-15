@@ -121,6 +121,7 @@ async def get_filtered_plans(token: str, search: Optional[str], sort_by: str, so
                 language=selected_plan.language.value if selected_plan.language and hasattr(selected_plan.language, 'value') else (selected_plan.language or 'EN'),
                 difficulty_level=selected_plan.difficulty_level,
                 image_url= generate_presigned_access_url(bucket_name=get("AWS_BUCKET_NAME"), s3_key=selected_plan.image_url),
+                plan_image_url=selected_plan.image_url,
                 total_days=int(plan_info.total_days or 0),
                 tags=selected_plan.tags or [],
                 status=PlanStatus(selected_plan.status.value),
@@ -176,6 +177,7 @@ def create_new_plan(token: str, create_plan_request: CreatePlanRequest) -> PlanD
             language=saved_plan.language.value if hasattr(saved_plan.language, 'value') else saved_plan.language,
             difficulty_level=saved_plan.difficulty_level,
             image_url=saved_plan.image_url,
+            plan_image_url=saved_plan.image_url, 
             total_days=total_days,
             tags=saved_plan.tags or [],
             status=saved_plan.status,
@@ -232,6 +234,7 @@ def _get_plan_details(db: Session, plan_id: UUID) -> PlanWithDays:
         description=plan.description or "",
         language=plan.language or "EN",
         image_url=generate_presigned_access_url(bucket_name=get("AWS_BUCKET_NAME"), s3_key=plan.image_url),
+        plan_image_url=plan.image_url, 
         total_days=len(items),
         difficulty_level=plan.difficulty_level,
         tags=plan.tags or [],
@@ -293,10 +296,11 @@ async def update_plan_details(token: str, plan_id: UUID, update_plan_request: Up
                 db.commit()
         
         image_url = None
-        if plan.image_url:
+        plan_image_url = plan.image_url
+        if plan_image_url:
             try:
                 bucket_name = get("AWS_BUCKET_NAME")
-                image_url = generate_presigned_access_url(bucket_name, plan.image_url)
+                image_url = generate_presigned_access_url(bucket_name, plan_image_url)
             except Exception:
                 image_url = plan.image_url
         
@@ -314,6 +318,7 @@ async def update_plan_details(token: str, plan_id: UUID, update_plan_request: Up
             language=plan.language.value if hasattr(plan.language, 'value') else str(plan.language),
             difficulty_level=plan.difficulty_level,
             image_url=image_url,
+            plan_image_url=plan_image_url,
             total_days=total_days,
             tags=plan.tags or [],
             status=plan.status,
