@@ -31,28 +31,14 @@ from pecha_api.plans.response_message import BAD_REQUEST, PLAN_NOT_FOUND
 from datetime import datetime, timezone
 from sqlalchemy import func
 
-def generate_plan_image_url(image_key: str) -> Optional[str]:
-
-    if not image_key:
-        return None
-    
-    try:
-        return generate_presigned_access_url(
-            bucket_name=get("AWS_BUCKET_NAME"),
-            s3_key=image_key
-        )
-    except Exception as e:
-        print(f"Error generating presigned URL for {image_key}: {str(e)}")
-        return None
-
 DUMMY_PLANS = [
     PlanDTO(
         id=uuid4(),
         title="Introduction to Buddhist Meditation",
         description="A 7-day beginner's guide to Buddhist meditation practices",
         language="en",
-        image_url="https://example.com/meditation.jpg",
-        image_key="images/plan_images/meditation.jpg",
+        url="https://example.com/meditation.jpg",
+        key="images/plan_images/meditation.jpg",
         total_days=7,
         status=PlanStatus.PUBLISHED,
         subscription_count=150
@@ -62,8 +48,8 @@ DUMMY_PLANS = [
         title="The Four Noble Truths Study",
         description="Deep dive into the foundational teachings of Buddhism",
         language="en",
-        image_url="https://example.com/four-truths.jpg",
-        image_key="images/plan_images/four-truths.jpg",
+        url="https://example.com/four-truths.jpg",
+        key="images/plan_images/four-truths.jpg",
         total_days=14,
         status=PlanStatus.PUBLISHED,
         subscription_count=89
@@ -73,8 +59,8 @@ DUMMY_PLANS = [
         title="Mindfulness in Daily Life",
         description="Practical applications of mindfulness for modern living",
         language="en",
-        image_url="https://example.com/mindfulness.jpg",
-        image_key="images/plan_images/mindfulness.jpg",
+        url="https://example.com/mindfulness.jpg",
+        key="images/plan_images/mindfulness.jpg",
         total_days=21,
         status=PlanStatus.DRAFT,
         subscription_count=0    
@@ -137,8 +123,7 @@ async def get_filtered_plans(token: str, search: Optional[str], sort_by: str, so
                 description=selected_plan.description,
                 language=selected_plan.language.value if selected_plan.language and hasattr(selected_plan.language, 'value') else (selected_plan.language or 'EN'),
                 difficulty_level=selected_plan.difficulty_level,
-                image_url=generate_plan_image_url(selected_plan.image_url),
-                image_key=selected_plan.image_url,
+                image_url= generate_presigned_access_url(bucket_name=get("AWS_BUCKET_NAME"), s3_key=selected_plan.image_url),
                 total_days=int(plan_info.total_days or 0),
                 tags=selected_plan.tags or [],
                 status=PlanStatus(selected_plan.status.value),
@@ -193,8 +178,7 @@ def create_new_plan(token: str, create_plan_request: CreatePlanRequest) -> PlanD
             description=saved_plan.description,
             language=saved_plan.language.value if hasattr(saved_plan.language, 'value') else saved_plan.language,
             difficulty_level=saved_plan.difficulty_level,
-            image_url=generate_plan_image_url(saved_plan.image_url),
-            image_key=saved_plan.image_url,
+            image_url=saved_plan.image_url,
             total_days=total_days,
             tags=saved_plan.tags or [],
             status=saved_plan.status,
@@ -250,8 +234,7 @@ def _get_plan_details(db: Session, plan_id: UUID) -> PlanWithDays:
         title=plan.title,
         description=plan.description or "",
         language=plan.language or "EN",
-        image_url=generate_plan_image_url(plan.image_url),
-        image_key=plan.image_url,
+        image_url=generate_presigned_access_url(bucket_name=get("AWS_BUCKET_NAME"), s3_key=plan.image_url),
         total_days=len(items),
         difficulty_level=plan.difficulty_level,
         tags=plan.tags or [],
@@ -318,15 +301,27 @@ async def update_plan_details(token: str, plan_id: UUID, update_plan_request: Up
         subscription_count = db.query(func.count(func.distinct(UserPlanProgress.user_id))).filter(
             UserPlanProgress.plan_id == plan_id
         ).scalar() or 0
+
+        upload_key = upload_bytes(
+            bucket_name=get("AWS_BUCKET_NAME"),
+            s3_key=plan.image_url,
+            file=plan.image_url,
+            content_type=plan.image_url
+        )
+
+        presigned_url = generate_presigned_access_url(
+            bucket_name=get("AWS_BUCKET_NAME"),
+            s3_key=upload_key
+        )
         
         return PlanDTO(
             id=plan.id,
             title=plan.title,
-            description=plan.description,
+            description=plan.description or "",
             language=plan.language.value if hasattr(plan.language, 'value') else str(plan.language),
             difficulty_level=plan.difficulty_level,
-            image_url=generate_plan_image_url(plan.image_url),
-            image_key=plan.image_url,
+            url=presigned_url,
+            key=upload_key,
             total_days=total_days,
             tags=plan.tags or [],
             status=plan.status,

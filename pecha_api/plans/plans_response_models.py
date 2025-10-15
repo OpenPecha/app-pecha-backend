@@ -38,8 +38,8 @@ class PlanDTO(BaseModel):
     description: str
     language: str
     difficulty_level: Optional[DifficultyLevel] = None
-    image_url: Optional[str] = None 
-    image_key: Optional[str] = None 
+    url: str
+    key: str
     total_days: int
     tags: Optional[List[str]] = []
     status: PlanStatus
@@ -55,7 +55,7 @@ class SubTaskDTO(BaseModel):
 
 class TaskDTO(BaseModel):
     id: UUID
-    title: Optional[str] = None  
+    title: Optional[str] = None  # Made optional to support subtasks
     estimated_time: Optional[int] = None
     display_order: Optional[int] = None
     subtasks: List[SubTaskDTO] = []
@@ -70,8 +70,7 @@ class PlanWithDays(BaseModel):
     title: str
     description: str
     language: str
-    image_url: Optional[str] = None 
-    image_key: Optional[str] = None 
+    image_url: Optional[str] = None
     total_days: int
     difficulty_level: str
     tags: List[str]
