@@ -4,14 +4,15 @@ from typing import Optional, List, Dict
 from starlette import status
 from pecha_api.plans.plans_models import Plan
 from pecha_api.plans.items.plan_items_models import PlanItem
+from pecha_api.plans.users.plan_users_model import UserPlanProgress
 from pecha_api.plans.cms.cms_plans_repository import save_plan, get_plan_by_id, update_plan
 from pecha_api.plans.items.plan_items_repository import save_plan_items
 from pecha_api.plans.users.plan_users_progress_repository import get_plan_progress
 
 from pecha_api.plans.authors.plan_authors_service import validate_and_extract_author_details
 from pecha_api.plans.plans_enums import LanguageCode, PlanStatus, ContentType
-from pecha_api.plans.plans_response_models import PlansResponse, PlanDTO, CreatePlanRequest, TaskDTO, PlanDayDTO, \
-    PlanWithDays, \
+from pecha_api.plans.plans_response_models import PlansResponse, PlanDTO, CreatePlanRequest, TaskDTO, PlanDayDTO, PlanWithDays, \
+    PlanWithAggregates, \
     UpdatePlanRequest, PlanStatusUpdate, PlansRepositoryResponse, PlanWithAggregates
     
 from pecha_api.plans.cms.cms_plans_repository import get_plans
@@ -59,7 +60,7 @@ DUMMY_PLANS = [
         image_url="https://example.com/mindfulness.jpg",
         total_days=21,
         status=PlanStatus.DRAFT,
-        subscription_count=0
+        subscription_count=0    
     )
 ]
 DUMMY_TASKS = [
@@ -118,8 +119,10 @@ async def get_filtered_plans(token: str, search: Optional[str], sort_by: str, so
                 title=selected_plan.title,
                 description=selected_plan.description,
                 language=selected_plan.language.value if selected_plan.language and hasattr(selected_plan.language, 'value') else (selected_plan.language or 'EN'),
+                difficulty_level=selected_plan.difficulty_level,
                 image_url= generate_presigned_access_url(bucket_name=get("AWS_BUCKET_NAME"), s3_key=selected_plan.image_url),
                 total_days=int(plan_info.total_days or 0),
+                tags=selected_plan.tags or [],
                 status=PlanStatus(selected_plan.status.value),
                 subscription_count=int(plan_info.subscription_count or 0),
             )
@@ -171,8 +174,10 @@ def create_new_plan(token: str, create_plan_request: CreatePlanRequest) -> PlanD
             title=saved_plan.title,
             description=saved_plan.description,
             language=saved_plan.language.value if hasattr(saved_plan.language, 'value') else saved_plan.language,
+            difficulty_level=saved_plan.difficulty_level,
             image_url=saved_plan.image_url,
             total_days=total_days,
+            tags=saved_plan.tags or [],
             status=saved_plan.status,
             subscription_count=total_subscription_count
         )
@@ -234,6 +239,7 @@ def _get_plan_details(db: Session, plan_id: UUID) -> PlanWithDays:
     )
     
 async def update_plan_details(token: str, plan_id: UUID, update_plan_request: UpdatePlanRequest) -> PlanDTO:
+
     author_details = validate_and_extract_author_details(token=token)
     
     with SessionLocal() as db:
@@ -245,12 +251,6 @@ async def update_plan_details(token: str, plan_id: UUID, update_plan_request: Up
                 detail=PLAN_NOT_FOUND
             )
         
-        # if str(plan.author_id) != author_details.id:
-        #     raise HTTPException(
-        #         status_code=status.HTTP_403_FORBIDDEN,
-        #         detail="You are not authorized to update this plan"
-        #     )
-            
         if update_plan_request.title is not None:
             plan.title = update_plan_request.title
         if update_plan_request.description is not None:
@@ -267,7 +267,31 @@ async def update_plan_details(token: str, plan_id: UUID, update_plan_request: Up
         
         plan = update_plan(db, plan)
         
-        # Generate presigned URL for image if exists
+        if update_plan_request.total_days is not None:
+
+            existing_items = get_plan_items_by_plan_id(db, plan_id)
+            current_total_days = len(existing_items)
+            requested_total_days = update_plan_request.total_days
+            
+            if requested_total_days > current_total_days:
+
+                new_items = [
+                    PlanItem(
+                        plan_id=plan_id,
+                        day_number=day,
+                        created_by=author_details.email
+                    )
+                    for day in range(current_total_days + 1, requested_total_days + 1)
+                ]
+                save_plan_items(db=db, plan_items=new_items)
+            elif requested_total_days < current_total_days:
+
+                items_to_remove = sorted(existing_items, key=lambda x: x.day_number, reverse=True)
+                for i in range(current_total_days - requested_total_days):
+                    item_to_delete = items_to_remove[i]
+                    db.delete(item_to_delete)
+                db.commit()
+        
         image_url = None
         if plan.image_url:
             try:
@@ -276,26 +300,24 @@ async def update_plan_details(token: str, plan_id: UUID, update_plan_request: Up
             except Exception:
                 image_url = plan.image_url
         
-        # Get total days count from plan items
-        total_days = len(plan.items) if hasattr(plan, 'items') and plan.items else 0
+        updated_items = get_plan_items_by_plan_id(db, plan_id)
+        total_days = len(updated_items)
         
-        # # Get subscription count
-        # subscription_count = db.query(func.count(func.distinct(UserPlanProgress.user_id))).filter(
-        #     UserPlanProgress.plan_id == plan_id
-        # ).scalar() or 0
+        subscription_count = db.query(func.count(func.distinct(UserPlanProgress.user_id))).filter(
+            UserPlanProgress.plan_id == plan_id
+        ).scalar() or 0
         
-        # Return updated plan as DTO
         return PlanDTO(
             id=plan.id,
             title=plan.title,
             description=plan.description or "",
+            language=plan.language.value if hasattr(plan.language, 'value') else str(plan.language),
             difficulty_level=plan.difficulty_level,
-            # language=plan.language.value if hasattr(plan.language, 'value') else str(plan.language),
             image_url=image_url,
             total_days=total_days,
             tags=plan.tags or [],
-            # status=plan.status,
-            # subscription_count=subscription_count
+            status=plan.status,
+            subscription_count=subscription_count
         )
 
 async def update_selected_plan_status(token:str,plan_id: UUID, plan_status_update: PlanStatusUpdate) -> PlanDTO:
