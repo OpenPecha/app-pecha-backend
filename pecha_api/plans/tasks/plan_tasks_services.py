@@ -10,7 +10,7 @@ from pecha_api.plans.tasks.plan_tasks_models import PlanTask
 from sqlalchemy import func
 from fastapi import HTTPException
 from starlette import status
-from pecha_api.plans.response_message import PLAN_DAY_NOT_FOUND, BAD_REQUEST, TASK_SAME_DAY_NOT_ALLOWED, FORBIDDEN, UNAUTHORIZED_TASK_DELETE
+from pecha_api.plans.response_message import PLAN_DAY_NOT_FOUND, BAD_REQUEST, TASK_SAME_DAY_NOT_ALLOWED, FORBIDDEN, UNAUTHORIZED_TASK_DELETE, UNAUTHORIZED_TASK_ACCESS
 from pecha_api.plans.auth.plan_auth_models import ResponseError
 
 def _get_max_display_order(plan_item_id: UUID) -> int:
@@ -75,10 +75,13 @@ async def change_task_day_service(token: str, task_id: UUID, update_task_request
         )
 
 async def get_task_subtasks_service(task_id: UUID, token: str) -> GetTaskResponse:
-    validate_and_extract_author_details(token=token)
+    current_user = validate_and_extract_author_details(token=token)
 
     with SessionLocal() as db:
         task = get_task_by_id(db=db, task_id=task_id)
+
+        if task.created_by != current_user.email:
+            raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail=ResponseError(error=FORBIDDEN, message=UNAUTHORIZED_TASK_ACCESS).model_dump())
         
         subtasks_dto = [
             SubTaskDTO(

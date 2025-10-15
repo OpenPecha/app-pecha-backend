@@ -32,3 +32,4 @@ EMAIL_IS_SENT = "Email is sent. Please check your email to verify your account."
 
 TASK_NOT_FOUND = "Task not found"
 UNAUTHORIZED_TASK_DELETE = "You are not authorized to delete this task"
+UNAUTHORIZED_TASK_ACCESS = "You are not authorized to access this task"
