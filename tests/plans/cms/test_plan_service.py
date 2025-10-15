@@ -4,7 +4,7 @@ from unittest.mock import patch, MagicMock, ANY
 from fastapi import HTTPException
 
 import pecha_api.plans.cms.cms_plans_service as plans_service
-from pecha_api.plans.plans_enums import DifficultyLevel, PlanStatus
+from pecha_api.plans.plans_enums import DifficultyLevel, PlanStatus, ContentType
 from pecha_api.plans.plans_models import Plan
 from pecha_api.plans.items.plan_items_models import PlanItem
 from pecha_api.plans.tasks.plan_tasks_models import PlanTask
@@ -14,7 +14,7 @@ from pecha_api.plans.plans_response_models import (
 )
 from pecha_api.plans.cms.cms_plans_service import (
     create_new_plan, get_filtered_plans, get_details_plan,
-    update_plan_details, update_selected_plan_status, delete_selected_plan,
+    update_plan_details, update_selected_plan_status, delete_selected_plan, get_plan_day_details,
     DUMMY_PLANS, DUMMY_DAYS
 )
 
@@ -270,6 +270,117 @@ async def test_get_details_plan_success():
         assert len(day2.tasks) == 1
         assert day2.tasks[0].id == task2.id
         assert day2.tasks[0].estimated_time == task2.estimated_time
+
+@pytest.mark.asyncio
+async def test_get_plan_day_details_success():
+    plan_id = uuid.uuid4()
+    day_number = 3
+
+    subtask1 = MagicMock()
+    subtask1.id = uuid.uuid4()
+    subtask1.content_type = ContentType.TEXT
+    subtask1.content = "Practice for 10 minutes"
+    subtask1.display_order = 1
+
+    subtask2 = MagicMock()
+    subtask2.id = uuid.uuid4()
+    subtask2.content_type = ContentType.AUDIO
+    subtask2.content = "https://example.com/audio.mp3"
+    subtask2.display_order = 2
+
+    task = MagicMock()
+    task.id = uuid.uuid4()
+    task.title = "Guided Meditation"
+    task.estimated_time = 15
+    task.display_order = 1
+    task.sub_tasks = [subtask1, subtask2]
+
+    plan_item = MagicMock()
+    plan_item.id = uuid.uuid4()
+    plan_item.day_number = day_number
+    plan_item.tasks = [task]
+
+    with patch("pecha_api.plans.cms.cms_plans_service.SessionLocal") as mock_session_local, \
+        patch("pecha_api.plans.cms.cms_plans_service.get_plan_day_with_tasks_and_subtasks") as mock_get_day, \
+        patch("pecha_api.plans.cms.cms_plans_service.validate_and_extract_author_details") as mock_validate_author:
+        _ = _mock_session_local(mock_session_local)
+        mock_validate_author.return_value = MagicMock()
+        mock_get_day.return_value = plan_item
+
+        resp = await get_plan_day_details(token="tkn", plan_id=plan_id, day_number=day_number)
+
+        mock_validate_author.assert_called_once_with(token="tkn")
+        mock_get_day.assert_called_once()
+
+        assert resp.id == plan_item.id
+        assert resp.day_number == day_number
+        assert len(resp.tasks) == 1
+
+        t = resp.tasks[0]
+        assert t.id == task.id
+        assert t.title == task.title
+        assert t.estimated_time == task.estimated_time
+        assert t.display_order == task.display_order
+        assert len(t.subtasks) == 2
+        assert t.subtasks[0].id == subtask1.id
+        assert t.subtasks[0].content_type == ContentType.TEXT
+        assert t.subtasks[0].content == subtask1.content
+        assert t.subtasks[0].display_order == 1
+        assert t.subtasks[1].id == subtask2.id
+        assert t.subtasks[1].content_type == ContentType.AUDIO
+        assert t.subtasks[1].content == subtask2.content
+        assert t.subtasks[1].display_order == 2
+
+@pytest.mark.asyncio
+async def test_get_plan_day_details_not_found():
+    non_existent_plan_id = uuid.uuid4()
+    with patch("pecha_api.plans.cms.cms_plans_service.SessionLocal") as mock_session_local, \
+        patch("pecha_api.plans.cms.cms_plans_service.get_plan_day_with_tasks_and_subtasks") as mock_get_day, \
+        patch("pecha_api.plans.cms.cms_plans_service.validate_and_extract_author_details") as mock_validate_author:
+        _ = _mock_session_local(mock_session_local)
+        mock_validate_author.return_value = MagicMock()
+        mock_get_day.side_effect = HTTPException(status_code=404, detail={"error": "Bad request", "message": "Plan day not found"})
+
+        with pytest.raises(HTTPException) as exc_info:
+            await get_plan_day_details(token="tkn", plan_id=non_existent_plan_id, day_number=1)
+
+        assert exc_info.value.status_code == 404
+        assert exc_info.value.detail == {"error": "Bad request", "message": "Plan day not found"}
+@pytest.mark.asyncio
+async def test_get_plan_day_details_no_subtasks():
+    plan_id = uuid.uuid4()
+    day_number = 2
+
+    task = MagicMock()
+    task.id = uuid.uuid4()
+    task.title = "Reading Practice"
+    task.estimated_time = 5
+    task.display_order = 1
+    task.sub_tasks = []
+
+    plan_item = MagicMock()
+    plan_item.id = uuid.uuid4()
+    plan_item.day_number = day_number
+    plan_item.tasks = [task]
+
+    with patch("pecha_api.plans.cms.cms_plans_service.SessionLocal") as mock_session_local, \
+        patch("pecha_api.plans.cms.cms_plans_service.get_plan_day_with_tasks_and_subtasks") as mock_get_day, \
+        patch("pecha_api.plans.cms.cms_plans_service.validate_and_extract_author_details") as mock_validate_author:
+        _ = _mock_session_local(mock_session_local)
+        mock_validate_author.return_value = MagicMock()
+        mock_get_day.return_value = plan_item
+
+        resp = await get_plan_day_details(token="tkn", plan_id=plan_id, day_number=day_number)
+
+        assert resp.id == plan_item.id
+        assert resp.day_number == day_number
+        assert len(resp.tasks) == 1
+        t = resp.tasks[0]
+        assert t.id == task.id
+        assert t.title == task.title
+        assert t.display_order == task.display_order
+        assert t.estimated_time == task.estimated_time
+        assert t.subtasks == []
 @pytest.mark.asyncio
 async def test_get_details_plan_not_found():
     non_existent_id = uuid.uuid4()

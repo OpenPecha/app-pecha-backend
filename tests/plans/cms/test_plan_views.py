@@ -3,8 +3,8 @@ import pytest
 from unittest.mock import patch, AsyncMock
 
 from pecha_api.plans.plans_enums import DifficultyLevel, PlanStatus
-from pecha_api.plans.plans_response_models import CreatePlanRequest, PlanDTO, PlansResponse
-from pecha_api.plans.cms.cms_plans_views import create_plan, get_plans
+from pecha_api.plans.plans_response_models import CreatePlanRequest, PlanDTO, PlansResponse, PlanDayDTO
+from pecha_api.plans.cms.cms_plans_views import create_plan, get_plans, get_plan_day_content
 
 
 class _Creds:
@@ -131,5 +131,39 @@ async def test_get_plans_defaults():
             "skip": 0,
             "limit": 10,
         }
+        assert resp == expected
+
+
+@pytest.mark.asyncio
+async def test_get_plan_day_content_success():
+    creds = _Creds(token="token123")
+    plan_id = uuid.uuid4()
+    day_number = 3
+
+    expected = PlanDayDTO(
+        id=uuid.uuid4(),
+        day_number=day_number,
+        tasks=[],
+    )
+
+    with patch(
+        "pecha_api.plans.cms.cms_plans_views.get_plan_day_details",
+        return_value=expected,
+        new_callable=AsyncMock,
+    ) as mock_service:
+        resp = await get_plan_day_content(
+            authentication_credential=creds,
+            plan_id=plan_id,
+            day_number=day_number,
+        )
+
+        assert mock_service.call_count == 1
+        called_kwargs = mock_service.call_args.kwargs
+        assert called_kwargs == {
+            "token": "token123",
+            "plan_id": plan_id,
+            "day_number": day_number,
+        }
+
         assert resp == expected
 

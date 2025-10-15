@@ -62,6 +62,7 @@ class PlanDayDTO(BaseModel):
     day_number: int
     tasks: List[TaskDTO]
 
+
 class PlanWithDays(BaseModel):
     id: UUID
     title: str
