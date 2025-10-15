@@ -4,7 +4,7 @@ from typing import Optional, List, Dict
 from starlette import status
 from pecha_api.plans.plans_models import Plan
 from pecha_api.plans.items.plan_items_models import PlanItem
-from pecha_api.plans.cms.cms_plans_repository import save_plan, get_plan_by_id
+from pecha_api.plans.cms.cms_plans_repository import save_plan, get_plan_by_id, get_plans_by_author_id
 from pecha_api.plans.items.plan_items_repository import save_plan_items
 from pecha_api.plans.users.plan_users_progress_repository import get_plan_progress
 
@@ -12,12 +12,12 @@ from pecha_api.plans.authors.plan_authors_service import validate_and_extract_au
 from pecha_api.plans.plans_enums import LanguageCode, PlanStatus, ContentType
 from pecha_api.plans.plans_response_models import PlansResponse, PlanDTO, CreatePlanRequest, TaskDTO, PlanDayDTO, \
     PlanWithDays, \
-    UpdatePlanRequest, PlanStatusUpdate, PlansRepositoryResponse, PlanWithAggregates
+    UpdatePlanRequest, PlanStatusUpdate, PlansRepositoryResponse, PlanWithAggregates, AuthorDTO, SubTaskDTO
     
-from pecha_api.plans.cms.cms_plans_repository import get_plans
-from pecha_api.plans.items.plan_items_repository import get_plan_items_by_plan_id
+from pecha_api.plans.items.plan_items_repository import get_plan_items_by_plan_id, get_plan_day_with_tasks_and_subtasks
 from pecha_api.plans.tasks.plan_tasks_repository import get_tasks_by_item_ids
 from pecha_api.plans.tasks.plan_tasks_models import PlanTask
+from pecha_api.plans.tasks.sub_tasks.plan_sub_tasks_models import PlanSubTask
 from sqlalchemy.orm import Session
 
 from pecha_api.db.database import SessionLocal
@@ -93,10 +93,11 @@ DUMMY_DAYS = [
 
 async def get_filtered_plans(token: str, search: Optional[str], sort_by: str, sort_order: str, skip: int, limit: int) -> PlansResponse:
     # Validate token and author context (authorization can be extended later)
-    validate_and_extract_author_details(token=token)
+    current_author = validate_and_extract_author_details(token=token)
     with SessionLocal() as db_session:
-        plan_repository_response : PlansRepositoryResponse = get_plans(
+        plan_repository_response : PlansRepositoryResponse = get_plans_by_author_id(
             db=db_session,
+            author_id=current_author.id,
             search=search,
             sort_by=sort_by,
             sort_order=sort_order,
@@ -120,6 +121,17 @@ async def get_filtered_plans(token: str, search: Optional[str], sort_by: str, so
                 total_days=int(plan_info.total_days or 0),
                 status=PlanStatus(selected_plan.status.value),
                 subscription_count=int(plan_info.subscription_count or 0),
+                author=AuthorDTO(
+                    id=selected_plan.author_id,
+                    firstname=selected_plan.author.first_name,
+                    lastname=selected_plan.author.last_name,
+                    image_url=(
+                        generate_presigned_access_url(
+                            bucket_name=get("AWS_BUCKET_NAME"),
+                            s3_key=selected_plan.author.image_url
+                        )
+                    )
+                )
             )
         )
 
@@ -278,3 +290,36 @@ async def delete_selected_plan(token:str,plan_id: UUID):
     DUMMY_PLANS = [p for p in DUMMY_PLANS if p.id != plan_id]
     # In real implementation, check if plan exists and handle foreign key constraints
     return
+
+def _get_task_subtasks_dto(subtasks: List[PlanSubTask]) -> List[SubTaskDTO]:
+
+    subtasks_dto = [SubTaskDTO(
+        id=subtask.id,
+            content_type=subtask.content_type,
+            content=subtask.content,
+            display_order=subtask.display_order,
+        )
+        for subtask in subtasks
+    ]
+    
+    return subtasks_dto
+
+async def get_plan_day_details(token:str,plan_id: UUID, day_number: int) -> PlanDayDTO:
+    validate_and_extract_author_details(token=token)
+    with SessionLocal() as db:
+        plan_item: PlanItem = get_plan_day_with_tasks_and_subtasks(db=db, plan_id=plan_id, day_number=day_number)
+        plan_day_dto: PlanDayDTO = PlanDayDTO(
+            id=plan_item.id,
+            day_number=plan_item.day_number,
+            tasks=[
+                TaskDTO(
+                    id=task.id,
+                    title=task.title,
+                    estimated_time=task.estimated_time,
+                    display_order=task.display_order,
+                    subtasks=_get_task_subtasks_dto(task.sub_tasks)
+                )
+                for task in plan_item.tasks
+            ]
+        )   
+        return plan_day_dto
