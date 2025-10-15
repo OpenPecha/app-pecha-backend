@@ -3,7 +3,7 @@ import pytest
 from types import SimpleNamespace
 from unittest.mock import patch, MagicMock
 from fastapi import HTTPException
-from pecha_api.plans.response_message import BAD_REQUEST, PLAN_DAY_NOT_FOUND
+from pecha_api.plans.response_message import BAD_REQUEST, PLAN_DAY_NOT_FOUND, FORBIDDEN, UNAUTHORIZED_TASK_ACCESS
 from pecha_api.plans.tasks.plan_tasks_response_model import (
     CreateTaskRequest,
     TaskDTO,
@@ -438,6 +438,7 @@ async def test_get_task_subtasks_service_success():
         title="Sample Task",
         display_order=2,
         estimated_time=30,
+        created_by="creator@example.com",
         sub_tasks=[subtask1, subtask2],
     )
 
@@ -447,6 +448,7 @@ async def test_get_task_subtasks_service_success():
 
     with patch(
         "pecha_api.plans.tasks.plan_tasks_services.validate_and_extract_author_details",
+        return_value=SimpleNamespace(email="creator@example.com"),
     ) as mock_validate, patch(
         "pecha_api.plans.tasks.plan_tasks_services.SessionLocal",
         return_value=session_cm,
@@ -481,6 +483,44 @@ async def test_get_task_subtasks_service_success():
             ],
         )
         assert resp == expected
+
+
+@pytest.mark.asyncio
+async def test_get_task_subtasks_service_forbidden_when_not_creator():
+    task_id = uuid.uuid4()
+
+    mock_task = SimpleNamespace(
+        id=task_id,
+        title="Sample Task",
+        display_order=1,
+        estimated_time=10,
+        created_by="someone_else@example.com",
+        sub_tasks=[],
+    )
+
+    db_mock = MagicMock()
+    session_cm = MagicMock()
+    session_cm.__enter__.return_value = db_mock
+
+    with patch(
+        "pecha_api.plans.tasks.plan_tasks_services.validate_and_extract_author_details",
+        return_value=SimpleNamespace(email="current_user@example.com"),
+    ) as mock_validate, patch(
+        "pecha_api.plans.tasks.plan_tasks_services.SessionLocal",
+        return_value=session_cm,
+    ), patch(
+        "pecha_api.plans.tasks.plan_tasks_services.get_task_by_id",
+        return_value=mock_task,
+    ) as mock_get_task:
+        with pytest.raises(HTTPException) as exc_info:
+            await get_task_subtasks_service(task_id=task_id, token="token789")
+
+        assert exc_info.value.status_code == 403
+        assert exc_info.value.detail["error"] == FORBIDDEN
+        assert exc_info.value.detail["message"] == UNAUTHORIZED_TASK_ACCESS
+
+        assert mock_validate.call_count == 1
+        assert mock_get_task.call_count == 1
 
 
 @pytest.mark.asyncio
