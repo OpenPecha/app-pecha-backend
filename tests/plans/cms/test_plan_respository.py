@@ -9,7 +9,7 @@ from pecha_api.plans.plans_models import Plan
 from pecha_api.plans.items.plan_items_models import PlanItem
 from pecha_api.plans.users.plan_users_model import UserPlanProgress
 from pecha_api.plans.authors.plan_authors_model import Author
-from pecha_api.plans.cms.cms_plans_repository import save_plan, get_plans
+from pecha_api.plans.cms.cms_plans_repository import save_plan, get_plans_by_author_id
 from pecha_api.plans.plans_response_models import PlansRepositoryResponse
 from pecha_api.users.users_models import Users
 
@@ -86,9 +86,10 @@ def test_get_plans_filter_sort_and_pagination(db):
         save_plan(db, p)
 
     # Sort by status ascending (all defaults are DRAFT)
-    repo_resp: PlansRepositoryResponse = get_plans(
+    repo_resp: PlansRepositoryResponse = get_plans_by_author_id(
         db=db,
         search=None,
+        author_id=author.id,
         sort_by="status",
         sort_order="asc",
         skip=0,
@@ -100,9 +101,10 @@ def test_get_plans_filter_sort_and_pagination(db):
     assert set(["A Plan", "B Plan", "C Plan"]) <= set(titles)
 
     # Search filter
-    repo_resp = get_plans(
+    repo_resp = get_plans_by_author_id(
         db=db,
         search="A",
+        author_id=author.id,
         sort_by="status",
         sort_order="asc",
         skip=0,
@@ -112,9 +114,10 @@ def test_get_plans_filter_sort_and_pagination(db):
     assert all("A" in r.plan.title for r in repo_resp.plan_info)
 
     # Pagination
-    repo_resp = get_plans(
+    repo_resp = get_plans_by_author_id(
         db=db,
         search=None,
+        author_id=author.id,
         sort_by="status",
         sort_order="asc",
         skip=1,
@@ -148,9 +151,10 @@ def test_get_plans_sort_by_total_days_desc(db):
             db.add(item)
         db.commit()
 
-    repo_resp = get_plans(
+    repo_resp = get_plans_by_author_id(
         db=db,
         search=None,
+        author_id=author.id,
         sort_by="total_days",
         sort_order="desc",
         skip=0,
