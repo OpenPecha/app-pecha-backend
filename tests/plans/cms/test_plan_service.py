@@ -41,7 +41,9 @@ def test_create_new_plan_success():
     saved_plan.id = uuid.uuid4()
     saved_plan.title = request.title
     saved_plan.description = request.description
+    saved_plan.difficulty_level = request.difficulty_level
     saved_plan.image_url = request.image_url
+    saved_plan.tags = request.tags
     saved_plan.language = request.language
     saved_plan.status = PlanStatus.DRAFT
 
@@ -422,6 +424,11 @@ async def test_update_plan_details_increase_total_days():
     
     mock_plan = MagicMock(spec=Plan)
     mock_plan.id = plan_id
+    mock_plan.title = "Test Plan"
+    mock_plan.description = "Test Description"
+    mock_plan.difficulty_level = DifficultyLevel.BEGINNER
+    mock_plan.image_url = None
+    mock_plan.tags = []
     mock_plan.language = MagicMock(value="en")
     mock_plan.status = PlanStatus.DRAFT
     
@@ -472,6 +479,11 @@ async def test_update_plan_details_decrease_total_days():
     
     mock_plan = MagicMock(spec=Plan)
     mock_plan.id = plan_id
+    mock_plan.title = "Test Plan"
+    mock_plan.description = "Test Description"
+    mock_plan.difficulty_level = DifficultyLevel.BEGINNER
+    mock_plan.image_url = None
+    mock_plan.tags = []
     mock_plan.language = MagicMock(value="en")
     mock_plan.status = PlanStatus.DRAFT
     
@@ -546,7 +558,11 @@ async def test_update_plan_details_with_image_url_generation():
     
     mock_plan = MagicMock(spec=Plan)
     mock_plan.id = plan_id
+    mock_plan.title = "Test Plan"
+    mock_plan.description = "Test Description"
+    mock_plan.difficulty_level = DifficultyLevel.BEGINNER
     mock_plan.image_url = "images/plan_images/test.jpg"
+    mock_plan.tags = []
     mock_plan.language = MagicMock(value="en")
     mock_plan.status = PlanStatus.DRAFT
     
@@ -594,7 +610,11 @@ async def test_update_plan_details_image_url_generation_failure():
     
     mock_plan = MagicMock(spec=Plan)
     mock_plan.id = plan_id
+    mock_plan.title = "Test Plan"
+    mock_plan.description = "Test Description"
+    mock_plan.difficulty_level = DifficultyLevel.BEGINNER
     mock_plan.image_url = "images/plan_images/test.jpg"
+    mock_plan.tags = []
     mock_plan.language = MagicMock(value="en")
     mock_plan.status = PlanStatus.DRAFT
     
@@ -639,7 +659,11 @@ async def test_update_plan_details_no_image_url():
     
     mock_plan = MagicMock(spec=Plan)
     mock_plan.id = plan_id
+    mock_plan.title = "Test Plan"
+    mock_plan.description = "Test Description"
+    mock_plan.difficulty_level = DifficultyLevel.BEGINNER
     mock_plan.image_url = None
+    mock_plan.tags = []
     mock_plan.language = MagicMock(value="en")
     mock_plan.status = PlanStatus.DRAFT
     
@@ -670,7 +694,6 @@ async def test_update_plan_details_no_image_url():
         )
         
         assert response.image_url is None
-        assert "Plan not found" in str(exc_info.value.detail)
 
 
 @pytest.mark.asyncio
