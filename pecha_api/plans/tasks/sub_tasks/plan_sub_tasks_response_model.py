@@ -26,10 +26,10 @@ class SubTaskDTO(BaseModel):
 class SubTaskResponse(BaseModel):
     sub_tasks: List[SubTaskDTO]
 
+
 class UpdateSubTaskRequest(BaseModel):
-    current_display_order: Optional[int] = None
-    target_display_order: Optional[int] = None
-    content: Optional[str] = None
+    task_id: UUID
+    sub_tasks: List[SubTaskDTO]
 
 class UpdateSubTaskResponse(BaseModel):
     sub_task_id: UUID

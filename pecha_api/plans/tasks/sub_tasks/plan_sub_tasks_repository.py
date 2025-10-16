@@ -41,11 +41,23 @@ def save_sub_tasks_bulk(db: Session, sub_tasks: List[PlanSubTask]) -> List[PlanS
 def get_sub_task_by_id(db: Session, sub_task_id: UUID) -> PlanSubTask:
     return db.query(PlanSubTask).filter(PlanSubTask.id == sub_task_id).first()
 
-def update_sub_task(db: Session, sub_task_id: UUID, update_sub_task_request: UpdateSubTaskRequest) -> PlanSubTask:
-    sub_task = get_sub_task_by_id(db=db, sub_task_id=sub_task_id)
-    if not sub_task:
-        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=ResponseError(error=BAD_REQUEST, message=ErrorConstants.SUB_TASK_NOT_FOUND).model_dump())
-    sub_task.display_order = update_sub_task_request.target_display_order
-    sub_task.content = update_sub_task_request.content
+
+def get_sub_tasks_by_task_id(db: Session, task_id: UUID) -> List[PlanSubTask]:
+    return db.query(PlanSubTask).filter(PlanSubTask.task_id == task_id).order_by(PlanSubTask.display_order).all()
+
+def delete_sub_tasks_bulk(db: Session, sub_tasks_ids: List[UUID]) -> None:
+    if not sub_tasks_ids:
+        return
+    db.query(PlanSubTask).filter(PlanSubTask.id.in_(sub_tasks_ids)).delete()
     db.commit()
-    return sub_task
+
+def update_sub_tasks_bulk(db: Session, sub_tasks: List[PlanSubTask]) -> None:
+    if not sub_tasks:
+        return
+    for sub_task in sub_tasks:    
+        db.query(PlanSubTask).filter(PlanSubTask.id == sub_task.id).update(
+            display_order=sub_task.display_order,
+            content=sub_task.content,
+            content_type=sub_task.content_type
+        )
+    db.commit()
