@@ -280,28 +280,6 @@ async def update_plan_details(token: str, plan_id: UUID, update_plan_request: Up
         
         plan = update_plan(db, plan)
         
-        if update_plan_request.total_days is not None:
-
-            existing_items = get_plan_items_by_plan_id(db, plan_id)
-            current_total_days = len(existing_items)
-            requested_total_days = update_plan_request.total_days
-            
-            if requested_total_days > current_total_days:
-
-                new_items = [
-                    PlanItem(
-                        plan_id=plan_id,
-                        day_number=day,
-                        created_by=author_details.email
-                    )
-                    for day in range(current_total_days + 1, requested_total_days + 1)
-                ]
-                save_plan_items(db=db, plan_items=new_items)
-            elif requested_total_days < current_total_days:
-                items_to_remove = sorted(existing_items, key=lambda x: x.day_number, reverse=True)
-                items_to_delete = items_to_remove[:current_total_days - requested_total_days]
-                delete_plan_items(db=db, plan_items=items_to_delete)
-        
         image_url = None
         plan_image_url = plan.image_url
         if plan_image_url:
