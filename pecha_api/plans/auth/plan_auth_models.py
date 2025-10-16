@@ -64,3 +64,10 @@ class ResetPasswordRequest(BaseModel):
 
 class EmailReVerificationResponse(BaseModel):
     message: str
+
+class RefreshTokenRequest(BaseModel):
+    token: str
+
+class RefreshTokenResponse(BaseModel):
+    access_token: str
+    token_type: str
