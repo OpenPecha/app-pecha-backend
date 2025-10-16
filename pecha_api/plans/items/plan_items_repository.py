@@ -1,7 +1,8 @@
 
 from sqlalchemy.exc import IntegrityError
-from sqlalchemy.orm import Session
+from sqlalchemy.orm import Session, joinedload
 from .plan_items_models import PlanItem
+from pecha_api.plans.tasks.plan_tasks_models import PlanTask
 from fastapi import HTTPException
 from starlette import status
 from sqlalchemy import func, asc
@@ -83,3 +84,20 @@ def delete_plan_items(db: Session, plan_items: List[PlanItem]) -> None:
                 message="Failed to delete plan items"
             ).model_dump()
         )
+
+
+def get_plan_day_with_tasks_and_subtasks(db: Session, plan_id: UUID, day_number: int) -> PlanItem:
+
+    plan_item = (
+        db.query(PlanItem)
+        .options(
+            joinedload(PlanItem.tasks).joinedload(PlanTask.sub_tasks)
+        )
+        .filter(PlanItem.plan_id == plan_id, PlanItem.day_number == day_number)
+        .first()
+    )
+
+    if not plan_item:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND,detail=ResponseError(error=BAD_REQUEST, message=PLAN_DAY_NOT_FOUND).model_dump())
+        
+    return plan_item

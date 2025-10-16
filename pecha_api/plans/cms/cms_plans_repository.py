@@ -1,5 +1,5 @@
 from sqlalchemy.exc import IntegrityError
-from sqlalchemy.orm import Session, joinedload
+from sqlalchemy.orm import Session, joinedload, selectinload
 from sqlalchemy import func, asc, desc
 from typing import Optional
 from uuid import UUID
@@ -9,7 +9,6 @@ from pecha_api.plans.users.plan_users_model import UserPlanProgress
 from fastapi import HTTPException
 from starlette import status
 from pecha_api.plans.plans_response_models import PlansRepositoryResponse, PlanWithAggregates
-from uuid import UUID
 
 def save_plan(db: Session, plan: Plan):
     try:
@@ -23,16 +22,17 @@ def save_plan(db: Session, plan: Plan):
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=f"{e.orig}")
 
 
-def get_plans(
+def get_plans_by_author_id(
     db: Session,
     search: Optional[str],
+    author_id: UUID,
     sort_by: str,
     sort_order: str,
     skip: int,
     limit: int,
 ) -> PlansRepositoryResponse:
     # Filters
-    filters = [Plan.deleted_at.is_(None)]
+    filters = [Plan.deleted_at.is_(None), Plan.author_id == author_id]
     if search:
         filters.append(Plan.title.ilike(f"%{search}%"))
 
@@ -49,6 +49,7 @@ def get_plans(
         )
         .outerjoin(PlanItem, PlanItem.plan_id == Plan.id)
         .outerjoin(UserPlanProgress, UserPlanProgress.plan_id == Plan.id)
+        .options(selectinload(Plan.author))
         .filter(*filters)
         .group_by(Plan.id)
     )

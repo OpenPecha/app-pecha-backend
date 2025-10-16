@@ -5,6 +5,8 @@ from uuid import UUID
 
 # Request/Response Models
 class CreateTaskRequest(BaseModel):
+    plan_id: UUID
+    day_id: UUID
     title: str
     description: Optional[str] = None
     estimated_time: Optional[int] = None
