@@ -6,7 +6,7 @@ from pecha_api.plans.plans_models import Plan
 from pecha_api.plans.items.plan_items_models import PlanItem
 from pecha_api.plans.users.plan_users_model import UserPlanProgress
 from pecha_api.plans.cms.cms_plans_repository import save_plan, get_plan_by_id, update_plan
-from pecha_api.plans.items.plan_items_repository import save_plan_items
+from pecha_api.plans.items.plan_items_repository import save_plan_items, delete_plan_items
 from pecha_api.plans.users.plan_users_progress_repository import get_plan_progress
 
 from pecha_api.plans.authors.plan_authors_service import validate_and_extract_author_details
@@ -288,12 +288,9 @@ async def update_plan_details(token: str, plan_id: UUID, update_plan_request: Up
                 ]
                 save_plan_items(db=db, plan_items=new_items)
             elif requested_total_days < current_total_days:
-
                 items_to_remove = sorted(existing_items, key=lambda x: x.day_number, reverse=True)
-                for i in range(current_total_days - requested_total_days):
-                    item_to_delete = items_to_remove[i]
-                    db.delete(item_to_delete)
-                db.commit()
+                items_to_delete = items_to_remove[:current_total_days - requested_total_days]
+                delete_plan_items(db=db, plan_items=items_to_delete)
         
         image_url = None
         plan_image_url = plan.image_url

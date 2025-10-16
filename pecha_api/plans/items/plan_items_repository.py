@@ -66,3 +66,20 @@ def get_plan_items_by_plan_id(db: Session, plan_id: UUID) -> List[PlanItem]:
 
 def get_last_day_number(db: Session, plan_id: UUID) -> int:
     return db.query(func.max(PlanItem.day_number)).filter(PlanItem.plan_id == plan_id).scalar() or 0
+
+def delete_plan_items(db: Session, plan_items: List[PlanItem]) -> None:
+   
+    try:
+        for item in plan_items:
+            db.delete(item)
+        db.commit()
+    except Exception as e:
+        db.rollback()
+        print(f"Error deleting plan items: {e}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=ResponseError(
+                error="DATABASE_ERROR",
+                message="Failed to delete plan items"
+            ).model_dump()
+        )
