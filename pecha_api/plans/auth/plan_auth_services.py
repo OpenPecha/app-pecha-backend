@@ -266,7 +266,7 @@ def refresh_access_token(refresh_token: str):
             )
     except jwt.ExpiredSignatureError:
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Refresh token expired")
-    except jwt.PyJWTError:
+    except jwt.JWTError:
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid refresh token")
 
 def _validate_token(token: str):

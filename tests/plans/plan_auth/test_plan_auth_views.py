@@ -7,6 +7,7 @@ from pecha_api.app import api
 from pecha_api.plans.auth.plan_auth_models import AuthorDetails
 from pecha_api.plans.auth.plan_auth_enums import AuthorStatus
 from pecha_api.plans.auth.plan_auth_models import AuthorVerificationResponse, EmailReVerificationResponse
+from pecha_api.plans.auth.plan_auth_models import RefreshTokenResponse
 from pecha_api.plans.response_message import EMAIL_VERIFIED_SUCCESS, EMAIL_IS_SENT, BAD_REQUEST, AUTHOR_NOT_FOUND
 
 client = TestClient(api)
@@ -277,3 +278,36 @@ def test_email_re_verification_author_not_found_404():
 
         assert response.status_code == status.HTTP_404_NOT_FOUND
         assert response.json()["detail"] == {"error": BAD_REQUEST, "message": AUTHOR_NOT_FOUND}
+
+
+def test_refresh_token_success():
+    request_payload = {"token": "refresh_token_value"}
+
+    expected = RefreshTokenResponse(access_token="new_access", token_type="Bearer")
+    with patch("pecha_api.plans.auth.plan_auth_views.refresh_access_token", return_value=expected) as mock_refresh:
+        response = client.post("cms/auth/refresh-token", json=request_payload)
+
+        assert response.status_code == status.HTTP_200_OK
+        data = response.json()
+        assert data["access_token"] == "new_access"
+        assert data["token_type"] == "Bearer"
+        mock_refresh.assert_called_once_with("refresh_token_value")
+
+
+def test_refresh_token_missing_field_422():
+    response = client.post("cms/auth/refresh-token", json={})
+    assert response.status_code == status.HTTP_422_UNPROCESSABLE_ENTITY
+    detail = response.json()["detail"]
+    assert any(err.get("loc") == ["body", "token"] for err in detail)
+
+
+def test_refresh_token_invalid_401():
+    from fastapi import HTTPException
+
+    with patch("pecha_api.plans.auth.plan_auth_views.refresh_access_token") as mock_refresh:
+        mock_refresh.side_effect = HTTPException(status_code=401, detail="Invalid refresh token")
+
+        response = client.post("cms/auth/refresh-token", json={"token": "bad"})
+
+        assert response.status_code == status.HTTP_401_UNAUTHORIZED
+        assert response.json()["detail"] == "Invalid refresh token"
