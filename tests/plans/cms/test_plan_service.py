@@ -474,7 +474,7 @@ async def test_update_plan_details_increase_total_days():
 
 @pytest.mark.asyncio
 async def test_update_plan_details_decrease_total_days():
-    """Test decreasing total_days removes plan items"""
+    """Test decreasing total_days removes plan items using repository pattern"""
     plan_id = uuid.uuid4()
     
     mock_plan = MagicMock(spec=Plan)
@@ -489,14 +489,14 @@ async def test_update_plan_details_decrease_total_days():
     
     existing_items = [MagicMock(spec=PlanItem, day_number=i) for i in range(1, 9)]
     
-
     update_request = UpdatePlanRequest(total_days=5)
     
     with patch("pecha_api.plans.cms.cms_plans_service.SessionLocal") as mock_session_local, \
          patch("pecha_api.plans.cms.cms_plans_service.validate_and_extract_author_details") as mock_validate_author, \
          patch("pecha_api.plans.cms.cms_plans_service.get_plan_by_id") as mock_get_plan, \
          patch("pecha_api.plans.cms.cms_plans_service.update_plan") as mock_update_plan, \
-         patch("pecha_api.plans.cms.cms_plans_service.get_plan_items_by_plan_id") as mock_get_items:
+         patch("pecha_api.plans.cms.cms_plans_service.get_plan_items_by_plan_id") as mock_get_items, \
+         patch("pecha_api.plans.cms.cms_plans_service.delete_plan_items") as mock_delete_items:
         
         db_session = _mock_session_local(mock_session_local)
         db_session.query.return_value.filter.return_value.scalar.return_value = 0
@@ -517,8 +517,14 @@ async def test_update_plan_details_decrease_total_days():
             update_plan_request=update_request
         )
         
-        assert db_session.delete.call_count == 3
-        db_session.commit.assert_called()
+        mock_delete_items.assert_called_once()
+        call_args = mock_delete_items.call_args
+        deleted_items = call_args.kwargs['plan_items']
+        
+        
+        assert len(deleted_items) == 3
+        deleted_day_numbers = sorted([item.day_number for item in deleted_items], reverse=True)
+        assert deleted_day_numbers == [8, 7, 6]
         
         assert response.total_days == 5
 
