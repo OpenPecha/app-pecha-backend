@@ -1,7 +1,7 @@
 
 from uuid import UUID
 from sqlalchemy.exc import IntegrityError
-from sqlalchemy.orm import Session
+from sqlalchemy.orm import Session, joinedload
 from sqlalchemy import func
 from fastapi import HTTPException
 from starlette import status
@@ -40,7 +40,12 @@ def get_tasks_by_item_ids(db: Session, plan_item_ids: List[UUID]) -> List[PlanTa
     return tasks
 
 def get_task_by_id(db: Session, task_id: UUID) -> PlanTask:
-    task = db.query(PlanTask).filter(PlanTask.id == task_id).first()
+    task = (
+        db.query(PlanTask)
+        .options(joinedload(PlanTask.sub_tasks))
+        .filter(PlanTask.id == task_id)
+        .first()
+    )
     if not task:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=ResponseError(error=BAD_REQUEST, message=TASK_NOT_FOUND).model_dump())
     return task
