@@ -218,7 +218,7 @@ async def test_get_task_subtasks_service_image_content_uses_presigned_url():
     image_key = "plans/tasks/images/img-123.png"
     subtask_image = SimpleNamespace(
         id=uuid.uuid4(),
-        content_type="IMAGE",  # ensure string to match service check
+        content_type=ContentType.IMAGE,  # enum to match service comparison
         content=image_key,
         display_order=1,
     )

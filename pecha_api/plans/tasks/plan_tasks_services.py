@@ -14,6 +14,7 @@ from pecha_api.plans.response_message import PLAN_DAY_NOT_FOUND, BAD_REQUEST, TA
 from pecha_api.plans.auth.plan_auth_models import ResponseError
 from pecha_api.uploads.S3_utils import generate_presigned_access_url
 from pecha_api.config import get
+from pecha_api.plans.plans_enums import ContentType
 
 def _get_max_display_order(plan_item_id: UUID) -> int:
     with SessionLocal() as db:
@@ -104,7 +105,9 @@ async def get_task_subtasks_service(task_id: UUID, token: str) -> GetTaskRespons
         )
 
 def _get_content_by_content_type(content_type: str, content: str) -> str:
-    if content_type == "IMAGE":
+    
+    if content_type == ContentType.IMAGE:
         return generate_presigned_access_url(bucket_name=get("AWS_BUCKET_NAME"), s3_key=content)
-    else:
-        return content 
+    return content
+
+    
