@@ -1,5 +1,4 @@
 from typing import List
-from uuid import UUID
 
 from fastapi import HTTPException
 from starlette import status
@@ -7,7 +6,6 @@ from starlette import status
 from pecha_api.db.database import SessionLocal
 from pecha_api.plans.auth.plan_auth_models import ResponseError
 from pecha_api.plans.authors.plan_authors_service import validate_and_extract_author_details
-from pecha_api.plans.plans_enums import ContentType
 from pecha_api.plans.response_message import BAD_REQUEST, FORBIDDEN, UNAUTHORIZED_TASK_ACCESS
 from pecha_api.plans.tasks.plan_tasks_repository import get_task_by_id
 from pecha_api.plans.tasks.sub_tasks.plan_sub_tasks_models import PlanSubTask
@@ -24,7 +22,6 @@ from pecha_api.plans.tasks.sub_tasks.plan_sub_tasks_response_model import (
     SubTaskRequest,
     SubTaskResponse,
     UpdateSubTaskRequest,
-    UpdateSubTaskResponse,
 )
 from pecha_api.error_contants import ErrorConstants
 
@@ -68,7 +65,7 @@ async def create_new_sub_tasks(token: str, create_task_request: SubTaskRequest) 
             sub_tasks=created_sub_tasks,
         )
 
-async def update_sub_task_by_task_id(token: str, update_sub_task_request: UpdateSubTaskRequest) -> UpdateSubTaskResponse:
+async def update_sub_task_by_task_id(token: str, update_sub_task_request: UpdateSubTaskRequest) -> None:
     current_author = validate_and_extract_author_details(token=token)
 
     with SessionLocal() as db:
@@ -87,6 +84,4 @@ async def update_sub_task_by_task_id(token: str, update_sub_task_request: Update
 
         delete_sub_tasks_bulk(db=db, sub_tasks_ids=sub_tasks_ids_to_delete)
 
-        update_sub_tasks_bulk(db=db, sub_tasks=sub_tasks_to_update)
-
-
+        update_sub_tasks_bulk(db=db, sub_tasks=update_sub_task_request)

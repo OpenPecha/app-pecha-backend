@@ -8,10 +8,9 @@ from sqlalchemy.orm import Session
 from starlette import status
 
 from pecha_api.plans.auth.plan_auth_models import ResponseError
-from pecha_api.plans.response_message import BAD_REQUEST, SUB_TASK_NOT_FOUND
+from pecha_api.plans.response_message import BAD_REQUEST
 from pecha_api.plans.tasks.sub_tasks.plan_sub_tasks_models import PlanSubTask
 from pecha_api.plans.tasks.sub_tasks.plan_sub_tasks_response_model import UpdateSubTaskRequest
-from pecha_api.error_contants import ErrorConstants
 
 
 def get_max_display_order_for_sub_task(db: Session, task_id: UUID) -> int:
@@ -51,13 +50,16 @@ def delete_sub_tasks_bulk(db: Session, sub_tasks_ids: List[UUID]) -> None:
     db.query(PlanSubTask).filter(PlanSubTask.id.in_(sub_tasks_ids)).delete()
     db.commit()
 
-def update_sub_tasks_bulk(db: Session, sub_tasks: List[PlanSubTask]) -> None:
-    if not sub_tasks:
+def update_sub_tasks_bulk(db: Session, input_payload: UpdateSubTaskRequest) -> None:
+    if not input_payload.sub_tasks:
         return
-    for sub_task in sub_tasks:    
+    for sub_task in input_payload.sub_tasks:
         db.query(PlanSubTask).filter(PlanSubTask.id == sub_task.id).update(
-            display_order=sub_task.display_order,
-            content=sub_task.content,
-            content_type=sub_task.content_type
+            {
+                PlanSubTask.content: sub_task.content,
+                PlanSubTask.content_type: sub_task.content_type,
+                PlanSubTask.display_order: sub_task.display_order,
+            },
+            synchronize_session=False,
         )
     db.commit()
