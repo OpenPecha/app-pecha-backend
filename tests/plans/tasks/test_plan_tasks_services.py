@@ -211,6 +211,74 @@ async def test_delete_task_by_id_unauthorized():
 
 
 @pytest.mark.asyncio
+async def test_get_task_subtasks_service_image_content_uses_presigned_url():
+    task_id = uuid.uuid4()
+
+    # subtask with IMAGE content should be transformed to presigned URL
+    image_key = "plans/tasks/images/img-123.png"
+    subtask_image = SimpleNamespace(
+        id=uuid.uuid4(),
+        content_type=ContentType.IMAGE,  # enum to match service comparison
+        content=image_key,
+        display_order=1,
+    )
+
+    mock_task = SimpleNamespace(
+        id=task_id,
+        title="Task with image",
+        display_order=1,
+        estimated_time=5,
+        created_by="creator@example.com",
+        sub_tasks=[subtask_image],
+    )
+
+    db_mock = MagicMock()
+    session_cm = MagicMock()
+    session_cm.__enter__.return_value = db_mock
+
+    presigned = "https://signed-url.example.com/img-123.png?sig=abc"
+
+    with patch(
+        "pecha_api.plans.tasks.plan_tasks_services.validate_and_extract_author_details",
+        return_value=SimpleNamespace(email="creator@example.com"),
+    ) as mock_validate, patch(
+        "pecha_api.plans.tasks.plan_tasks_services.SessionLocal",
+        return_value=session_cm,
+    ), patch(
+        "pecha_api.plans.tasks.plan_tasks_services.get_task_by_id",
+        return_value=mock_task,
+    ) as mock_get_task, patch(
+        "pecha_api.plans.tasks.plan_tasks_services.get",
+        return_value="my-bucket",
+    ) as mock_get_cfg, patch(
+        "pecha_api.plans.tasks.plan_tasks_services.generate_presigned_access_url",
+        return_value=presigned,
+    ) as mock_presign:
+        resp = await get_task_subtasks_service(task_id=task_id, token="token789")
+
+        assert mock_validate.call_count == 1
+        assert mock_get_task.call_count == 1
+        assert mock_get_cfg.call_count == 1
+        mock_presign.assert_called_once_with(bucket_name="my-bucket", s3_key=image_key)
+
+        expected = GetTaskResponse(
+            id=mock_task.id,
+            title=mock_task.title,
+            display_order=mock_task.display_order,
+            estimated_time=mock_task.estimated_time,
+            subtasks=[
+                SubTaskDTO(
+                    id=subtask_image.id,
+                    content_type=ContentType.IMAGE,
+                    content=presigned,
+                    display_order=subtask_image.display_order,
+                ),
+            ],
+        )
+        assert resp == expected
+
+
+@pytest.mark.asyncio
 async def test_delete_task_by_id_task_not_found():
     """Test task deletion fails when task doesn't exist."""
     task_id = uuid.uuid4()
