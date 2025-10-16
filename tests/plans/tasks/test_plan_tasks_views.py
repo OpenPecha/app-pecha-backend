@@ -2,8 +2,8 @@ import uuid
 import pytest
 from unittest.mock import patch, AsyncMock
 from fastapi import HTTPException
-from pecha_api.plans.tasks.plan_tasks_response_model import CreateTaskRequest, TaskDTO, UpdateTaskDayRequest, UpdatedTaskDayResponse
-from pecha_api.plans.tasks.plan_tasks_views import create_task, change_task_day, delete_task
+from pecha_api.plans.tasks.plan_tasks_response_model import CreateTaskRequest, TaskDTO, UpdateTaskDayRequest, UpdatedTaskDayResponse, GetTaskResponse
+from pecha_api.plans.tasks.plan_tasks_views import create_task, change_task_day, delete_task, get_task
 
 
 class _Creds:
@@ -203,4 +203,58 @@ async def test_change_task_day_success():
         }
 
         assert resp == expected
+
+
+@pytest.mark.asyncio
+async def test_get_task_success_with_subtasks():
+    task_id = uuid.uuid4()
+
+    creds = _Creds(token="token789")
+
+    expected = GetTaskResponse(
+        id=task_id,
+        title="Sample Task",
+        display_order=2,
+        estimated_time=30,
+        subtasks=[],
+    )
+
+    with patch(
+        "pecha_api.plans.tasks.plan_tasks_views.get_task_subtasks_service",
+        return_value=expected,
+        new_callable=AsyncMock,
+    ) as mock_get:
+        resp = await get_task(
+            task_id=task_id,
+            authentication_credential=creds,
+        )
+
+        assert mock_get.call_count == 1
+        assert mock_get.call_args.kwargs == {
+            "task_id": task_id,
+            "token": "token789",
+        }
+
+        assert resp == expected
+
+
+@pytest.mark.asyncio
+async def test_get_task_not_found():
+    task_id = uuid.uuid4()
+    creds = _Creds(token="token789")
+
+    with patch(
+        "pecha_api.plans.tasks.plan_tasks_views.get_task_subtasks_service",
+        new_callable=AsyncMock,
+        side_effect=HTTPException(status_code=404, detail={"error": "NOT_FOUND", "message": "Task not found"}),
+    ) as mock_get:
+        with pytest.raises(HTTPException) as exc_info:
+            await get_task(
+                task_id=task_id,
+                authentication_credential=creds,
+            )
+
+        assert exc_info.value.status_code == 404
+        assert mock_get.call_count == 1
+
 
