@@ -107,4 +107,4 @@ def _get_content_by_content_type(content_type: str, content: str) -> str:
     if content_type == "IMAGE":
         return generate_presigned_access_url(bucket_name=get("AWS_BUCKET_NAME"), s3_key=content)
     else:
-        return content
+        return content 
