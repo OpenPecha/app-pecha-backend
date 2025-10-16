@@ -84,4 +84,4 @@ async def update_sub_task_by_task_id(token: str, update_sub_task_request: Update
 
         delete_sub_tasks_bulk(db=db, sub_tasks_ids=sub_tasks_ids_to_delete)
 
-        update_sub_tasks_bulk(db=db, sub_tasks=update_sub_task_request)
+        update_sub_tasks_bulk(db=db, sub_tasks=update_sub_task_request.sub_tasks)
