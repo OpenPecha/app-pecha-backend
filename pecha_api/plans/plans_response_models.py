@@ -37,8 +37,11 @@ class PlanDTO(BaseModel):
     title: str
     description: str
     language: str
+    difficulty_level: Optional[DifficultyLevel] = None
     image_url: Optional[str] = None
+    plan_image_url: Optional[str] = None
     total_days: int
+    tags: Optional[List[str]] = []
     status: PlanStatus
     subscription_count: int
     author: Optional[AuthorDTO] = None
@@ -69,6 +72,7 @@ class PlanWithDays(BaseModel):
     description: str
     language: str
     image_url: Optional[str] = None
+    plan_image_url: Optional[str] = None
     total_days: int
     difficulty_level: str
     tags: List[str]

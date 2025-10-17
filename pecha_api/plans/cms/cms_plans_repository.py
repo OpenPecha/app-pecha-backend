@@ -1,4 +1,3 @@
-
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session, joinedload, selectinload
 from sqlalchemy import func, asc, desc
@@ -86,3 +85,25 @@ def get_plan_by_id(db: Session, plan_id: UUID) -> Plan:
 
 def get_plan_by_id_with_items_and_tasks(db: Session, plan_id: UUID) -> Plan:
     return db.query(Plan).filter(Plan.id == plan_id).options(joinedload(Plan.items), joinedload(Plan.tasks)).first()
+
+def update_plan(db: Session, plan: Plan) -> Plan:
+
+    try:
+        db.add(plan)
+        db.commit()
+        db.refresh(plan)
+        return plan
+    except IntegrityError as e:
+        db.rollback()
+        print(f"Integrity error while updating plan: {e.orig}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Failed to update plan: {e.orig}"
+        )
+    except Exception as e:
+        db.rollback()
+        print(f"Error updating plan: {str(e)}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Failed to update plan: {str(e)}"
+        )

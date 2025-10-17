@@ -41,7 +41,9 @@ def test_create_new_plan_success():
     saved_plan.id = uuid.uuid4()
     saved_plan.title = request.title
     saved_plan.description = request.description
+    saved_plan.difficulty_level = request.difficulty_level
     saved_plan.image_url = request.image_url
+    saved_plan.tags = request.tags
     saved_plan.language = request.language
     saved_plan.status = PlanStatus.DRAFT
 
@@ -428,51 +430,301 @@ async def test_get_details_plan_not_found():
 
 @pytest.mark.asyncio
 async def test_update_plan_details_success():
-    # Get a test plan from DUMMY_PLANS
-    test_plan = DUMMY_PLANS[0]
+    plan_id = uuid.uuid4()
+    author_email = "author@example.com"
+    
+    mock_plan = MagicMock(spec=Plan)
+    mock_plan.id = plan_id
+    mock_plan.title = "Original Title"
+    mock_plan.description = "Original Description"
+    mock_plan.difficulty_level = DifficultyLevel.BEGINNER
+    mock_plan.image_url = "images/plan_images/original.jpg"
+    mock_plan.tags = ["original"]
+    mock_plan.language = MagicMock(value="en")
+    mock_plan.status = PlanStatus.DRAFT
+    
+    existing_items = [MagicMock(spec=PlanItem, day_number=i) for i in range(1, 6)]
     
     update_request = UpdatePlanRequest(
         title="Updated Title",
         description="Updated Description",
-        total_days=10,
-        image_url="https://example.com/updated.jpg"
+        difficulty_level=DifficultyLevel.INTERMEDIATE,
+        image_url="images/plan_images/updated.jpg",
+        tags=["updated", "test"],
+        total_days=5
     )
     
-    with patch("pecha_api.plans.cms.cms_plans_service.validate_and_extract_author_details") as mock_validate_author:
-        mock_validate_author.return_value = MagicMock()
+    with patch("pecha_api.plans.cms.cms_plans_service.SessionLocal") as mock_session_local, \
+         patch("pecha_api.plans.cms.cms_plans_service.validate_and_extract_author_details") as mock_validate_author, \
+         patch("pecha_api.plans.cms.cms_plans_service.get_plan_by_id") as mock_get_plan, \
+         patch("pecha_api.plans.cms.cms_plans_service.update_plan") as mock_update_plan, \
+         patch("pecha_api.plans.cms.cms_plans_service.get_plan_items_by_plan_id") as mock_get_items, \
+         patch("pecha_api.plans.cms.cms_plans_service.generate_presigned_access_url") as mock_presigned_url, \
+         patch("pecha_api.plans.cms.cms_plans_service.get") as mock_get_config:
+        
+        db_session = _mock_session_local(mock_session_local)
+        db_session.query.return_value.filter.return_value.scalar.return_value = 10  
+        
+        mock_author = MagicMock()
+        mock_author.email = author_email
+        mock_validate_author.return_value = mock_author
+        
+        mock_get_plan.return_value = mock_plan
+        mock_update_plan.return_value = mock_plan
+        mock_get_items.return_value = existing_items
+        mock_presigned_url.return_value = "https://s3.amazonaws.com/presigned-url"
+        mock_get_config.return_value = "test-bucket"
         
         response = await update_plan_details(
-            token="dummy-token",
-            plan_id=test_plan.id,
+            token="test-token",
+            plan_id=plan_id,
             update_plan_request=update_request
         )
         
-        # Verify response
-        assert response is not None
-        assert response.id == test_plan.id
+        mock_validate_author.assert_called_once_with(token="test-token")
+        mock_get_plan.assert_called_once_with(db_session, plan_id)
+        mock_update_plan.assert_called_once_with(db_session, mock_plan)
+        
+        assert mock_plan.title == update_request.title
+        assert mock_plan.description == update_request.description
+        assert mock_plan.difficulty_level == update_request.difficulty_level
+        assert mock_plan.image_url == update_request.image_url
+        assert mock_plan.tags == update_request.tags
+        assert mock_plan.updated_by == author_email
+        
+        assert response.id == plan_id
         assert response.title == update_request.title
         assert response.description == update_request.description
-        assert response.total_days == update_request.total_days
-        assert response.image_url == update_request.image_url
+        assert response.difficulty_level == update_request.difficulty_level
+        assert response.total_days == 5
+        assert response.subscription_count == 10
+
+
+@pytest.mark.asyncio
+async def test_update_plan_details_partial_update():
+    """Test updating only some fields (partial update)"""
+    plan_id = uuid.uuid4()
+    
+    mock_plan = MagicMock(spec=Plan)
+    mock_plan.id = plan_id
+    mock_plan.title = "Original Title"
+    mock_plan.description = "Original Description"
+    mock_plan.difficulty_level = DifficultyLevel.BEGINNER
+    mock_plan.image_url = "images/original.jpg"
+    mock_plan.tags = ["original"]
+    mock_plan.language = MagicMock(value="en")
+    mock_plan.status = PlanStatus.DRAFT
+    
+    existing_items = [MagicMock(spec=PlanItem, day_number=i) for i in range(1, 6)]
+    
+    update_request = UpdatePlanRequest(
+        title="New Title",
+        description="New Description"
+    )
+    
+    with patch("pecha_api.plans.cms.cms_plans_service.SessionLocal") as mock_session_local, \
+         patch("pecha_api.plans.cms.cms_plans_service.validate_and_extract_author_details") as mock_validate_author, \
+         patch("pecha_api.plans.cms.cms_plans_service.get_plan_by_id") as mock_get_plan, \
+         patch("pecha_api.plans.cms.cms_plans_service.update_plan") as mock_update_plan, \
+         patch("pecha_api.plans.cms.cms_plans_service.get_plan_items_by_plan_id") as mock_get_items:
+        
+        db_session = _mock_session_local(mock_session_local)
+        db_session.query.return_value.filter.return_value.scalar.return_value = 5
+        
+        mock_author = MagicMock()
+        mock_author.email = "author@example.com"
+        mock_validate_author.return_value = mock_author
+        
+        mock_get_plan.return_value = mock_plan
+        mock_update_plan.return_value = mock_plan
+        mock_get_items.return_value = existing_items
+        
+        response = await update_plan_details(
+            token="test-token",
+            plan_id=plan_id,
+            update_plan_request=update_request
+        )
+        
+        assert mock_plan.title == "New Title"
+        assert mock_plan.description == "New Description"
+        assert mock_plan.difficulty_level == DifficultyLevel.BEGINNER
+        assert mock_plan.image_url == "images/original.jpg"
+        assert mock_plan.tags == ["original"]
+
+        assert response.total_days == 5
 
 
 @pytest.mark.asyncio
 async def test_update_plan_details_not_found():
+    """Test updating non-existent plan returns 404"""
     non_existent_id = uuid.uuid4()
     update_request = UpdatePlanRequest(title="Updated Title")
     
-    with patch("pecha_api.plans.cms.cms_plans_service.validate_and_extract_author_details") as mock_validate_author:
-        mock_validate_author.return_value = MagicMock()
+    with patch("pecha_api.plans.cms.cms_plans_service.SessionLocal") as mock_session_local, \
+         patch("pecha_api.plans.cms.cms_plans_service.validate_and_extract_author_details") as mock_validate_author, \
+         patch("pecha_api.plans.cms.cms_plans_service.get_plan_by_id") as mock_get_plan:
+        
+        _mock_session_local(mock_session_local)
+        
+        mock_author = MagicMock()
+        mock_validate_author.return_value = mock_author
+        
+        mock_get_plan.return_value = None  
         
         with pytest.raises(HTTPException) as exc_info:
             await update_plan_details(
-                token="dummy-token",
+                token="test-token",
                 plan_id=non_existent_id,
                 update_plan_request=update_request
             )
         
         assert exc_info.value.status_code == 404
-        assert "Plan not found" in str(exc_info.value.detail)
+        assert "not found" in exc_info.value.detail.lower()
+
+
+@pytest.mark.asyncio
+async def test_update_plan_details_with_image_url_generation():
+    """Test that image_url is properly generated with presigned URL"""
+    plan_id = uuid.uuid4()
+    
+    mock_plan = MagicMock(spec=Plan)
+    mock_plan.id = plan_id
+    mock_plan.title = "Test Plan"
+    mock_plan.description = "Test Description"
+    mock_plan.difficulty_level = DifficultyLevel.BEGINNER
+    mock_plan.image_url = "images/plan_images/test.jpg"
+    mock_plan.tags = []
+    mock_plan.language = MagicMock(value="en")
+    mock_plan.status = PlanStatus.DRAFT
+    
+    existing_items = [MagicMock(spec=PlanItem, day_number=1)]
+    
+    update_request = UpdatePlanRequest(title="Test Plan")
+    
+    with patch("pecha_api.plans.cms.cms_plans_service.SessionLocal") as mock_session_local, \
+         patch("pecha_api.plans.cms.cms_plans_service.validate_and_extract_author_details") as mock_validate_author, \
+         patch("pecha_api.plans.cms.cms_plans_service.get_plan_by_id") as mock_get_plan, \
+         patch("pecha_api.plans.cms.cms_plans_service.update_plan") as mock_update_plan, \
+         patch("pecha_api.plans.cms.cms_plans_service.get_plan_items_by_plan_id") as mock_get_items, \
+         patch("pecha_api.plans.cms.cms_plans_service.generate_presigned_access_url") as mock_presigned_url, \
+         patch("pecha_api.plans.cms.cms_plans_service.get") as mock_get_config:
+        
+        db_session = _mock_session_local(mock_session_local)
+        db_session.query.return_value.filter.return_value.scalar.return_value = 0
+        
+        mock_author = MagicMock()
+        mock_validate_author.return_value = mock_author
+        
+        mock_get_plan.return_value = mock_plan
+        mock_update_plan.return_value = mock_plan
+        mock_get_items.return_value = existing_items
+        
+        presigned_url = "https://s3.amazonaws.com/bucket/test.jpg?signature=xyz"
+        mock_presigned_url.return_value = presigned_url
+        mock_get_config.return_value = "test-bucket"
+        
+        response = await update_plan_details(
+            token="test-token",
+            plan_id=plan_id,
+            update_plan_request=update_request
+        )
+        
+        mock_get_config.assert_called_with("AWS_BUCKET_NAME")
+        mock_presigned_url.assert_called_once_with("test-bucket", "images/plan_images/test.jpg")
+        assert response.image_url == presigned_url
+
+
+@pytest.mark.asyncio
+async def test_update_plan_details_image_url_generation_failure():
+    """Test that original image_url is used when presigned URL generation fails"""
+    plan_id = uuid.uuid4()
+    
+    mock_plan = MagicMock(spec=Plan)
+    mock_plan.id = plan_id
+    mock_plan.title = "Test Plan"
+    mock_plan.description = "Test Description"
+    mock_plan.difficulty_level = DifficultyLevel.BEGINNER
+    mock_plan.image_url = "images/plan_images/test.jpg"
+    mock_plan.tags = []
+    mock_plan.language = MagicMock(value="en")
+    mock_plan.status = PlanStatus.DRAFT
+    
+    existing_items = [MagicMock(spec=PlanItem, day_number=1)]
+    
+    update_request = UpdatePlanRequest(title="Test Plan")
+    
+    with patch("pecha_api.plans.cms.cms_plans_service.SessionLocal") as mock_session_local, \
+         patch("pecha_api.plans.cms.cms_plans_service.validate_and_extract_author_details") as mock_validate_author, \
+         patch("pecha_api.plans.cms.cms_plans_service.get_plan_by_id") as mock_get_plan, \
+         patch("pecha_api.plans.cms.cms_plans_service.update_plan") as mock_update_plan, \
+         patch("pecha_api.plans.cms.cms_plans_service.get_plan_items_by_plan_id") as mock_get_items, \
+         patch("pecha_api.plans.cms.cms_plans_service.generate_presigned_access_url") as mock_presigned_url, \
+         patch("pecha_api.plans.cms.cms_plans_service.get") as mock_get_config:
+        
+        db_session = _mock_session_local(mock_session_local)
+        db_session.query.return_value.filter.return_value.scalar.return_value = 0
+        
+        mock_author = MagicMock()
+        mock_validate_author.return_value = mock_author
+        
+        mock_get_plan.return_value = mock_plan
+        mock_update_plan.return_value = mock_plan
+        mock_get_items.return_value = existing_items
+        
+        mock_presigned_url.side_effect = Exception("S3 error")
+        mock_get_config.return_value = "test-bucket"
+        
+        response = await update_plan_details(
+            token="test-token",
+            plan_id=plan_id,
+            update_plan_request=update_request
+        )
+        
+        assert response.image_url == "images/plan_images/test.jpg"
+
+
+@pytest.mark.asyncio
+async def test_update_plan_details_no_image_url():
+    """Test updating plan with no image_url"""
+    plan_id = uuid.uuid4()
+    
+    mock_plan = MagicMock(spec=Plan)
+    mock_plan.id = plan_id
+    mock_plan.title = "Test Plan"
+    mock_plan.description = "Test Description"
+    mock_plan.difficulty_level = DifficultyLevel.BEGINNER
+    mock_plan.image_url = None
+    mock_plan.tags = []
+    mock_plan.language = MagicMock(value="en")
+    mock_plan.status = PlanStatus.DRAFT
+    
+    existing_items = [MagicMock(spec=PlanItem, day_number=1)]
+    
+    update_request = UpdatePlanRequest(title="Test Plan")
+    
+    with patch("pecha_api.plans.cms.cms_plans_service.SessionLocal") as mock_session_local, \
+         patch("pecha_api.plans.cms.cms_plans_service.validate_and_extract_author_details") as mock_validate_author, \
+         patch("pecha_api.plans.cms.cms_plans_service.get_plan_by_id") as mock_get_plan, \
+         patch("pecha_api.plans.cms.cms_plans_service.update_plan") as mock_update_plan, \
+         patch("pecha_api.plans.cms.cms_plans_service.get_plan_items_by_plan_id") as mock_get_items:
+        
+        db_session = _mock_session_local(mock_session_local)
+        db_session.query.return_value.filter.return_value.scalar.return_value = 0
+        
+        mock_author = MagicMock()
+        mock_validate_author.return_value = mock_author
+        
+        mock_get_plan.return_value = mock_plan
+        mock_update_plan.return_value = mock_plan
+        mock_get_items.return_value = existing_items
+        
+        response = await update_plan_details(
+            token="test-token",
+            plan_id=plan_id,
+            update_plan_request=update_request
+        )
+        
+        assert response.image_url is None
 
 
 @pytest.mark.asyncio
