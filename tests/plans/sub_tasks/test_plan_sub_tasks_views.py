@@ -7,8 +7,9 @@ from pecha_api.plans.tasks.sub_tasks.plan_sub_tasks_response_model import (
     SubTaskRequest,
     SubTaskRequestFields,
     SubTaskResponse,
+    UpdateSubTaskRequest,
 )
-from pecha_api.plans.tasks.sub_tasks.plan_sub_tasks_views import create_sub_tasks
+from pecha_api.plans.tasks.sub_tasks.plan_sub_tasks_views import create_sub_tasks, update_sub_task
 
 
 class _Creds:
@@ -54,4 +55,39 @@ async def test_create_sub_tasks_success():
 
         assert resp == expected
 
+
+
+@pytest.mark.asyncio
+async def test_update_sub_task_no_content_success():
+    task_id = uuid.uuid4()
+    sub_task_1_id = uuid.uuid4()
+    sub_task_2_id = uuid.uuid4()
+
+    request = UpdateSubTaskRequest(
+        task_id=task_id,
+        sub_tasks=[
+            SubTaskDTO(id=sub_task_1_id, content_type="TEXT", content="First updated", display_order=1),
+            SubTaskDTO(id=sub_task_2_id, content_type="TEXT", content="Second updated", display_order=2),
+        ],
+    )
+
+    creds = _Creds(token="token123")
+
+    with patch(
+        "pecha_api.plans.tasks.sub_tasks.plan_sub_tasks_views.update_sub_task_by_task_id",
+        return_value=None,
+        new_callable=AsyncMock,
+    ) as mock_update:
+        resp = await update_sub_task(
+            authentication_credential=creds,
+            update_sub_task_request=request,
+        )
+
+        assert mock_update.call_count == 1
+        assert mock_update.call_args.kwargs == {
+            "token": "token123",
+            "update_sub_task_request": request,
+        }
+
+        assert resp is None
 

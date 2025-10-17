@@ -8,8 +8,9 @@ from pecha_api.plans.tasks.sub_tasks.plan_sub_tasks_response_model import (
     SubTaskRequest,
     SubTaskRequestFields,
     SubTaskResponse,
+    UpdateSubTaskRequest,
 )
-from pecha_api.plans.tasks.sub_tasks.plan_sub_tasks_services import create_new_sub_tasks
+from pecha_api.plans.tasks.sub_tasks.plan_sub_tasks_services import create_new_sub_tasks, update_sub_task_by_task_id
 from pecha_api.plans.response_message import BAD_REQUEST
 
 
@@ -169,4 +170,70 @@ async def test_create_new_sub_tasks_task_not_found_raises_http_exception():
         # message is set from ErrorConstants.TASK_NOT_FOUND; validate presence
         assert "not found" in detail["message"].lower()
 
+
+
+@pytest.mark.asyncio
+async def test_update_sub_task_by_task_id_deletes_missing_and_updates_existing_and_returns_none():
+    task_id = uuid.uuid4()
+    existing_to_keep_id = uuid.uuid4()
+    existing_to_delete_id = uuid.uuid4()
+
+    request = UpdateSubTaskRequest(
+        task_id=task_id,
+        sub_tasks=[
+            SubTaskDTO(id=existing_to_keep_id, content_type="TEXT", content="First updated", display_order=1),
+        ],
+    )
+
+    db_mock = MagicMock()
+    session_cm = MagicMock()
+    session_cm.__enter__.return_value = db_mock
+
+    with patch(
+        "pecha_api.plans.tasks.sub_tasks.plan_sub_tasks_services.validate_and_extract_author_details",
+        return_value=SimpleNamespace(email="author@example.com"),
+    ) as mock_validate, patch(
+        "pecha_api.plans.tasks.sub_tasks.plan_sub_tasks_services.SessionLocal",
+        return_value=session_cm,
+    ) as mock_session, patch(
+        "pecha_api.plans.tasks.sub_tasks.plan_sub_tasks_services.get_task_by_id",
+        return_value=SimpleNamespace(id=task_id, created_by="author@example.com"),
+    ) as mock_get_task, patch(
+        "pecha_api.plans.tasks.sub_tasks.plan_sub_tasks_services.get_sub_tasks_by_task_id",
+        return_value=[
+            SimpleNamespace(id=existing_to_keep_id),
+            SimpleNamespace(id=existing_to_delete_id),
+        ],
+    ) as mock_get_subtasks, patch(
+        "pecha_api.plans.tasks.sub_tasks.plan_sub_tasks_services.delete_sub_tasks_bulk",
+    ) as mock_delete_bulk, patch(
+        "pecha_api.plans.tasks.sub_tasks.plan_sub_tasks_services.update_sub_tasks_bulk",
+    ) as mock_update_bulk:
+        resp = await update_sub_task_by_task_id(
+            token="token123",
+            update_sub_task_request=request,
+        )
+
+        assert mock_validate.call_count == 1
+        assert mock_validate.call_args.kwargs == {"token": "token123"}
+
+        assert mock_session.call_count == 1
+        assert mock_get_task.call_count == 1
+
+        assert mock_get_subtasks.call_count == 1
+        assert mock_get_subtasks.call_args.kwargs == {"db": db_mock, "task_id": task_id}
+
+        # deleted only the missing id
+        assert mock_delete_bulk.call_count == 1
+        delete_kwargs = mock_delete_bulk.call_args.kwargs
+        assert delete_kwargs["db"] is db_mock
+        assert delete_kwargs["sub_tasks_ids"] == [existing_to_delete_id]
+
+        # update called with provided DTOs list
+        assert mock_update_bulk.call_count == 1
+        update_kwargs = mock_update_bulk.call_args.kwargs
+        assert update_kwargs["db"] is db_mock
+        assert update_kwargs["sub_tasks"] == request.sub_tasks
+
+        assert resp is None
 

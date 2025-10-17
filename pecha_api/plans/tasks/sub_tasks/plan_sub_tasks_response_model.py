@@ -1,7 +1,9 @@
 from pydantic import BaseModel
+from typing import Optional
 from pecha_api.plans.plans_enums import ContentType
 from typing import List
 from uuid import UUID
+
 
 
 
@@ -23,3 +25,11 @@ class SubTaskDTO(BaseModel):
 
 class SubTaskResponse(BaseModel):
     sub_tasks: List[SubTaskDTO]
+
+
+class UpdateSubTaskRequest(BaseModel):
+    task_id: UUID
+    sub_tasks: List[SubTaskDTO]
+
+class UpdateSubTaskResponse(BaseModel):
+    sub_task_id: UUID
