@@ -3,11 +3,11 @@ from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 
 from .plan_auth_models import CreateAuthorRequest, AuthorDetails, AuthorVerificationResponse, AuthorLoginRequest, AuthorLoginResponse, PasswordResetRequest, ResetPasswordRequest
 from starlette import status
-from .plan_auth_services import register_author, verify_author_email, re_verify_email
+from .plan_auth_services import register_author, verify_author_email, re_verify_email, refresh_access_token
 from typing import Annotated
 oauth2_scheme = HTTPBearer()
 from .plan_auth_services import authenticate_and_generate_tokens, request_reset_password, update_password
-from .plan_auth_models import EmailReVerificationResponse
+from .plan_auth_models import EmailReVerificationResponse, RefreshTokenRequest, RefreshTokenResponse
 
 
 plan_auth_router = APIRouter(
@@ -45,3 +45,8 @@ async def password_reset_request(reset_request: PasswordResetRequest):
 def password_reset(reset_password_request: ResetPasswordRequest,
                    authentication_credential: Annotated[HTTPAuthorizationCredentials, Depends(oauth2_scheme)]):
     update_password(token=authentication_credential.credentials, password=reset_password_request.password)
+
+
+@plan_auth_router.post("/refresh-token", status_code=status.HTTP_200_OK)
+def refresh_token(refresh_token_request: RefreshTokenRequest) -> RefreshTokenResponse:
+    return refresh_access_token(refresh_token_request.token)

@@ -1,7 +1,7 @@
 import secrets
 from .plan_auth_enums import AuthorStatus
 from .plan_auth_models import CreateAuthorRequest, AuthorDetails, TokenPayload, \
-    AuthorVerificationResponse, ResponseError, TokenResponse, AuthorLoginResponse, AuthorInfo, EmailReVerificationResponse
+    AuthorVerificationResponse, ResponseError, TokenResponse, AuthorLoginResponse, AuthorInfo, EmailReVerificationResponse, RefreshTokenResponse
 from pecha_api.plans.authors.plan_authors_model import Author, AuthorPasswordReset
 from pecha_api.db.database import SessionLocal
 from pecha_api.plans.authors.plan_authors_repository import save_author, get_author_by_email, update_author, check_author_exists
@@ -16,6 +16,7 @@ from pecha_api.config import get
 from pecha_api.notification.email_provider import send_email
 from jinja2 import Template
 from pathlib import Path
+from typing import Dict, Any
 from pecha_api.plans.response_message import (
     PASSWORD_EMPTY,
     PASSWORD_LENGTH_INVALID,
@@ -244,3 +245,35 @@ def re_verify_email(email: str) -> EmailReVerificationResponse:
             raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=ResponseError(error=BAD_REQUEST, message=AUTHOR_NOT_FOUND).model_dump())
         _send_verification_email(email=email)
     return EmailReVerificationResponse(message=EMAIL_IS_SENT)
+
+
+def refresh_access_token(refresh_token: str):
+    try:
+        payload = _validate_token(refresh_token)
+        author_email = payload.get("email")
+        if author_email is None:
+            raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid refresh token")
+        with SessionLocal() as db_session:
+            author = get_author_by_email(
+                db=db_session,
+                email=author_email
+            )
+            data = generate_author_token_data(author)
+            access_token = create_access_token(data=data)
+            return RefreshTokenResponse(
+                access_token=access_token,
+                token_type="Bearer"
+            )
+    except jwt.ExpiredSignatureError:
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Refresh token expired")
+    except jwt.JWTError:
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid refresh token")
+
+def _validate_token(token: str):
+    return jwt.decode(
+        token,
+        get("JWT_SECRET_KEY"),
+        algorithms=[get("JWT_ALGORITHM")],
+        audience=get("JWT_AUD")
+    )
+

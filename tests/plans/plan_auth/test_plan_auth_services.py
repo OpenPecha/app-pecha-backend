@@ -22,6 +22,7 @@ from pecha_api.plans.auth.plan_auth_services import (
     generate_token_author,
     generate_author_token_data,
     re_verify_email,
+    refresh_access_token,
 )
 from pecha_api.plans.auth.plan_auth_models import CreateAuthorRequest, AuthorVerificationResponse, AuthorInfo, TokenResponse, AuthorLoginResponse
 from pecha_api.plans.response_message import (
@@ -763,3 +764,65 @@ def test_re_verify_email_author_not_found():
         except HTTPException as e:
             assert e.status_code == status.HTTP_404_NOT_FOUND
             assert e.detail == {"error": BAD_REQUEST, "message": AUTHOR_NOT_FOUND}
+
+
+def test_refresh_access_token_success():
+    refresh_token = "refresh123"
+
+    payload = {"email": "john.doe@example.com"}
+    author = MagicMock()
+    author.first_name = "John"
+    author.last_name = "Doe"
+    author.email = "john.doe@example.com"
+
+    with patch("pecha_api.plans.auth.plan_auth_services._validate_token", return_value=payload) as mock_validate, \
+         patch("pecha_api.plans.auth.plan_auth_services.SessionLocal") as mock_session_local, \
+         patch("pecha_api.plans.auth.plan_auth_services.get_author_by_email", return_value=author) as mock_get_author, \
+         patch("pecha_api.plans.auth.plan_auth_services.generate_author_token_data", return_value={"email": "john.doe@example.com"}) as mock_token_data, \
+         patch("pecha_api.plans.auth.plan_auth_services.create_access_token", return_value="new_access") as mock_create_access:
+
+        _mock_session_local(mock_session_local)
+
+        resp = refresh_access_token(refresh_token)
+
+        mock_validate.assert_called_once_with(refresh_token)
+        mock_get_author.assert_called_once()
+        mock_token_data.assert_called_once()
+        mock_create_access.assert_called_once()
+
+        assert resp.access_token == "new_access"
+        assert resp.token_type == "Bearer"
+
+
+def test_refresh_access_token_missing_email_401():
+    with patch("pecha_api.plans.auth.plan_auth_services._validate_token", return_value={}) as mock_validate:
+        try:
+            refresh_access_token("tok")
+            assert False, "Expected HTTPException"
+        except HTTPException as e:
+            assert e.status_code == 401
+            assert e.detail == "Invalid refresh token"
+
+
+def test_refresh_access_token_expired_signature_401():
+    from jose import jwt as jose_jwt
+    with patch("pecha_api.plans.auth.plan_auth_services._validate_token") as mock_validate:
+        mock_validate.side_effect = jose_jwt.ExpiredSignatureError
+        try:
+            refresh_access_token("tok")
+            assert False, "Expected HTTPException"
+        except HTTPException as e:
+            assert e.status_code == 401
+            assert e.detail == "Refresh token expired"
+
+
+def test_refresh_access_token_invalid_token_401():
+    from jose import jwt as jose_jwt
+    with patch("pecha_api.plans.auth.plan_auth_services._validate_token") as mock_validate:
+        mock_validate.side_effect = jose_jwt.JWTError
+        try:
+            refresh_access_token("tok")
+            assert False, "Expected HTTPException"
+        except HTTPException as e:
+            assert e.status_code == 401
+            assert e.detail == "Invalid refresh token"
