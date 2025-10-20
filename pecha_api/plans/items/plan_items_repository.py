@@ -101,3 +101,34 @@ def get_plan_day_with_tasks_and_subtasks(db: Session, plan_id: UUID, day_number:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND,detail=ResponseError(error=BAD_REQUEST, message=PLAN_DAY_NOT_FOUND).model_dump())
         
     return plan_item
+
+
+def get_day_by_plan_day_id(db: Session, plan_id: UUID, day_id: UUID) -> PlanItem:
+    return db.query(PlanItem).filter(PlanItem.id == day_id, PlanItem.plan_id == plan_id).first()
+
+
+def delete_day_by_id(db: Session, plan_id: UUID, day_id: UUID) -> None:
+    try:
+        db.query(PlanItem).filter(PlanItem.id == day_id, PlanItem.plan_id == plan_id).delete()
+        db.commit()
+    except Exception as e:
+        db.rollback()
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=ResponseError(error=BAD_REQUEST, message=str(e)).model_dump())
+
+
+def get_days_by_plan_id(db: Session, plan_id: UUID) -> List[PlanItem]:
+    return (
+        db.query(PlanItem)
+        .filter(PlanItem.plan_id == plan_id)
+        .order_by(asc(PlanItem.day_number))
+        .all()
+    )
+
+
+def update_day_by_id(db: Session, plan_id: UUID, day_id: UUID, day_number: int) -> None:
+    try:
+        db.query(PlanItem).filter(PlanItem.id == day_id, PlanItem.plan_id == plan_id).update({"day_number": day_number})
+        db.commit()
+    except Exception as e:
+        db.rollback()
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=ResponseError(error=BAD_REQUEST, message=str(e)).model_dump())

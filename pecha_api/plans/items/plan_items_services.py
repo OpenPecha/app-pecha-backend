@@ -1,5 +1,5 @@
 from uuid import UUID
-from .plan_items_repository import save_plan_item, get_last_day_number
+from .plan_items_repository import save_plan_item, get_last_day_number, get_day_by_plan_day_id, delete_day_by_id, get_days_by_plan_id, update_day_by_id
 from pecha_api.plans.cms.cms_plans_repository import get_plan_by_id
 from .plan_items_models import PlanItem
 from .plan_items_response_models import ItemDTO
@@ -25,3 +25,24 @@ def create_plan_item(token: str, plan_id: UUID) -> ItemDTO:
         plan_id=saved_item.plan_id,
         day_number=saved_item.day_number
     )
+
+def delete_plan_day_by_id(token: str, plan_id: UUID, day_id: UUID) -> None:
+    validate_and_extract_author_details(token=token)
+
+    with SessionLocal() as db_session:
+        plan = get_plan_by_id(db=db_session, plan_id=plan_id)
+        item = get_day_by_plan_day_id(db=db_session, plan_id=plan.id, day_id=day_id)
+        delete_day_by_id(db=db_session, plan_id=plan.id, day_id=item.id)
+        _reorder_day_display_order(db=db_session, plan_id=plan.id)
+
+
+
+def _reorder_day_display_order(db: SessionLocal(), plan_id: UUID) -> None:
+
+    items = get_days_by_plan_id(db=db, plan_id=plan_id)
+    sorted_items = sorted(items, key=lambda x: x.day_number)
+    
+    for index, item in enumerate(sorted_items, start=1):
+        update_day_by_id(db=db, plan_id=plan_id, day_id=item.id, day_number=index)
+
+
