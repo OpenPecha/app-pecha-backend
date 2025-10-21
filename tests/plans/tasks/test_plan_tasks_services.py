@@ -271,6 +271,7 @@ async def test_get_task_subtasks_service_image_content_uses_presigned_url():
                     id=subtask_image.id,
                     content_type=ContentType.IMAGE,
                     content=presigned,
+                    image_key=image_key,
                     display_order=subtask_image.display_order,
                 ),
             ],
