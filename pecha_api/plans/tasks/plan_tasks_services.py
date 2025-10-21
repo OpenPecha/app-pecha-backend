@@ -91,6 +91,7 @@ async def get_task_subtasks_service(task_id: UUID, token: str) -> GetTaskRespons
                 id=sub_task.id,
                 content_type=sub_task.content_type,
                 content=_get_content_by_content_type(content_type=sub_task.content_type, content=sub_task.content),
+                image_key=_get_image_key_by_content_image(content=sub_task.content, content_type=sub_task.content_type),
                 display_order=sub_task.display_order,
             )
             for sub_task in task.sub_tasks
@@ -110,4 +111,7 @@ def _get_content_by_content_type(content_type: str, content: str) -> str:
         return generate_presigned_access_url(bucket_name=get("AWS_BUCKET_NAME"), s3_key=content)
     return content
 
-    
+def _get_image_key_by_content_image(content: str, content_type: str) -> str:
+    if content_type == ContentType.IMAGE:
+        return content
+    return None
