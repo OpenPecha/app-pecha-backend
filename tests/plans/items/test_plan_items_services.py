@@ -117,7 +117,7 @@ def test_delete_plan_day_success_reorders():
 
     with patch("pecha_api.plans.items.plan_items_services.SessionLocal") as mock_session_local, \
          patch("pecha_api.plans.items.plan_items_services.validate_and_extract_author_details") as mock_validate_author, \
-         patch("pecha_api.plans.items.plan_items_services.get_plan_by_id") as mock_get_plan_by_id, \
+         patch("pecha_api.plans.items.plan_items_services.get_plan_by_id_and_created_by") as mock_get_plan_by_id, \
          patch("pecha_api.plans.items.plan_items_services.get_day_by_plan_day_id") as mock_get_day, \
          patch("pecha_api.plans.items.plan_items_services.delete_day_by_id") as mock_delete, \
          patch("pecha_api.plans.items.plan_items_services.get_days_by_plan_id") as mock_get_days, \
@@ -160,7 +160,7 @@ def test_delete_plan_day_not_found():
 
     with patch("pecha_api.plans.items.plan_items_services.SessionLocal") as mock_session_local, \
          patch("pecha_api.plans.items.plan_items_services.validate_and_extract_author_details") as mock_validate_author, \
-         patch("pecha_api.plans.items.plan_items_services.get_plan_by_id") as mock_get_plan_by_id, \
+         patch("pecha_api.plans.items.plan_items_services.get_plan_by_id_and_created_by") as mock_get_plan_by_id, \
          patch("pecha_api.plans.items.plan_items_services.get_day_by_plan_day_id") as mock_get_day:
         _ = _mock_session_local(mock_session_local)
 
@@ -204,7 +204,7 @@ def test_delete_plan_day_repository_error():
 
     with patch("pecha_api.plans.items.plan_items_services.SessionLocal") as mock_session_local, \
          patch("pecha_api.plans.items.plan_items_services.validate_and_extract_author_details") as mock_validate_author, \
-         patch("pecha_api.plans.items.plan_items_services.get_plan_by_id") as mock_get_plan_by_id, \
+         patch("pecha_api.plans.items.plan_items_services.get_plan_by_id_and_created_by") as mock_get_plan_by_id, \
          patch("pecha_api.plans.items.plan_items_services.get_day_by_plan_day_id") as mock_get_day, \
          patch("pecha_api.plans.items.plan_items_services.delete_day_by_id") as mock_delete:
         _ = _mock_session_local(mock_session_local)
