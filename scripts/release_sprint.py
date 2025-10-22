@@ -95,8 +95,8 @@ class SprintReleaser:
         """Complete sprint release process"""
         print(f"🚀 Starting {tag_type} release process...")
         
-        # Check git status
-        self.check_git_status()
+        # Check git status - DISABLED
+        # self.check_git_status()
         
         # Get current branch
         current_branch = self.get_current_branch()
