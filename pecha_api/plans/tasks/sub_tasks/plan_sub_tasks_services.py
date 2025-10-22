@@ -77,9 +77,16 @@ async def update_sub_task_by_task_id(token: str, update_sub_task_request: Update
             raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail=ResponseError(error=FORBIDDEN, message=UNAUTHORIZED_TASK_ACCESS).model_dump())
 
     
+        new_sub_tasks_to_create: List[PlanSubTask] = [subtask for subtask in update_sub_task_request.sub_tasks if subtask.id is None]
+    
+        if new_sub_tasks_to_create:
+            save_sub_tasks_bulk(db=db, sub_tasks=new_sub_tasks_to_create)
+
+        existing_sub_tasks_to_update = [subtask for subtask in update_sub_task_request.sub_tasks if subtask.id is not None]
+
         sub_tasks = get_sub_tasks_by_task_id(db=db, task_id=update_sub_task_request.task_id)
         sub_tasks_ids = [sub_task.id for sub_task in sub_tasks]
-        requested_sub_tasks_ids = [sub_task.id for sub_task in update_sub_task_request.sub_tasks]
+        requested_sub_tasks_ids = [sub_task.id for sub_task in existing_sub_tasks_to_update]
         sub_tasks_ids_to_delete = [id for id in sub_tasks_ids if id not in requested_sub_tasks_ids]
 
         delete_sub_tasks_bulk(db=db, sub_tasks_ids=sub_tasks_ids_to_delete)

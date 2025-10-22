@@ -18,7 +18,7 @@ class SubTaskRequest(BaseModel):
 
 
 class SubTaskDTO(BaseModel):
-    id: UUID
+    id: Optional[UUID]
     content_type: ContentType
     content: str
     display_order: int
