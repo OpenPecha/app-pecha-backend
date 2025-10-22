@@ -1,0 +1,59 @@
+name: Auto Sprint Release
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  sprint-release:
+    runs-on: ubuntu-latest
+    
+    permissions:
+      contents: write  # Required for creating tags and pushing commits
+      
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      with:
+        fetch-depth: 0  # Fetch full history for proper git operations
+        token: ${{ secrets.GITHUB_TOKEN }}
+      
+    - name: Configure Git
+      run: |
+        git config --global user.name "github-actions[bot]"
+        git config --global user.email "github-actions[bot]@users.noreply.github.com"
+      
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.11'
+        
+    - name: Install Poetry
+      uses: snok/install-poetry@v1
+      with:
+        version: latest
+        virtualenvs-create: true
+        virtualenvs-in-project: true
+        
+    - name: Load cached venv
+      id: cached-poetry-dependencies
+      uses: actions/cache@v3
+      with:
+        path: .venv
+        key: venv-${{ runner.os }}-${{ steps.setup-python.outputs.python-version }}-${{ hashFiles('**/poetry.lock') }}
+        
+    - name: Install dependencies
+      if: steps.cached-poetry-dependencies.outputs.cache-hit != 'true'
+      run: poetry install --no-interaction --no-root
+      
+    - name: Run sprint release script
+      run: poetry run python scripts/release_sprint.py --type sprint
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        
+    - name: Notify on failure
+      if: failure()
+      run: |
+        echo "❌ Sprint release failed! Check the workflow logs for details."
+        exit 1
