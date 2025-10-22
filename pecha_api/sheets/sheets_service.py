@@ -1,5 +1,6 @@
 import os
 import uuid
+import re
 from typing import Optional, Dict, List
 import hashlib
 from fastapi import UploadFile, HTTPException, status
@@ -9,10 +10,11 @@ from pecha_api.texts.texts_models import Text
 from pecha_api.error_contants import ErrorConstants
 from pecha_api.config import get
 from .sheets_response_models import CreateSheetRequest, SheetImageResponse, Publisher
-from ..uploads.S3_utils import upload_bytes, generate_presigned_upload_url
+from ..uploads.S3_utils import upload_bytes, generate_presigned_access_url
 from pecha_api.image_utils import ImageUtils
 from pecha_api.utils import Utils
 from pecha_api.texts.texts_utils import TextUtils
+from pecha_api.texts.texts_cache_service import update_text_details_cache
 
 from pecha_api.users.users_models import Users
 
@@ -39,15 +41,13 @@ from pecha_api.texts.groups.groups_service import (
 
 from pecha_api.texts.texts_response_models import (
     CreateTextRequest,
-    UpdateTextRequest,
-    TextDTOResponse
+    UpdateTextRequest
 )
 from pecha_api.texts.texts_service import (
     create_new_text,
     create_table_of_content,
     remove_table_of_content_by_text_id,
     update_text_details,
-    get_table_of_contents_by_text_id,
     delete_text_by_text_id,
     get_sheet,
     get_table_of_content_by_sheet_id
@@ -61,10 +61,10 @@ from pecha_api.texts.texts_enums import TextType
 from pecha_api.texts.texts_response_models import (
     TextDTO,
     TableOfContent,
-    TableOfContentResponse,
     Section,
     TextSegment
 )
+from pecha_api.texts.mappings.mappings_repository import get_sheet_first_content_by_ids
 
 from pecha_api.texts.segments.segments_models import SegmentType
 from pecha_api.texts.segments.segments_response_models import (
@@ -88,8 +88,67 @@ from pecha_api.sheets.sheets_response_models import (
     SheetDTOResponse,
     SheetDTO
 )
+from pecha_api.texts.texts_cache_service import (
+    delete_text_details_by_id_cache,
+    delete_table_of_content_by_sheet_id_cache
+)
+from pecha_api.texts.segments.segments_cache_service import (
+    delete_segments_details_by_ids_cache
+)
+
+from pecha_api.cache.cache_enums import CacheType
+from pecha_api.cache.cache_repository import update_cache
+from pecha_api.utils import Utils
+import logging
 
 DEFAULT_SHEET_SECTION_NUMBER = 1
+
+def _strip_html_tags_(html_content: str) -> str:
+    #Remove HTML tags from content and return clean text.
+    clean = re.compile('<.*?>')
+    return re.sub(clean, '', html_content).strip()
+
+async def _generate_sheet_summary_(sheet_id: str) -> str:
+    # Generate a summary from the first content segment limited to max_words.
+    try:
+        # Get sheet table of content
+        sheet_table_of_content: Optional[TableOfContent] = await get_table_of_content_by_sheet_id(
+            sheet_id=sheet_id
+        )
+        
+        if not sheet_table_of_content or not sheet_table_of_content.sections:
+            return ""
+        
+        # Get all segment IDs from the table of content
+        segment_ids = _get_all_segment_ids_in_table_of_content_(sheet_sections=sheet_table_of_content.sections)
+        
+        if not segment_ids:
+            return ""
+            
+        content_segment = await _get_sheet_first_content_details_by_type_(segment_ids=segment_ids, segment_type=SegmentType.CONTENT)    
+
+        if content_segment: # not NONE
+            content = content_segment.content
+            return clean_text(content)
+        # Return empty string if no content segment found
+        return ""
+            
+    except Exception:
+        # Return empty string if any error occurs during summary generation
+        return ""
+
+def clean_text(content: str) -> str:
+    max_words = 30
+    clean_text = _strip_html_tags_(content)
+    if clean_text:
+        # Split into words and limit to max_words
+        words = clean_text.split()
+        if len(words) <= max_words:
+            return " ".join(words)
+        else:
+            return " ".join(words[:max_words]) + "..."
+    else:
+        return ""
 
 async def fetch_sheets(
     token: Optional[str] = None,
@@ -121,7 +180,7 @@ async def fetch_sheets(
         )
     
 
-    sheets: SheetDTOResponse = _generate_sheet_dto_response_(sheets = sheets, skip = skip, limit = limit)
+    sheets: SheetDTOResponse = await _generate_sheet_dto_response_(sheets = sheets, skip = skip, limit = limit)
       
     return sheets
 
@@ -212,6 +271,11 @@ async def update_sheet_by_id(
     if not is_valid_user:
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail=ErrorConstants.TOKEN_ERROR_MESSAGE)
 
+    await delete_text_details_by_id_cache(text_id=sheet_id, cache_type=CacheType.TEXT_DETAIL)
+    sheet_table_of_content: Optional[TableOfContent] = await _delete_sheet_table_of_content_cache_(sheet_id=sheet_id)
+    
+    await _delete_sheet_segments_cache_(sheet_table_of_content=sheet_table_of_content)
+
     await remove_segments_by_text_id(text_id=sheet_id)
 
     await remove_table_of_content_by_text_id(text_id=sheet_id)
@@ -229,10 +293,23 @@ async def update_sheet_by_id(
         segment_dict=sheet_segments,
         token=token
     )
-    # delete_sheet_by_id_cache(
-    #     sheet_id=sheet_id
-    # )
+    sheet_details: TextDTO = await TextUtils.get_text_details_by_id(text_id=sheet_id)
+    
+    # Update cache with new sheet data after successful update
+    await update_text_details_cache(text_id=sheet_id, updated_text_data=sheet_details, cache_type=CacheType.SHEET_DETAIL)
+    
     return SheetIdResponse(sheet_id=sheet_id)
+
+async def _delete_sheet_table_of_content_cache_(sheet_id: str) -> Optional[TableOfContent]:
+    sheet_table_of_content: Optional[TableOfContent] = await get_table_of_content_by_sheet_id(sheet_id=sheet_id)
+    if sheet_table_of_content is not None:
+        await delete_table_of_content_by_sheet_id_cache(sheet_id=sheet_id, cache_type=CacheType.SHEET_TABLE_OF_CONTENT)
+    return sheet_table_of_content
+
+async def _delete_sheet_segments_cache_(sheet_table_of_content: Optional[TableOfContent]):
+    sections = sheet_table_of_content.sections if sheet_table_of_content else []
+    segment_ids = _get_all_segment_ids_in_table_of_content_(sheet_sections=sections)
+    await delete_segments_details_by_ids_cache(segment_ids=segment_ids, cache_type=CacheType.SEGMENTS_DETAILS)
 
 async def delete_sheet_by_id(sheet_id: str, token: str):
     is_valid_user = validate_user_exists(token=token)
@@ -276,7 +353,7 @@ def upload_sheet_image_request(sheet_id: Optional[str], file: UploadFile) -> She
         file=compressed_image,
         content_type=file.content_type
     )
-    presigned_url = generate_presigned_upload_url(
+    presigned_url = generate_presigned_access_url(
         bucket_name=get("AWS_BUCKET_NAME"),
         s3_key=upload_key
     )
@@ -335,15 +412,16 @@ async def _fetch_user_sheets_(token: str, email: str, sort_by: SortBy, sort_orde
     )
     return sheets
 
-def _generate_sheet_dto_response_(sheets, skip: int, limit: int) -> SheetDTOResponse:
+async def _generate_sheet_dto_response_(sheets, skip: int, limit: int) -> SheetDTOResponse:
     sheets_dto = [
         SheetDTO(
             id = str(sheet.id),
             title = sheet.title,
-            summary = "summary",
+            summary = await _generate_sheet_summary_(str(sheet.id)),
             published_date = sheet.published_date,
             time_passed = Utils.time_passed(published_time=sheet.published_date, language=sheet.language),
             views = sheet.views,
+            is_published = sheet.is_published,
             likes = sheet.likes or [],
             publisher = _create_publisher_object_(published_by=sheet.published_by),
             language = sheet.language
@@ -385,8 +463,10 @@ async def _generate_sheet_section_(segments: List[TextSegment], segments_dict: D
                 )
             )
         else:
+            s3_key = None
             if segment_details.type == SegmentType.IMAGE:
-                segment_details.content = generate_presigned_upload_url(
+                s3_key = segment_details.content
+                segment_details.content = generate_presigned_access_url(
                     bucket_name=get("AWS_BUCKET_NAME"),
                     s3_key=segment_details.content
                 )
@@ -395,7 +475,8 @@ async def _generate_sheet_section_(segments: List[TextSegment], segments_dict: D
                     segment_id=segment.segment_id,
                     segment_number=segment.segment_number,
                     content=segment_details.content,
-                    type=segment_details.type
+                    type=segment_details.type,
+                    key=s3_key
                 )
             )
 
@@ -404,6 +485,11 @@ async def _generate_sheet_section_(segments: List[TextSegment], segments_dict: D
         segments=sheet_segments
     )
 
+async def _get_sheet_first_content_details_by_type_(segment_ids: List[str], segment_type: SegmentType) -> Optional[str]:
+    
+    # Get detailed firt segment information of type segment_type
+    segments_detail = await get_sheet_first_content_by_ids(segment_ids=segment_ids, segment_type=segment_type)
+    return segments_detail
 
 def _get_all_segment_ids_in_table_of_content_(sheet_sections: Section) -> List[str]:
     segment_ids = []
@@ -509,6 +595,8 @@ def _generate_segment_creation_request_payload_(create_sheet_request: CreateShee
 
 async def _create_sheet_text_(title: str, token: str, group_id: str) -> str:
     user_details = validate_and_extract_user_details(token=token)
+    if title is None or title == "":
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=ErrorConstants.SHEET_TITLE_REQUIRED_MESSAGE)
     create_text_request = CreateTextRequest(
         title=title,
         group_id=group_id,

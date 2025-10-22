@@ -17,8 +17,18 @@ from pecha_api.texts.segments import segments_views
 from pecha_api.texts.groups import groups_views
 from pecha_api.share import share_views
 from pecha_api.search import search_views
-import uvicorn
+from pecha_api.plans.auth import plan_auth_views
+from pecha_api.plans.cms import cms_plans_views as cms_plans_views
+from pecha_api.plans.tasks import plan_tasks_views
+from pecha_api.plans.tasks.sub_tasks import plan_sub_tasks_views
+from pecha_api.plans.public import plan_views as public_plans_views
+from pecha_api.plans.users import plan_users_views as user_plans_views
+from pecha_api.plans.media import media_views
+from pecha_api.plans.items import plan_items_views
+from pecha_api.plans.authors import plan_authors_views as plan_authors_views
+from pecha_api.user_follows import user_follow_views
 
+import uvicorn
 
 api = FastAPI(
     title="Pecha API",
@@ -39,6 +49,16 @@ api.include_router(users_views.user_router)
 api.include_router(mappings_views.mapping_router)
 api.include_router(search_views.search_router)
 api.include_router(share_views.share_router)
+api.include_router(plan_auth_views.plan_auth_router)
+api.include_router(cms_plans_views.cms_plans_router)
+api.include_router(media_views.media_router)
+api.include_router(public_plans_views.public_plans_router)
+api.include_router(user_plans_views.user_progress_router)
+api.include_router(plan_items_views.items_router)
+api.include_router(plan_tasks_views.plans_router)
+api.include_router(plan_sub_tasks_views.sub_tasks_router)
+api.include_router(plan_authors_views.author_router)
+api.include_router(user_follow_views.user_follow_router)
 
 api.add_middleware(
     CORSMiddleware,
@@ -59,4 +79,3 @@ async def get_health():
 
 if __name__ == "__main__":
     uvicorn.run("pecha_api.app:api", host="127.0.0.1", port=8000, reload=True)
-

@@ -1,0 +1,60 @@
+from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
+from fastapi import APIRouter, Depends, Query
+from typing import Annotated
+from uuid import UUID
+from starlette import status
+from pecha_api.plans.tasks.plan_tasks_response_model import CreateTaskRequest, TaskDTO, UpdateTaskDayRequest, UpdatedTaskDayResponse, GetTaskResponse
+from pecha_api.plans.tasks.plan_tasks_services import create_new_task, change_task_day_service, delete_task_by_id, get_task_subtasks_service
+
+oauth2_scheme = HTTPBearer()
+# Create router for plan endpoints
+plans_router = APIRouter(
+    prefix="/cms/tasks",
+    tags=["Task"]
+)
+
+
+@plans_router.post("", status_code=status.HTTP_201_CREATED, response_model=TaskDTO)
+async def create_task(
+        authentication_credential: Annotated[HTTPAuthorizationCredentials, Depends(oauth2_scheme)],
+        create_task_request: CreateTaskRequest,
+):
+    new_task: TaskDTO = await create_new_task(
+        token=authentication_credential.credentials,
+        create_task_request=create_task_request,
+        plan_id=create_task_request.plan_id,
+        day_id=create_task_request.day_id,
+    )
+    return new_task
+
+@plans_router.delete("/{task_id}", status_code=status.HTTP_204_NO_CONTENT)
+async def delete_task(
+    task_id: UUID,
+    authentication_credential: Annotated[HTTPAuthorizationCredentials, Depends(oauth2_scheme)],
+):
+    await delete_task_by_id(
+        task_id=task_id,
+        token=authentication_credential.credentials
+    )   
+
+@plans_router.put("/{task_id}", response_model=UpdatedTaskDayResponse)
+async def change_task_day(
+        authentication_credential: Annotated[HTTPAuthorizationCredentials, Depends(oauth2_scheme)],
+        task_id: UUID,
+        update_task_request: UpdateTaskDayRequest,
+)-> UpdatedTaskDayResponse:
+    return await change_task_day_service(
+        token=authentication_credential.credentials,
+        task_id=task_id,
+        update_task_request=update_task_request,
+    )
+
+@plans_router.get("/{task_id}", response_model=GetTaskResponse)
+async def get_task(
+    task_id: UUID,
+    authentication_credential: Annotated[HTTPAuthorizationCredentials, Depends(oauth2_scheme)],
+):
+    return await get_task_subtasks_service(
+        task_id=task_id,
+        token=authentication_credential.credentials
+    )

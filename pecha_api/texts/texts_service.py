@@ -41,12 +41,18 @@ from pecha_api.texts.texts_cache_service import (
     get_table_of_contents_by_text_id_cache,
     set_table_of_contents_by_text_id_cache,
     get_text_versions_by_group_id_cache,
-    set_text_versions_by_group_id_cache
+    set_text_versions_by_group_id_cache,
+    get_table_of_content_by_sheet_id_cache,
+    set_table_of_content_by_sheet_id_cache,
+    delete_table_of_content_by_sheet_id_cache,
+    update_text_details_cache,
+    invalidate_text_cache_on_update
 )
 from pecha_api.sheets.sheets_enum import (
     SortBy,
     SortOrder
 )
+from pecha_api.cache.cache_enums import CacheType
 
 from .texts_utils import TextUtils
 from pecha_api.users.users_service import validate_user_exists
@@ -61,13 +67,15 @@ from pecha_api.config import get
 from pecha_api.utils import Utils
 from .texts_enums import PaginationDirection
 
+import logging
+
 
 async def get_text_by_text_id_or_collection(
         text_id: str,
-        collection_id: str,
-        language: str,
-        skip: int,
-        limit: int
+        collection_id: Optional[str] = None,
+        language: Optional[str] = None,
+        skip: int = 0,
+        limit: int = 10
 ) -> TextsCategoryResponse | TextDTO:
     if language is None:
         language = get("DEFAULT_LANGUAGE")
@@ -77,7 +85,8 @@ async def get_text_by_text_id_or_collection(
         collection_id = collection_id,
         language = language,
         skip = skip,
-        limit = limit
+        limit = limit,
+        cache_type = CacheType.TEXTS_BY_ID_OR_COLLECTION
     )
 
     if cached_data is not None:
@@ -102,6 +111,7 @@ async def get_text_by_text_id_or_collection(
         language = language,
         skip = skip,
         limit = limit,
+        cache_type = CacheType.TEXTS_BY_ID_OR_COLLECTION,
         data = response
     )
 
@@ -121,6 +131,10 @@ async def get_sheet(published_by: Optional[str] = None, is_published: Optional[b
     return sheets
 
 async def get_table_of_content_by_sheet_id(sheet_id: str) -> Optional[TableOfContent]:
+    cached_data: TableOfContent = await get_table_of_content_by_sheet_id_cache(sheet_id=sheet_id, cache_type=CacheType.SHEET_TABLE_OF_CONTENT)
+    if cached_data is not None:
+        return cached_data
+    
     table_of_content = None
     is_valid_sheet: bool = await TextUtils.validate_text_exists(text_id=sheet_id)
     if not is_valid_sheet:
@@ -129,6 +143,10 @@ async def get_table_of_content_by_sheet_id(sheet_id: str) -> Optional[TableOfCon
     table_of_contents: List[TableOfContent] = await get_contents_by_id(text_id=sheet_id)
     if len(table_of_contents) > 0 and table_of_contents[0] is not None:
         table_of_content: TableOfContent = table_of_contents[0]
+    
+    if table_of_content is not None:
+        print(type(table_of_content))
+        await set_table_of_content_by_sheet_id_cache(sheet_id=sheet_id, cache_type=CacheType.SHEET_TABLE_OF_CONTENT, data=table_of_content)
     
     return table_of_content
 
@@ -229,7 +247,8 @@ async def get_text_versions_by_group_id(text_id: str, language: str, skip: int, 
         text_id = text_id,
         language = language,
         skip = skip,
-        limit = limit
+        limit = limit,
+        cache_type = CacheType.TEXT_VERSIONS
     )
     if cached_data is not None:
         return cached_data
@@ -255,6 +274,7 @@ async def get_text_versions_by_group_id(text_id: str, language: str, skip: int, 
         language = language,
         skip = skip,
         limit = limit,
+        cache_type = CacheType.TEXT_VERSIONS,
         data = response
     )
 
@@ -289,7 +309,7 @@ async def create_new_text(
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail=ErrorConstants.TOKEN_ERROR_MESSAGE)
 
 
-async def create_table_of_content(table_of_content_request: TableOfContent, token: str) -> TableOfContent:
+async def create_table_of_content(table_of_content_request: TableOfContent, token: str):
     is_valid_user = validate_user_exists(token=token)
     if is_valid_user:
         await TextUtils.validate_text_exists(text_id=table_of_content_request.text_id)
@@ -427,7 +447,20 @@ async def update_text_details(text_id: str, update_text_request: UpdateTextReque
     text_details.updated_date = Utils.get_utc_date_time()
     text_details.title = update_text_request.title
     text_details.is_published = update_text_request.is_published
-    return await update_text_details_by_id(text_id=text_id, update_text_request=update_text_request)
+    
+    # Update the text details in the database
+    updated_text = await update_text_details_by_id(text_id=text_id, update_text_request=update_text_request)
+    
+    # Update the cache with the new text details
+    try:
+        await update_text_details_cache(text_id=text_id, updated_text_data=updated_text)
+    except Exception as e:
+        # If cache update fails, log the error but don't fail the entire operation
+        # Fallback to cache invalidation to ensure consistency
+        logging.error(f"Failed to update cache for text_id {text_id}: {str(e)}")
+        await invalidate_text_cache_on_update(text_id=text_id)
+    
+    return updated_text
 
 async def delete_text_by_text_id(text_id: str):
     is_valid_text = await TextUtils.validate_text_exists(text_id=text_id)

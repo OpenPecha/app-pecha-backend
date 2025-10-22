@@ -20,6 +20,7 @@ class SheetSegment(BaseModel):
     segment_id: str
     segment_number: int
     content: Optional[str] = None
+    key: Optional[str] = None
     text_title: Optional[str] = None
     language: Optional[str] = None
     type: SegmentType
@@ -57,6 +58,7 @@ class SheetDTO(BaseModel):
     published_date: str
     time_passed: str
     views: int
+    is_published: bool
     likes: Optional[List[str]] = []
     publisher: Publisher
     language: Optional[str] = None

@@ -11,7 +11,7 @@ class ErrorConstants:
     GROUP_NOT_FOUND_MESSAGE="Group not found"
     VERSION_NOT_FOUND_MESSAGE="Version not found"
     SHORT_URL_GENERATION_FAILED_MESSAGE="Short URL generation failed"
-
+    SHEET_TITLE_REQUIRED_MESSAGE="Sheet title is required"
     # Image Error Messages
     IMAGE_ERROR_MESSAGE = "Only image files are allowed"
     IMAGE_SIZE_ERROR_MESSAGE = "File size exceeds 5MB limit"
@@ -25,3 +25,13 @@ class ErrorConstants:
 
     INVALID_S3_URL="Invalid S3 URL"
 
+    PLAN_NOT_FOUND ="Plan not found"
+    USER_NOT_FOUND ="User not found"
+    BAD_REQUEST_FOLLOW_YOURSELF ="Bad Request - Cannot follow yourself"
+
+    USER_NOT_FOUND = "User not found"
+    USER_ALREADY_EXISTS = "User with this email or username already exists"
+    USER_UPDATE_ISSUE = "User update issue"
+    INVALID_UPDATE_REQUEST = "Invalid update request"
+    TASK_NOT_FOUND = "Task not found"
+    SUB_TASK_NOT_FOUND = "Sub task not found"

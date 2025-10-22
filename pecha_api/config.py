@@ -1,13 +1,16 @@
 import os
 
 DEFAULTS = dict(
+    SITE_LANGUAGE="en",
+    SITE_NAME="Pecha",
     ACCESS_TOKEN_EXPIRE_MINUTES=30,
     APP_NAME="Pecha Backend",
     AWS_ACCESS_KEY="",
     AWS_SECRET_KEY="",
     AWS_REGION="eu-central-1",
     AWS_BUCKET_NAME="app-pecha-backend",
-    BASE_URL="https://pech.org",
+    AWS_BUCKET_OWNER="",
+    BASE_URL="https://webuddhist.com/",
     CLIENT_ID="",
     COMPRESSED_QUALITY=80,
     DATABASE_URL="postgresql://admin:pechaAdmin@localhost:5434/pecha",
@@ -21,9 +24,11 @@ DEFAULTS = dict(
     JWT_ISSUER="https://pecha.org",
     JWT_SECRET_KEY="",
     MAX_FILE_SIZE_MB=1,
-
+    MAX_FILE_SIZE = 5 * 1024 * 1024,
+    ALLOWED_EXTENSIONS = {'.jpg', '.jpeg', '.png', '.webp'},
     MONGO_CONNECTION_STRING="mongodb://admin:pechaAdmin@localhost:27017/pecha?authSource=admin",
 
+    WEBUDDHIST_STUDIO_BASE_URL="https://studio.webuddhist.com",
     MONGO_DATABASE_NAME="pecha",
     REFRESH_TOKEN_EXPIRE_DAYS=30,   
     SENDGRID_API_KEY="",
@@ -34,11 +39,18 @@ DEFAULTS = dict(
     CACHE_PORT=6379,
     CACHE_DB=0,
     CACHE_PREFIX="pecha:",
-    CACHE_DEFAULT_TIMEOUT=30, # 30 seconds in seconds
+    CACHE_DEFAULT_TIMEOUT=3000000, # 30 seconds in seconds
     CACHE_CONNECTION_STRING="redis://localhost:6379",
+    
+    # Cache timeout configurations for different types (in seconds)
+    CACHE_TEXT_TIMEOUT=1800,        # 30 minutes for texts (not frequently changed)
+    CACHE_COLLECTION_TIMEOUT=1800,  # 30 minutes for collections (not frequently changed)
+    CACHE_USER_TIMEOUT=900,         # 15 minutes for users (not frequently changed)
+    CACHE_TOPIC_TIMEOUT=1800,       # 30 minutes for topics (not frequently changed)
+    CACHE_SHEET_TIMEOUT=60,         # 1 minute for sheets (frequently edited by users)
 
-    SHORT_URL_GENERATION_ENDPOINT="https://url-shortening-14682653622-b69c6fd.onrender.com/api/v1",
-    PECHA_BACKEND_ENDPOINT="https://pecha-backend-12341825340-1fb0112.onrender.com/api/v1",
+    SHORT_URL_GENERATION_ENDPOINT="https://pech.as/api/v1",
+    PECHA_BACKEND_ENDPOINT="http://127.0.0.1:8000/api/v1",
 
     # Search configuration
     ELASTICSEARCH_URL= None,

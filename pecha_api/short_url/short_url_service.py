@@ -7,7 +7,7 @@ from starlette.responses import Response
 async def get_short_url(payload: dict) -> ShortUrlResponse:
 
     short_url_endpoint = get("SHORT_URL_GENERATION_ENDPOINT")
-    url = f"{short_url_endpoint}/shorten"
+    url = f"{short_url_endpoint}/"
     
     async with httpx.AsyncClient() as client:
         response = await client.post(url, json=payload)

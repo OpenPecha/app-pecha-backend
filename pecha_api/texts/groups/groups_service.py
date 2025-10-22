@@ -26,6 +26,7 @@ from .groups_cache_service import (
     get_group_by_id_cache,
     set_group_by_id_cache
 )
+from pecha_api.cache.cache_enums import CacheType
 
 async def validate_group_exists(group_id: str) -> bool:
     is_exists = False
@@ -44,7 +45,7 @@ async def get_groups_by_list_of_ids(group_ids: List[str]) -> Dict[str, GroupDTO]
     return groups
 
 async def get_group_details(group_id: str) -> GroupDTO | None:
-    cache_data: GroupDTO = await get_group_by_id_cache(group_id=group_id)
+    cache_data: GroupDTO = await get_group_by_id_cache(group_id=group_id, cache_type=CacheType.GROUP_DETAIL)
     if cache_data:
         return cache_data
     try:
@@ -59,7 +60,7 @@ async def get_group_details(group_id: str) -> GroupDTO | None:
             id=str(group_details.id),
             type=group_details.type
         )
-        await set_group_by_id_cache(group_id=group_id, data=response)
+        await set_group_by_id_cache(group_id=group_id, cache_type=CacheType.GROUP_DETAIL, data=response)
         return response
     except ValueError:
         raise HTTPException(
