@@ -23,7 +23,7 @@ We use timestamp-based versioning with the format: `YYYY.MM.DD.HHMM`
 ./scripts/sprint-release.sh
 
 # Or with Python script directly
-python3 scripts/release_sprint.py --type sprint
+poetry run python  scripts/release_sprint.py --type sprint
 ```
 
 ### Hotfix Release (Emergency fixes)
@@ -32,12 +32,12 @@ python3 scripts/release_sprint.py --type sprint
 ./scripts/hotfix-release.sh
 
 # Or with Python script directly
-python3 scripts/release_sprint.py --type hotfix
+poetry run python scripts/release_sprint.py --type hotfix
 ```
 
 ### Major Release
 ```bash
-python3 scripts/release_sprint.py --type release
+poetry run python scripts/release_sprint.py --type release
 ```
 
 ## Advanced Usage
