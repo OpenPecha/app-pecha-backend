@@ -1,4 +1,8 @@
 from uuid import UUID
+from fastapi import HTTPException
+from starlette import status
+from pecha_api.plans.auth.plan_auth_models import ResponseError
+from pecha_api.plans.response_message import BAD_REQUEST, PLAN_NOT_FOUND
 from .plan_items_repository import save_plan_item, get_last_day_number, get_day_by_plan_day_id, delete_day_by_id, get_days_by_plan_id, update_day_by_id
 from pecha_api.plans.cms.cms_plans_repository import get_plan_by_id
 from .plan_items_models import PlanItem
@@ -27,10 +31,12 @@ def create_plan_item(token: str, plan_id: UUID) -> ItemDTO:
     )
 
 def delete_plan_day_by_id(token: str, plan_id: UUID, day_id: UUID) -> None:
-    validate_and_extract_author_details(token=token)
+    current_author = validate_and_extract_author_details(token=token)
 
     with SessionLocal() as db_session:
-        plan = get_plan_by_id(db=db_session, plan_id=plan_id)
+        plan = get_plan_by_id(db=db_session, plan_id=plan_id, created_by=current_author.email)
+        if plan is None:
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=ResponseError(error=BAD_REQUEST, message=PLAN_NOT_FOUND).model_dump())
         item = get_day_by_plan_day_id(db=db_session, plan_id=plan.id, day_id=day_id)
         delete_day_by_id(db=db_session, plan_id=plan.id, day_id=item.id)
         _reorder_day_display_order(db=db_session, plan_id=plan.id)

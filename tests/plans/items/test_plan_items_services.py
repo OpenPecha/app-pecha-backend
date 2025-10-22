@@ -132,7 +132,7 @@ def test_delete_plan_day_success_reorders():
         delete_plan_day_by_id(token="dummy-token", plan_id=plan_id, day_id=day_id)
 
         mock_validate_author.assert_called_once_with(token="dummy-token")
-        mock_get_plan_by_id.assert_called_once_with(db=db_session, plan_id=plan_id)
+        mock_get_plan_by_id.assert_called_once_with(db=db_session, plan_id=plan_id, created_by=author.email)
         mock_get_day.assert_called_once_with(db=db_session, plan_id=plan_id, day_id=day_id)
         mock_delete.assert_called_once_with(db=db_session, plan_id=plan_id, day_id=item_to_delete.id)
 

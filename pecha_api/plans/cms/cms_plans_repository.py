@@ -9,6 +9,8 @@ from pecha_api.plans.users.plan_users_model import UserPlanProgress
 from fastapi import HTTPException
 from starlette import status
 from pecha_api.plans.plans_response_models import PlansRepositoryResponse, PlanWithAggregates
+from pecha_api.plans.auth.plan_auth_models import ResponseError
+from pecha_api.plans.response_message import BAD_REQUEST
 
 def save_plan(db: Session, plan: Plan):
     try:
@@ -80,8 +82,17 @@ def get_plans_by_author_id(
     total = db.query(func.count(Plan.id)).filter(*filters).scalar()
     return PlansRepositoryResponse(plan_info=plan_aggregates, total=total)
 
-def get_plan_by_id(db: Session, plan_id: UUID) -> Plan:
-    return db.query(Plan).filter(Plan.id == plan_id).first()
+def get_plan_by_id(db: Session, plan_id: UUID, created_by: str) -> Plan:
+    try:   
+        return db.query(Plan).filter(Plan.id == plan_id, Plan.created_by == created_by).first()
+    except Exception as e:
+        db.rollback()
+        print(f"Error getting plan by id: {str(e)}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=ResponseError(error=BAD_REQUEST, message=str(e)).model_dump()
+        )
+
 
 def get_plan_by_id_with_items_and_tasks(db: Session, plan_id: UUID) -> Plan:
     return db.query(Plan).filter(Plan.id == plan_id).options(joinedload(Plan.items), joinedload(Plan.tasks)).first()
