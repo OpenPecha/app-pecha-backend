@@ -258,3 +258,191 @@ async def test_get_task_not_found():
         assert mock_get.call_count == 1
 
 
+@pytest.mark.asyncio
+async def test_update_task_title_success():
+    """Test successful task title update with valid authentication and authorization."""
+    task_id = uuid.uuid4()
+    new_title = "Updated Task Title"
+    
+    from pecha_api.plans.tasks.plan_tasks_response_model import UpdateTaskTitleRequest, UpdateTaskTitleResponse
+    from pecha_api.plans.tasks.plan_tasks_views import update_task_title
+    
+    request = UpdateTaskTitleRequest(title=new_title)
+    
+    expected_response = UpdateTaskTitleResponse(
+        task_id=task_id,
+        title=new_title
+    )
+    
+    creds = _Creds(token="token123")
+    
+    with patch(
+        "pecha_api.plans.tasks.plan_tasks_views.update_task_title_service",
+        return_value=expected_response,
+        new_callable=AsyncMock,
+    ) as mock_update:
+        resp = await update_task_title(
+            authentication_credential=creds,
+            task_id=task_id,
+            update_request=request,
+        )
+        
+        assert mock_update.call_count == 1
+        assert mock_update.call_args.kwargs == {
+            "token": "token123",
+            "task_id": task_id,
+            "update_request": request,
+        }
+        assert resp.task_id == task_id
+        assert resp.title == new_title
+
+
+@pytest.mark.asyncio
+async def test_update_task_title_unauthorized():
+    """Test task title update fails when user is not the task creator."""
+    task_id = uuid.uuid4()
+    new_title = "Updated Task Title"
+    
+    from pecha_api.plans.tasks.plan_tasks_response_model import UpdateTaskTitleRequest
+    from pecha_api.plans.tasks.plan_tasks_views import update_task_title
+    
+    request = UpdateTaskTitleRequest(title=new_title)
+    creds = _Creds(token="token123")
+    
+    with patch(
+        "pecha_api.plans.tasks.plan_tasks_views.update_task_title_service",
+        side_effect=HTTPException(
+            status_code=403,
+            detail={"error": "FORBIDDEN", "message": "You are not authorized to update this task"}
+        ),
+        new_callable=AsyncMock,
+    ) as mock_update:
+        with pytest.raises(HTTPException) as exc_info:
+            await update_task_title(
+                authentication_credential=creds,
+                task_id=task_id,
+                update_request=request,
+            )
+        
+        assert exc_info.value.status_code == 403
+        assert exc_info.value.detail["error"] == "FORBIDDEN"
+
+
+@pytest.mark.asyncio
+async def test_update_task_title_task_not_found():
+    """Test task title update fails when task doesn't exist."""
+    task_id = uuid.uuid4()
+    new_title = "Updated Task Title"
+    
+    from pecha_api.plans.tasks.plan_tasks_response_model import UpdateTaskTitleRequest
+    from pecha_api.plans.tasks.plan_tasks_views import update_task_title
+    
+    request = UpdateTaskTitleRequest(title=new_title)
+    creds = _Creds(token="token123")
+    
+    with patch(
+        "pecha_api.plans.tasks.plan_tasks_views.update_task_title_service",
+        side_effect=HTTPException(
+            status_code=404,
+            detail={"error": "NOT_FOUND", "message": "Task not found"}
+        ),
+        new_callable=AsyncMock,
+    ) as mock_update:
+        with pytest.raises(HTTPException) as exc_info:
+            await update_task_title(
+                authentication_credential=creds,
+                task_id=task_id,
+                update_request=request,
+            )
+        
+        assert exc_info.value.status_code == 404
+        assert exc_info.value.detail["error"] == "NOT_FOUND"
+
+
+@pytest.mark.asyncio
+async def test_update_task_title_invalid_token():
+    """Test task title update fails with invalid authentication token."""
+    task_id = uuid.uuid4()
+    new_title = "Updated Task Title"
+    
+    from pecha_api.plans.tasks.plan_tasks_response_model import UpdateTaskTitleRequest
+    from pecha_api.plans.tasks.plan_tasks_views import update_task_title
+    
+    request = UpdateTaskTitleRequest(title=new_title)
+    creds = _Creds(token="invalid_token")
+    
+    with patch(
+        "pecha_api.plans.tasks.plan_tasks_views.update_task_title_service",
+        side_effect=HTTPException(
+            status_code=401,
+            detail={"error": "UNAUTHORIZED", "message": "Invalid authentication token"}
+        ),
+        new_callable=AsyncMock,
+    ) as mock_update:
+        with pytest.raises(HTTPException) as exc_info:
+            await update_task_title(
+                authentication_credential=creds,
+                task_id=task_id,
+                update_request=request,
+            )
+        
+        assert exc_info.value.status_code == 401
+
+
+@pytest.mark.asyncio
+async def test_update_task_title_empty_title():
+    """Test task title update with empty title string."""
+    task_id = uuid.uuid4()
+    
+    from pecha_api.plans.tasks.plan_tasks_response_model import UpdateTaskTitleRequest
+    from pecha_api.plans.tasks.plan_tasks_views import update_task_title
+    
+    request = UpdateTaskTitleRequest(title="")
+    creds = _Creds(token="token123")
+    
+    with patch(
+        "pecha_api.plans.tasks.plan_tasks_views.update_task_title_service",
+        side_effect=HTTPException(
+            status_code=400,
+            detail={"error": "BAD_REQUEST", "message": "Title cannot be empty"}
+        ),
+        new_callable=AsyncMock,
+    ) as mock_update:
+        with pytest.raises(HTTPException) as exc_info:
+            await update_task_title(
+                authentication_credential=creds,
+                task_id=task_id,
+                update_request=request,
+            )
+        
+        assert exc_info.value.status_code == 400
+
+
+@pytest.mark.asyncio
+async def test_update_task_title_database_error():
+    """Test task title update handles database errors gracefully."""
+    task_id = uuid.uuid4()
+    new_title = "Updated Task Title"
+    
+    from pecha_api.plans.tasks.plan_tasks_response_model import UpdateTaskTitleRequest
+    from pecha_api.plans.tasks.plan_tasks_views import update_task_title
+    
+    request = UpdateTaskTitleRequest(title=new_title)
+    creds = _Creds(token="token123")
+    
+    with patch(
+        "pecha_api.plans.tasks.plan_tasks_views.update_task_title_service",
+        side_effect=HTTPException(
+            status_code=500,
+            detail={"error": "INTERNAL_SERVER_ERROR", "message": "Database error occurred"}
+        ),
+        new_callable=AsyncMock,
+    ) as mock_update:
+        with pytest.raises(HTTPException) as exc_info:
+            await update_task_title(
+                authentication_credential=creds,
+                task_id=task_id,
+                update_request=request,
+            )
+        
+        assert exc_info.value.status_code == 500
