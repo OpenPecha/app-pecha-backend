@@ -21,7 +21,7 @@ class SubTaskDTO(BaseModel):
     id: UUID
     content_type: ContentType
     content: str
-    image_key: Optional[str] = None
+    image_url: Optional[str] = None
     display_order: int
 
 class SubTaskResponse(BaseModel):

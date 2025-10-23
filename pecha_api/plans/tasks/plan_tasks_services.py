@@ -86,16 +86,21 @@ async def get_task_subtasks_service(task_id: UUID, token: str) -> GetTaskRespons
         if task.created_by != current_user.email:
             raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail=ResponseError(error=FORBIDDEN, message=UNAUTHORIZED_TASK_ACCESS).model_dump())
         
-        subtasks_dto = [
-            SubTaskDTO(
-                id=sub_task.id,
+        subtasks_dto = []
+        for sub_task in task.sub_tasks:
+            processed_content, image_url = _resolve_content_and_image_url(
                 content_type=sub_task.content_type,
-                content=_get_content_by_content_type(content_type=sub_task.content_type, content=sub_task.content),
-                image_key=_get_image_key_by_content_image(content=sub_task.content, content_type=sub_task.content_type),
-                display_order=sub_task.display_order,
+                content=sub_task.content,
             )
-            for sub_task in task.sub_tasks
-        ]
+            subtasks_dto.append(
+                SubTaskDTO(
+                    id=sub_task.id,
+                    content_type=sub_task.content_type,
+                    content=processed_content,
+                    image_url=image_url,
+                    display_order=sub_task.display_order,
+                )
+            )
 
         return GetTaskResponse(
             id=task.id,
@@ -105,13 +110,10 @@ async def get_task_subtasks_service(task_id: UUID, token: str) -> GetTaskRespons
             subtasks=subtasks_dto,
         )
 
-def _get_content_by_content_type(content_type: str, content: str) -> str:
-    
+def _resolve_content_and_image_url(content_type: str, content: str) -> tuple[str, str | None]:
     if content_type == ContentType.IMAGE:
-        return generate_presigned_access_url(bucket_name=get("AWS_BUCKET_NAME"), s3_key=content)
-    return content
-
-def _get_image_key_by_content_image(content: str, content_type: str) -> str:
-    if content_type == ContentType.IMAGE:
-        return content
-    return None
+        presigned_url = generate_presigned_access_url(
+            bucket_name=get("AWS_BUCKET_NAME"), s3_key=content
+        )
+        return presigned_url, content
+    return content, None
