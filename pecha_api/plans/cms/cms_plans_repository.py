@@ -81,7 +81,26 @@ def get_plans_by_author_id(
     return PlansRepositoryResponse(plan_info=plan_aggregates, total=total)
 
 def get_plan_by_id(db: Session, plan_id: UUID) -> Plan:
-    return db.query(Plan).filter(Plan.id == plan_id).first()
+    try:   
+        return db.query(Plan).filter(Plan.id == plan_id).first()
+    except Exception as e:
+        db.rollback()
+        print(f"Error getting plan by id: {str(e)}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Failed to get plan by id: {str(e)}"
+        )
+
+def get_plan_by_id_and_created_by(db: Session, plan_id: UUID, created_by: str) -> Plan:
+    try:
+        return db.query(Plan).filter(Plan.id == plan_id, Plan.created_by == created_by).first()
+    except Exception as e:
+        db.rollback()
+        print(f"Error getting plan by id and created by: {str(e)}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Failed to get plan by id and created by: {str(e)}"
+        )
 
 def get_plan_by_id_with_items_and_tasks(db: Session, plan_id: UUID) -> Plan:
     return db.query(Plan).filter(Plan.id == plan_id).options(joinedload(Plan.items), joinedload(Plan.tasks)).first()

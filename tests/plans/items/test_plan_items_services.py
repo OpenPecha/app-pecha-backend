@@ -3,7 +3,7 @@ import pytest
 from unittest.mock import patch, MagicMock
 from fastapi import HTTPException
 
-from pecha_api.plans.items.plan_items_services import create_plan_item
+from pecha_api.plans.items.plan_items_services import create_plan_item, delete_plan_day_by_id
 from pecha_api.plans.items.plan_items_models import PlanItem
 from pecha_api.plans.items.plan_items_response_models import ItemDTO
 
@@ -95,3 +95,127 @@ def test_create_plan_item_propagates_repository_error():
         assert exc_info.value.detail == {"error": "Bad request", "message": "duplicate"}
 
 
+def test_delete_plan_day_success_reorders():
+    plan_id = uuid.uuid4()
+    day_id = uuid.uuid4()
+
+    plan = MagicMock()
+    plan.id = plan_id
+
+    item_to_delete = MagicMock()
+    item_to_delete.id = day_id
+
+    # Create three items with day numbers 1, 3, 5 which should be reordered to 1,2,3 after delete
+    remaining_items = [
+        MagicMock(id=uuid.uuid4(), day_number=1),
+        MagicMock(id=uuid.uuid4(), day_number=3),
+        MagicMock(id=uuid.uuid4(), day_number=5),
+    ]
+
+    author = MagicMock()
+    author.email = "author@example.com"
+
+    with patch("pecha_api.plans.items.plan_items_services.SessionLocal") as mock_session_local, \
+         patch("pecha_api.plans.items.plan_items_services.validate_and_extract_author_details") as mock_validate_author, \
+         patch("pecha_api.plans.items.plan_items_services.get_plan_by_id_and_created_by") as mock_get_plan_by_id, \
+         patch("pecha_api.plans.items.plan_items_services.get_day_by_plan_day_id") as mock_get_day, \
+         patch("pecha_api.plans.items.plan_items_services.delete_day_by_id") as mock_delete, \
+         patch("pecha_api.plans.items.plan_items_services.get_days_by_plan_id") as mock_get_days, \
+         patch("pecha_api.plans.items.plan_items_services.update_day_by_id") as mock_update_day:
+        db_session = _mock_session_local(mock_session_local)
+
+        mock_validate_author.return_value = author
+        mock_get_plan_by_id.return_value = plan
+        mock_get_day.return_value = item_to_delete
+        mock_get_days.return_value = remaining_items
+
+        delete_plan_day_by_id(token="dummy-token", plan_id=plan_id, day_id=day_id)
+
+        mock_validate_author.assert_called_once_with(token="dummy-token")
+        mock_get_plan_by_id.assert_called_once_with(db=db_session, plan_id=plan_id, created_by=author.email)
+        mock_get_day.assert_called_once_with(db=db_session, plan_id=plan_id, day_id=day_id)
+        mock_delete.assert_called_once_with(db=db_session, plan_id=plan_id, day_id=item_to_delete.id)
+
+        # Verify reordering calls: items sorted by original day_number -> indices 1..n
+        assert mock_update_day.call_count == 3
+        # First call should set first item's day_number to 1, etc.
+        expected_new_numbers = [1, 2, 3]
+        for call, new_num in zip(mock_update_day.call_args_list, expected_new_numbers):
+            kwargs = call.kwargs
+            assert kwargs["db"] is db_session
+            assert kwargs["plan_id"] == plan_id
+            assert "day_id" in kwargs and kwargs["day_id"] is not None
+            assert kwargs["day_number"] == new_num
+
+
+def test_delete_plan_day_not_found():
+    plan_id = uuid.uuid4()
+    day_id = uuid.uuid4()
+
+    plan = MagicMock()
+    plan.id = plan_id
+
+    author = MagicMock()
+    author.email = "author@example.com"
+
+    with patch("pecha_api.plans.items.plan_items_services.SessionLocal") as mock_session_local, \
+         patch("pecha_api.plans.items.plan_items_services.validate_and_extract_author_details") as mock_validate_author, \
+         patch("pecha_api.plans.items.plan_items_services.get_plan_by_id_and_created_by") as mock_get_plan_by_id, \
+         patch("pecha_api.plans.items.plan_items_services.get_day_by_plan_day_id") as mock_get_day:
+        _ = _mock_session_local(mock_session_local)
+
+        mock_validate_author.return_value = author
+        mock_get_plan_by_id.return_value = plan
+        mock_get_day.side_effect = HTTPException(status_code=404, detail={"error": "Not Found", "message": "day not found"})
+
+        with pytest.raises(HTTPException) as exc_info:
+            delete_plan_day_by_id(token="dummy-token", plan_id=plan_id, day_id=day_id)
+
+        assert exc_info.value.status_code == 404
+        assert exc_info.value.detail == {"error": "Not Found", "message": "day not found"}
+
+
+def test_delete_plan_day_auth_error():
+    plan_id = uuid.uuid4()
+    day_id = uuid.uuid4()
+
+    with patch("pecha_api.plans.items.plan_items_services.validate_and_extract_author_details") as mock_validate_author:
+        mock_validate_author.side_effect = HTTPException(status_code=401, detail="Unauthorized")
+
+        with pytest.raises(HTTPException) as exc_info:
+            delete_plan_day_by_id(token="bad-token", plan_id=plan_id, day_id=day_id)
+
+        assert exc_info.value.status_code == 401
+        assert exc_info.value.detail == "Unauthorized"
+
+
+def test_delete_plan_day_repository_error():
+    plan_id = uuid.uuid4()
+    day_id = uuid.uuid4()
+
+    plan = MagicMock()
+    plan.id = plan_id
+
+    item_to_delete = MagicMock()
+    item_to_delete.id = day_id
+
+    author = MagicMock()
+    author.email = "author@example.com"
+
+    with patch("pecha_api.plans.items.plan_items_services.SessionLocal") as mock_session_local, \
+         patch("pecha_api.plans.items.plan_items_services.validate_and_extract_author_details") as mock_validate_author, \
+         patch("pecha_api.plans.items.plan_items_services.get_plan_by_id_and_created_by") as mock_get_plan_by_id, \
+         patch("pecha_api.plans.items.plan_items_services.get_day_by_plan_day_id") as mock_get_day, \
+         patch("pecha_api.plans.items.plan_items_services.delete_day_by_id") as mock_delete:
+        _ = _mock_session_local(mock_session_local)
+
+        mock_validate_author.return_value = author
+        mock_get_plan_by_id.return_value = plan
+        mock_get_day.return_value = item_to_delete
+        mock_delete.side_effect = HTTPException(status_code=400, detail={"error": "Bad request", "message": "cannot delete"})
+
+        with pytest.raises(HTTPException) as exc_info:
+            delete_plan_day_by_id(token="dummy-token", plan_id=plan_id, day_id=day_id)
+
+        assert exc_info.value.status_code == 400
+        assert exc_info.value.detail == {"error": "Bad request", "message": "cannot delete"}
