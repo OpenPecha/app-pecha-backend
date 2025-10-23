@@ -88,7 +88,7 @@ async def get_task_subtasks_service(task_id: UUID, token: str) -> GetTaskRespons
         
         subtasks_dto = []
         for sub_task in task.sub_tasks:
-            processed_content, image_url = _resolve_content_and_image_url(
+            processed_content, image_url = _generate_image_url_content_type(
                 content_type=sub_task.content_type,
                 content=sub_task.content,
             )
@@ -110,7 +110,7 @@ async def get_task_subtasks_service(task_id: UUID, token: str) -> GetTaskRespons
             subtasks=subtasks_dto,
         )
 
-def _resolve_content_and_image_url(content_type: str, content: str) -> tuple[str, str | None]:
+def _generate_image_url_content_type(content_type: str, content: str) -> tuple[str, str | None]:
     if content_type == ContentType.IMAGE:
         presigned_url = generate_presigned_access_url(
             bucket_name=get("AWS_BUCKET_NAME"), s3_key=content
