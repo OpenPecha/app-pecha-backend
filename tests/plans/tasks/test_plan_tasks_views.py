@@ -271,8 +271,7 @@ async def test_update_task_title_success():
     
     expected_response = UpdateTaskTitleResponse(
         task_id=task_id,
-        title=new_title,
-        message="Task title updated successfully"
+        title=new_title
     )
     
     creds = _Creds(token="token123")
@@ -296,7 +295,6 @@ async def test_update_task_title_success():
         }
         assert resp.task_id == task_id
         assert resp.title == new_title
-        assert resp.message == "Task title updated successfully"
 
 
 @pytest.mark.asyncio
