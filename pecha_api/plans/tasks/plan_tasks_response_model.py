@@ -34,7 +34,6 @@ class UpdateTaskTitleRequest(BaseModel):
 class UpdateTaskTitleResponse(BaseModel):
     task_id: UUID
     title: str
-    message: str
 
 class GetTaskRequest(BaseModel):
     task_id: UUID

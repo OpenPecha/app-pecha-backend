@@ -98,8 +98,7 @@ async def update_task_title_service(token: str, task_id: UUID, update_request: U
         
         return UpdateTaskTitleResponse(
             task_id=updated_task.id,
-            title=updated_task.title,
-            message=TASK_TITLE_UPDATE_SUCCESS
+            title=updated_task.title
         )
 
 async def get_task_subtasks_service(task_id: UUID, token: str) -> GetTaskResponse:
