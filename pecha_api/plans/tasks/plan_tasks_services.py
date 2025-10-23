@@ -67,7 +67,13 @@ async def change_task_day_service(token: str, task_id: UUID, update_task_request
         if not targeted_day:
             raise HTTPException(status_code=404, detail=ResponseError(error=BAD_REQUEST, message=PLAN_DAY_NOT_FOUND).model_dump())
 
-        task = update_task_day(db=db, task_id=task_id, target_day_id=update_task_request.target_day_id, display_order=display_order)
+        task = update_task_day(
+            db=db, 
+            task_id=task_id, 
+            target_day_id=update_task_request.target_day_id, 
+            display_order=display_order,
+            title=update_task_request.title
+        )
 
         return UpdatedTaskDayResponse(
             task_id=task.id, 
@@ -109,5 +115,3 @@ def _get_content_by_content_type(content_type: str, content: str) -> str:
     if content_type == ContentType.IMAGE:
         return generate_presigned_access_url(bucket_name=get("AWS_BUCKET_NAME"), s3_key=content)
     return content
-
-    

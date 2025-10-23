@@ -27,6 +27,7 @@ class UpdatedTaskDayResponse(BaseModel):
 
 class UpdateTaskDayRequest(BaseModel):
     target_day_id: UUID
+    title: Optional[str] = None
 
 class GetTaskRequest(BaseModel):
     task_id: UUID

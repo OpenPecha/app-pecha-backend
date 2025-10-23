@@ -1,11 +1,10 @@
-
 from uuid import UUID
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session, joinedload
 from sqlalchemy import func
 from fastapi import HTTPException
 from starlette import status
-from typing import List
+from typing import List, Optional
 from sqlalchemy import asc
 
 from pecha_api.db.database import SessionLocal
@@ -60,9 +59,11 @@ def delete_task(db: Session, task_id: UUID):
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=ResponseError(error=BAD_REQUEST, message=str(e)).model_dump())
     return db.query(PlanTask).filter(PlanTask.id == task_id).first()
 
-def update_task_day(db: Session, task_id: UUID, target_day_id: UUID, display_order: int) -> PlanTask:
+def update_task_day(db: Session, task_id: UUID, target_day_id: UUID, display_order: int, title: Optional[str] = None) -> PlanTask:
     task = get_task_by_id(db=db, task_id=task_id)
     task.plan_item_id = target_day_id
     task.display_order = display_order
+    if title is not None:
+        task.title = title
     db.commit()
     return task
