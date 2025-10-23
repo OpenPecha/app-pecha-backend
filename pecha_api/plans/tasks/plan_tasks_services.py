@@ -1,5 +1,5 @@
-from pecha_api.plans.tasks.plan_tasks_repository import save_task, get_task_by_id, delete_task, update_task_day
-from pecha_api.plans.tasks.plan_tasks_response_model import CreateTaskRequest, TaskDTO, UpdateTaskDayRequest, UpdatedTaskDayResponse, GetTaskResponse
+from pecha_api.plans.tasks.plan_tasks_repository import save_task, get_task_by_id, delete_task, update_task_day, update_task_title
+from pecha_api.plans.tasks.plan_tasks_response_model import CreateTaskRequest, TaskDTO, UpdateTaskDayRequest, UpdatedTaskDayResponse, GetTaskResponse, UpdateTaskTitleRequest, UpdateTaskTitleResponse
 from pecha_api.plans.tasks.sub_tasks.plan_sub_tasks_response_model import SubTaskDTO
 from pecha_api.plans.authors.plan_authors_service import validate_and_extract_author_details
 from uuid import UUID
@@ -71,8 +71,7 @@ async def change_task_day_service(token: str, task_id: UUID, update_task_request
             db=db, 
             task_id=task_id, 
             target_day_id=update_task_request.target_day_id, 
-            display_order=display_order,
-            title=update_task_request.title
+            display_order=display_order
         )
 
         return UpdatedTaskDayResponse(
@@ -81,6 +80,25 @@ async def change_task_day_service(token: str, task_id: UUID, update_task_request
             display_order=task.display_order, 
             estimated_time=task.estimated_time,
             title=task.title,
+        )
+
+async def update_task_title_service(token: str, task_id: UUID, update_request: UpdateTaskTitleRequest) -> UpdateTaskTitleResponse:
+    current_author = validate_and_extract_author_details(token=token)
+    
+    with SessionLocal() as db:
+        task = get_task_by_id(db=db, task_id=task_id)
+        
+        if task.created_by != current_author.email:
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN, 
+                detail=ResponseError(error=FORBIDDEN, message=UNAUTHORIZED_TASK_ACCESS).model_dump()
+            )
+        
+        updated_task = update_task_title(db=db, task_id=task_id, title=update_request.title)
+        
+        return UpdateTaskTitleResponse(
+            task_id=updated_task.id,
+            title=updated_task.title,
         )
 
 async def get_task_subtasks_service(task_id: UUID, token: str) -> GetTaskResponse:
