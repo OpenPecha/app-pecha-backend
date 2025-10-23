@@ -10,6 +10,8 @@ from pecha_api.plans.tasks.plan_tasks_response_model import (
     UpdateTaskDayRequest,
     UpdatedTaskDayResponse,
     GetTaskResponse,
+    UpdateTaskTitleRequest,
+    UpdateTaskTitleResponse,
 )
 from pecha_api.plans.tasks.sub_tasks.plan_sub_tasks_response_model import SubTaskDTO
 from pecha_api.plans.plans_enums import ContentType
@@ -18,6 +20,7 @@ from pecha_api.plans.tasks.plan_tasks_services import (
     change_task_day_service,
     delete_task_by_id,
     get_task_subtasks_service,
+    update_task_title_service,
 )
 
 
@@ -635,3 +638,309 @@ async def test_get_task_subtasks_service_task_not_found():
         assert exc_info.value.status_code == 404
         assert mock_validate.call_count == 1
         assert mock_get_task.call_count == 1
+
+@pytest.mark.asyncio
+async def test_update_task_title_service_success():
+    task_id = uuid.uuid4()
+    new_title = "Updated Task Title"
+    author_email = "author@example.com"
+    
+    request = UpdateTaskTitleRequest(title=new_title)
+    
+    mock_author = SimpleNamespace(
+        id=uuid.uuid4(),
+        email=author_email,
+        first_name="John",
+        last_name="Doe",
+    )
+    
+    mock_task = SimpleNamespace(
+        id=task_id,
+        title="Old Title",
+        created_by=author_email,
+    )
+    
+    mock_updated_task = SimpleNamespace(
+        id=task_id,
+        title=new_title,
+        created_by=author_email,
+    )
+    
+    db_mock = MagicMock()
+    session_cm = MagicMock()
+    session_cm.__enter__.return_value = db_mock
+    
+    with patch(
+        "pecha_api.plans.tasks.plan_tasks_services.validate_and_extract_author_details",
+        return_value=mock_author,
+    ) as mock_validate, patch(
+        "pecha_api.plans.tasks.plan_tasks_services.SessionLocal",
+        return_value=session_cm,
+    ), patch(
+        "pecha_api.plans.tasks.plan_tasks_services.get_task_by_id",
+        return_value=mock_task,
+    ) as mock_get_task, patch(
+        "pecha_api.plans.tasks.plan_tasks_services.update_task_title",
+        return_value=mock_updated_task,
+    ) as mock_update:
+        
+        result = await update_task_title_service(
+            token="valid_token_123",
+            task_id=task_id,
+            update_request=request,
+        )
+        
+        assert mock_validate.call_count == 1
+        assert mock_validate.call_args.kwargs == {"token": "valid_token_123"}
+        
+        assert mock_get_task.call_count == 1
+        assert mock_get_task.call_args.kwargs == {"db": db_mock, "task_id": task_id}
+        
+        assert mock_update.call_count == 1
+        assert mock_update.call_args.kwargs == {
+            "db": db_mock,
+            "task_id": task_id,
+            "title": new_title,
+        }
+        
+        assert isinstance(result, UpdateTaskTitleResponse)
+        assert result.task_id == task_id
+        assert result.title == new_title
+
+
+@pytest.mark.asyncio
+async def test_update_task_title_service_unauthorized():
+    task_id = uuid.uuid4()
+    new_title = "Updated Task Title"
+    author_email = "author@example.com"
+    different_email = "different@example.com"
+    
+    request = UpdateTaskTitleRequest(title=new_title)
+    
+    mock_author = SimpleNamespace(
+        id=uuid.uuid4(),
+        email=different_email,
+        first_name="Jane",
+        last_name="Smith",
+    )
+    
+    mock_task = SimpleNamespace(
+        id=task_id,
+        title="Old Title",
+        created_by=author_email,
+    )
+    
+    db_mock = MagicMock()
+    session_cm = MagicMock()
+    session_cm.__enter__.return_value = db_mock
+    
+    with patch(
+        "pecha_api.plans.tasks.plan_tasks_services.validate_and_extract_author_details",
+        return_value=mock_author,
+    ) as mock_validate, patch(
+        "pecha_api.plans.tasks.plan_tasks_services.SessionLocal",
+        return_value=session_cm,
+    ), patch(
+        "pecha_api.plans.tasks.plan_tasks_services.get_task_by_id",
+        return_value=mock_task,
+    ) as mock_get_task:
+        
+        with pytest.raises(HTTPException) as exc_info:
+            await update_task_title_service(
+                token="valid_token_123",
+                task_id=task_id,
+                update_request=request,
+            )
+        
+        assert exc_info.value.status_code == 403
+        assert exc_info.value.detail["error"] == FORBIDDEN
+        assert exc_info.value.detail["message"] == UNAUTHORIZED_TASK_ACCESS
+        
+        assert mock_validate.call_count == 1
+        assert mock_get_task.call_count == 1
+
+
+@pytest.mark.asyncio
+async def test_update_task_title_service_task_not_found():
+    task_id = uuid.uuid4()
+    new_title = "Updated Task Title"
+    
+    request = UpdateTaskTitleRequest(title=new_title)
+    
+    mock_author = SimpleNamespace(
+        id=uuid.uuid4(),
+        email="author@example.com",
+        first_name="John",
+        last_name="Doe",
+    )
+    
+    db_mock = MagicMock()
+    session_cm = MagicMock()
+    session_cm.__enter__.return_value = db_mock
+    
+    with patch(
+        "pecha_api.plans.tasks.plan_tasks_services.validate_and_extract_author_details",
+        return_value=mock_author,
+    ) as mock_validate, patch(
+        "pecha_api.plans.tasks.plan_tasks_services.SessionLocal",
+        return_value=session_cm,
+    ), patch(
+        "pecha_api.plans.tasks.plan_tasks_services.get_task_by_id",
+        side_effect=HTTPException(
+            status_code=404,
+            detail={"error": "NOT_FOUND", "message": "Task not found"}
+        ),
+    ) as mock_get_task:
+        
+        with pytest.raises(HTTPException) as exc_info:
+            await update_task_title_service(
+                token="valid_token_123",
+                task_id=task_id,
+                update_request=request,
+            )
+        
+        assert exc_info.value.status_code == 404
+        assert exc_info.value.detail["error"] == "NOT_FOUND"
+        
+        assert mock_validate.call_count == 1
+        assert mock_get_task.call_count == 1
+
+
+@pytest.mark.asyncio
+async def test_update_task_title_service_invalid_token():
+    task_id = uuid.uuid4()
+    new_title = "Updated Task Title"
+    
+    request = UpdateTaskTitleRequest(title=new_title)
+    
+    with patch(
+        "pecha_api.plans.tasks.plan_tasks_services.validate_and_extract_author_details",
+        side_effect=HTTPException(
+            status_code=401,
+            detail={"error": "UNAUTHORIZED", "message": "Invalid authentication token"}
+        ),
+    ) as mock_validate:
+        
+        with pytest.raises(HTTPException) as exc_info:
+            await update_task_title_service(
+                token="invalid_token",
+                task_id=task_id,
+                update_request=request,
+            )
+        
+        assert exc_info.value.status_code == 401
+        assert exc_info.value.detail["error"] == "UNAUTHORIZED"
+        
+        assert mock_validate.call_count == 1
+
+
+@pytest.mark.asyncio
+async def test_update_task_title_service_database_error():
+    task_id = uuid.uuid4()
+    new_title = "Updated Task Title"
+    author_email = "author@example.com"
+    
+    request = UpdateTaskTitleRequest(title=new_title)
+    
+    mock_author = SimpleNamespace(
+        id=uuid.uuid4(),
+        email=author_email,
+        first_name="John",
+        last_name="Doe",
+    )
+    
+    mock_task = SimpleNamespace(
+        id=task_id,
+        title="Old Title",
+        created_by=author_email,
+    )
+    
+    db_mock = MagicMock()
+    session_cm = MagicMock()
+    session_cm.__enter__.return_value = db_mock
+    
+    with patch(
+        "pecha_api.plans.tasks.plan_tasks_services.validate_and_extract_author_details",
+        return_value=mock_author,
+    ) as mock_validate, patch(
+        "pecha_api.plans.tasks.plan_tasks_services.SessionLocal",
+        return_value=session_cm,
+    ), patch(
+        "pecha_api.plans.tasks.plan_tasks_services.get_task_by_id",
+        return_value=mock_task,
+    ) as mock_get_task, patch(
+        "pecha_api.plans.tasks.plan_tasks_services.update_task_title",
+        side_effect=Exception("Database connection error"),
+    ) as mock_update:
+        
+        with pytest.raises(Exception) as exc_info:
+            await update_task_title_service(
+                token="valid_token_123",
+                task_id=task_id,
+                update_request=request,
+            )
+        
+        assert str(exc_info.value) == "Database connection error"
+        
+        assert mock_validate.call_count == 1
+        assert mock_get_task.call_count == 1
+        assert mock_update.call_count == 1
+
+
+@pytest.mark.asyncio
+async def test_update_task_title_service_empty_title():
+    task_id = uuid.uuid4()
+    author_email = "author@example.com"
+    
+    request = UpdateTaskTitleRequest(title="")
+    
+    mock_author = SimpleNamespace(
+        id=uuid.uuid4(),
+        email=author_email,
+        first_name="John",
+        last_name="Doe",
+    )
+    
+    mock_task = SimpleNamespace(
+        id=task_id,
+        title="Old Title",
+        created_by=author_email,
+    )
+    
+    mock_updated_task = SimpleNamespace(
+        id=task_id,
+        title="",
+        created_by=author_email,
+    )
+    
+    db_mock = MagicMock()
+    session_cm = MagicMock()
+    session_cm.__enter__.return_value = db_mock
+    
+    with patch(
+        "pecha_api.plans.tasks.plan_tasks_services.validate_and_extract_author_details",
+        return_value=mock_author,
+    ) as mock_validate, patch(
+        "pecha_api.plans.tasks.plan_tasks_services.SessionLocal",
+        return_value=session_cm,
+    ), patch(
+        "pecha_api.plans.tasks.plan_tasks_services.get_task_by_id",
+        return_value=mock_task,
+    ) as mock_get_task, patch(
+        "pecha_api.plans.tasks.plan_tasks_services.update_task_title",
+        return_value=mock_updated_task,
+    ) as mock_update:
+        
+        result = await update_task_title_service(
+            token="valid_token_123",
+            task_id=task_id,
+            update_request=request,
+        )
+        
+        assert isinstance(result, UpdateTaskTitleResponse)
+        assert result.task_id == task_id
+        assert result.title == ""
+        
+        assert mock_validate.call_count == 1
+        assert mock_get_task.call_count == 1
+        assert mock_update.call_count == 1

@@ -10,7 +10,7 @@ from pecha_api.plans.tasks.plan_tasks_models import PlanTask
 from sqlalchemy import func
 from fastapi import HTTPException
 from starlette import status
-from pecha_api.plans.response_message import PLAN_DAY_NOT_FOUND, BAD_REQUEST, TASK_SAME_DAY_NOT_ALLOWED, FORBIDDEN, UNAUTHORIZED_TASK_DELETE, UNAUTHORIZED_TASK_ACCESS
+from pecha_api.plans.response_message import PLAN_DAY_NOT_FOUND, BAD_REQUEST, TASK_SAME_DAY_NOT_ALLOWED, FORBIDDEN, UNAUTHORIZED_TASK_DELETE, UNAUTHORIZED_TASK_ACCESS, TASK_TITLE_UPDATE_SUCCESS
 from pecha_api.plans.auth.plan_auth_models import ResponseError
 from pecha_api.uploads.S3_utils import generate_presigned_access_url
 from pecha_api.config import get
@@ -99,6 +99,7 @@ async def update_task_title_service(token: str, task_id: UUID, update_request: U
         return UpdateTaskTitleResponse(
             task_id=updated_task.id,
             title=updated_task.title,
+            message=TASK_TITLE_UPDATE_SUCCESS
         )
 
 async def get_task_subtasks_service(task_id: UUID, token: str) -> GetTaskResponse:
