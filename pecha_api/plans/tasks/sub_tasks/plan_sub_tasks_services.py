@@ -76,7 +76,6 @@ async def update_sub_task_by_task_id(token: str, update_sub_task_request: Update
         if task.created_by != current_author.email:
             raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail=ResponseError(error=FORBIDDEN, message=UNAUTHORIZED_TASK_ACCESS).model_dump())
 
-        # Separate existing items (with id) and new items (without id)
         existing_sub_tasks_to_update: List[SubTaskDTO] = [
             subtask for subtask in update_sub_task_request.sub_tasks if subtask.id is not None
         ]
