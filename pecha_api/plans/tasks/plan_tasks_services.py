@@ -1,5 +1,5 @@
 from pecha_api.plans.tasks.plan_tasks_repository import save_task, get_task_by_id, delete_task, update_task_day
-from pecha_api.plans.tasks.plan_tasks_response_model import CreateTaskRequest, TaskDTO, UpdateTaskDayRequest, UpdatedTaskDayResponse, GetTaskResponse
+from pecha_api.plans.tasks.plan_tasks_response_model import CreateTaskRequest, TaskDTO, UpdateTaskDayRequest, UpdatedTaskDayResponse, GetTaskResponse, ContentAndImageUrl
 from pecha_api.plans.tasks.sub_tasks.plan_sub_tasks_response_model import SubTaskDTO
 from pecha_api.plans.authors.plan_authors_service import validate_and_extract_author_details
 from uuid import UUID
@@ -86,15 +86,21 @@ async def get_task_subtasks_service(task_id: UUID, token: str) -> GetTaskRespons
         if task.created_by != current_user.email:
             raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail=ResponseError(error=FORBIDDEN, message=UNAUTHORIZED_TASK_ACCESS).model_dump())
         
-        subtasks_dto = [
-            SubTaskDTO(
-                id=sub_task.id,
+        subtasks_dto = []
+        for sub_task in task.sub_tasks:
+            content_and_image_url = _generate_image_url_content_type(
                 content_type=sub_task.content_type,
-                content=_get_content_by_content_type(content_type=sub_task.content_type, content=sub_task.content),
-                display_order=sub_task.display_order,
+                content=sub_task.content,
             )
-            for sub_task in task.sub_tasks
-        ]
+            subtasks_dto.append(
+                SubTaskDTO(
+                    id=sub_task.id,
+                    content_type=sub_task.content_type,
+                    content=content_and_image_url.content,
+                    image_url=content_and_image_url.image_url,
+                    display_order=sub_task.display_order,
+                )
+            )
 
         return GetTaskResponse(
             id=task.id,
@@ -104,10 +110,10 @@ async def get_task_subtasks_service(task_id: UUID, token: str) -> GetTaskRespons
             subtasks=subtasks_dto,
         )
 
-def _get_content_by_content_type(content_type: str, content: str) -> str:
-    
+def _generate_image_url_content_type(content_type: str, content: str) -> ContentAndImageUrl:
     if content_type == ContentType.IMAGE:
-        return generate_presigned_access_url(bucket_name=get("AWS_BUCKET_NAME"), s3_key=content)
-    return content
-
-    
+        presigned_url = generate_presigned_access_url(
+            bucket_name=get("AWS_BUCKET_NAME"), s3_key=content
+        )
+        return ContentAndImageUrl(content=presigned_url, image_url=content)
+    return ContentAndImageUrl(content=content, image_url=None)

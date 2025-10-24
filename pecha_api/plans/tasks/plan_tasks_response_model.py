@@ -37,3 +37,7 @@ class GetTaskResponse(BaseModel):
     display_order: int
     estimated_time: Optional[int] = None
     subtasks: List[SubTaskDTO]
+
+class ContentAndImageUrl(BaseModel):
+    content: str
+    image_url: Optional[str] = None
