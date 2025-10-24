@@ -76,19 +76,34 @@ async def update_sub_task_by_task_id(token: str, update_sub_task_request: Update
         if task.created_by != current_author.email:
             raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail=ResponseError(error=FORBIDDEN, message=UNAUTHORIZED_TASK_ACCESS).model_dump())
 
-    
-        new_sub_tasks_to_create: List[PlanSubTask] = [subtask for subtask in update_sub_task_request.sub_tasks if subtask.id is None]
-    
-        if new_sub_tasks_to_create:
-            save_sub_tasks_bulk(db=db, sub_tasks=new_sub_tasks_to_create)
+        # Separate existing items (with id) and new items (without id)
+        existing_sub_tasks_to_update: List[SubTaskDTO] = [
+            subtask for subtask in update_sub_task_request.sub_tasks if subtask.id is not None
+        ]
 
-        existing_sub_tasks_to_update = [subtask for subtask in update_sub_task_request.sub_tasks if subtask.id is not None]
+        new_sub_tasks_to_create: List[PlanSubTask] = [
+            PlanSubTask(
+                task_id=update_sub_task_request.task_id,
+                content_type=subtask.content_type,
+                content=subtask.content,
+                display_order=subtask.display_order,
+                created_by=current_author.email,
+            )
+            for subtask in update_sub_task_request.sub_tasks
+            if subtask.id is None
+        ]
 
-        sub_tasks = get_sub_tasks_by_task_id(db=db, task_id=update_sub_task_request.task_id)
-        sub_tasks_ids = [sub_task.id for sub_task in sub_tasks]
-        requested_sub_tasks_ids = [sub_task.id for sub_task in existing_sub_tasks_to_update]
-        sub_tasks_ids_to_delete = [id for id in sub_tasks_ids if id not in requested_sub_tasks_ids]
+        # Compute deletions BEFORE creating new sub tasks to avoid deleting freshly created records
+        existing_in_db = get_sub_tasks_by_task_id(db=db, task_id=update_sub_task_request.task_id)
+        existing_ids_in_db = [sub_task.id for sub_task in existing_in_db]
+        requested_existing_ids = [sub_task.id for sub_task in existing_sub_tasks_to_update]
+        sub_tasks_ids_to_delete = [id for id in existing_ids_in_db if id not in requested_existing_ids]
 
         delete_sub_tasks_bulk(db=db, sub_tasks_ids=sub_tasks_ids_to_delete)
 
-        update_sub_tasks_bulk(db=db, sub_tasks=update_sub_task_request.sub_tasks)
+        # Update only existing sub tasks
+        update_sub_tasks_bulk(db=db, sub_tasks=existing_sub_tasks_to_update)
+
+        # Finally, create new sub tasks
+        if new_sub_tasks_to_create:
+            save_sub_tasks_bulk(db=db, sub_tasks=new_sub_tasks_to_create)
