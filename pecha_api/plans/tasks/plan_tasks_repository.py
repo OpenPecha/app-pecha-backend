@@ -1,4 +1,3 @@
-
 from uuid import UUID
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session, joinedload
@@ -73,3 +72,38 @@ def update_task_order(db: Session, task_id: UUID, display_order: int) -> PlanTas
     task.display_order = display_order
     db.commit()
     return task
+
+def get_task_by_display_order(db: Session, plan_item_id: UUID, display_order: int) -> PlanTask:
+    task = (
+        db.query(PlanTask)
+        .filter(
+            PlanTask.plan_item_id == plan_item_id,
+            PlanTask.display_order == display_order
+        )
+        .first()
+    )
+    return task
+
+def get_tasks_by_plan_item_id(db: Session, plan_item_id: UUID) -> List[PlanTask]:
+    tasks = (
+        db.query(PlanTask)
+        .filter(PlanTask.plan_item_id == plan_item_id)
+        .order_by(asc(PlanTask.display_order))
+        .all()
+    )
+    return tasks
+
+def shift_tasks_order(db: Session, plan_item_id: UUID, from_order: int, to_order: int, exclude_task_id: UUID = None):
+
+    tasks = get_tasks_by_plan_item_id(db=db, plan_item_id=plan_item_id)
+    
+    if from_order < to_order:
+        for task in tasks:
+            if task.id != exclude_task_id and from_order < task.display_order <= to_order:
+                task.display_order -= 1
+    else:
+        for task in tasks:
+            if task.id != exclude_task_id and to_order <= task.display_order < from_order:
+                task.display_order += 1
+    
+    db.commit()

@@ -1,4 +1,4 @@
-from pecha_api.plans.tasks.plan_tasks_repository import save_task, get_task_by_id, delete_task, update_task_day, update_task_order
+from pecha_api.plans.tasks.plan_tasks_repository import save_task, get_task_by_id, delete_task, update_task_day, update_task_order, shift_tasks_order
 from pecha_api.plans.tasks.plan_tasks_response_model import CreateTaskRequest, TaskDTO, UpdateTaskDayRequest, UpdatedTaskDayResponse, GetTaskResponse, ContentAndImageUrl, UpdateTaskOrderRequest, UpdatedTaskOrderResponse
 from pecha_api.plans.tasks.sub_tasks.plan_sub_tasks_response_model import SubTaskDTO
 from pecha_api.plans.authors.plan_authors_service import validate_and_extract_author_details
@@ -10,7 +10,7 @@ from pecha_api.plans.tasks.plan_tasks_models import PlanTask
 from sqlalchemy import func
 from fastapi import HTTPException
 from starlette import status
-from pecha_api.plans.response_message import PLAN_DAY_NOT_FOUND, BAD_REQUEST, TASK_SAME_DAY_NOT_ALLOWED, FORBIDDEN, UNAUTHORIZED_TASK_DELETE, UNAUTHORIZED_TASK_ACCESS
+from pecha_api.plans.response_message import PLAN_DAY_NOT_FOUND, BAD_REQUEST, TASK_ORDER_UPDATE_FAIL, FORBIDDEN, UNAUTHORIZED_TASK_DELETE, UNAUTHORIZED_TASK_ACCESS
 from pecha_api.plans.auth.plan_auth_models import ResponseError
 from pecha_api.uploads.S3_utils import generate_presigned_access_url
 from pecha_api.config import get
@@ -77,16 +77,37 @@ async def change_task_day_service(token: str, task_id: UUID, update_task_request
             title=task.title,
         )
 
-async def change_task_order_service(token: str, task_id: UUID, update_task_order_request: UpdateTaskOrderRequest) -> UpdatedTaskDayResponse:
+async def change_task_order_service(token: str, task_id: UUID, update_task_order_request: UpdateTaskOrderRequest) -> UpdatedTaskOrderResponse:
     validate_and_extract_author_details(token=token)
 
     with SessionLocal() as db:
-        last_task_display_order = get_task_by_id(db=db, task_id=task_id).display_order
-
-        update_current_task_display_order = update_task_order(db=db, task_id=task_id, display_order=last_task_display_order + 1)
+        current_task = get_task_by_id(db=db, task_id=task_id)
+        current_display_order = current_task.display_order
+        plan_item_id = current_task.plan_item_id
+        target_display_order = update_task_order_request.target_order
+        
+        shift_tasks_order(
+            db=db,
+            plan_item_id=plan_item_id,
+            from_order=current_display_order,
+            to_order=target_display_order,
+            exclude_task_id=task_id
+        )
+        
+        update_current_task_display_order = update_task_order(
+            db=db, 
+            task_id=task_id, 
+            display_order=target_display_order
+        )
 
         if not update_current_task_display_order:
-            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=ResponseError(error=BAD_REQUEST, message=str(e)).model_dump())
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST, 
+                detail=ResponseError(
+                    error=BAD_REQUEST, 
+                    message=TASK_ORDER_UPDATE_FAIL
+                ).model_dump()
+            )
 
         return UpdatedTaskOrderResponse(
             task_id=update_current_task_display_order.id,
