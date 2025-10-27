@@ -18,6 +18,8 @@ from pecha_api.plans.tasks.plan_tasks_services import (
     change_task_day_service,
     delete_task_by_id,
     get_task_subtasks_service,
+    _get_max_display_order,
+    _reorder_task_display_order,
 )
 
 
