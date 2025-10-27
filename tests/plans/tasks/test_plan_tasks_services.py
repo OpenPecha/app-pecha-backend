@@ -618,6 +618,93 @@ async def test_get_task_subtasks_service_forbidden_when_not_creator():
         assert mock_get_task.call_count == 1
 
 
+def test__get_max_display_order_returns_zero_when_no_tasks():
+    plan_item_id = uuid.uuid4()
+
+    db_mock = MagicMock()
+
+    # Chain: db.query(...).filter(...).scalar() -> None
+    query_mock = MagicMock()
+    filter_mock = MagicMock()
+    filter_mock.scalar.return_value = None
+    query_mock.filter.return_value = filter_mock
+    db_mock.query.return_value = query_mock
+
+    session_cm = MagicMock()
+    session_cm.__enter__.return_value = db_mock
+
+    with patch(
+        "pecha_api.plans.tasks.plan_tasks_services.SessionLocal",
+        return_value=session_cm,
+    ):
+        result = _get_max_display_order(plan_item_id=plan_item_id)
+
+    # None -> coalesce to 0
+    assert result == 0
+    assert db_mock.query.call_count == 1
+    assert query_mock.filter.call_count == 1
+    assert filter_mock.scalar.call_count == 1
+
+
+def test__get_max_display_order_returns_max_value():
+    plan_item_id = uuid.uuid4()
+
+    db_mock = MagicMock()
+
+    # Chain: db.query(...).filter(...).scalar() -> 7
+    query_mock = MagicMock()
+    filter_mock = MagicMock()
+    filter_mock.scalar.return_value = 7
+    query_mock.filter.return_value = filter_mock
+    db_mock.query.return_value = query_mock
+
+    session_cm = MagicMock()
+    session_cm.__enter__.return_value = db_mock
+
+    with patch(
+        "pecha_api.plans.tasks.plan_tasks_services.SessionLocal",
+        return_value=session_cm,
+    ):
+        result = _get_max_display_order(plan_item_id=plan_item_id)
+
+    assert result == 7
+    assert db_mock.query.call_count == 1
+    assert query_mock.filter.call_count == 1
+    assert filter_mock.scalar.call_count == 1
+
+
+def test__reorder_task_display_order_sorts_and_reassigns_incremental_orders():
+    plan_item_id = uuid.uuid4()
+    db_mock = MagicMock()
+
+    task_a = SimpleNamespace(id=uuid.uuid4(), display_order=5)
+    task_b = SimpleNamespace(id=uuid.uuid4(), display_order=2)
+    task_c = SimpleNamespace(id=uuid.uuid4(), display_order=3)
+    returned_tasks = [task_a, task_b, task_c]
+
+    with patch(
+        "pecha_api.plans.tasks.plan_tasks_services.get_tasks_by_plan_item_id",
+        return_value=returned_tasks,
+    ) as mock_get_tasks, patch(
+        "pecha_api.plans.tasks.plan_tasks_services.update_task_order_by_id",
+    ) as mock_update:
+        _reorder_task_display_order(db=db_mock, plan_item_id=plan_item_id)
+
+    # Should fetch tasks for the specific plan item
+    assert mock_get_tasks.call_count == 1
+    assert mock_get_tasks.call_args.kwargs == {"db": db_mock, "plan_item_id": plan_item_id}
+
+    # Should update in ascending order of current display_order -> ids: task_b, task_c, task_a
+    expected_calls = [
+        {"task_id": task_b.id, "display_order": 1},
+        {"task_id": task_c.id, "display_order": 2},
+        {"task_id": task_a.id, "display_order": 3},
+    ]
+    assert mock_update.call_count == 3
+    actual_calls = [kw.kwargs for kw in mock_update.call_args_list]
+    for actual, expected in zip(actual_calls, expected_calls):
+        assert actual == {"db": db_mock, **expected}
+
 @pytest.mark.asyncio
 async def test_get_task_subtasks_service_invalid_token():
     task_id = uuid.uuid4()
