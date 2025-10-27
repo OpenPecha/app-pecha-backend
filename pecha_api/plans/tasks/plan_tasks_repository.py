@@ -66,3 +66,12 @@ def update_task_day(db: Session, task_id: UUID, target_day_id: UUID, display_ord
     task.display_order = display_order
     db.commit()
     return task
+
+def get_tasks_by_plan_item_id(db: Session, plan_item_id: UUID) -> List[PlanTask]:
+    return db.query(PlanTask).filter(PlanTask.plan_item_id == plan_item_id).order_by(PlanTask.display_order).all()
+
+def update_task_order_by_id(db: Session, task_id: UUID, display_order: int) -> PlanTask:
+    task = get_task_by_id(db=db, task_id=task_id)
+    task.display_order = display_order
+    db.commit()
+    return task
