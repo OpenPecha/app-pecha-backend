@@ -785,16 +785,25 @@ async def test_update_selected_plan_status_invalid_transition():
 
 @pytest.mark.asyncio
 async def test_delete_selected_plan_success():
-    # Get a test plan from DUMMY_PLANS
-    test_plan = DUMMY_PLANS[0]
-    initial_plan_count = len(DUMMY_PLANS)
-    
-    with patch("pecha_api.plans.cms.cms_plans_service.validate_and_extract_author_details") as mock_validate_author:
-        mock_validate_author.return_value = MagicMock()
-        
-        await delete_selected_plan(token="dummy-token", plan_id=test_plan.id)
-        
-        # Verify plan was removed from DUMMY_PLANS
-        assert len(plans_service.DUMMY_PLANS) == initial_plan_count - 1
-        assert not any(p.id == test_plan.id for p in plans_service.DUMMY_PLANS)
+    plan_id = uuid.uuid4()
+    author = MagicMock()
+    author.id = uuid.uuid4()
+
+    plan = MagicMock(spec=Plan)
+    plan.id = plan_id
+    plan.author_id = author.id
+
+    with patch("pecha_api.plans.cms.cms_plans_service.SessionLocal") as mock_session_local, \
+        patch("pecha_api.plans.cms.cms_plans_service.get_plan_by_id") as mock_get_plan_by_id, \
+        patch("pecha_api.plans.cms.cms_plans_service.soft_delete_plan_by_id") as mock_soft_delete, \
+        patch("pecha_api.plans.cms.cms_plans_service.validate_and_extract_author_details") as mock_validate_author:
+        db_session = _mock_session_local(mock_session_local)
+        mock_validate_author.return_value = author
+        mock_get_plan_by_id.return_value = plan
+
+        await delete_selected_plan(token="dummy-token", plan_id=plan_id)
+
+        mock_validate_author.assert_called_once_with(token="dummy-token")
+        mock_get_plan_by_id.assert_called_once_with(db=db_session, plan_id=plan_id)
+        mock_soft_delete.assert_called_once_with(db=db_session, plan_id=plan_id, author=author)
 
