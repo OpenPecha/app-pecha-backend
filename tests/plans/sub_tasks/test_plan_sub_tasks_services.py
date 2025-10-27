@@ -11,7 +11,8 @@ from pecha_api.plans.tasks.sub_tasks.plan_sub_tasks_response_model import (
     UpdateSubTaskRequest,
 )
 from pecha_api.plans.tasks.sub_tasks.plan_sub_tasks_services import create_new_sub_tasks, update_sub_task_by_task_id
-from pecha_api.plans.response_message import BAD_REQUEST
+from pecha_api.plans.response_message import BAD_REQUEST, FORBIDDEN, UNAUTHORIZED_TASK_ACCESS
+from pecha_api.plans.plans_enums import ContentType
 
 
 @pytest.mark.asyncio
@@ -237,3 +238,174 @@ async def test_update_sub_task_by_task_id_deletes_missing_and_updates_existing_a
 
         assert resp is None
 
+
+@pytest.mark.asyncio
+async def test_update_sub_task_by_task_id_unauthorized_raises_http_exception_403():
+    task_id = uuid.uuid4()
+
+    request = UpdateSubTaskRequest(
+        task_id=task_id,
+        sub_tasks=[
+            SubTaskDTO(id=uuid.uuid4(), content_type="TEXT", content="X", display_order=1),
+        ],
+    )
+
+    db_mock = MagicMock()
+    session_cm = MagicMock()
+    session_cm.__enter__.return_value = db_mock
+
+    with patch(
+        "pecha_api.plans.tasks.sub_tasks.plan_sub_tasks_services.validate_and_extract_author_details",
+        return_value=SimpleNamespace(email="author@example.com"),
+    ), patch(
+        "pecha_api.plans.tasks.sub_tasks.plan_sub_tasks_services.SessionLocal",
+        return_value=session_cm,
+    ), patch(
+        "pecha_api.plans.tasks.sub_tasks.plan_sub_tasks_services.get_task_by_id",
+        return_value=SimpleNamespace(id=task_id, created_by="someoneelse@example.com"),
+    ):
+        from fastapi import HTTPException
+
+        with pytest.raises(HTTPException) as exc:
+            await update_sub_task_by_task_id(
+                token="token123",
+                update_sub_task_request=request,
+            )
+
+        assert exc.value.status_code == 403
+        detail = exc.value.detail
+        assert detail["error"] == FORBIDDEN
+        assert detail["message"] == UNAUTHORIZED_TASK_ACCESS
+
+
+@pytest.mark.asyncio
+async def test_update_sub_task_by_task_id_creates_new_sub_tasks_for_none_ids():
+    task_id = uuid.uuid4()
+    existing_id = uuid.uuid4()
+
+    request = UpdateSubTaskRequest(
+        task_id=task_id,
+        sub_tasks=[
+            SubTaskDTO(id=existing_id, content_type="TEXT", content="Keep updated", display_order=1),
+            SubTaskDTO(id=None, content_type="TEXT", content="New A", display_order=2),
+            SubTaskDTO(id=None, content_type="TEXT", content="New B", display_order=3),
+        ],
+    )
+
+    db_mock = MagicMock()
+    session_cm = MagicMock()
+    session_cm.__enter__.return_value = db_mock
+
+    constructed_a = SimpleNamespace(
+        task_id=task_id,
+        content_type="TEXT",
+        content="New A",
+        display_order=2,
+        created_by="author@example.com",
+    )
+    constructed_b = SimpleNamespace(
+        task_id=task_id,
+        content_type="TEXT",
+        content="New B",
+        display_order=3,
+        created_by="author@example.com",
+    )
+
+    with patch(
+        "pecha_api.plans.tasks.sub_tasks.plan_sub_tasks_services.validate_and_extract_author_details",
+        return_value=SimpleNamespace(email="author@example.com"),
+    ), patch(
+        "pecha_api.plans.tasks.sub_tasks.plan_sub_tasks_services.SessionLocal",
+        return_value=session_cm,
+    ), patch(
+        "pecha_api.plans.tasks.sub_tasks.plan_sub_tasks_services.get_task_by_id",
+        return_value=SimpleNamespace(id=task_id, created_by="author@example.com"),
+    ), patch(
+        "pecha_api.plans.tasks.sub_tasks.plan_sub_tasks_services.get_sub_tasks_by_task_id",
+        return_value=[SimpleNamespace(id=existing_id)],
+    ) as mock_get_subtasks, patch(
+        "pecha_api.plans.tasks.sub_tasks.plan_sub_tasks_services.delete_sub_tasks_bulk",
+    ) as mock_delete_bulk, patch(
+        "pecha_api.plans.tasks.sub_tasks.plan_sub_tasks_services.update_sub_tasks_bulk",
+    ) as mock_update_bulk, patch(
+        "pecha_api.plans.tasks.sub_tasks.plan_sub_tasks_services.PlanSubTask",
+    ) as MockPlanSubTask, patch(
+        "pecha_api.plans.tasks.sub_tasks.plan_sub_tasks_services.save_sub_tasks_bulk",
+    ) as mock_save_bulk:
+        MockPlanSubTask.side_effect = [constructed_a, constructed_b]
+
+        resp = await update_sub_task_by_task_id(
+            token="token123",
+            update_sub_task_request=request,
+        )
+
+        # No deletions
+        assert mock_get_subtasks.call_count == 1
+        assert mock_delete_bulk.call_count == 1
+        assert mock_delete_bulk.call_args.kwargs["sub_tasks_ids"] == []
+
+        # Update existing
+        assert mock_update_bulk.call_count == 1
+        assert mock_update_bulk.call_args.kwargs["sub_tasks"] == [request.sub_tasks[0]]
+
+        # Create two new sub tasks
+        assert MockPlanSubTask.call_count == 2
+        call1 = MockPlanSubTask.call_args_list[0].kwargs
+        call2 = MockPlanSubTask.call_args_list[1].kwargs
+        assert call1 == {
+            "task_id": task_id,
+            "content_type": ContentType.TEXT,
+            "content": "New A",
+            "display_order": 2,
+            "created_by": "author@example.com",
+        }
+        assert call2 == {
+            "task_id": task_id,
+            "content_type": ContentType.TEXT,
+            "content": "New B",
+            "display_order": 3,
+            "created_by": "author@example.com",
+        }
+
+        assert mock_save_bulk.call_count == 1
+        assert mock_save_bulk.call_args.kwargs["db"] is db_mock
+        assert mock_save_bulk.call_args.kwargs["sub_tasks"] == [constructed_a, constructed_b]
+
+        assert resp is None
+
+
+@pytest.mark.asyncio
+async def test_update_sub_task_by_task_id_task_not_found_raises_http_exception_400():
+    task_id = uuid.uuid4()
+
+    request = UpdateSubTaskRequest(
+        task_id=task_id,
+        sub_tasks=[],
+    )
+
+    db_mock = MagicMock()
+    session_cm = MagicMock()
+    session_cm.__enter__.return_value = db_mock
+
+    with patch(
+        "pecha_api.plans.tasks.sub_tasks.plan_sub_tasks_services.validate_and_extract_author_details",
+        return_value=SimpleNamespace(email="author@example.com"),
+    ), patch(
+        "pecha_api.plans.tasks.sub_tasks.plan_sub_tasks_services.SessionLocal",
+        return_value=session_cm,
+    ), patch(
+        "pecha_api.plans.tasks.sub_tasks.plan_sub_tasks_services.get_task_by_id",
+        return_value=None,
+    ):
+        from fastapi import HTTPException
+
+        with pytest.raises(HTTPException) as exc:
+            await update_sub_task_by_task_id(
+                token="token123",
+                update_sub_task_request=request,
+            )
+
+        assert exc.value.status_code == 400
+        detail = exc.value.detail
+        assert detail["error"] == BAD_REQUEST
+        assert "not found" in detail["message"].lower()
