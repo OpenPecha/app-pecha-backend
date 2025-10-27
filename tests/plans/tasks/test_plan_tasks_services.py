@@ -136,6 +136,7 @@ async def test_delete_task_by_id_success():
         id=task_id,
         title="Test Task",
         created_by=author_email,
+        plan_item_id=uuid.uuid4(),
     )
 
     db_mock = MagicMock()
@@ -153,7 +154,9 @@ async def test_delete_task_by_id_success():
         return_value=mock_task,
     ) as mock_get_task, patch(
         "pecha_api.plans.tasks.plan_tasks_services.delete_task",
-    ) as mock_delete:
+    ) as mock_delete, patch(
+        "pecha_api.plans.tasks.plan_tasks_services._reorder_task_display_order",
+    ) as mock_reorder:
         await delete_task_by_id(task_id=task_id, token=token)
 
         assert mock_validate.call_count == 1
@@ -165,6 +168,10 @@ async def test_delete_task_by_id_success():
 
         assert mock_delete.call_count == 1
         assert mock_delete.call_args.kwargs == {"db": db_mock, "task_id": task_id}
+
+        # ensure reorder is triggered with the deleted task's plan_item_id
+        assert mock_reorder.call_count == 1
+        assert mock_reorder.call_args.kwargs == {"db": db_mock, "plan_item_id": mock_task.plan_item_id}
 
 
 @pytest.mark.asyncio
@@ -181,6 +188,7 @@ async def test_delete_task_by_id_unauthorized():
         id=task_id,
         title="Test Task",
         created_by=different_author_email,
+        plan_item_id=uuid.uuid4(),
     )
 
     db_mock = MagicMock()
@@ -198,7 +206,9 @@ async def test_delete_task_by_id_unauthorized():
         return_value=mock_task,
     ) as mock_get_task, patch(
         "pecha_api.plans.tasks.plan_tasks_services.delete_task",
-    ) as mock_delete:
+    ) as mock_delete, patch(
+        "pecha_api.plans.tasks.plan_tasks_services._reorder_task_display_order",
+    ) as mock_reorder:
         with pytest.raises(HTTPException) as exc_info:
             await delete_task_by_id(task_id=task_id, token=token)
 
@@ -208,6 +218,9 @@ async def test_delete_task_by_id_unauthorized():
 
         assert mock_validate.call_count == 1
         assert mock_get_task.call_count == 1
+        # ensure delete and reorder were not called
+        assert mock_delete.call_count == 0
+        assert mock_reorder.call_count == 0
 
 
 @pytest.mark.asyncio
@@ -303,7 +316,9 @@ async def test_delete_task_by_id_task_not_found():
         side_effect=HTTPException(status_code=404, detail={"error": "BAD_REQUEST", "message": "Task not found"}),
     ) as mock_get_task, patch(
         "pecha_api.plans.tasks.plan_tasks_services.delete_task",
-    ) as mock_delete:
+    ) as mock_delete, patch(
+        "pecha_api.plans.tasks.plan_tasks_services._reorder_task_display_order",
+    ) as mock_reorder:
         with pytest.raises(HTTPException) as exc_info:
             await delete_task_by_id(task_id=task_id, token=token)
 
@@ -314,6 +329,7 @@ async def test_delete_task_by_id_task_not_found():
         assert mock_get_task.call_count == 1
 
         assert mock_delete.call_count == 0
+        assert mock_reorder.call_count == 0
 
 
 @pytest.mark.asyncio
@@ -331,7 +347,9 @@ async def test_delete_task_by_id_invalid_token():
         "pecha_api.plans.tasks.plan_tasks_services.get_task_by_id",
     ) as mock_get_task, patch(
         "pecha_api.plans.tasks.plan_tasks_services.delete_task",
-    ) as mock_delete:
+    ) as mock_delete, patch(
+        "pecha_api.plans.tasks.plan_tasks_services._reorder_task_display_order",
+    ) as mock_reorder:
         with pytest.raises(HTTPException) as exc_info:
             await delete_task_by_id(task_id=task_id, token=token)
 
@@ -341,6 +359,7 @@ async def test_delete_task_by_id_invalid_token():
         assert mock_session.call_count == 0
         assert mock_get_task.call_count == 0
         assert mock_delete.call_count == 0
+        assert mock_reorder.call_count == 0
 
 
 @pytest.mark.asyncio
@@ -356,6 +375,7 @@ async def test_delete_task_by_id_database_error():
         id=task_id,
         title="Test Task",
         created_by=author_email,
+        plan_item_id=uuid.uuid4(),
     )
 
     db_mock = MagicMock()
@@ -374,7 +394,9 @@ async def test_delete_task_by_id_database_error():
     ) as mock_get_task, patch(
         "pecha_api.plans.tasks.plan_tasks_services.delete_task",
         side_effect=HTTPException(status_code=400, detail={"error": "BAD_REQUEST", "message": "Database error"}),
-    ) as mock_delete:
+    ) as mock_delete, patch(
+        "pecha_api.plans.tasks.plan_tasks_services._reorder_task_display_order",
+    ) as mock_reorder:
         with pytest.raises(HTTPException) as exc_info:
             await delete_task_by_id(task_id=task_id, token=token)
 
@@ -383,6 +405,8 @@ async def test_delete_task_by_id_database_error():
         assert mock_validate.call_count == 1
         assert mock_get_task.call_count == 1
         assert mock_delete.call_count == 1
+        # reorder should not be called if delete fails
+        assert mock_reorder.call_count == 0
 
 
 @pytest.mark.asyncio
