@@ -82,7 +82,7 @@ async def update_author_info(token: str, author_info_request: AuthorInfoRequest)
     current_author.first_name = author_info_request.firstname
     current_author.last_name = author_info_request.lastname
     current_author.bio = author_info_request.bio
-    current_author.image_url = Utils.extract_s3_key(presigned_url=author_info_request.avatar_url)
+    current_author.image_url = Utils.extract_s3_key(presigned_url=author_info_request.image_url)
     with SessionLocal() as db_session:
         try:
             db_session.add(current_author)
