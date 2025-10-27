@@ -29,7 +29,7 @@ PLAN_DAY_NOT_FOUND = "Plan day not found"
 TASK_SAME_DAY_NOT_ALLOWED = "Task is already in the same day"
 PLAN_NOT_FOUND = "Plan not found"
 EMAIL_IS_SENT = "Email is sent. Please check your email to verify your account."
-
+UNAUTHORIZED_PLAN_DELETE = "You are not authorized to delete this plan"
 TASK_NOT_FOUND = "Task not found"
 UNAUTHORIZED_TASK_DELETE = "You are not authorized to delete this task"
 UNAUTHORIZED_TASK_ACCESS = "You are not authorized to access this task"

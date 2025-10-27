@@ -25,7 +25,7 @@ from pecha_api.uploads.S3_utils import generate_presigned_access_url
 from uuid import uuid4, UUID
 from fastapi import HTTPException
 from pecha_api.plans.auth.plan_auth_models import ResponseError
-from pecha_api.plans.response_message import BAD_REQUEST, PLAN_NOT_FOUND
+from pecha_api.plans.response_message import BAD_REQUEST, PLAN_NOT_FOUND, FORBIDDEN, UNAUTHORIZED_PLAN_DELETE
 from datetime import datetime, timezone
 from sqlalchemy import func
 
@@ -335,9 +335,17 @@ async def delete_selected_plan(token:str,plan_id: UUID):
     with SessionLocal() as db:
         plan = get_plan_by_id(db=db, plan_id=plan_id)
         if not plan:
-            raise HTTPException(status_code=404, detail="Plan not found")
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND, 
+                detail=ResponseError(error=BAD_REQUEST, 
+                message=PLAN_NOT_FOUND).model_dump()
+            )
         if plan.author_id != current_author.id:
-            raise HTTPException(status_code=403, detail="You are not authorized to delete this plan")
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN, 
+                detail=ResponseError(error=FORBIDDEN, 
+                message=UNAUTHORIZED_PLAN_DELETE).model_dump()
+            )
         soft_delete_plan_by_id(db=db, plan_id=plan_id, author=current_author)
 
 def _get_task_subtasks_dto(subtasks: List[PlanSubTask]) -> List[SubTaskDTO]:
