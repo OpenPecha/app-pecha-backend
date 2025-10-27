@@ -322,7 +322,7 @@ class TestDataFactory:
     def create_author_info_request(
         firstname="John",
         lastname="Doe",
-        avatar_url="https://s3.amazonaws.com/bucket/test-image.jpg",
+        image_url="https://s3.amazonaws.com/bucket/test-image.jpg",
         bio="Updated bio",
         social_profiles=None
     ) -> AuthorInfoRequest:
@@ -338,7 +338,7 @@ class TestDataFactory:
         return AuthorInfoRequest(
             firstname=firstname,
             lastname=lastname,
-            avatar_url=avatar_url,
+            image_url=image_url,
             bio=bio,
             social_profiles=social_profiles
         )
@@ -402,7 +402,7 @@ class TestGetAuthors:
         assert first_author.lastname == mock_authors[0].last_name
         assert first_author.email == mock_authors[0].email
         assert first_author.bio == mock_authors[0].bio
-        assert first_author.avatar_url == presigned_url
+        assert first_author.image_url == presigned_url
         
         # Verify function calls
         mock_get_all_authors.assert_called_once_with(db=mock_db_session)
@@ -486,7 +486,7 @@ class TestGetAuthorDetails:
         assert result.lastname == mock_author.last_name
         assert result.email == mock_author.email
         assert result.bio == mock_author.bio
-        assert result.avatar_url == presigned_url
+        assert result.image_url == presigned_url
         assert result.social_profiles == social_profiles
         
         # Verify function calls
@@ -625,7 +625,7 @@ class TestUpdateAuthorInfo:
         
         # Verify function calls
         mock_validate_and_extract.assert_called_once_with(token=token)
-        mock_extract_s3_key.assert_called_once_with(presigned_url=author_info_request.avatar_url)
+        mock_extract_s3_key.assert_called_once_with(presigned_url=author_info_request.image_url)
         mock_db_session.add.assert_called_once_with(mock_author)
         mock_update_social_profiles.assert_called_once_with(
             author=mock_author,
@@ -716,7 +716,7 @@ class TestGetSelectedAuthorDetails:
         assert result.lastname == mock_author.last_name
         assert result.email == mock_author.email
         assert result.bio == mock_author.bio
-        assert result.avatar_url == presigned_url
+        assert result.image_url == presigned_url
         assert result.social_profiles == social_profiles
         
         # Verify function calls

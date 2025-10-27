@@ -35,7 +35,7 @@ async def get_authors() -> AuthorsResponse:
             firstname=author.first_name,
             lastname=author.last_name,
             email=author.email,
-            avatar_url=generate_presigned_access_url(bucket_name=get("AWS_BUCKET_NAME"), s3_key= author.image_url),
+            image_url=generate_presigned_access_url(bucket_name=get("AWS_BUCKET_NAME"), s3_key= author.image_url),
             bio=author.bio,
             social_profiles=_get_author_social_profile(author=author)
         ) for author in authors]
@@ -54,7 +54,7 @@ async def get_author_details(token: str) -> AuthorInfoResponse:
         firstname=author.first_name,
         lastname=author.last_name,
         email=author.email,
-        avatar_url=generate_presigned_access_url(bucket_name=get("AWS_BUCKET_NAME"), s3_key= author.image_url),
+        image_url=generate_presigned_access_url(bucket_name=get("AWS_BUCKET_NAME"), s3_key= author.image_url),
         bio=author.bio,
         social_profiles=social_media_profiles
     )
@@ -103,7 +103,7 @@ async def get_selected_author_details(author_id: UUID) -> AuthorInfoResponse:
         firstname=author.first_name,
         lastname=author.last_name,
         email=author.email,
-        avatar_url=generate_presigned_access_url(bucket_name=get("AWS_BUCKET_NAME"), s3_key= author.image_url),
+        image_url=generate_presigned_access_url(bucket_name=get("AWS_BUCKET_NAME"), s3_key= author.image_url),
         bio=author.bio,
         social_profiles=social_media_profiles
     )
