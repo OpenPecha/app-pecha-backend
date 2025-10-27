@@ -1,5 +1,5 @@
-from pecha_api.plans.tasks.plan_tasks_repository import save_task, get_task_by_id, delete_task, update_task_day
-from pecha_api.plans.tasks.plan_tasks_response_model import CreateTaskRequest, TaskDTO, UpdateTaskDayRequest, UpdatedTaskDayResponse, GetTaskResponse, ContentAndImageUrl
+from pecha_api.plans.tasks.plan_tasks_repository import save_task, get_task_by_id, delete_task, update_task_day, update_task_order
+from pecha_api.plans.tasks.plan_tasks_response_model import CreateTaskRequest, TaskDTO, UpdateTaskDayRequest, UpdatedTaskDayResponse, GetTaskResponse, ContentAndImageUrl, UpdateTaskOrderRequest, UpdatedTaskOrderResponse
 from pecha_api.plans.tasks.sub_tasks.plan_sub_tasks_response_model import SubTaskDTO
 from pecha_api.plans.authors.plan_authors_service import validate_and_extract_author_details
 from uuid import UUID
@@ -76,6 +76,23 @@ async def change_task_day_service(token: str, task_id: UUID, update_task_request
             estimated_time=task.estimated_time,
             title=task.title,
         )
+
+async def change_task_order_service(token: str, task_id: UUID, update_task_order_request: UpdateTaskOrderRequest) -> UpdatedTaskDayResponse:
+    validate_and_extract_author_details(token=token)
+
+    with SessionLocal() as db:
+        last_task_display_order = get_task_by_id(db=db, task_id=task_id).display_order
+
+        update_current_task_display_order = update_task_order(db=db, task_id=task_id, display_order=last_task_display_order + 1)
+
+        if not update_current_task_display_order:
+            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=ResponseError(error=BAD_REQUEST, message=str(e)).model_dump())
+
+        return UpdatedTaskOrderResponse(
+            task_id=update_current_task_display_order.id,
+            display_order=update_current_task_display_order.display_order,
+        )
+
 
 async def get_task_subtasks_service(task_id: UUID, token: str) -> GetTaskResponse:
     current_user = validate_and_extract_author_details(token=token)
