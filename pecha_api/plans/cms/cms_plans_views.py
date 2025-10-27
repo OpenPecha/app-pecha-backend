@@ -95,3 +95,5 @@ async def get_plan_day_content(authentication_credential: Annotated[HTTPAuthoriz
         plan_id=plan_id,
         day_number=day_number
     )
+
+

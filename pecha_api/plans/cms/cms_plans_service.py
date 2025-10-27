@@ -5,7 +5,7 @@ from starlette import status
 from pecha_api.plans.plans_models import Plan
 from pecha_api.plans.items.plan_items_models import PlanItem
 from pecha_api.plans.users.plan_users_model import UserPlanProgress
-from pecha_api.plans.cms.cms_plans_repository import save_plan, get_plan_by_id, get_plans_by_author_id, update_plan
+from pecha_api.plans.cms.cms_plans_repository import save_plan, get_plan_by_id, get_plans_by_author_id, update_plan, soft_delete_plan_by_id
 from pecha_api.plans.items.plan_items_repository import save_plan_items, delete_plan_items, get_plan_items_by_plan_id, get_plan_day_with_tasks_and_subtasks
 from pecha_api.plans.users.plan_users_progress_repository import get_plan_progress
 
@@ -331,13 +331,14 @@ async def update_selected_plan_status(token:str,plan_id: UUID, plan_status_updat
     return plan
 
 async def delete_selected_plan(token:str,plan_id: UUID):
-    """Delete plan"""
-    # Find and remove plan
-    #  current_author = validate_and_extract_author_details(token=token)
-    global DUMMY_PLANS
-    DUMMY_PLANS = [p for p in DUMMY_PLANS if p.id != plan_id]
-    # In real implementation, check if plan exists and handle foreign key constraints
-    return
+    current_author = validate_and_extract_author_details(token=token)
+    with SessionLocal() as db:
+        plan = get_plan_by_id(db=db, plan_id=plan_id)
+        if not plan:
+            raise HTTPException(status_code=404, detail="Plan not found")
+        if plan.author_id != current_author.id:
+            raise HTTPException(status_code=403, detail="You are not authorized to delete this plan")
+        soft_delete_plan_by_id(db=db, plan_id=plan_id, author=current_author)
 
 def _get_task_subtasks_dto(subtasks: List[PlanSubTask]) -> List[SubTaskDTO]:
 
