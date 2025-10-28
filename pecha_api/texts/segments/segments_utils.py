@@ -120,12 +120,21 @@ class SegmentUtils:
             elif text_detail.type == "commentary" and type == "commentary":
                 if text_id is not None and text_id != segment.text_id:
                     continue
+                # merge by text_id: append content and increment count if already exists
+                existing_text = next(
+                    (item for item in filtered_segments if isinstance(item, SegmentCommentry) and item.text_id == segment.text_id),
+                    None,
+                )
+                if existing_text:
+                    existing_text.content.append(segment.content)
+                    existing_text.count += 1
+                    continue
                 filtered_segments.append(
                     SegmentCommentry(
                         segment_id=str(segment.id),
                         text_id=segment.text_id,
                         title=text_detail.title,
-                        content=segment.content,
+                        content=[segment.content],
                         language=text_detail.language,
                         count=1
                     )
