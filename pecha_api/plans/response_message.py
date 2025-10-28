@@ -33,5 +33,6 @@ PLAN_AUTHOR_MISMATCH = "You are not authorized to update this plan"
 EMAIL_IS_SENT = "Email is sent. Please check your email to verify your account."
 
 TASK_NOT_FOUND = "Task not found"
+TASK_TITLE_UPDATE_SUCCESS = "Task title updated successfully"
 UNAUTHORIZED_TASK_DELETE = "You are not authorized to delete this task"
 UNAUTHORIZED_TASK_ACCESS = "You are not authorized to access this task"
