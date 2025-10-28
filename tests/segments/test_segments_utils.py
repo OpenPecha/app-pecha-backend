@@ -3,6 +3,7 @@ from typing import Union
 from unittest.mock import AsyncMock, patch
 from uuid import UUID
 from uuid import uuid4
+from fastapi import HTTPException
 
 from pecha_api.texts.segments.segments_utils import SegmentUtils
 
@@ -322,6 +323,105 @@ async def test_mapped_segment_content_for_table_of_content_without_version_id_su
         assert response.sections[0].segments[0].segment_id == "anju6a06-f373-a50b-ba57-e7a8d4dd5555"
         assert response.sections[0].segments[0].segment_number == 1
         assert response.sections[0].segments[0].content == "content"
+
+
+@pytest.mark.asyncio
+async def test_validate_segment_exists_invalid_uuid():
+    with pytest.raises(HTTPException) as exc_info:
+        await SegmentUtils.validate_segment_exists(segment_id="not-a-uuid")
+    assert exc_info.value.status_code == 400
+
+
+@pytest.mark.asyncio
+async def test_validate_segments_exists_invalid_uuid_in_list():
+    with pytest.raises(HTTPException) as exc_info:
+        await SegmentUtils.validate_segments_exists(segment_ids=["valid-uuid-wont-parse", "also-bad"])
+    assert exc_info.value.status_code == 400
+
+
+@pytest.mark.asyncio
+async def test_get_root_mapping_count_group_type_text_returns_zero():
+    segment_id = "efb26a06-f373-450b-ba57-e7a8d4dd5b64"
+    text_id = "text-id-1"
+    segment = SegmentDTO(
+        id=segment_id,
+        text_id=text_id,
+        content="content",
+        mapping=[
+            MappingResponse(text_id="t1", segments=["s1", "s2"]),
+        ],
+        type=SegmentType.SOURCE,
+    )
+    text_details = TextDTO(
+        id=text_id,
+        title="title",
+        language="en",
+        type="commentary",
+        group_id="g1",
+        is_published=True,
+        created_date="",
+        updated_date="",
+        published_date="",
+        published_by="",
+        categories=[],
+        views=0,
+    )
+    group_detail = GroupDTO(id="g1", type="text")
+
+    with patch("pecha_api.texts.segments.segments_utils.get_segment_by_id", new_callable=AsyncMock, return_value=segment), \
+        patch("pecha_api.texts.segments.segments_utils.TextUtils.get_text_details_by_id", new_callable=AsyncMock, return_value=text_details), \
+        patch("pecha_api.texts.segments.segments_utils.get_group_details", new_callable=AsyncMock, return_value=group_detail):
+        count = await SegmentUtils.get_root_mapping_count(segment_id)
+        assert count == 0
+
+
+@pytest.mark.asyncio
+async def test_filter_segment_mapping_by_type_commentary_merges_same_text_id():
+    # two segments from same commentary text should merge content and increment count
+    text_id = "commentary-text-1"
+    segments = [
+        SegmentDTO(
+            id="seg-1",
+            text_id=text_id,
+            content="c1",
+            mapping=[],
+            type=SegmentType.SOURCE,
+        ),
+        SegmentDTO(
+            id="seg-2",
+            text_id=text_id,
+            content="c2",
+            mapping=[],
+            type=SegmentType.SOURCE,
+        ),
+    ]
+    text_details = {
+        text_id: TextDTO(
+            id=text_id,
+            title="Commentary Title",
+            language="bo",
+            type="commentary",
+            group_id="g1",
+            is_published=True,
+            created_date="",
+            updated_date="",
+            published_date="",
+            published_by="",
+            categories=[],
+            views=0,
+        )
+    }
+
+    with patch("pecha_api.texts.segments.segments_utils.TextUtils.get_text_details_by_ids", new_callable=AsyncMock, return_value=text_details):
+        result = await SegmentUtils.filter_segment_mapping_by_type_or_text_id(segments, type="commentary")
+        assert len(result) == 1
+        commentary = result[0]
+        assert isinstance(commentary, SegmentCommentry)
+        assert commentary.text_id == text_id
+        assert commentary.title == "Commentary Title"
+        assert commentary.language == "bo"
+        assert commentary.content == ["c1", "c2"]
+        assert commentary.count == 2
 
 @pytest.mark.asyncio
 async def test_mapped_segment_content_for_table_of_content_with_version_id_success():
