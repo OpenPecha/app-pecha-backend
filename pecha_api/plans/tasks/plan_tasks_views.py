@@ -3,7 +3,7 @@ from fastapi import APIRouter, Depends, Query
 from typing import Annotated
 from uuid import UUID
 from starlette import status
-from pecha_api.plans.tasks.plan_tasks_response_model import CreateTaskRequest, TaskDTO, UpdateTaskDayRequest, UpdatedTaskDayResponse, GetTaskResponse, UpdateTaskOrderRequest
+from pecha_api.plans.tasks.plan_tasks_response_model import CreateTaskRequest, TaskDTO, UpdateTaskDayRequest, UpdatedTaskDayResponse, GetTaskResponse, UpdateTaskOrderRequest, UpdatedTaskOrderResponse
 from pecha_api.plans.tasks.plan_tasks_services import create_new_task, change_task_day_service, delete_task_by_id, get_task_subtasks_service, change_task_order_service
 
 oauth2_scheme = HTTPBearer()
@@ -49,12 +49,12 @@ async def change_task_day(
         update_task_request=update_task_request,
     )
 
-@plans_router.put("/{task_id}", response_model=UpdatedTaskDayResponse)
+@plans_router.put("/{task_id}", response_model=UpdatedTaskOrderResponse)
 async def change_task_order(
     authentication_credential: Annotated[HTTPAuthorizationCredentials, Depends(oauth2_scheme)],
     task_id: UUID,
     update_task_order_request: UpdateTaskOrderRequest,
-)-> UpdatedTaskDayResponse:    
+)-> UpdatedTaskOrderResponse:    
     return await change_task_order_service(
         token=authentication_credential.credentials,
         task_id=task_id,
