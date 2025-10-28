@@ -287,10 +287,11 @@ async def test_get_segment_details_by_id_with_text_details_success():
 @pytest.mark.asyncio
 async def test_get_commentaries_by_segment_id_success():
     parent_segment_id = "efb26a06-f373-450b-ba57-e7a8d4dd5b64"
-    parent_segment = ParentSegment(
-        segment_id=parent_segment_id,
-        content="parent_segment_content"
-    )
+    # repository segment object with id and content attributes
+    repo_parent_segment = type('Segment', (), {
+        'id': parent_segment_id,
+        'content': "parent_segment_content"
+    })()
     commentaries = [
         SegmentDTO(
             id=f"id_{i}",
@@ -313,7 +314,7 @@ async def test_get_commentaries_by_segment_id_success():
             segment_id=f"id_{i}",
             text_id=f"text_id_{i}",
             title=f"title_{i}",
-            content=f"content_{i}",
+            content=[f"content_{i}"],
             language="en",
             count=1
         )
@@ -323,14 +324,15 @@ async def test_get_commentaries_by_segment_id_success():
         patch("pecha_api.texts.segments.segments_service.get_segment_by_id", new_callable=AsyncMock) as mock_parent_segment, \
         patch("pecha_api.texts.segments.segments_service.get_related_mapped_segments", new_callable=AsyncMock) as mock_get_related_mapped_segment, \
         patch("pecha_api.texts.segments.segments_service.SegmentUtils.filter_segment_mapping_by_type_or_text_id", new_callable=AsyncMock) as mock_filtered_segment_mapping:
-        mock_parent_segment.return_value = parent_segment
+        mock_parent_segment.return_value = repo_parent_segment
         mock_get_related_mapped_segment.return_value = commentaries
         mock_filtered_segment_mapping.return_value = filtered_commentaries
         response = await get_commentaries_by_segment_id(segment_id=parent_segment_id)
         assert isinstance(response, SegmentCommentariesResponse)
-        assert response.parent_segment == parent_segment
+        assert response.parent_segment.segment_id == parent_segment_id
+        assert response.parent_segment.content == "parent_segment_content"
         assert response.commentaries[0].text_id == "text_id_1"
-        assert response.commentaries[0].content == "content_1"
+        assert response.commentaries[0].content == ["content_1"]
         assert response.commentaries[0].language == "en"
         assert response.commentaries[0].count == 1
 

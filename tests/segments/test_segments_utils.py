@@ -170,11 +170,13 @@ async def test_filter_segment_mapping_by_type_success():
     ]
     with patch("pecha_api.texts.segments.segments_utils.TextUtils.get_text_details_by_ids", new_callable=AsyncMock, return_value=text_details):
         response = await SegmentUtils.filter_segment_mapping_by_type_or_text_id(list_of_segment_paramenter, "commentary")
-        assert isinstance(response[0], Union[SegmentCommentry, SegmentTranslation])
+        assert isinstance(response[0], SegmentCommentry)
+        assert len(response) == 2
         assert response[0].text_id == "efb26a06-f373-450b-ba57-e7a8d4dd5b64"
         assert response[0].title == "title"
-        assert response[0].content == "content"
+        assert response[0].content == ["content"]
         assert response[0].language == "language"
+        assert response[0].count == 1
         
 @pytest.mark.asyncio
 async def test_get_root_mapping_count_success():
@@ -320,3 +322,80 @@ async def test_mapped_segment_content_for_table_of_content_without_version_id_su
         assert response.sections[0].segments[0].segment_id == "anju6a06-f373-a50b-ba57-e7a8d4dd5555"
         assert response.sections[0].segments[0].segment_number == 1
         assert response.sections[0].segments[0].content == "content"
+
+@pytest.mark.asyncio
+async def test_mapped_segment_content_for_table_of_content_with_version_id_success():
+    table_of_content = TableOfContent(
+        id="efb26a06-f373-450b-ba57-e7a8d4dd5b64",
+        text_id="5f3c2e9d-9b7a-4f5e-8e2a-6a8b7c9d4e0f",
+        sections=[
+            Section(
+                id="123e4567-e89b-12d3-a456-426614174000",
+                title="title",
+                section_number=1,
+                parent_id=None,
+                segments=[
+                    TextSegment(
+                        segment_id="root-seg-1",
+                        segment_number=1
+                    )
+                ],
+                sections=[],
+                created_date="created_date",
+                updated_date="updated_date",
+                published_date="published_date"
+            )
+        ]
+    )
+    version_id = "version-text-1"
+
+    # Root/source segment content
+    root_segment = SegmentDTO(
+        id="root-seg-1",
+        text_id="root-text-1",
+        content="source content",
+        mapping=[],
+        type=SegmentType.SOURCE
+    )
+
+    # Related mapped segments include a version mapped to the root segment
+    related_mapped_segments = [
+        SegmentDTO(
+            id=str(uuid4()),
+            text_id=version_id,
+            content="translated content",
+            mapping=[],
+            type=SegmentType.SOURCE
+        )
+    ]
+
+    # Text details for the version (used by filter and for language)
+    version_text_detail = TextDTO(
+        id=version_id,
+        title="Version Title",
+        language="en",
+        type="version",
+        group_id="group-id",
+        is_published=True,
+        created_date="created_date",
+        updated_date="updated_date",
+        published_date="published_date",
+        published_by="published_by",
+        categories=["cat"],
+        views=0
+    )
+
+    with patch("pecha_api.texts.segments.segments_utils.get_segment_by_id", new_callable=AsyncMock, return_value=root_segment), \
+        patch("pecha_api.texts.segments.segments_utils.get_related_mapped_segments", new_callable=AsyncMock, return_value=related_mapped_segments), \
+        patch("pecha_api.texts.segments.segments_utils.TextUtils.get_text_details_by_ids", new_callable=AsyncMock, return_value={version_id: version_text_detail}), \
+        patch("pecha_api.texts.segments.segments_utils.TextUtils.get_text_details_by_id", new_callable=AsyncMock, return_value=version_text_detail):
+        response = await SegmentUtils.get_mapped_segment_content_for_table_of_content(table_of_content=table_of_content, version_id=version_id)
+
+        assert isinstance(response, DetailTableOfContent)
+        seg = response.sections[0].segments[0]
+        assert seg.segment_id == "root-seg-1"
+        assert seg.content == "source content"
+        assert seg.translation is not None
+        assert seg.translation.text_id == version_id
+        assert seg.translation.language == "en"
+        assert seg.translation.content == "translated content"
