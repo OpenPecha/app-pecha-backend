@@ -202,13 +202,7 @@ async def get_details_plan(token:str,plan_id: UUID) -> PlanWithDays:
 
 def _get_plan_details(db: Session, plan_id: UUID) -> PlanWithDays:
     # Fetch base plan
-    plan: Plan = get_plan_by_id(db=db, plan_id=plan_id)
-    if not plan:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND, 
-            detail=ResponseError(error=BAD_REQUEST, 
-            message=PLAN_NOT_FOUND).model_dump()
-        )
+    plan: Plan = _check_author_plan_availability(plan_id=plan_id)
 
     # Fetch items (days)
     items = get_plan_items_by_plan_id(db=db, plan_id=plan.id)
@@ -256,13 +250,7 @@ async def update_plan_details(token: str, plan_id: UUID, update_plan_request: Up
     author_details = validate_and_extract_author_details(token=token)
     
     with SessionLocal() as db:
-        plan = get_plan_by_id(db, plan_id)
-        
-        if not plan:
-            raise HTTPException(
-                status_code=status.HTTP_404_NOT_FOUND,
-                detail=PLAN_NOT_FOUND
-            )
+        plan = _check_author_plan_availability(plan_id=plan_id, author_id=author_details.id)
         
         if update_plan_request.title is not None:
             plan.title = update_plan_request.title
@@ -314,15 +302,10 @@ async def update_selected_plan_status(token:str,plan_id: UUID, plan_status_updat
     
    current_author = validate_and_extract_author_details(token=token)
    with SessionLocal() as db:
-        plan = get_plan_by_id(db=db, plan_id=plan_id)
-        if not plan:
-            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=ResponseError(error=BAD_REQUEST, message=PLAN_NOT_FOUND).model_dump())
-        if plan.author_id != current_author.id:
-            raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail=ResponseError(error=BAD_REQUEST, message=PLAN_AUTHOR_MISMATCH).model_dump())
-        
-        if plan_status_update.status == PlanStatus.PUBLISHED:
-            if len(get_plan_items_by_plan_id(db=db, plan_id=plan_id)) == 0:
-                raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=ResponseError(error=BAD_REQUEST, message=PLAN_MUST_HAVE_AT_LEAST_ONE_DAY_WITH_CONTENT_TO_BE_PUBLISHED).model_dump())
+
+        plan = _check_author_plan_availability(plan_id=plan_id, author_id=current_author.id)
+        _check_published_plan_day_availability(plan_id=plan_id, plan_status=plan_status_update.status)
+
         plan.status = plan_status_update.status
         plan = update_plan(db=db, plan=plan)
         return PlanDTO(
@@ -380,3 +363,20 @@ async def get_plan_day_details(token:str,plan_id: UUID, day_number: int) -> Plan
             ]
         )   
         return plan_day_dto
+
+
+def _check_author_plan_availability(plan_id: UUID, author_id: Optional[UUID] = None) -> Plan:
+    with SessionLocal() as db:
+        plan = get_plan_by_id(db=db, plan_id=plan_id)
+        if not plan:
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=ResponseError(error=BAD_REQUEST, message=PLAN_NOT_FOUND).model_dump())
+        if author_id and plan.author_id != author_id:
+            raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail=ResponseError(error=BAD_REQUEST, message=PLAN_AUTHOR_MISMATCH).model_dump())
+        return plan
+
+def _check_published_plan_day_availability(plan_id: UUID, plan_status: PlanStatus):
+    with SessionLocal() as db:
+        if plan_status == PlanStatus.PUBLISHED and len(get_plan_items_by_plan_id(db=db, plan_id=plan_id)) == 0:
+            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=ResponseError(error=BAD_REQUEST, message=PLAN_MUST_HAVE_AT_LEAST_ONE_DAY_WITH_CONTENT_TO_BE_PUBLISHED).model_dump())
+        return
+        
