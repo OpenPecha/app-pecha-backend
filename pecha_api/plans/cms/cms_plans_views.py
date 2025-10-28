@@ -75,7 +75,7 @@ async def delete_plan(authentication_credential: Annotated[HTTPAuthorizationCred
     )
 
 
-@cms_plans_router.patch("/{plan_id}/status", response_model=PlanDTO)
+@cms_plans_router.patch("/{plan_id}/status", status_code=status.HTTP_200_OK, response_model=PlanDTO)
 async def update_plan_status(
         authentication_credential: Annotated[HTTPAuthorizationCredentials, Depends(oauth2_scheme)],
         plan_id: UUID,

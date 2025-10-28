@@ -28,6 +28,8 @@ FORBIDDEN = "Forbidden"
 PLAN_DAY_NOT_FOUND = "Plan day not found"
 TASK_SAME_DAY_NOT_ALLOWED = "Task is already in the same day"
 PLAN_NOT_FOUND = "Plan not found"
+PLAN_MUST_HAVE_AT_LEAST_ONE_DAY_WITH_CONTENT_TO_BE_PUBLISHED = "Plan must have at least one day with content to be published"
+PLAN_AUTHOR_MISMATCH = "You are not authorized to update this plan"
 EMAIL_IS_SENT = "Email is sent. Please check your email to verify your account."
 
 TASK_NOT_FOUND = "Task not found"

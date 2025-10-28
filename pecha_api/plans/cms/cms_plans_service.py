@@ -25,7 +25,7 @@ from pecha_api.uploads.S3_utils import generate_presigned_access_url
 from uuid import uuid4, UUID
 from fastapi import HTTPException
 from pecha_api.plans.auth.plan_auth_models import ResponseError
-from pecha_api.plans.response_message import BAD_REQUEST, PLAN_NOT_FOUND
+from pecha_api.plans.response_message import BAD_REQUEST, PLAN_NOT_FOUND, PLAN_AUTHOR_MISMATCH, PLAN_MUST_HAVE_AT_LEAST_ONE_DAY_WITH_CONTENT_TO_BE_PUBLISHED
 from datetime import datetime, timezone
 from sqlalchemy import func
 
@@ -311,24 +311,21 @@ async def update_plan_details(token: str, plan_id: UUID, update_plan_request: Up
         )
 
 async def update_selected_plan_status(token:str,plan_id: UUID, plan_status_update: PlanStatusUpdate) -> PlanDTO:
-    """Update plan status"""
-    # Find plan by ID
-   # current_author = validate_and_extract_author_details(token=token)
-    plan = next((p for p in DUMMY_PLANS if p.id == plan_id), None)
-    if not plan:
-        raise HTTPException(status_code=404, detail="Plan not found")
-
-    # Validate status transition
-    if plan_status_update.status == PlanStatus.PUBLISHED:
-        # In real implementation, check if plan has at least one day with content
-        if plan.total_days == 0:
-            raise HTTPException(
-                status_code=400,
-                detail="Plan must have at least one day with content to be published"
-            )
-
-    plan.status = plan_status_update.status
-    return plan
+    
+   current_author = validate_and_extract_author_details(token=token)
+   with SessionLocal() as db:
+        plan = get_plan_by_id(db=db, plan_id=plan_id)
+        if not plan:
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=ResponseError(error=BAD_REQUEST, message=PLAN_NOT_FOUND).model_dump())
+        if plan.author_id != current_author.id:
+            raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail=ResponseError(error=BAD_REQUEST, message=PLAN_AUTHOR_MISMATCH).model_dump())
+        
+        if plan_status_update.status == PlanStatus.PUBLISHED:
+            if len(get_plan_items_by_plan_id(db=db, plan_id=plan_id)) == 0:
+                raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=ResponseError(error=BAD_REQUEST, message=PLAN_MUST_HAVE_AT_LEAST_ONE_DAY_WITH_CONTENT_TO_BE_PUBLISHED).model_dump())
+        plan.status = plan_status_update.status
+        plan = update_plan(db=db, plan=plan)
+        return PlanDTO(id=plan.id, title=plan.title, description=plan.description, language=plan.language.value if hasattr(plan.language, 'value') else str(plan.language), difficulty_level=plan.difficulty_level, image_url=plan.image_url, plan_image_url=plan.image_url, total_days=len(get_plan_items_by_plan_id(db=db, plan_id=plan_id)), tags=plan.tags or [], status=plan.status, subscription_count=len(get_plan_progress(db=db, plan_id=plan.id)))
 
 async def delete_selected_plan(token:str,plan_id: UUID):
     """Delete plan"""
