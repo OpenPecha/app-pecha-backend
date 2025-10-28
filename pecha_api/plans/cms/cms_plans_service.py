@@ -325,20 +325,9 @@ async def update_selected_plan_status(token:str,plan_id: UUID, plan_status_updat
 async def delete_selected_plan(token:str,plan_id: UUID):
     current_author = validate_and_extract_author_details(token=token)
     with SessionLocal() as db:
-        plan = get_plan_by_id(db=db, plan_id=plan_id)
-        if not plan:
-            raise HTTPException(
-                status_code=status.HTTP_404_NOT_FOUND, 
-                detail=ResponseError(error=BAD_REQUEST, 
-                message=PLAN_NOT_FOUND).model_dump()
-            )
-        if plan.author_id != current_author.id:
-            raise HTTPException(
-                status_code=status.HTTP_403_FORBIDDEN, 
-                detail=ResponseError(error=FORBIDDEN, 
-                message=UNAUTHORIZED_PLAN_DELETE).model_dump()
-            )
-        _soft_delete_plan_by_id(db=db, plan_id=plan_id, author=current_author)
+        plan = _check_author_plan_availability(plan_id=plan_id, author_id=current_author.id)
+        _soft_delete_plan_by_id(db=db, plan_id=plan.id, author=current_author)
+        return
 
 def _get_task_subtasks_dto(subtasks: List[PlanSubTask]) -> List[SubTaskDTO]:
 
