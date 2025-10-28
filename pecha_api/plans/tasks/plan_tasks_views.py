@@ -37,7 +37,7 @@ async def delete_task(
         token=authentication_credential.credentials
     )   
 
-@plans_router.patch("/{task_id}/day", response_model=UpdatedTaskDayResponse)
+@plans_router.patch("/{task_id}", response_model=UpdatedTaskDayResponse)
 async def change_task_day(
         authentication_credential: Annotated[HTTPAuthorizationCredentials, Depends(oauth2_scheme)],
         task_id: UUID,
