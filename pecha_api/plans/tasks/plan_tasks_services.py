@@ -1,4 +1,4 @@
-from pecha_api.plans.tasks.plan_tasks_repository import save_task, get_task_by_id, delete_task, update_task_day, update_task_title, get_tasks_by_plan_item_id, update_task_order_by_id
+from pecha_api.plans.tasks.plan_tasks_repository import save_task, get_task_by_id, delete_task, update_task_day, update_task_title, get_tasks_by_plan_item_id, update_task_order_by_id, reorder_day_display_order
 from pecha_api.plans.tasks.plan_tasks_response_model import CreateTaskRequest, TaskDTO, UpdateTaskDayRequest, UpdatedTaskDayResponse, GetTaskResponse, UpdateTaskTitleRequest, UpdateTaskTitleResponse, ContentAndImageUrl
 from pecha_api.plans.tasks.sub_tasks.plan_sub_tasks_response_model import SubTaskDTO
 from pecha_api.plans.authors.plan_authors_service import validate_and_extract_author_details
@@ -55,7 +55,7 @@ async def delete_task_by_id(task_id: UUID, token: str):
         if task.created_by != current_author.email:
             raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail=ResponseError(error=FORBIDDEN, message=UNAUTHORIZED_TASK_DELETE).model_dump())
         delete_task(db=db, task_id=task_id)
-        _reorder_task_display_order(db=db, plan_item_id=task.plan_item_id)
+        reorder_day_display_order(db=db, plan_item_id=task.plan_item_id)
 
 async def change_task_day_service(token: str, task_id: UUID, update_task_request: UpdateTaskDayRequest) -> UpdatedTaskDayResponse:
     validate_and_extract_author_details(token=token)
@@ -143,12 +143,3 @@ def _generate_image_url_content_type(content_type: str, content: str) -> Content
         return ContentAndImageUrl(content=presigned_url, image_url=content)
     return ContentAndImageUrl(content=content, image_url=None)
 
-
-
-def _reorder_task_display_order(db: SessionLocal(), plan_item_id: UUID) -> None:
-
-    tasks = get_tasks_by_plan_item_id(db=db, plan_item_id=plan_item_id)
-    sorted_tasks = sorted(tasks, key=lambda x: x.display_order)
-    
-    for index, task in enumerate(sorted_tasks, start=1):
-        update_task_order_by_id(db=db, task_id=task.id, display_order=index)

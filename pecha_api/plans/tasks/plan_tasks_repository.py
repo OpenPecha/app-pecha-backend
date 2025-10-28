@@ -1,4 +1,5 @@
 from uuid import UUID
+from sqlalchemy import select, update, func
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session, joinedload
 from sqlalchemy import func
@@ -81,3 +82,28 @@ def update_task_order_by_id(db: Session, task_id: UUID, display_order: int) -> P
     task.display_order = display_order
     db.commit()
     return task
+
+def reorder_day_display_order(db: Session, plan_item_id: UUID):
+    try:
+        # Create CTE (ordered by display_order)
+        ordered_cte = (
+            select(
+                PlanTask.id,
+                func.row_number().over(order_by=(PlanTask.display_order)).label("rn")
+            )
+            .where(PlanTask.plan_item_id == plan_item_id)
+            .cte("ordered")
+        )
+    
+        # Perform UPDATE using CTE to update the display_order
+        stmt = (
+            update(PlanTask)
+            .where(PlanTask.id == ordered_cte.c.id)
+            .values(display_order=ordered_cte.c.rn)
+        )
+    
+        db.execute(stmt)
+        db.commit()
+    except Exception as e:
+        db.rollback()
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=ResponseError(error=BAD_REQUEST, message=str(e)).model_dump())
