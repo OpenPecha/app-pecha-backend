@@ -22,7 +22,6 @@ from pecha_api.plans.tasks.plan_tasks_services import (
     get_task_subtasks_service,
     update_task_title_service,
     _get_max_display_order,
-    _reorder_task_display_order,
 )
 
 
@@ -160,7 +159,7 @@ async def test_delete_task_by_id_success():
     ) as mock_get_task, patch(
         "pecha_api.plans.tasks.plan_tasks_services.delete_task",
     ) as mock_delete, patch(
-        "pecha_api.plans.tasks.plan_tasks_services._reorder_task_display_order",
+        "pecha_api.plans.tasks.plan_tasks_services.reorder_day_display_order",
     ) as mock_reorder:
         await delete_task_by_id(task_id=task_id, token=token)
 
@@ -212,7 +211,7 @@ async def test_delete_task_by_id_unauthorized():
     ) as mock_get_task, patch(
         "pecha_api.plans.tasks.plan_tasks_services.delete_task",
     ) as mock_delete, patch(
-        "pecha_api.plans.tasks.plan_tasks_services._reorder_task_display_order",
+        "pecha_api.plans.tasks.plan_tasks_services.reorder_day_display_order",
     ) as mock_reorder:
         with pytest.raises(HTTPException) as exc_info:
             await delete_task_by_id(task_id=task_id, token=token)
@@ -322,7 +321,7 @@ async def test_delete_task_by_id_task_not_found():
     ) as mock_get_task, patch(
         "pecha_api.plans.tasks.plan_tasks_services.delete_task",
     ) as mock_delete, patch(
-        "pecha_api.plans.tasks.plan_tasks_services._reorder_task_display_order",
+        "pecha_api.plans.tasks.plan_tasks_services.reorder_day_display_order",
     ) as mock_reorder:
         with pytest.raises(HTTPException) as exc_info:
             await delete_task_by_id(task_id=task_id, token=token)
@@ -353,7 +352,7 @@ async def test_delete_task_by_id_invalid_token():
     ) as mock_get_task, patch(
         "pecha_api.plans.tasks.plan_tasks_services.delete_task",
     ) as mock_delete, patch(
-        "pecha_api.plans.tasks.plan_tasks_services._reorder_task_display_order",
+        "pecha_api.plans.tasks.plan_tasks_services.reorder_day_display_order",
     ) as mock_reorder:
         with pytest.raises(HTTPException) as exc_info:
             await delete_task_by_id(task_id=task_id, token=token)
@@ -400,7 +399,7 @@ async def test_delete_task_by_id_database_error():
         "pecha_api.plans.tasks.plan_tasks_services.delete_task",
         side_effect=HTTPException(status_code=400, detail={"error": "BAD_REQUEST", "message": "Database error"}),
     ) as mock_delete, patch(
-        "pecha_api.plans.tasks.plan_tasks_services._reorder_task_display_order",
+        "pecha_api.plans.tasks.plan_tasks_services.reorder_day_display_order",
     ) as mock_reorder:
         with pytest.raises(HTTPException) as exc_info:
             await delete_task_by_id(task_id=task_id, token=token)
@@ -676,37 +675,7 @@ def test__get_max_display_order_returns_max_value():
     assert filter_mock.scalar.call_count == 1
 
 
-def test__reorder_task_display_order_sorts_and_reassigns_incremental_orders():
-    plan_item_id = uuid.uuid4()
-    db_mock = MagicMock()
-
-    task_a = SimpleNamespace(id=uuid.uuid4(), display_order=5)
-    task_b = SimpleNamespace(id=uuid.uuid4(), display_order=2)
-    task_c = SimpleNamespace(id=uuid.uuid4(), display_order=3)
-    returned_tasks = [task_a, task_b, task_c]
-
-    with patch(
-        "pecha_api.plans.tasks.plan_tasks_services.get_tasks_by_plan_item_id",
-        return_value=returned_tasks,
-    ) as mock_get_tasks, patch(
-        "pecha_api.plans.tasks.plan_tasks_services.update_task_order_by_id",
-    ) as mock_update:
-        _reorder_task_display_order(db=db_mock, plan_item_id=plan_item_id)
-
-    # Should fetch tasks for the specific plan item
-    assert mock_get_tasks.call_count == 1
-    assert mock_get_tasks.call_args.kwargs == {"db": db_mock, "plan_item_id": plan_item_id}
-
-    # Should update in ascending order of current display_order -> ids: task_b, task_c, task_a
-    expected_calls = [
-        {"task_id": task_b.id, "display_order": 1},
-        {"task_id": task_c.id, "display_order": 2},
-        {"task_id": task_a.id, "display_order": 3},
-    ]
-    assert mock_update.call_count == 3
-    actual_calls = [kw.kwargs for kw in mock_update.call_args_list]
-    for actual, expected in zip(actual_calls, expected_calls):
-        assert actual == {"db": db_mock, **expected}
+    
 
 @pytest.mark.asyncio
 async def test_get_task_subtasks_service_invalid_token():
