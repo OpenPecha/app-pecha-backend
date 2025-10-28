@@ -12,7 +12,7 @@ class SocialMediaProfile(BaseModel):
 class AuthorInfoRequest(BaseModel):
     firstname: str
     lastname: str
-    avatar_url: Optional[str] = None
+    image_url: Optional[str] = None
     bio: Optional[str] = None
     social_profiles: List[SocialMediaProfile]
 
@@ -21,7 +21,7 @@ class AuthorInfoResponse(BaseModel):
     firstname: str
     lastname: str
     email: str
-    avatar_url: Optional[str] = None
+    image_url: Optional[str] = None
     bio: Optional[str] = None
     social_profiles: List[SocialMediaProfile]
 

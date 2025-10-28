@@ -4,7 +4,7 @@ from sqlalchemy.orm import Session, joinedload
 from sqlalchemy import func
 from fastapi import HTTPException
 from starlette import status
-from typing import List
+from typing import List, Optional
 from sqlalchemy import asc
 
 from pecha_api.db.database import SessionLocal
@@ -64,6 +64,13 @@ def update_task_day(db: Session, task_id: UUID, target_day_id: UUID, display_ord
     task.plan_item_id = target_day_id
     task.display_order = display_order
     db.commit()
+    return task
+
+def update_task_title(db: Session, task_id: UUID, title: str) -> PlanTask:
+    task = get_task_by_id(db=db, task_id=task_id)
+    task.title = title
+    db.commit()
+    db.refresh(task)
     return task
 
 

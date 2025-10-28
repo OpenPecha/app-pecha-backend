@@ -28,6 +28,13 @@ class UpdatedTaskDayResponse(BaseModel):
 class UpdateTaskDayRequest(BaseModel):
     target_day_id: UUID
 
+class UpdateTaskTitleRequest(BaseModel):
+    title: str
+
+class UpdateTaskTitleResponse(BaseModel):
+    task_id: UUID
+    title: str
+
 class UpdateTaskOrderRequest(BaseModel):
     target_order: int
     
