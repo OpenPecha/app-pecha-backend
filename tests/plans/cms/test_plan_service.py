@@ -883,7 +883,7 @@ async def test_delete_selected_plan_success():
 
     with patch("pecha_api.plans.cms.cms_plans_service.SessionLocal") as mock_session_local, \
         patch("pecha_api.plans.cms.cms_plans_service.get_plan_by_id") as mock_get_plan_by_id, \
-        patch("pecha_api.plans.cms.cms_plans_service.soft_delete_plan_by_id") as mock_soft_delete, \
+        patch("pecha_api.plans.cms.cms_plans_service._soft_delete_plan_by_id") as mock_soft_delete, \
         patch("pecha_api.plans.cms.cms_plans_service.validate_and_extract_author_details") as mock_validate_author:
         db_session = _mock_session_local(mock_session_local)
         mock_validate_author.return_value = author
