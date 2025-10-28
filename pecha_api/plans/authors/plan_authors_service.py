@@ -35,7 +35,7 @@ async def get_authors() -> AuthorsResponse:
             firstname=author.first_name,
             lastname=author.last_name,
             email=author.email,
-            avatar_url=generate_presigned_access_url(bucket_name=get("AWS_BUCKET_NAME"), s3_key= author.image_url),
+            image_url=generate_presigned_access_url(bucket_name=get("AWS_BUCKET_NAME"), s3_key= author.image_url),
             bio=author.bio,
             social_profiles=_get_author_social_profile(author=author)
         ) for author in authors]
@@ -54,7 +54,7 @@ async def get_author_details(token: str) -> AuthorInfoResponse:
         firstname=author.first_name,
         lastname=author.last_name,
         email=author.email,
-        avatar_url=generate_presigned_access_url(bucket_name=get("AWS_BUCKET_NAME"), s3_key= author.image_url),
+        image_url=generate_presigned_access_url(bucket_name=get("AWS_BUCKET_NAME"), s3_key= author.image_url),
         bio=author.bio,
         social_profiles=social_media_profiles
     )
@@ -82,7 +82,7 @@ async def update_author_info(token: str, author_info_request: AuthorInfoRequest)
     current_author.first_name = author_info_request.firstname
     current_author.last_name = author_info_request.lastname
     current_author.bio = author_info_request.bio
-    current_author.image_url = Utils.extract_s3_key(presigned_url=author_info_request.avatar_url)
+    current_author.image_url = Utils.extract_s3_key(presigned_url=author_info_request.image_url)
     with SessionLocal() as db_session:
         try:
             db_session.add(current_author)
@@ -103,7 +103,7 @@ async def get_selected_author_details(author_id: UUID) -> AuthorInfoResponse:
         firstname=author.first_name,
         lastname=author.last_name,
         email=author.email,
-        avatar_url=generate_presigned_access_url(bucket_name=get("AWS_BUCKET_NAME"), s3_key= author.image_url),
+        image_url=generate_presigned_access_url(bucket_name=get("AWS_BUCKET_NAME"), s3_key= author.image_url),
         bio=author.bio,
         social_profiles=social_media_profiles
     )

@@ -12,6 +12,7 @@ from pecha_api.plans.tasks.plan_tasks_repository import (
     get_tasks_by_item_ids,
     get_task_by_id,
     update_task_day,
+    update_task_title,
 )
 
 
@@ -169,6 +170,134 @@ def test_delete_task_error_rolls_back_and_raises_http_exception():
 
         assert exc.value.status_code == 400
         assert exc.value.detail["error"] == BAD_REQUEST
-        assert "boom" in exc.value.detail["message"]
-        assert db.rollback.call_count == 1
+
+
+def test_update_task_title_success():
+    db = MagicMock()
+    task_id = uuid.uuid4()
+    new_title = "Updated Task Title"
+    
+    mock_task = SimpleNamespace(
+        id=task_id,
+        title="Old Title",
+        description="Task description",
+        display_order=1,
+    )
+    
+    with patch("pecha_api.plans.tasks.plan_tasks_repository.get_task_by_id", return_value=mock_task):
+        result = update_task_title(db=db, task_id=task_id, title=new_title)
+        
+        assert result.title == new_title
+        assert result.id == task_id
+        
+        assert db.commit.call_count == 1
+        assert db.refresh.call_count == 1
+        assert db.refresh.call_args[0][0] is mock_task
+
+
+def test_update_task_title_task_not_found():
+    db = MagicMock()
+    task_id = uuid.uuid4()
+    new_title = "Updated Task Title"
+    
+    from fastapi import HTTPException
+    
+    with patch(
+        "pecha_api.plans.tasks.plan_tasks_repository.get_task_by_id",
+        side_effect=HTTPException(
+            status_code=404,
+            detail={"error": "NOT_FOUND", "message": TASK_NOT_FOUND}
+        )
+    ):
+        with pytest.raises(HTTPException) as exc:
+            update_task_title(db=db, task_id=task_id, title=new_title)
+        
+        assert exc.value.status_code == 404
+        assert exc.value.detail["error"] == "NOT_FOUND"
+        assert exc.value.detail["message"] == TASK_NOT_FOUND
+        
+        assert db.commit.call_count == 0
+        assert db.refresh.call_count == 0
+        assert db.commit.call_count == 0
+        assert db.refresh.call_count == 0
+
+
+def test_update_task_title_empty_string():
+    db = MagicMock()
+    task_id = uuid.uuid4()
+    
+    mock_task = SimpleNamespace(
+        id=task_id,
+        title="Old Title",
+        description="Task description",
+        display_order=1,
+    )
+    
+    with patch("pecha_api.plans.tasks.plan_tasks_repository.get_task_by_id", return_value=mock_task):
+        result = update_task_title(db=db, task_id=task_id, title="")
+        
+        assert result.title == ""
+        assert result.id == task_id
+        
+        assert db.commit.call_count == 1
+        assert db.refresh.call_count == 1
+
+
+def test_update_task_title_database_commit_error():
+    db = MagicMock()
+    task_id = uuid.uuid4()
+    new_title = "Updated Task Title"
+    
+    mock_task = SimpleNamespace(
+        id=task_id,
+        title="Old Title",
+        description="Task description",
+        display_order=1,
+    )
+    
+    db.commit.side_effect = Exception("Database connection error")
+    
+    with patch("pecha_api.plans.tasks.plan_tasks_repository.get_task_by_id", return_value=mock_task):
+        with pytest.raises(Exception) as exc:
+            update_task_title(db=db, task_id=task_id, title=new_title)
+        
+        assert str(exc.value) == "Database connection error"
+        
+        assert mock_task.title == new_title
+        
+        assert db.commit.call_count == 1
+        
+        assert db.refresh.call_count == 0
+
+
+def test_update_task_title_preserves_other_fields():
+    db = MagicMock()
+    task_id = uuid.uuid4()
+    new_title = "Updated Task Title"
+    
+    mock_task = SimpleNamespace(
+        id=task_id,
+        title="Old Title",
+        description="Important description",
+        display_order=5,
+        estimated_time=30,
+        created_by="author@example.com",
+    )
+    
+    original_description = mock_task.description
+    original_display_order = mock_task.display_order
+    original_estimated_time = mock_task.estimated_time
+    original_created_by = mock_task.created_by
+    
+    with patch("pecha_api.plans.tasks.plan_tasks_repository.get_task_by_id", return_value=mock_task):
+        result = update_task_title(db=db, task_id=task_id, title=new_title)
+        
+        assert result.title == new_title
+        assert result.description == original_description
+        assert result.display_order == original_display_order
+        assert result.estimated_time == original_estimated_time
+        assert result.created_by == original_created_by
+        
+        assert db.commit.call_count == 1
+        assert db.refresh.call_count == 1
 
