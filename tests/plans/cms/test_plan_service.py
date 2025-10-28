@@ -432,9 +432,11 @@ async def test_get_details_plan_not_found():
 async def test_update_plan_details_success():
     plan_id = uuid.uuid4()
     author_email = "author@example.com"
+    author_id = uuid.uuid4()
     
     mock_plan = MagicMock(spec=Plan)
     mock_plan.id = plan_id
+    mock_plan.author_id = author_id
     mock_plan.title = "Original Title"
     mock_plan.description = "Original Description"
     mock_plan.difficulty_level = DifficultyLevel.BEGINNER
@@ -467,6 +469,7 @@ async def test_update_plan_details_success():
         
         mock_author = MagicMock()
         mock_author.email = author_email
+        mock_author.id = author_id
         mock_validate_author.return_value = mock_author
         
         mock_get_plan.return_value = mock_plan
@@ -482,7 +485,7 @@ async def test_update_plan_details_success():
         )
         
         mock_validate_author.assert_called_once_with(token="test-token")
-        mock_get_plan.assert_called_once_with(db_session, plan_id)
+        mock_get_plan.assert_called_once_with(db=db_session, plan_id=plan_id)
         mock_update_plan.assert_called_once_with(db_session, mock_plan)
         
         assert mock_plan.title == update_request.title
@@ -504,9 +507,11 @@ async def test_update_plan_details_success():
 async def test_update_plan_details_partial_update():
     """Test updating only some fields (partial update)"""
     plan_id = uuid.uuid4()
+    author_id = uuid.uuid4()
     
     mock_plan = MagicMock(spec=Plan)
     mock_plan.id = plan_id
+    mock_plan.author_id = author_id
     mock_plan.title = "Original Title"
     mock_plan.description = "Original Description"
     mock_plan.difficulty_level = DifficultyLevel.BEGINNER
@@ -533,6 +538,7 @@ async def test_update_plan_details_partial_update():
         
         mock_author = MagicMock()
         mock_author.email = "author@example.com"
+        mock_author.id = author_id
         mock_validate_author.return_value = mock_author
         
         mock_get_plan.return_value = mock_plan
@@ -579,16 +585,18 @@ async def test_update_plan_details_not_found():
             )
         
         assert exc_info.value.status_code == 404
-        assert "not found" in exc_info.value.detail.lower()
+        assert exc_info.value.detail == {"error": "Bad request", "message": "Plan not found"}
 
 
 @pytest.mark.asyncio
 async def test_update_plan_details_with_image_url_generation():
     """Test that image_url is properly generated with presigned URL"""
     plan_id = uuid.uuid4()
+    author_id = uuid.uuid4()
     
     mock_plan = MagicMock(spec=Plan)
     mock_plan.id = plan_id
+    mock_plan.author_id = author_id
     mock_plan.title = "Test Plan"
     mock_plan.description = "Test Description"
     mock_plan.difficulty_level = DifficultyLevel.BEGINNER
@@ -613,6 +621,7 @@ async def test_update_plan_details_with_image_url_generation():
         db_session.query.return_value.filter.return_value.scalar.return_value = 0
         
         mock_author = MagicMock()
+        mock_author.id = author_id
         mock_validate_author.return_value = mock_author
         
         mock_get_plan.return_value = mock_plan
@@ -638,9 +647,11 @@ async def test_update_plan_details_with_image_url_generation():
 async def test_update_plan_details_image_url_generation_failure():
     """Test that original image_url is used when presigned URL generation fails"""
     plan_id = uuid.uuid4()
+    author_id = uuid.uuid4()
     
     mock_plan = MagicMock(spec=Plan)
     mock_plan.id = plan_id
+    mock_plan.author_id = author_id
     mock_plan.title = "Test Plan"
     mock_plan.description = "Test Description"
     mock_plan.difficulty_level = DifficultyLevel.BEGINNER
@@ -665,6 +676,7 @@ async def test_update_plan_details_image_url_generation_failure():
         db_session.query.return_value.filter.return_value.scalar.return_value = 0
         
         mock_author = MagicMock()
+        mock_author.id = author_id
         mock_validate_author.return_value = mock_author
         
         mock_get_plan.return_value = mock_plan
@@ -687,9 +699,11 @@ async def test_update_plan_details_image_url_generation_failure():
 async def test_update_plan_details_no_image_url():
     """Test updating plan with no image_url"""
     plan_id = uuid.uuid4()
+    author_id = uuid.uuid4()
     
     mock_plan = MagicMock(spec=Plan)
     mock_plan.id = plan_id
+    mock_plan.author_id = author_id
     mock_plan.title = "Test Plan"
     mock_plan.description = "Test Description"
     mock_plan.difficulty_level = DifficultyLevel.BEGINNER
@@ -712,6 +726,7 @@ async def test_update_plan_details_no_image_url():
         db_session.query.return_value.filter.return_value.scalar.return_value = 0
         
         mock_author = MagicMock()
+        mock_author.id = author_id
         mock_validate_author.return_value = mock_author
         
         mock_get_plan.return_value = mock_plan
