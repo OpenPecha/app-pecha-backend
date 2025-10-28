@@ -325,7 +325,7 @@ async def update_selected_plan_status(token:str,plan_id: UUID, plan_status_updat
                 raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=ResponseError(error=BAD_REQUEST, message=PLAN_MUST_HAVE_AT_LEAST_ONE_DAY_WITH_CONTENT_TO_BE_PUBLISHED).model_dump())
         plan.status = plan_status_update.status
         plan = update_plan(db=db, plan=plan)
-        return PlanDTO(id=plan.id, title=plan.title, description=plan.description, language=plan.language.value if hasattr(plan.language, 'value') else str(plan.language), difficulty_level=plan.difficulty_level, image_url=plan.image_url, plan_image_url=plan.image_url, total_days=len(get_plan_items_by_plan_id(db=db, plan_id=plan_id)), tags=plan.tags or [], status=plan.status, subscription_count=len(get_plan_progress(db=db, plan_id=plan.id)))
+        return plan
 
 async def delete_selected_plan(token:str,plan_id: UUID):
     """Delete plan"""
