@@ -432,9 +432,11 @@ async def test_get_details_plan_not_found():
 async def test_update_plan_details_success():
     plan_id = uuid.uuid4()
     author_email = "author@example.com"
+    author_id = uuid.uuid4()
     
     mock_plan = MagicMock(spec=Plan)
     mock_plan.id = plan_id
+    mock_plan.author_id = author_id
     mock_plan.title = "Original Title"
     mock_plan.description = "Original Description"
     mock_plan.difficulty_level = DifficultyLevel.BEGINNER
@@ -467,6 +469,7 @@ async def test_update_plan_details_success():
         
         mock_author = MagicMock()
         mock_author.email = author_email
+        mock_author.id = author_id
         mock_validate_author.return_value = mock_author
         
         mock_get_plan.return_value = mock_plan
@@ -482,7 +485,7 @@ async def test_update_plan_details_success():
         )
         
         mock_validate_author.assert_called_once_with(token="test-token")
-        mock_get_plan.assert_called_once_with(db_session, plan_id)
+        mock_get_plan.assert_called_once_with(db=db_session, plan_id=plan_id)
         mock_update_plan.assert_called_once_with(db_session, mock_plan)
         
         assert mock_plan.title == update_request.title
@@ -504,9 +507,11 @@ async def test_update_plan_details_success():
 async def test_update_plan_details_partial_update():
     """Test updating only some fields (partial update)"""
     plan_id = uuid.uuid4()
+    author_id = uuid.uuid4()
     
     mock_plan = MagicMock(spec=Plan)
     mock_plan.id = plan_id
+    mock_plan.author_id = author_id
     mock_plan.title = "Original Title"
     mock_plan.description = "Original Description"
     mock_plan.difficulty_level = DifficultyLevel.BEGINNER
@@ -533,6 +538,7 @@ async def test_update_plan_details_partial_update():
         
         mock_author = MagicMock()
         mock_author.email = "author@example.com"
+        mock_author.id = author_id
         mock_validate_author.return_value = mock_author
         
         mock_get_plan.return_value = mock_plan
@@ -579,16 +585,18 @@ async def test_update_plan_details_not_found():
             )
         
         assert exc_info.value.status_code == 404
-        assert "not found" in exc_info.value.detail.lower()
+        assert exc_info.value.detail == {"error": "Bad request", "message": "Plan not found"}
 
 
 @pytest.mark.asyncio
 async def test_update_plan_details_with_image_url_generation():
     """Test that image_url is properly generated with presigned URL"""
     plan_id = uuid.uuid4()
+    author_id = uuid.uuid4()
     
     mock_plan = MagicMock(spec=Plan)
     mock_plan.id = plan_id
+    mock_plan.author_id = author_id
     mock_plan.title = "Test Plan"
     mock_plan.description = "Test Description"
     mock_plan.difficulty_level = DifficultyLevel.BEGINNER
@@ -613,6 +621,7 @@ async def test_update_plan_details_with_image_url_generation():
         db_session.query.return_value.filter.return_value.scalar.return_value = 0
         
         mock_author = MagicMock()
+        mock_author.id = author_id
         mock_validate_author.return_value = mock_author
         
         mock_get_plan.return_value = mock_plan
@@ -638,9 +647,11 @@ async def test_update_plan_details_with_image_url_generation():
 async def test_update_plan_details_image_url_generation_failure():
     """Test that original image_url is used when presigned URL generation fails"""
     plan_id = uuid.uuid4()
+    author_id = uuid.uuid4()
     
     mock_plan = MagicMock(spec=Plan)
     mock_plan.id = plan_id
+    mock_plan.author_id = author_id
     mock_plan.title = "Test Plan"
     mock_plan.description = "Test Description"
     mock_plan.difficulty_level = DifficultyLevel.BEGINNER
@@ -665,6 +676,7 @@ async def test_update_plan_details_image_url_generation_failure():
         db_session.query.return_value.filter.return_value.scalar.return_value = 0
         
         mock_author = MagicMock()
+        mock_author.id = author_id
         mock_validate_author.return_value = mock_author
         
         mock_get_plan.return_value = mock_plan
@@ -687,9 +699,11 @@ async def test_update_plan_details_image_url_generation_failure():
 async def test_update_plan_details_no_image_url():
     """Test updating plan with no image_url"""
     plan_id = uuid.uuid4()
+    author_id = uuid.uuid4()
     
     mock_plan = MagicMock(spec=Plan)
     mock_plan.id = plan_id
+    mock_plan.author_id = author_id
     mock_plan.title = "Test Plan"
     mock_plan.description = "Test Description"
     mock_plan.difficulty_level = DifficultyLevel.BEGINNER
@@ -712,6 +726,7 @@ async def test_update_plan_details_no_image_url():
         db_session.query.return_value.filter.return_value.scalar.return_value = 0
         
         mock_author = MagicMock()
+        mock_author.id = author_id
         mock_validate_author.return_value = mock_author
         
         mock_get_plan.return_value = mock_plan
@@ -728,59 +743,132 @@ async def test_update_plan_details_no_image_url():
 
 
 @pytest.mark.asyncio
-async def test_update_selected_plan_status_success():
-    # Get a test plan from DUMMY_PLANS
-    test_plan = DUMMY_PLANS[0]
-    
+async def test_update_selected_plan_status_success_db_backed():
+    plan_id = uuid.uuid4()
+    author_id = uuid.uuid4()
+
+    mock_plan = MagicMock(spec=Plan)
+    mock_plan.id = plan_id
+    mock_plan.author_id = author_id
+    mock_plan.title = "Title"
+    mock_plan.description = "Desc"
+    mock_plan.language = "EN"
+    mock_plan.difficulty_level = DifficultyLevel.BEGINNER
+    mock_plan.image_url = "images/plan.jpg"
+    mock_plan.tags = ["t"]
+    mock_plan.status = PlanStatus.DRAFT
+
+    items = [MagicMock(spec=PlanItem), MagicMock(spec=PlanItem)]
+    user_progress = [MagicMock(), MagicMock(), MagicMock()]
+
     status_update = PlanStatusUpdate(status=PlanStatus.PUBLISHED)
-    
-    with patch("pecha_api.plans.cms.cms_plans_service.validate_and_extract_author_details") as mock_validate_author:
-        mock_validate_author.return_value = MagicMock()
-        
-        response = await update_selected_plan_status(
-            token="dummy-token",
-            plan_id=test_plan.id,
-            plan_status_update=status_update
+
+    with patch("pecha_api.plans.cms.cms_plans_service.SessionLocal") as mock_session_local, \
+         patch("pecha_api.plans.cms.cms_plans_service.get_plan_by_id") as mock_get_plan_by_id, \
+         patch("pecha_api.plans.cms.cms_plans_service.get_plan_items_by_plan_id") as mock_get_items, \
+         patch("pecha_api.plans.cms.cms_plans_service.get_plan_progress") as mock_get_progress, \
+         patch("pecha_api.plans.cms.cms_plans_service.update_plan") as mock_update_plan, \
+         patch("pecha_api.plans.cms.cms_plans_service.validate_and_extract_author_details") as mock_validate_author:
+        db_session = _mock_session_local(mock_session_local)
+
+        mock_validate_author.return_value = MagicMock(id=author_id)
+        mock_get_plan_by_id.return_value = mock_plan
+        mock_get_items.return_value = items
+        mock_get_progress.return_value = user_progress
+        mock_update_plan.return_value = mock_plan
+
+        resp = await update_selected_plan_status(
+            token="tkn",
+            plan_id=plan_id,
+            plan_status_update=status_update,
         )
-        
-        # Verify response
-        assert response is not None
-        assert response.id == test_plan.id
-        assert response.status == PlanStatus.PUBLISHED
+
+        mock_get_plan_by_id.assert_called_once_with(db=db_session, plan_id=plan_id)
+        mock_get_items.assert_called_with(db=db_session, plan_id=plan_id)
+        mock_update_plan.assert_called_once_with(db=db_session, plan=mock_plan)
+
+        assert resp.id == plan_id
+        assert resp.status == PlanStatus.PUBLISHED
+        assert resp.total_days == len(items)
+        assert resp.subscription_count == len(user_progress)
 
 
 @pytest.mark.asyncio
-async def test_update_selected_plan_status_invalid_transition():
-    # Ensure a plan with zero days exists
-    zero_day_plan = next((p for p in DUMMY_PLANS if getattr(p, "total_days", 0) == 0), None)
-    if zero_day_plan is None:
-        # Inject a zero-day plan for this test
-        zero_day_plan = PlanDTO(
-            id=uuid.uuid4(),
-            title="Zero Day Plan",
-            description="Should not publish",
-            language="en",
-            image_url="https://example.com/zero.jpg",
-            total_days=0,
-            status=PlanStatus.DRAFT,
-            subscription_count=0
-        )
-        DUMMY_PLANS.append(zero_day_plan)
+async def test_update_selected_plan_status_invalid_transition_no_days():
+    plan_id = uuid.uuid4()
+    author_id = uuid.uuid4()
 
-    status_update = PlanStatusUpdate(status=PlanStatus.PUBLISHED)
-    
-    with patch("pecha_api.plans.cms.cms_plans_service.validate_and_extract_author_details") as mock_validate_author:
-        mock_validate_author.return_value = MagicMock()
-        
+    mock_plan = MagicMock(spec=Plan)
+    mock_plan.id = plan_id
+    mock_plan.author_id = author_id
+    mock_plan.status = PlanStatus.DRAFT
+
+    with patch("pecha_api.plans.cms.cms_plans_service.SessionLocal") as mock_session_local, \
+         patch("pecha_api.plans.cms.cms_plans_service.get_plan_by_id") as mock_get_plan_by_id, \
+         patch("pecha_api.plans.cms.cms_plans_service.get_plan_items_by_plan_id") as mock_get_items, \
+         patch("pecha_api.plans.cms.cms_plans_service.validate_and_extract_author_details") as mock_validate_author:
+        _ = _mock_session_local(mock_session_local)
+        mock_validate_author.return_value = MagicMock(id=author_id)
+        mock_get_plan_by_id.return_value = mock_plan
+        mock_get_items.return_value = []
+
         with pytest.raises(HTTPException) as exc_info:
             await update_selected_plan_status(
-                token="dummy-token",
-                plan_id=zero_day_plan.id,
-                plan_status_update=status_update
+                token="tkn",
+                plan_id=plan_id,
+                plan_status_update=PlanStatusUpdate(status=PlanStatus.PUBLISHED),
             )
-        
+
         assert exc_info.value.status_code == 400
-        assert "must have at least one day with content" in str(exc_info.value.detail)
+        assert exc_info.value.detail == {"error": "Bad request", "message": "Plan must have at least one day with content to be published"}
+
+
+@pytest.mark.asyncio
+async def test_update_selected_plan_status_not_found():
+    plan_id = uuid.uuid4()
+
+    with patch("pecha_api.plans.cms.cms_plans_service.SessionLocal") as mock_session_local, \
+         patch("pecha_api.plans.cms.cms_plans_service.get_plan_by_id") as mock_get_plan_by_id, \
+         patch("pecha_api.plans.cms.cms_plans_service.validate_and_extract_author_details") as mock_validate_author:
+        _ = _mock_session_local(mock_session_local)
+        mock_validate_author.return_value = MagicMock(id=uuid.uuid4())
+        mock_get_plan_by_id.return_value = None
+
+        with pytest.raises(HTTPException) as exc_info:
+            await update_selected_plan_status(
+                token="tkn",
+                plan_id=plan_id,
+                plan_status_update=PlanStatusUpdate(status=PlanStatus.PUBLISHED),
+            )
+
+        assert exc_info.value.status_code == 404
+        assert exc_info.value.detail == {"error": "Bad request", "message": "Plan not found"}
+
+
+@pytest.mark.asyncio
+async def test_update_selected_plan_status_author_mismatch():
+    plan_id = uuid.uuid4()
+
+    mock_plan = MagicMock(spec=Plan)
+    mock_plan.id = plan_id
+    mock_plan.author_id = uuid.uuid4()  # different than caller
+
+    with patch("pecha_api.plans.cms.cms_plans_service.SessionLocal") as mock_session_local, \
+         patch("pecha_api.plans.cms.cms_plans_service.get_plan_by_id") as mock_get_plan_by_id, \
+         patch("pecha_api.plans.cms.cms_plans_service.validate_and_extract_author_details") as mock_validate_author:
+        _ = _mock_session_local(mock_session_local)
+        mock_validate_author.return_value = MagicMock(id=uuid.uuid4())
+        mock_get_plan_by_id.return_value = mock_plan
+
+        with pytest.raises(HTTPException) as exc_info:
+            await update_selected_plan_status(
+                token="tkn",
+                plan_id=plan_id,
+                plan_status_update=PlanStatusUpdate(status=PlanStatus.PUBLISHED),
+            )
+
+        assert exc_info.value.status_code == 403
+        assert exc_info.value.detail == {"error": "Bad request", "message": "You are not authorized to update this plan"}
 
 
 @pytest.mark.asyncio

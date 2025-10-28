@@ -25,7 +25,7 @@ from pecha_api.uploads.S3_utils import generate_presigned_access_url
 from uuid import uuid4, UUID
 from fastapi import HTTPException
 from pecha_api.plans.auth.plan_auth_models import ResponseError
-from pecha_api.plans.response_message import BAD_REQUEST, PLAN_NOT_FOUND, FORBIDDEN, UNAUTHORIZED_PLAN_DELETE
+from pecha_api.plans.response_message import BAD_REQUEST, PLAN_NOT_FOUND, FORBIDDEN, UNAUTHORIZED_PLAN_DELETE, PLAN_AUTHOR_MISMATCH, PLAN_MUST_HAVE_AT_LEAST_ONE_DAY_WITH_CONTENT_TO_BE_PUBLISHED
 from datetime import datetime, timezone
 from sqlalchemy import func
 
@@ -202,13 +202,7 @@ async def get_details_plan(token:str,plan_id: UUID) -> PlanWithDays:
 
 def _get_plan_details(db: Session, plan_id: UUID) -> PlanWithDays:
     # Fetch base plan
-    plan: Plan = get_plan_by_id(db=db, plan_id=plan_id)
-    if not plan:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND, 
-            detail=ResponseError(error=BAD_REQUEST, 
-            message=PLAN_NOT_FOUND).model_dump()
-        )
+    plan: Plan = _check_author_plan_availability(plan_id=plan_id)
 
     # Fetch items (days)
     items = get_plan_items_by_plan_id(db=db, plan_id=plan.id)
@@ -256,13 +250,7 @@ async def update_plan_details(token: str, plan_id: UUID, update_plan_request: Up
     author_details = validate_and_extract_author_details(token=token)
     
     with SessionLocal() as db:
-        plan = get_plan_by_id(db, plan_id)
-        
-        if not plan:
-            raise HTTPException(
-                status_code=status.HTTP_404_NOT_FOUND,
-                detail=PLAN_NOT_FOUND
-            )
+        plan = _check_author_plan_availability(plan_id=plan_id, author_id=author_details.id)
         
         if update_plan_request.title is not None:
             plan.title = update_plan_request.title
@@ -311,24 +299,28 @@ async def update_plan_details(token: str, plan_id: UUID, update_plan_request: Up
         )
 
 async def update_selected_plan_status(token:str,plan_id: UUID, plan_status_update: PlanStatusUpdate) -> PlanDTO:
-    """Update plan status"""
-    # Find plan by ID
-   # current_author = validate_and_extract_author_details(token=token)
-    plan = next((p for p in DUMMY_PLANS if p.id == plan_id), None)
-    if not plan:
-        raise HTTPException(status_code=404, detail="Plan not found")
+    
+   current_author = validate_and_extract_author_details(token=token)
+   with SessionLocal() as db:
 
-    # Validate status transition
-    if plan_status_update.status == PlanStatus.PUBLISHED:
-        # In real implementation, check if plan has at least one day with content
-        if plan.total_days == 0:
-            raise HTTPException(
-                status_code=400,
-                detail="Plan must have at least one day with content to be published"
-            )
+        plan = _check_author_plan_availability(plan_id=plan_id, author_id=current_author.id)
+        _check_published_plan_day_availability(plan_id=plan_id, plan_status=plan_status_update.status)
 
-    plan.status = plan_status_update.status
-    return plan
+        plan.status = plan_status_update.status
+        plan = update_plan(db=db, plan=plan)
+        return PlanDTO(
+            id=plan.id,
+            title=plan.title,
+            description=plan.description or "",
+            language=plan.language,
+            difficulty_level=plan.difficulty_level,
+            image_url=plan.image_url,
+            plan_image_url=plan.image_url,
+            total_days=len(get_plan_items_by_plan_id(db=db, plan_id=plan_id)),
+            tags=plan.tags or [],
+            status=plan.status,
+            subscription_count=len(get_plan_progress(db=db, plan_id=plan.id))
+        )
 
 async def delete_selected_plan(token:str,plan_id: UUID):
     current_author = validate_and_extract_author_details(token=token)
@@ -388,3 +380,20 @@ def _soft_delete_plan_by_id(db: Session, plan_id: UUID, author: Author):
     plan.deleted_at = datetime.now(timezone.utc)
     plan.deleted_by = author.email
     plan = update_plan(db=db, plan=plan)
+
+
+def _check_author_plan_availability(plan_id: UUID, author_id: Optional[UUID] = None) -> Plan:
+    with SessionLocal() as db:
+        plan = get_plan_by_id(db=db, plan_id=plan_id)
+        if not plan:
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=ResponseError(error=BAD_REQUEST, message=PLAN_NOT_FOUND).model_dump())
+        if author_id and plan.author_id != author_id:
+            raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail=ResponseError(error=BAD_REQUEST, message=PLAN_AUTHOR_MISMATCH).model_dump())
+        return plan
+
+def _check_published_plan_day_availability(plan_id: UUID, plan_status: PlanStatus):
+    with SessionLocal() as db:
+        if plan_status == PlanStatus.PUBLISHED and len(get_plan_items_by_plan_id(db=db, plan_id=plan_id)) == 0:
+            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=ResponseError(error=BAD_REQUEST, message=PLAN_MUST_HAVE_AT_LEAST_ONE_DAY_WITH_CONTENT_TO_BE_PUBLISHED).model_dump())
+        return
+        
