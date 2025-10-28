@@ -3,7 +3,7 @@ import pytest
 from types import SimpleNamespace
 from unittest.mock import patch, MagicMock
 from fastapi import HTTPException
-from pecha_api.plans.response_message import BAD_REQUEST, PLAN_DAY_NOT_FOUND, FORBIDDEN, UNAUTHORIZED_TASK_ACCESS
+from pecha_api.plans.response_message import BAD_REQUEST, PLAN_DAY_NOT_FOUND, FORBIDDEN, UNAUTHORIZED_TASK_ACCESS, TASK_ORDER_UPDATE_FAIL
 from pecha_api.plans.tasks.plan_tasks_response_model import (
     CreateTaskRequest,
     TaskDTO,
@@ -12,6 +12,8 @@ from pecha_api.plans.tasks.plan_tasks_response_model import (
     GetTaskResponse,
     UpdateTaskTitleRequest,
     UpdateTaskTitleResponse,
+    UpdateTaskOrderRequest,
+    UpdatedTaskOrderResponse,
 )
 from pecha_api.plans.tasks.sub_tasks.plan_sub_tasks_response_model import SubTaskDTO
 from pecha_api.plans.plans_enums import ContentType
@@ -21,6 +23,7 @@ from pecha_api.plans.tasks.plan_tasks_services import (
     delete_task_by_id,
     get_task_subtasks_service,
     update_task_title_service,
+    change_task_order_service,
 )
 
 
@@ -944,4 +947,366 @@ async def test_update_task_title_service_empty_title():
         
         assert mock_validate.call_count == 1
         assert mock_get_task.call_count == 1
+
+@pytest.mark.asyncio
+async def test_change_task_order_service_success():
+    """Test successful task order change with proper authentication."""
+    task_id = uuid.uuid4()
+    plan_item_id = uuid.uuid4()
+    token = "valid_token_123"
+    
+    request = UpdateTaskOrderRequest(target_order=3)
+    
+    current_task = SimpleNamespace(
+        id=task_id,
+        display_order=5,
+        plan_item_id=plan_item_id,
+    )
+    
+    updated_task = SimpleNamespace(
+        id=task_id,
+        display_order=3,
+    )
+    
+    db_mock = MagicMock()
+    session_cm = MagicMock()
+    session_cm.__enter__.return_value = db_mock
+    
+    with patch("pecha_api.plans.tasks.plan_tasks_services.validate_and_extract_author_details") as mock_validate, \
+         patch("pecha_api.plans.tasks.plan_tasks_services.SessionLocal", return_value=session_cm), \
+         patch("pecha_api.plans.tasks.plan_tasks_services.get_task_by_id", return_value=current_task) as mock_get_task, \
+         patch("pecha_api.plans.tasks.plan_tasks_services.shift_tasks_order") as mock_shift, \
+         patch("pecha_api.plans.tasks.plan_tasks_services.update_task_order", return_value=updated_task) as mock_update:
+        
+        result = await change_task_order_service(
+            token=token,
+            task_id=task_id,
+            update_task_order_request=request,
+        )
+        
+        assert mock_validate.call_count == 1
+        mock_validate.assert_called_with(token=token)
+        
+        assert mock_get_task.call_count == 1
+        mock_get_task.assert_called_with(db=db_mock, task_id=task_id)
+        
+        assert mock_shift.call_count == 1
+        mock_shift.assert_called_with(
+            db=db_mock,
+            plan_item_id=plan_item_id,
+            from_order=5,
+            to_order=3,
+            exclude_task_id=task_id,
+        )
+        
         assert mock_update.call_count == 1
+        mock_update.assert_called_with(
+            db=db_mock,
+            task_id=task_id,
+            display_order=3,
+        )
+        
+        assert isinstance(result, UpdatedTaskOrderResponse)
+        assert result.task_id == task_id
+        assert result.display_order == 3
+
+
+@pytest.mark.asyncio
+async def test_change_task_order_service_move_up():
+    """Test moving task order up (from position 5 to position 2)."""
+    task_id = uuid.uuid4()
+    plan_item_id = uuid.uuid4()
+    token = "valid_token_123"
+    
+    request = UpdateTaskOrderRequest(target_order=2)
+    
+    current_task = SimpleNamespace(
+        id=task_id,
+        display_order=5,
+        plan_item_id=plan_item_id,
+    )
+    
+    updated_task = SimpleNamespace(
+        id=task_id,
+        display_order=2,
+    )
+    
+    db_mock = MagicMock()
+    session_cm = MagicMock()
+    session_cm.__enter__.return_value = db_mock
+    
+    with patch("pecha_api.plans.tasks.plan_tasks_services.validate_and_extract_author_details"), \
+         patch("pecha_api.plans.tasks.plan_tasks_services.SessionLocal", return_value=session_cm), \
+         patch("pecha_api.plans.tasks.plan_tasks_services.get_task_by_id", return_value=current_task), \
+         patch("pecha_api.plans.tasks.plan_tasks_services.shift_tasks_order") as mock_shift, \
+         patch("pecha_api.plans.tasks.plan_tasks_services.update_task_order", return_value=updated_task):
+        
+        result = await change_task_order_service(
+            token=token,
+            task_id=task_id,
+            update_task_order_request=request,
+        )
+        
+        mock_shift.assert_called_with(
+            db=db_mock,
+            plan_item_id=plan_item_id,
+            from_order=5,
+            to_order=2,
+            exclude_task_id=task_id,
+        )
+        
+        assert result.display_order == 2
+
+
+@pytest.mark.asyncio
+async def test_change_task_order_service_move_down():
+    """Test moving task order down (from position 2 to position 5)."""
+    task_id = uuid.uuid4()
+    plan_item_id = uuid.uuid4()
+    token = "valid_token_123"
+    
+    request = UpdateTaskOrderRequest(target_order=5)
+    
+    current_task = SimpleNamespace(
+        id=task_id,
+        display_order=2,
+        plan_item_id=plan_item_id,
+    )
+    
+    updated_task = SimpleNamespace(
+        id=task_id,
+        display_order=5,
+    )
+    
+    db_mock = MagicMock()
+    session_cm = MagicMock()
+    session_cm.__enter__.return_value = db_mock
+    
+    with patch("pecha_api.plans.tasks.plan_tasks_services.validate_and_extract_author_details"), \
+         patch("pecha_api.plans.tasks.plan_tasks_services.SessionLocal", return_value=session_cm), \
+         patch("pecha_api.plans.tasks.plan_tasks_services.get_task_by_id", return_value=current_task), \
+         patch("pecha_api.plans.tasks.plan_tasks_services.shift_tasks_order") as mock_shift, \
+         patch("pecha_api.plans.tasks.plan_tasks_services.update_task_order", return_value=updated_task):
+        
+        result = await change_task_order_service(
+            token=token,
+            task_id=task_id,
+            update_task_order_request=request,
+        )
+        
+        mock_shift.assert_called_with(
+            db=db_mock,
+            plan_item_id=plan_item_id,
+            from_order=2,
+            to_order=5,
+            exclude_task_id=task_id,
+        )
+        
+        assert result.display_order == 5
+
+
+@pytest.mark.asyncio
+async def test_change_task_order_service_to_first_position():
+    """Test moving task to first position (order 1)."""
+    task_id = uuid.uuid4()
+    plan_item_id = uuid.uuid4()
+    token = "valid_token_123"
+    
+    request = UpdateTaskOrderRequest(target_order=1)
+    
+    current_task = SimpleNamespace(
+        id=task_id,
+        display_order=4,
+        plan_item_id=plan_item_id,
+    )
+    
+    updated_task = SimpleNamespace(
+        id=task_id,
+        display_order=1,
+    )
+    
+    db_mock = MagicMock()
+    session_cm = MagicMock()
+    session_cm.__enter__.return_value = db_mock
+    
+    with patch("pecha_api.plans.tasks.plan_tasks_services.validate_and_extract_author_details"), \
+         patch("pecha_api.plans.tasks.plan_tasks_services.SessionLocal", return_value=session_cm), \
+         patch("pecha_api.plans.tasks.plan_tasks_services.get_task_by_id", return_value=current_task), \
+         patch("pecha_api.plans.tasks.plan_tasks_services.shift_tasks_order"), \
+         patch("pecha_api.plans.tasks.plan_tasks_services.update_task_order", return_value=updated_task):
+        
+        result = await change_task_order_service(
+            token=token,
+            task_id=task_id,
+            update_task_order_request=request,
+        )
+        
+        assert result.display_order == 1
+
+
+@pytest.mark.asyncio
+async def test_change_task_order_service_invalid_token():
+    """Test task order change fails with invalid authentication token."""
+    task_id = uuid.uuid4()
+    token = "invalid_token"
+    
+    request = UpdateTaskOrderRequest(target_order=3)
+    
+    with patch("pecha_api.plans.tasks.plan_tasks_services.validate_and_extract_author_details", 
+               side_effect=HTTPException(status_code=401, detail={"error": "UNAUTHORIZED", "message": "Invalid token"})) as mock_validate:
+        
+        with pytest.raises(HTTPException) as exc_info:
+            await change_task_order_service(
+                token=token,
+                task_id=task_id,
+                update_task_order_request=request,
+            )
+        
+        assert exc_info.value.status_code == 401
+        assert mock_validate.call_count == 1
+
+
+@pytest.mark.asyncio
+async def test_change_task_order_service_task_not_found():
+    """Test task order change fails when task doesn't exist."""
+    task_id = uuid.uuid4()
+    token = "valid_token_123"
+    
+    request = UpdateTaskOrderRequest(target_order=3)
+    
+    db_mock = MagicMock()
+    session_cm = MagicMock()
+    session_cm.__enter__.return_value = db_mock
+    
+    with patch("pecha_api.plans.tasks.plan_tasks_services.validate_and_extract_author_details"), \
+         patch("pecha_api.plans.tasks.plan_tasks_services.SessionLocal", return_value=session_cm), \
+         patch("pecha_api.plans.tasks.plan_tasks_services.get_task_by_id", 
+               side_effect=HTTPException(status_code=404, detail={"error": "NOT_FOUND", "message": "Task not found"})):
+        
+        with pytest.raises(HTTPException) as exc_info:
+            await change_task_order_service(
+                token=token,
+                task_id=task_id,
+                update_task_order_request=request,
+            )
+        
+        assert exc_info.value.status_code == 404
+
+
+@pytest.mark.asyncio
+async def test_change_task_order_service_update_failed():
+    """Test task order change fails when update operation returns None."""
+    task_id = uuid.uuid4()
+    plan_item_id = uuid.uuid4()
+    token = "valid_token_123"
+    
+    request = UpdateTaskOrderRequest(target_order=3)
+    
+    current_task = SimpleNamespace(
+        id=task_id,
+        display_order=5,
+        plan_item_id=plan_item_id,
+    )
+    
+    db_mock = MagicMock()
+    session_cm = MagicMock()
+    session_cm.__enter__.return_value = db_mock
+    
+    with patch("pecha_api.plans.tasks.plan_tasks_services.validate_and_extract_author_details"), \
+         patch("pecha_api.plans.tasks.plan_tasks_services.SessionLocal", return_value=session_cm), \
+         patch("pecha_api.plans.tasks.plan_tasks_services.get_task_by_id", return_value=current_task), \
+         patch("pecha_api.plans.tasks.plan_tasks_services.shift_tasks_order"), \
+         patch("pecha_api.plans.tasks.plan_tasks_services.update_task_order", return_value=None):
+        
+        with pytest.raises(HTTPException) as exc_info:
+            await change_task_order_service(
+                token=token,
+                task_id=task_id,
+                update_task_order_request=request,
+            )
+        
+        assert exc_info.value.status_code == 400
+        assert TASK_ORDER_UPDATE_FAIL in str(exc_info.value.detail)
+
+
+@pytest.mark.asyncio
+async def test_change_task_order_service_database_error():
+    """Test task order change handles database errors gracefully."""
+    task_id = uuid.uuid4()
+    plan_item_id = uuid.uuid4()
+    token = "valid_token_123"
+    
+    request = UpdateTaskOrderRequest(target_order=3)
+    
+    current_task = SimpleNamespace(
+        id=task_id,
+        display_order=5,
+        plan_item_id=plan_item_id,
+    )
+    
+    db_mock = MagicMock()
+    session_cm = MagicMock()
+    session_cm.__enter__.return_value = db_mock
+    
+    with patch("pecha_api.plans.tasks.plan_tasks_services.validate_and_extract_author_details"), \
+         patch("pecha_api.plans.tasks.plan_tasks_services.SessionLocal", return_value=session_cm), \
+         patch("pecha_api.plans.tasks.plan_tasks_services.get_task_by_id", return_value=current_task), \
+         patch("pecha_api.plans.tasks.plan_tasks_services.shift_tasks_order", 
+               side_effect=Exception("Database connection error")):
+        
+        with pytest.raises(Exception) as exc_info:
+            await change_task_order_service(
+                token=token,
+                task_id=task_id,
+                update_task_order_request=request,
+            )
+        
+        assert "Database connection error" in str(exc_info.value)
+
+
+@pytest.mark.asyncio
+async def test_change_task_order_service_same_position():
+    """Test moving task to its current position (no-op scenario)."""
+    task_id = uuid.uuid4()
+    plan_item_id = uuid.uuid4()
+    token = "valid_token_123"
+    
+    request = UpdateTaskOrderRequest(target_order=3)
+    
+    current_task = SimpleNamespace(
+        id=task_id,
+        display_order=3, 
+        plan_item_id=plan_item_id,
+    )
+    
+    updated_task = SimpleNamespace(
+        id=task_id,
+        display_order=3,
+    )
+    
+    db_mock = MagicMock()
+    session_cm = MagicMock()
+    session_cm.__enter__.return_value = db_mock
+    
+    with patch("pecha_api.plans.tasks.plan_tasks_services.validate_and_extract_author_details"), \
+         patch("pecha_api.plans.tasks.plan_tasks_services.SessionLocal", return_value=session_cm), \
+         patch("pecha_api.plans.tasks.plan_tasks_services.get_task_by_id", return_value=current_task), \
+         patch("pecha_api.plans.tasks.plan_tasks_services.shift_tasks_order") as mock_shift, \
+         patch("pecha_api.plans.tasks.plan_tasks_services.update_task_order", return_value=updated_task):
+        
+        result = await change_task_order_service(
+            token=token,
+            task_id=task_id,
+            update_task_order_request=request,
+        )
+        
+        assert mock_shift.call_count == 1
+        mock_shift.assert_called_with(
+            db=db_mock,
+            plan_item_id=plan_item_id,
+            from_order=3,
+            to_order=3,
+            exclude_task_id=task_id,
+        )
+        
+        assert result.display_order == 3
