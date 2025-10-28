@@ -5,10 +5,10 @@ from starlette import status
 from pecha_api.plans.plans_models import Plan
 from pecha_api.plans.items.plan_items_models import PlanItem
 from pecha_api.plans.users.plan_users_model import UserPlanProgress
-from pecha_api.plans.cms.cms_plans_repository import save_plan, get_plan_by_id, get_plans_by_author_id, update_plan, soft_delete_plan_by_id
-from pecha_api.plans.items.plan_items_repository import save_plan_items, delete_plan_items, get_plan_items_by_plan_id, get_plan_day_with_tasks_and_subtasks
+from pecha_api.plans.cms.cms_plans_repository import save_plan, get_plan_by_id, get_plans_by_author_id, update_plan
+from pecha_api.plans.items.plan_items_repository import save_plan_items, get_plan_items_by_plan_id, get_plan_day_with_tasks_and_subtasks
 from pecha_api.plans.users.plan_users_progress_repository import get_plan_progress
-
+from pecha_api.plans.authors.plan_authors_model import Author
 from pecha_api.plans.authors.plan_authors_service import validate_and_extract_author_details
 from pecha_api.plans.plans_enums import LanguageCode, PlanStatus, ContentType
 from pecha_api.plans.plans_response_models import PlansResponse, PlanDTO, CreatePlanRequest, TaskDTO, PlanDayDTO, \
@@ -346,7 +346,7 @@ async def delete_selected_plan(token:str,plan_id: UUID):
                 detail=ResponseError(error=FORBIDDEN, 
                 message=UNAUTHORIZED_PLAN_DELETE).model_dump()
             )
-        soft_delete_plan_by_id(db=db, plan_id=plan_id, author=current_author)
+        _soft_delete_plan_by_id(db=db, plan_id=plan_id, author=current_author)
 
 def _get_task_subtasks_dto(subtasks: List[PlanSubTask]) -> List[SubTaskDTO]:
 
@@ -380,3 +380,11 @@ async def get_plan_day_details(token:str,plan_id: UUID, day_number: int) -> Plan
             ]
         )   
         return plan_day_dto
+
+def _soft_delete_plan_by_id(db: Session, plan_id: UUID, author: Author):
+    plan = get_plan_by_id(db=db, plan_id=plan_id)
+    if not plan:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=ResponseError(error=BAD_REQUEST, message=PLAN_NOT_FOUND).model_dump())
+    plan.deleted_at = datetime.now(timezone.utc)
+    plan.deleted_by = author.email
+    plan = update_plan(db=db, plan=plan)

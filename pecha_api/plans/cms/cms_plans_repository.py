@@ -128,17 +128,3 @@ def update_plan(db: Session, plan: Plan) -> Plan:
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Failed to update plan: {str(e)}"
         )
-
-def soft_delete_plan_by_id(db: Session, plan_id: UUID, author: Author) -> Plan:
-    try:
-        plan = get_plan_by_id(db=db, plan_id=plan_id)
-        if not plan:
-            raise HTTPException(status_code=404, detail="Plan not found")
-        plan.deleted_at = datetime.now(timezone.utc)
-        plan.deleted_by = author.email
-        plan = update_plan(db=db, plan=plan)
-        return plan
-    except Exception as e:
-        db.rollback()
-        print(f"Error soft deleting plan by id: {str(e)}")
-        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=f"Failed to soft delete plan by id: {str(e)}")
