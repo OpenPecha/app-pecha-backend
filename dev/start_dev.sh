@@ -12,4 +12,4 @@ poetry run uvicorn pecha_api.app:api \
   --reload-exclude ".venv/" \
   --reload-exclude "venv/" \
   --reload-exclude ".pytest_cache/" \
-  --reload-exclude "*.log" 
+  --reload-exclude "*.log"
