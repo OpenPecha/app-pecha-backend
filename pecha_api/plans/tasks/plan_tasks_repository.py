@@ -75,7 +75,11 @@ def update_task_title(db: Session, task_id: UUID, title: str) -> PlanTask:
     return task
 
 def get_tasks_by_plan_item_id(db: Session, plan_item_id: UUID) -> List[PlanTask]:
-    return db.query(PlanTask).filter(PlanTask.plan_item_id == plan_item_id).order_by(PlanTask.display_order).all()
+    return (db.query(PlanTask)
+        .filter(PlanTask.plan_item_id == plan_item_id)
+        .order_by(PlanTask.display_order)
+        .all()
+    )
 
 def update_task_order_by_id(db: Session, task_id: UUID, display_order: int) -> PlanTask:
     task = get_task_by_id(db=db, task_id=task_id)
@@ -83,27 +87,12 @@ def update_task_order_by_id(db: Session, task_id: UUID, display_order: int) -> P
     db.commit()
     return task
 
-def reorder_day_display_order(db: Session, plan_item_id: UUID):
+
+def reorder_day_tasks_display_order(db: Session, tasks: List[PlanTask]):
     try:
-        # Create CTE (ordered by display_order)
-        ordered_cte = (
-            select(
-                PlanTask.id,
-                func.row_number().over(order_by=(PlanTask.display_order)).label("rn")
-            )
-            .where(PlanTask.plan_item_id == plan_item_id)
-            .cte("ordered")
-        )
-    
-        # Perform UPDATE using CTE to update the display_order
-        stmt = (
-            update(PlanTask)
-            .where(PlanTask.id == ordered_cte.c.id)
-            .values(display_order=ordered_cte.c.rn)
-        )
-    
-        db.execute(stmt)
-        db.commit()
+        for task in tasks:
+            db.commit()
+            db.refresh(task)
     except Exception as e:
         db.rollback()
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=ResponseError(error=BAD_REQUEST, message=str(e)).model_dump())

@@ -1,4 +1,4 @@
-from pecha_api.plans.tasks.plan_tasks_repository import save_task, get_task_by_id, delete_task, update_task_day, update_task_title, get_tasks_by_plan_item_id, update_task_order_by_id, reorder_day_display_order
+from pecha_api.plans.tasks.plan_tasks_repository import save_task, get_task_by_id, delete_task, update_task_day, update_task_title, get_tasks_by_plan_item_id, update_task_order_by_id, reorder_day_tasks_display_order
 from pecha_api.plans.tasks.plan_tasks_response_model import CreateTaskRequest, TaskDTO, UpdateTaskDayRequest, UpdatedTaskDayResponse, GetTaskResponse, UpdateTaskTitleRequest, UpdateTaskTitleResponse, ContentAndImageUrl
 from pecha_api.plans.tasks.sub_tasks.plan_sub_tasks_response_model import SubTaskDTO
 from pecha_api.plans.authors.plan_authors_service import validate_and_extract_author_details
@@ -8,6 +8,7 @@ from pecha_api.db.database import SessionLocal
 from pecha_api.plans.items.plan_items_repository import get_plan_item, get_plan_item_by_id
 from pecha_api.plans.tasks.plan_tasks_models import PlanTask
 from sqlalchemy import func
+from typing import List
 from fastapi import HTTPException
 from starlette import status
 from pecha_api.plans.response_message import PLAN_DAY_NOT_FOUND, BAD_REQUEST, TASK_SAME_DAY_NOT_ALLOWED, FORBIDDEN, UNAUTHORIZED_TASK_DELETE, UNAUTHORIZED_TASK_ACCESS, TASK_TITLE_UPDATE_SUCCESS
@@ -55,7 +56,10 @@ async def delete_task_by_id(task_id: UUID, token: str):
         if task.created_by != current_author.email:
             raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail=ResponseError(error=FORBIDDEN, message=UNAUTHORIZED_TASK_DELETE).model_dump())
         delete_task(db=db, task_id=task_id)
-        reorder_day_display_order(db=db, plan_item_id=task.plan_item_id)
+
+        tasks = get_tasks_by_plan_item_id(db=db, plan_item_id=task.plan_item_id)
+        if tasks:
+            _reorder_sequentially(db=db, tasks=tasks)
 
 async def change_task_day_service(token: str, task_id: UUID, update_task_request: UpdateTaskDayRequest) -> UpdatedTaskDayResponse:
     validate_and_extract_author_details(token=token)
@@ -143,3 +147,16 @@ def _generate_image_url_content_type(content_type: str, content: str) -> Content
         return ContentAndImageUrl(content=presigned_url, image_url=content)
     return ContentAndImageUrl(content=content, image_url=None)
 
+
+def _reorder_sequentially(db: SessionLocal(), tasks: List[PlanTask]):
+    
+    tasks_to_update: List[PlanTask] = []
+
+    for index, task in enumerate(tasks, start=1):
+        if task.display_order != index:
+            task.display_order = index
+            tasks_to_update.append(task)
+    
+    if tasks_to_update:
+        reorder_day_tasks_display_order(db=db, tasks=tasks_to_update)
+    return tasks_to_update
