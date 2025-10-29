@@ -74,10 +74,9 @@ def update_task_title(db: Session, task_id: UUID, title: str) -> PlanTask:
     return task
 
 
-def update_task_order(db: Session, task_id: UUID, display_order: int) -> PlanTask:
-    task = get_task_by_id(db=db, task_id=task_id)
-    task.display_order = display_order
+def update_task_order(db: Session, task: PlanTask) -> PlanTask:
     db.commit()
+    db.refresh(task)
     return task
 
 def get_task_by_display_order(db: Session, plan_item_id: UUID, display_order: int) -> PlanTask:

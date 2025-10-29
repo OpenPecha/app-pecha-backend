@@ -136,11 +136,8 @@ async def change_task_order_service(token: str, task_id: UUID, update_task_order
         if tasks_to_shift:
             shift_tasks_order(db=db, tasks_to_update=tasks_to_shift, order_adjustment=order_adjustment)
         
-        update_current_task_display_order = update_task_order(
-            db=db, 
-            task_id=task_id, 
-            display_order=target_display_order
-        )
+        current_task.display_order = target_display_order
+        update_current_task_display_order = update_task_order(db=db, task=current_task)
 
         if not update_current_task_display_order:
             raise HTTPException(
