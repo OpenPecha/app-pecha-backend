@@ -5,6 +5,8 @@ from unittest.mock import patch, AsyncMock
 from pecha_api.plans.plans_enums import DifficultyLevel, PlanStatus
 from pecha_api.plans.plans_response_models import CreatePlanRequest, PlanDTO, PlansResponse, PlanDayDTO
 from pecha_api.plans.cms.cms_plans_views import create_plan, get_plans, get_plan_day_content
+from pecha_api.plans.plans_response_models import UpdatePlanRequest, PlanStatusUpdate, PlanWithDays
+from pecha_api.plans.cms.cms_plans_views import get_plan_details, update_plan, delete_plan, update_plan_status
 
 
 class _Creds:
@@ -165,5 +167,122 @@ async def test_get_plan_day_content_success():
             "day_number": day_number,
         }
 
+        assert resp == expected
+
+
+@pytest.mark.asyncio
+async def test_get_plan_details_success():
+    creds = _Creds(token="tkn")
+    plan_id = uuid.uuid4()
+
+    expected = PlanWithDays(
+        id=plan_id,
+        title="Plan",
+        description="Desc",
+        language="en",
+        image_url=None,
+        plan_image_url=None,
+        total_days=0,
+        difficulty_level="BEGINNER",
+        tags=[],
+        days=[],
+    )
+
+    with patch(
+        "pecha_api.plans.cms.cms_plans_views.get_details_plan",
+        return_value=expected,
+        new_callable=AsyncMock,
+    ) as mock_service:
+        resp = await get_plan_details(authentication_credential=creds, plan_id=plan_id)
+
+        assert mock_service.call_count == 1
+        assert mock_service.call_args.kwargs == {"token": "tkn", "plan_id": plan_id}
+        assert resp == expected
+
+
+@pytest.mark.asyncio
+async def test_update_plan_success():
+    creds = _Creds(token="token123")
+    plan_id = uuid.uuid4()
+
+    request = UpdatePlanRequest(title="Updated", description="Desc")
+    expected = PlanDTO(
+        id=plan_id,
+        title="Updated",
+        description="Desc",
+        language="en",
+        image_url=None,
+        plan_image_url=None,
+        total_days=3,
+        tags=[],
+        status=PlanStatus.DRAFT,
+        subscription_count=0,
+    )
+
+    with patch(
+        "pecha_api.plans.cms.cms_plans_views.update_plan_details",
+        return_value=expected,
+        new_callable=AsyncMock,
+    ) as mock_service:
+        resp = await update_plan(authentication_credential=creds, plan_id=plan_id, update_plan_request=request)
+
+        assert mock_service.call_count == 1
+        assert mock_service.call_args.kwargs == {
+            "token": "token123",
+            "plan_id": plan_id,
+            "update_plan_request": request,
+        }
+        assert resp == expected
+
+
+@pytest.mark.asyncio
+async def test_delete_plan_success():
+    creds = _Creds(token="tkn")
+    plan_id = uuid.uuid4()
+
+    with patch(
+        "pecha_api.plans.cms.cms_plans_views.delete_selected_plan",
+        return_value=None,
+        new_callable=AsyncMock,
+    ) as mock_service:
+        resp = await delete_plan(authentication_credential=creds, plan_id=plan_id)
+
+        assert mock_service.call_count == 1
+        assert mock_service.call_args.kwargs == {"token": "tkn", "plan_id": plan_id}
+        assert resp is None
+
+
+@pytest.mark.asyncio
+async def test_update_plan_status_success():
+    creds = _Creds(token="token123")
+    plan_id = uuid.uuid4()
+    status_update = PlanStatusUpdate(status=PlanStatus.PUBLISHED)
+
+    expected = PlanDTO(
+        id=plan_id,
+        title="Plan",
+        description="Desc",
+        language="en",
+        image_url=None,
+        plan_image_url=None,
+        total_days=1,
+        tags=[],
+        status=PlanStatus.PUBLISHED,
+        subscription_count=1,
+    )
+
+    with patch(
+        "pecha_api.plans.cms.cms_plans_views.update_selected_plan_status",
+        return_value=expected,
+        new_callable=AsyncMock,
+    ) as mock_service:
+        resp = await update_plan_status(authentication_credential=creds, plan_id=plan_id, plan_status_update=status_update)
+
+        assert mock_service.call_count == 1
+        assert mock_service.call_args.kwargs == {
+            "token": "token123",
+            "plan_id": plan_id,
+            "plan_status_update": status_update,
+        }
         assert resp == expected
 
