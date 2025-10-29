@@ -11,7 +11,7 @@ class ContentType(enum.Enum):
     AUDIO = "AUDIO"
     VIDEO = "VIDEO"
     IMAGE = "IMAGE"
-    SOURCE = "SOURCE"
+    SOURCE_REFERENCE = "SOURCE_REFERENCE"
 
 class UserPlanStatus(enum.Enum):
     NOT_STARTED = "NOT_STARTED"
