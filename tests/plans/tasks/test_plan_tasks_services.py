@@ -159,7 +159,10 @@ async def test_delete_task_by_id_success():
     ) as mock_get_task, patch(
         "pecha_api.plans.tasks.plan_tasks_services.delete_task",
     ) as mock_delete, patch(
-        "pecha_api.plans.tasks.plan_tasks_services.reorder_day_display_order",
+        "pecha_api.plans.tasks.plan_tasks_services.get_tasks_by_plan_item_id",
+        return_value=[SimpleNamespace(id=uuid.uuid4(), display_order=2)],
+    ) as mock_get_tasks, patch(
+        "pecha_api.plans.tasks.plan_tasks_services._reorder_sequentially",
     ) as mock_reorder:
         await delete_task_by_id(task_id=task_id, token=token)
 
@@ -173,9 +176,13 @@ async def test_delete_task_by_id_success():
         assert mock_delete.call_count == 1
         assert mock_delete.call_args.kwargs == {"db": db_mock, "task_id": task_id}
 
-        # ensure reorder is triggered with the deleted task's plan_item_id
+        # ensure tasks fetched and reorder is triggered with fetched tasks
+        assert mock_get_tasks.call_count == 1
+        assert mock_get_tasks.call_args.kwargs == {"db": db_mock, "plan_item_id": mock_task.plan_item_id}
         assert mock_reorder.call_count == 1
-        assert mock_reorder.call_args.kwargs == {"db": db_mock, "plan_item_id": mock_task.plan_item_id}
+        # _reorder_sequentially(db, tasks)
+        assert "db" in mock_reorder.call_args.kwargs
+        assert "tasks" in mock_reorder.call_args.kwargs
 
 
 @pytest.mark.asyncio
@@ -211,7 +218,9 @@ async def test_delete_task_by_id_unauthorized():
     ) as mock_get_task, patch(
         "pecha_api.plans.tasks.plan_tasks_services.delete_task",
     ) as mock_delete, patch(
-        "pecha_api.plans.tasks.plan_tasks_services.reorder_day_display_order",
+        "pecha_api.plans.tasks.plan_tasks_services.get_tasks_by_plan_item_id",
+    ) as mock_get_tasks, patch(
+        "pecha_api.plans.tasks.plan_tasks_services._reorder_sequentially",
     ) as mock_reorder:
         with pytest.raises(HTTPException) as exc_info:
             await delete_task_by_id(task_id=task_id, token=token)
@@ -222,8 +231,9 @@ async def test_delete_task_by_id_unauthorized():
 
         assert mock_validate.call_count == 1
         assert mock_get_task.call_count == 1
-        # ensure delete and reorder were not called
+        # ensure delete, get_tasks and reorder were not called
         assert mock_delete.call_count == 0
+        assert mock_get_tasks.call_count == 0
         assert mock_reorder.call_count == 0
 
 
@@ -321,7 +331,9 @@ async def test_delete_task_by_id_task_not_found():
     ) as mock_get_task, patch(
         "pecha_api.plans.tasks.plan_tasks_services.delete_task",
     ) as mock_delete, patch(
-        "pecha_api.plans.tasks.plan_tasks_services.reorder_day_display_order",
+        "pecha_api.plans.tasks.plan_tasks_services.get_tasks_by_plan_item_id",
+    ) as mock_get_tasks, patch(
+        "pecha_api.plans.tasks.plan_tasks_services._reorder_sequentially",
     ) as mock_reorder:
         with pytest.raises(HTTPException) as exc_info:
             await delete_task_by_id(task_id=task_id, token=token)
@@ -352,7 +364,9 @@ async def test_delete_task_by_id_invalid_token():
     ) as mock_get_task, patch(
         "pecha_api.plans.tasks.plan_tasks_services.delete_task",
     ) as mock_delete, patch(
-        "pecha_api.plans.tasks.plan_tasks_services.reorder_day_display_order",
+        "pecha_api.plans.tasks.plan_tasks_services.get_tasks_by_plan_item_id",
+    ) as mock_get_tasks, patch(
+        "pecha_api.plans.tasks.plan_tasks_services._reorder_sequentially",
     ) as mock_reorder:
         with pytest.raises(HTTPException) as exc_info:
             await delete_task_by_id(task_id=task_id, token=token)
@@ -363,6 +377,7 @@ async def test_delete_task_by_id_invalid_token():
         assert mock_session.call_count == 0
         assert mock_get_task.call_count == 0
         assert mock_delete.call_count == 0
+        assert mock_get_tasks.call_count == 0
         assert mock_reorder.call_count == 0
 
 
@@ -399,7 +414,9 @@ async def test_delete_task_by_id_database_error():
         "pecha_api.plans.tasks.plan_tasks_services.delete_task",
         side_effect=HTTPException(status_code=400, detail={"error": "BAD_REQUEST", "message": "Database error"}),
     ) as mock_delete, patch(
-        "pecha_api.plans.tasks.plan_tasks_services.reorder_day_display_order",
+        "pecha_api.plans.tasks.plan_tasks_services.get_tasks_by_plan_item_id",
+    ) as mock_get_tasks, patch(
+        "pecha_api.plans.tasks.plan_tasks_services._reorder_sequentially",
     ) as mock_reorder:
         with pytest.raises(HTTPException) as exc_info:
             await delete_task_by_id(task_id=task_id, token=token)
@@ -409,7 +426,8 @@ async def test_delete_task_by_id_database_error():
         assert mock_validate.call_count == 1
         assert mock_get_task.call_count == 1
         assert mock_delete.call_count == 1
-        # reorder should not be called if delete fails
+        # get_tasks and reorder should not be called if delete fails
+        assert mock_get_tasks.call_count == 0
         assert mock_reorder.call_count == 0
 
 

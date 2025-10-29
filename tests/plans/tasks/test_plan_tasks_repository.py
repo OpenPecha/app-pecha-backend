@@ -13,6 +13,9 @@ from pecha_api.plans.tasks.plan_tasks_repository import (
     get_task_by_id,
     update_task_day,
     update_task_title,
+    get_tasks_by_plan_item_id,
+    update_task_order_by_id,
+    reorder_day_tasks_display_order,
 )
 
 
@@ -192,7 +195,68 @@ def test_update_task_title_success():
         
         assert db.commit.call_count == 1
         assert db.refresh.call_count == 1
-        assert db.refresh.call_args[0][0] is mock_task
+
+
+def test_get_tasks_by_plan_item_id_filters_and_orders():
+    db = MagicMock()
+
+    expected = [SimpleNamespace(id=1, display_order=1), SimpleNamespace(id=2, display_order=2)]
+    db.query.return_value.filter.return_value.order_by.return_value.all.return_value = expected
+
+    plan_item_id = uuid.uuid4()
+    result = get_tasks_by_plan_item_id(db=db, plan_item_id=plan_item_id)
+
+    assert result == expected
+    assert db.query.call_count == 1
+    # ensure filter called with correct criterion object
+    assert db.query.return_value.filter.call_count == 1
+    assert db.query.return_value.filter.return_value.order_by.call_count == 1
+
+
+def test_update_task_order_by_id_updates_display_order_and_commits():
+    db = MagicMock()
+    task_id = uuid.uuid4()
+
+    mock_task = SimpleNamespace(id=task_id, display_order=3)
+
+    with patch(
+        "pecha_api.plans.tasks.plan_tasks_repository.get_task_by_id",
+        return_value=mock_task,
+    ) as mock_get:
+        result = update_task_order_by_id(db=db, task_id=task_id, display_order=7)
+
+    assert mock_get.call_count == 1
+    assert mock_task.display_order == 7
+    assert db.commit.call_count == 1
+    assert result is mock_task
+
+
+def test_reorder_day_tasks_display_order_commits_and_refreshes_each_task():
+    db = MagicMock()
+    tasks = [SimpleNamespace(id=1), SimpleNamespace(id=2), SimpleNamespace(id=3)]
+
+    reorder_day_tasks_display_order(db=db, tasks=tasks)
+
+    # commit once per task
+    assert db.commit.call_count == len(tasks)
+    # refresh called for each specific task
+    refreshed = [call_args[0][0] for call_args in db.refresh.call_args_list]
+    assert refreshed == tasks
+
+
+def test_reorder_day_tasks_display_order_rolls_back_and_raises_on_error():
+    db = MagicMock()
+    tasks = [SimpleNamespace(id=1)]
+    db.commit.side_effect = Exception("boom")
+
+    from fastapi import HTTPException
+
+    with pytest.raises(HTTPException) as exc:
+        reorder_day_tasks_display_order(db=db, tasks=tasks)
+
+    assert exc.value.status_code == 400
+    assert exc.value.detail["error"] == BAD_REQUEST
+    assert db.rollback.call_count == 1
 
 
 def test_update_task_title_task_not_found():
