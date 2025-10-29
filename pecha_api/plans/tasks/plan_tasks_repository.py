@@ -100,17 +100,9 @@ def get_tasks_by_plan_item_id(db: Session, plan_item_id: UUID) -> List[PlanTask]
     )
     return tasks
 
-def shift_tasks_order(db: Session, plan_item_id: UUID, from_order: int, to_order: int, exclude_task_id: UUID = None):
+def shift_tasks_order(db: Session, tasks_to_update: List[PlanTask], order_adjustment: int):
 
-    tasks = get_tasks_by_plan_item_id(db=db, plan_item_id=plan_item_id)
-    
-    if from_order < to_order:
-        for task in tasks:
-            if task.id != exclude_task_id and from_order < task.display_order <= to_order:
-                task.display_order -= 1
-    else:
-        for task in tasks:
-            if task.id != exclude_task_id and to_order <= task.display_order < from_order:
-                task.display_order += 1
+    for task in tasks_to_update:
+        task.display_order += order_adjustment
     
     db.commit()
