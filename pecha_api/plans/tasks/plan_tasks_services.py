@@ -102,10 +102,17 @@ async def update_task_title_service(token: str, task_id: UUID, update_request: U
         )
 
 async def change_task_order_service(token: str, task_id: UUID, update_task_order_request: UpdateTaskOrderRequest) -> UpdatedTaskOrderResponse:
-    validate_and_extract_author_details(token=token)
+    current_author = validate_and_extract_author_details(token=token)
 
     with SessionLocal() as db:
         current_task = get_task_by_id(db=db, task_id=task_id)
+
+        if current_task.created_by != current_author.email:
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN, 
+                detail=ResponseError(error=FORBIDDEN, message=UNAUTHORIZED_TASK_ACCESS).model_dump()
+            )
+        
         current_display_order = current_task.display_order
         plan_item_id = current_task.plan_item_id
         target_display_order = update_task_order_request.target_order
