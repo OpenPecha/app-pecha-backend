@@ -159,4 +159,3 @@ def _reorder_sequentially(db: SessionLocal(), tasks: List[PlanTask]):
     
     if tasks_to_update:
         reorder_day_tasks_display_order(db=db, tasks=tasks_to_update)
-    return tasks_to_update

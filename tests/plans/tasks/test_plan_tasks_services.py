@@ -22,6 +22,7 @@ from pecha_api.plans.tasks.plan_tasks_services import (
     get_task_subtasks_service,
     update_task_title_service,
     _get_max_display_order,
+    _reorder_sequentially,
 )
 
 
@@ -986,6 +987,45 @@ async def test_update_task_title_service_database_error():
         assert mock_validate.call_count == 1
         assert mock_get_task.call_count == 1
         assert mock_update.call_count == 1
+
+
+def test__reorder_sequentially_updates_only_when_needed_and_calls_repository():
+    db = MagicMock()
+    # Current orders: 1, 3, 3 -> should become 1, 2, 3; only second task changes
+    t1 = SimpleNamespace(id=1, display_order=1)
+    t2 = SimpleNamespace(id=2, display_order=3)
+    t3 = SimpleNamespace(id=3, display_order=3)
+
+    with patch(
+        "pecha_api.plans.tasks.plan_tasks_services.reorder_day_tasks_display_order",
+    ) as mock_repo_reorder:
+        _reorder_sequentially(db=db, tasks=[t1, t2, t3])
+
+    # Only tasks with mismatched order should be updated before calling repo
+    assert t1.display_order == 1
+    assert t2.display_order == 2
+    assert t3.display_order == 3
+
+    # Repository called with tasks that needed updating (t2 only)
+    assert mock_repo_reorder.call_count == 1
+    called_tasks = mock_repo_reorder.call_args.kwargs["tasks"]
+    assert [t.id for t in called_tasks] == [2]
+
+
+def test__reorder_sequentially_no_changes_does_not_call_repository():
+    db = MagicMock()
+    tasks = [
+        SimpleNamespace(id=1, display_order=1),
+        SimpleNamespace(id=2, display_order=2),
+        SimpleNamespace(id=3, display_order=3),
+    ]
+
+    with patch(
+        "pecha_api.plans.tasks.plan_tasks_services.reorder_day_tasks_display_order",
+    ) as mock_repo_reorder:
+        _reorder_sequentially(db=db, tasks=tasks)
+
+    assert mock_repo_reorder.call_count == 0
 
 
 @pytest.mark.asyncio
