@@ -14,7 +14,6 @@ from pecha_api.plans.tasks.plan_tasks_repository import (
     update_task_day,
     update_task_title,
     get_tasks_by_plan_item_id,
-    update_task_order_by_id,
     reorder_day_tasks_display_order,
 )
 
@@ -91,26 +90,20 @@ def test_get_task_by_id_queries_by_id():
     assert db.query.call_count == 1
 
 
-def test_update_task_day_updates_and_commits():
+def test_update_task_day_commits_and_refreshes_updated_task():
     db = MagicMock()
     task_id = uuid.uuid4()
     target_day_id = uuid.uuid4()
 
-    task_obj = SimpleNamespace(id=task_id, plan_item_id=uuid.uuid4(), display_order=1)
+    updated_task = SimpleNamespace(id=task_id, plan_item_id=target_day_id, display_order=5)
 
-    with patch(
-        "pecha_api.plans.tasks.plan_tasks_repository.get_task_by_id",
-        return_value=task_obj,
-    ) as mock_get:
-        result = update_task_day(db=db, task_id=task_id, target_day_id=target_day_id, display_order=5)
+    result = update_task_day(db=db, updated_task=updated_task)
 
-        assert mock_get.call_count == 1
-        assert mock_get.call_args.kwargs == {"db": db, "task_id": task_id}
-
-        assert task_obj.plan_item_id == target_day_id
-        assert task_obj.display_order == 5
-        assert db.commit.call_count == 1
-        assert result is task_obj
+    assert result is updated_task
+    assert db.commit.call_count == 1
+    assert db.refresh.call_count == 1
+    # ensure refresh called on the same object
+    assert db.refresh.call_args[0][0] is updated_task
 
 
 def test_get_task_by_id_not_found_raises_http_404_with_payload():
@@ -179,22 +172,22 @@ def test_update_task_title_success():
     db = MagicMock()
     task_id = uuid.uuid4()
     new_title = "Updated Task Title"
-    
-    mock_task = SimpleNamespace(
+
+    updated_task = SimpleNamespace(
         id=task_id,
-        title="Old Title",
+        title=new_title,
         description="Task description",
         display_order=1,
     )
-    
-    with patch("pecha_api.plans.tasks.plan_tasks_repository.get_task_by_id", return_value=mock_task):
-        result = update_task_title(db=db, task_id=task_id, title=new_title)
-        
-        assert result.title == new_title
-        assert result.id == task_id
-        
-        assert db.commit.call_count == 1
-        assert db.refresh.call_count == 1
+
+    result = update_task_title(db=db, updated_task=updated_task)
+
+    assert result is updated_task
+    assert result.title == new_title
+    assert result.id == task_id
+
+    assert db.commit.call_count == 1
+    assert db.refresh.call_count == 1
 
 
 def test_get_tasks_by_plan_item_id_filters_and_orders():
@@ -213,22 +206,7 @@ def test_get_tasks_by_plan_item_id_filters_and_orders():
     assert db.query.return_value.filter.return_value.order_by.call_count == 1
 
 
-def test_update_task_order_by_id_updates_display_order_and_commits():
-    db = MagicMock()
-    task_id = uuid.uuid4()
-
-    mock_task = SimpleNamespace(id=task_id, display_order=3)
-
-    with patch(
-        "pecha_api.plans.tasks.plan_tasks_repository.get_task_by_id",
-        return_value=mock_task,
-    ) as mock_get:
-        result = update_task_order_by_id(db=db, task_id=task_id, display_order=7)
-
-    assert mock_get.call_count == 1
-    assert mock_task.display_order == 7
-    assert db.commit.call_count == 1
-    assert result is mock_task
+# Removed: update_task_order_by_id no longer exists in repository
 
 
 def test_reorder_day_tasks_display_order_commits_and_refreshes_each_task():
@@ -259,52 +237,28 @@ def test_reorder_day_tasks_display_order_rolls_back_and_raises_on_error():
     assert db.rollback.call_count == 1
 
 
-def test_update_task_title_task_not_found():
-    db = MagicMock()
-    task_id = uuid.uuid4()
-    new_title = "Updated Task Title"
-    
-    from fastapi import HTTPException
-    
-    with patch(
-        "pecha_api.plans.tasks.plan_tasks_repository.get_task_by_id",
-        side_effect=HTTPException(
-            status_code=404,
-            detail={"error": "NOT_FOUND", "message": TASK_NOT_FOUND}
-        )
-    ):
-        with pytest.raises(HTTPException) as exc:
-            update_task_title(db=db, task_id=task_id, title=new_title)
-        
-        assert exc.value.status_code == 404
-        assert exc.value.detail["error"] == "NOT_FOUND"
-        assert exc.value.detail["message"] == TASK_NOT_FOUND
-        
-        assert db.commit.call_count == 0
-        assert db.refresh.call_count == 0
-        assert db.commit.call_count == 0
-        assert db.refresh.call_count == 0
+# Removed: task-not-found handled at service layer, repository only commits/refreses
 
 
 def test_update_task_title_empty_string():
     db = MagicMock()
     task_id = uuid.uuid4()
-    
-    mock_task = SimpleNamespace(
+
+    updated_task = SimpleNamespace(
         id=task_id,
-        title="Old Title",
+        title="",
         description="Task description",
         display_order=1,
     )
-    
-    with patch("pecha_api.plans.tasks.plan_tasks_repository.get_task_by_id", return_value=mock_task):
-        result = update_task_title(db=db, task_id=task_id, title="")
-        
-        assert result.title == ""
-        assert result.id == task_id
-        
-        assert db.commit.call_count == 1
-        assert db.refresh.call_count == 1
+
+    result = update_task_title(db=db, updated_task=updated_task)
+
+    assert result is updated_task
+    assert result.title == ""
+    assert result.id == task_id
+
+    assert db.commit.call_count == 1
+    assert db.refresh.call_count == 1
 
 
 def test_update_task_title_database_commit_error():
@@ -312,26 +266,21 @@ def test_update_task_title_database_commit_error():
     task_id = uuid.uuid4()
     new_title = "Updated Task Title"
     
-    mock_task = SimpleNamespace(
+    updated_task = SimpleNamespace(
         id=task_id,
-        title="Old Title",
+        title=new_title,
         description="Task description",
         display_order=1,
     )
     
     db.commit.side_effect = Exception("Database connection error")
     
-    with patch("pecha_api.plans.tasks.plan_tasks_repository.get_task_by_id", return_value=mock_task):
-        with pytest.raises(Exception) as exc:
-            update_task_title(db=db, task_id=task_id, title=new_title)
-        
-        assert str(exc.value) == "Database connection error"
-        
-        assert mock_task.title == new_title
-        
-        assert db.commit.call_count == 1
-        
-        assert db.refresh.call_count == 0
+    with pytest.raises(Exception) as exc:
+        update_task_title(db=db, updated_task=updated_task)
+    
+    assert str(exc.value) == "Database connection error"
+    assert db.commit.call_count == 1
+    assert db.refresh.call_count == 0
 
 
 def test_update_task_title_preserves_other_fields():
@@ -339,29 +288,28 @@ def test_update_task_title_preserves_other_fields():
     task_id = uuid.uuid4()
     new_title = "Updated Task Title"
     
-    mock_task = SimpleNamespace(
+    updated_task = SimpleNamespace(
         id=task_id,
-        title="Old Title",
+        title=new_title,
         description="Important description",
         display_order=5,
         estimated_time=30,
         created_by="author@example.com",
     )
     
-    original_description = mock_task.description
-    original_display_order = mock_task.display_order
-    original_estimated_time = mock_task.estimated_time
-    original_created_by = mock_task.created_by
+    original_description = updated_task.description
+    original_display_order = updated_task.display_order
+    original_estimated_time = updated_task.estimated_time
+    original_created_by = updated_task.created_by
     
-    with patch("pecha_api.plans.tasks.plan_tasks_repository.get_task_by_id", return_value=mock_task):
-        result = update_task_title(db=db, task_id=task_id, title=new_title)
-        
-        assert result.title == new_title
-        assert result.description == original_description
-        assert result.display_order == original_display_order
-        assert result.estimated_time == original_estimated_time
-        assert result.created_by == original_created_by
-        
-        assert db.commit.call_count == 1
-        assert db.refresh.call_count == 1
+    result = update_task_title(db=db, updated_task=updated_task)
+    
+    assert result.title == new_title
+    assert result.description == original_description
+    assert result.display_order == original_display_order
+    assert result.estimated_time == original_estimated_time
+    assert result.created_by == original_created_by
+    
+    assert db.commit.call_count == 1
+    assert db.refresh.call_count == 1
 

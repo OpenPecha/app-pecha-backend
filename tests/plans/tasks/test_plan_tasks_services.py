@@ -463,6 +463,16 @@ async def test_change_task_day_service_success():
         "pecha_api.plans.tasks.plan_tasks_services.get_plan_item_by_id",
         return_value=SimpleNamespace(id=target_day_id),
     ) as mock_get_day, patch(
+        "pecha_api.plans.tasks.plan_tasks_services._get_author_task",
+        return_value=SimpleNamespace(
+            id=task_id,
+            plan_item_id=uuid.uuid4(),
+            display_order=None,
+            estimated_time=None,
+            title="Moved Task",
+            created_by="creator@example.com",
+        ),
+    ) as mock_get_author_task, patch(
         "pecha_api.plans.tasks.plan_tasks_services.update_task_day",
         return_value=updated_task,
     ) as mock_update:
@@ -477,13 +487,11 @@ async def test_change_task_day_service_success():
         assert mock_get_max.call_args.kwargs == {"plan_item_id": target_day_id}
         assert mock_get_day.call_count == 1
         assert mock_get_day.call_args.kwargs == {"db": db_mock, "day_id": target_day_id}
+        assert mock_get_author_task.call_count == 1
+        # update_task_day should be called with the mutated task instance
         assert mock_update.call_count == 1
-        assert mock_update.call_args.kwargs == {
-            "db": db_mock,
-            "task_id": task_id,
-            "target_day_id": target_day_id,
-            "display_order": 3,
-        }
+        assert set(mock_update.call_args.kwargs.keys()) == {"db", "updated_task"}
+        assert mock_update.call_args.kwargs["db"] is db_mock
 
         expected = UpdatedTaskDayResponse(
             task_id=updated_task.id,
@@ -779,9 +787,9 @@ async def test_update_task_title_service_success():
         "pecha_api.plans.tasks.plan_tasks_services.SessionLocal",
         return_value=session_cm,
     ), patch(
-        "pecha_api.plans.tasks.plan_tasks_services.get_task_by_id",
+        "pecha_api.plans.tasks.plan_tasks_services._get_author_task",
         return_value=mock_task,
-    ) as mock_get_task, patch(
+    ) as mock_get_author_task, patch(
         "pecha_api.plans.tasks.plan_tasks_services.update_task_title",
         return_value=mock_updated_task,
     ) as mock_update:
@@ -795,14 +803,14 @@ async def test_update_task_title_service_success():
         assert mock_validate.call_count == 1
         assert mock_validate.call_args.kwargs == {"token": "valid_token_123"}
         
-        assert mock_get_task.call_count == 1
-        assert mock_get_task.call_args.kwargs == {"db": db_mock, "task_id": task_id}
+        assert mock_get_author_task.call_count == 1
+        # title should be set on the task object before repository call
+        assert mock_task.title == new_title
         
         assert mock_update.call_count == 1
         assert mock_update.call_args.kwargs == {
             "db": db_mock,
-            "task_id": task_id,
-            "title": new_title,
+            "updated_task": mock_task,
         }
         
         assert isinstance(result, UpdateTaskTitleResponse)
@@ -826,12 +834,6 @@ async def test_update_task_title_service_unauthorized():
         last_name="Smith",
     )
     
-    mock_task = SimpleNamespace(
-        id=task_id,
-        title="Old Title",
-        created_by=author_email,
-    )
-    
     db_mock = MagicMock()
     session_cm = MagicMock()
     session_cm.__enter__.return_value = db_mock
@@ -843,9 +845,9 @@ async def test_update_task_title_service_unauthorized():
         "pecha_api.plans.tasks.plan_tasks_services.SessionLocal",
         return_value=session_cm,
     ), patch(
-        "pecha_api.plans.tasks.plan_tasks_services.get_task_by_id",
-        return_value=mock_task,
-    ) as mock_get_task:
+        "pecha_api.plans.tasks.plan_tasks_services._get_author_task",
+        side_effect=HTTPException(status_code=403, detail={"error": FORBIDDEN, "message": UNAUTHORIZED_TASK_ACCESS}),
+    ) as mock_get_author_task:
         
         with pytest.raises(HTTPException) as exc_info:
             await update_task_title_service(
@@ -859,7 +861,7 @@ async def test_update_task_title_service_unauthorized():
         assert exc_info.value.detail["message"] == UNAUTHORIZED_TASK_ACCESS
         
         assert mock_validate.call_count == 1
-        assert mock_get_task.call_count == 1
+        assert mock_get_author_task.call_count == 1
 
 
 @pytest.mark.asyncio
@@ -887,12 +889,12 @@ async def test_update_task_title_service_task_not_found():
         "pecha_api.plans.tasks.plan_tasks_services.SessionLocal",
         return_value=session_cm,
     ), patch(
-        "pecha_api.plans.tasks.plan_tasks_services.get_task_by_id",
+        "pecha_api.plans.tasks.plan_tasks_services._get_author_task",
         side_effect=HTTPException(
             status_code=404,
             detail={"error": "NOT_FOUND", "message": "Task not found"}
         ),
-    ) as mock_get_task:
+    ) as mock_get_author_task:
         
         with pytest.raises(HTTPException) as exc_info:
             await update_task_title_service(
@@ -905,7 +907,7 @@ async def test_update_task_title_service_task_not_found():
         assert exc_info.value.detail["error"] == "NOT_FOUND"
         
         assert mock_validate.call_count == 1
-        assert mock_get_task.call_count == 1
+        assert mock_get_author_task.call_count == 1
 
 
 @pytest.mark.asyncio
@@ -968,9 +970,9 @@ async def test_update_task_title_service_database_error():
         "pecha_api.plans.tasks.plan_tasks_services.SessionLocal",
         return_value=session_cm,
     ), patch(
-        "pecha_api.plans.tasks.plan_tasks_services.get_task_by_id",
+        "pecha_api.plans.tasks.plan_tasks_services._get_author_task",
         return_value=mock_task,
-    ) as mock_get_task, patch(
+    ) as mock_get_author_task, patch(
         "pecha_api.plans.tasks.plan_tasks_services.update_task_title",
         side_effect=Exception("Database connection error"),
     ) as mock_update:
@@ -985,7 +987,7 @@ async def test_update_task_title_service_database_error():
         assert str(exc_info.value) == "Database connection error"
         
         assert mock_validate.call_count == 1
-        assert mock_get_task.call_count == 1
+        assert mock_get_author_task.call_count == 1
         assert mock_update.call_count == 1
 
 
@@ -1065,9 +1067,9 @@ async def test_update_task_title_service_empty_title():
         "pecha_api.plans.tasks.plan_tasks_services.SessionLocal",
         return_value=session_cm,
     ), patch(
-        "pecha_api.plans.tasks.plan_tasks_services.get_task_by_id",
+        "pecha_api.plans.tasks.plan_tasks_services._get_author_task",
         return_value=mock_task,
-    ) as mock_get_task, patch(
+    ) as mock_get_author_task, patch(
         "pecha_api.plans.tasks.plan_tasks_services.update_task_title",
         return_value=mock_updated_task,
     ) as mock_update:
@@ -1083,5 +1085,5 @@ async def test_update_task_title_service_empty_title():
         assert result.title == ""
         
         assert mock_validate.call_count == 1
-        assert mock_get_task.call_count == 1
+        assert mock_get_author_task.call_count == 1
         assert mock_update.call_count == 1

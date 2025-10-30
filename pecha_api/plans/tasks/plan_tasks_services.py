@@ -1,4 +1,4 @@
-from pecha_api.plans.tasks.plan_tasks_repository import save_task, get_task_by_id, delete_task, update_task_day, update_task_title, get_tasks_by_plan_item_id, update_task_order_by_id, reorder_day_tasks_display_order
+from pecha_api.plans.tasks.plan_tasks_repository import save_task, get_task_by_id, delete_task, update_task_day, update_task_title, get_tasks_by_plan_item_id, reorder_day_tasks_display_order
 from pecha_api.plans.tasks.plan_tasks_response_model import CreateTaskRequest, TaskDTO, UpdateTaskDayRequest, UpdatedTaskDayResponse, GetTaskResponse, UpdateTaskTitleRequest, UpdateTaskTitleResponse, ContentAndImageUrl
 from pecha_api.plans.tasks.sub_tasks.plan_sub_tasks_response_model import SubTaskDTO
 from pecha_api.plans.authors.plan_authors_service import validate_and_extract_author_details
@@ -9,9 +9,10 @@ from pecha_api.plans.items.plan_items_repository import get_plan_item, get_plan_
 from pecha_api.plans.tasks.plan_tasks_models import PlanTask
 from sqlalchemy import func
 from typing import List
+from pecha_api.plans.authors.plan_authors_model import Author
 from fastapi import HTTPException
 from starlette import status
-from pecha_api.plans.response_message import PLAN_DAY_NOT_FOUND, BAD_REQUEST, TASK_SAME_DAY_NOT_ALLOWED, FORBIDDEN, UNAUTHORIZED_TASK_DELETE, UNAUTHORIZED_TASK_ACCESS, TASK_TITLE_UPDATE_SUCCESS
+from pecha_api.plans.response_message import PLAN_DAY_NOT_FOUND, BAD_REQUEST, TASK_SAME_DAY_NOT_ALLOWED, FORBIDDEN, UNAUTHORIZED_TASK_DELETE, UNAUTHORIZED_TASK_ACCESS, TASK_TITLE_UPDATE_SUCCESS, TASK_NOT_FOUND
 from pecha_api.plans.auth.plan_auth_models import ResponseError
 from pecha_api.uploads.S3_utils import generate_presigned_access_url
 from pecha_api.config import get
@@ -62,7 +63,7 @@ async def delete_task_by_id(task_id: UUID, token: str):
             _reorder_sequentially(db=db, tasks=tasks)
 
 async def change_task_day_service(token: str, task_id: UUID, update_task_request: UpdateTaskDayRequest) -> UpdatedTaskDayResponse:
-    validate_and_extract_author_details(token=token)
+    current_author = validate_and_extract_author_details(token=token)
 
     with SessionLocal() as db:
         display_order = _get_max_display_order(plan_item_id=update_task_request.target_day_id) + 1
@@ -71,12 +72,14 @@ async def change_task_day_service(token: str, task_id: UUID, update_task_request
 
         if not targeted_day:
             raise HTTPException(status_code=404, detail=ResponseError(error=BAD_REQUEST, message=PLAN_DAY_NOT_FOUND).model_dump())
+        
+        task = _get_author_task(db=db, task_id=task_id, current_author=current_author)
+        task.plan_item_id = update_task_request.target_day_id
+        task.display_order = display_order
 
         task = update_task_day(
             db=db, 
-            task_id=task_id, 
-            target_day_id=update_task_request.target_day_id, 
-            display_order=display_order
+            updated_task=task
         )
 
         return UpdatedTaskDayResponse(
@@ -91,15 +94,10 @@ async def update_task_title_service(token: str, task_id: UUID, update_request: U
     current_author = validate_and_extract_author_details(token=token)
     
     with SessionLocal() as db:
-        task = get_task_by_id(db=db, task_id=task_id)
-        
-        if task.created_by != current_author.email:
-            raise HTTPException(
-                status_code=status.HTTP_403_FORBIDDEN, 
-                detail=ResponseError(error=FORBIDDEN, message=UNAUTHORIZED_TASK_ACCESS).model_dump()
-            )
-        
-        updated_task = update_task_title(db=db, task_id=task_id, title=update_request.title)
+        task = _get_author_task(db=db, task_id=task_id, current_author=current_author)
+
+        task.title = update_request.title
+        updated_task = update_task_title(db=db, updated_task=task)
         
         return UpdateTaskTitleResponse(
             task_id=updated_task.id,
@@ -159,3 +157,12 @@ def _reorder_sequentially(db: SessionLocal(), tasks: List[PlanTask]):
     
     if tasks_to_update:
         reorder_day_tasks_display_order(db=db, tasks=tasks_to_update)
+
+
+def _get_author_task(db: SessionLocal(), task_id: UUID, current_author: Author) -> PlanTask:
+    task = get_task_by_id(db=db, task_id=task_id)
+    if not task:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=ResponseError(error=BAD_REQUEST, message=TASK_NOT_FOUND).model_dump())
+    if task.created_by != current_author.email:
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail=ResponseError(error=FORBIDDEN, message=UNAUTHORIZED_TASK_ACCESS).model_dump())
+    return task
