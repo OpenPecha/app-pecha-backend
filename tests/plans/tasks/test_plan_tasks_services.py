@@ -3,7 +3,7 @@ import pytest
 from types import SimpleNamespace
 from unittest.mock import patch, MagicMock
 from fastapi import HTTPException
-from pecha_api.plans.response_message import BAD_REQUEST, PLAN_DAY_NOT_FOUND, FORBIDDEN, UNAUTHORIZED_TASK_ACCESS
+from pecha_api.plans.response_message import BAD_REQUEST, PLAN_DAY_NOT_FOUND, FORBIDDEN, UNAUTHORIZED_TASK_ACCESS, TASK_NOT_FOUND
 from pecha_api.plans.tasks.plan_tasks_response_model import (
     CreateTaskRequest,
     TaskDTO,
@@ -23,6 +23,7 @@ from pecha_api.plans.tasks.plan_tasks_services import (
     update_task_title_service,
     _get_max_display_order,
     _reorder_sequentially,
+    _get_author_task,
 )
 
 
@@ -1028,6 +1029,56 @@ def test__reorder_sequentially_no_changes_does_not_call_repository():
         _reorder_sequentially(db=db, tasks=tasks)
 
     assert mock_repo_reorder.call_count == 0
+
+
+def test__get_author_task_success():
+    db = MagicMock()
+    task_id = uuid.uuid4()
+    current_author = SimpleNamespace(email="owner@example.com")
+
+    # Return a task owned by current_author
+    with patch(
+        "pecha_api.plans.tasks.plan_tasks_services.get_task_by_id",
+        return_value=SimpleNamespace(id=task_id, created_by="owner@example.com"),
+    ) as mock_get:
+        task = _get_author_task(db=db, task_id=task_id, current_author=current_author)
+
+    assert task.id == task_id
+    assert mock_get.call_count == 1
+
+
+def test__get_author_task_not_found_raises_404():
+    db = MagicMock()
+    task_id = uuid.uuid4()
+    current_author = SimpleNamespace(email="owner@example.com")
+
+    with patch(
+        "pecha_api.plans.tasks.plan_tasks_services.get_task_by_id",
+        return_value=None,
+    ):
+        with pytest.raises(HTTPException) as exc_info:
+            _get_author_task(db=db, task_id=task_id, current_author=current_author)
+
+    assert exc_info.value.status_code == 404
+    assert exc_info.value.detail["error"] == BAD_REQUEST
+    assert exc_info.value.detail["message"] == TASK_NOT_FOUND
+
+
+def test__get_author_task_unauthorized_raises_403():
+    db = MagicMock()
+    task_id = uuid.uuid4()
+    current_author = SimpleNamespace(email="owner@example.com")
+
+    with patch(
+        "pecha_api.plans.tasks.plan_tasks_services.get_task_by_id",
+        return_value=SimpleNamespace(id=task_id, created_by="other@example.com"),
+    ):
+        with pytest.raises(HTTPException) as exc_info:
+            _get_author_task(db=db, task_id=task_id, current_author=current_author)
+
+    assert exc_info.value.status_code == 403
+    assert exc_info.value.detail["error"] == FORBIDDEN
+    assert exc_info.value.detail["message"] == UNAUTHORIZED_TASK_ACCESS
 
 
 @pytest.mark.asyncio
