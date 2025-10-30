@@ -499,3 +499,37 @@ async def test_mapped_segment_content_for_table_of_content_with_version_id_succe
         assert seg.translation.text_id == version_id
         assert seg.translation.language == "en"
         assert seg.translation.content == "translated content"
+
+
+@pytest.mark.asyncio
+async def test_validate_segment_exists_not_found_raises_404():
+    with patch("pecha_api.texts.segments.segments_utils.check_segment_exists", new_callable=AsyncMock, return_value=False):
+        with pytest.raises(HTTPException) as exc_info:
+            await SegmentUtils.validate_segment_exists(segment_id="efb26a06-f373-450b-ba57-e7a8d4dd5b64")
+        assert exc_info.value.status_code == 404
+
+
+@pytest.mark.asyncio
+async def test_validate_segment_exists_success():
+    with patch("pecha_api.texts.segments.segments_utils.check_segment_exists", new_callable=AsyncMock, return_value=True):
+        assert await SegmentUtils.validate_segment_exists(segment_id="efb26a06-f373-450b-ba57-e7a8d4dd5b64") is True
+
+
+@pytest.mark.asyncio
+async def test_validate_segments_exists_not_found_raises_404():
+    with patch("pecha_api.texts.segments.segments_utils.check_all_segment_exists", new_callable=AsyncMock, return_value=False):
+        with pytest.raises(HTTPException) as exc_info:
+            await SegmentUtils.validate_segments_exists(segment_ids=[
+                "efb26a06-f373-450b-ba57-e7a8d4dd5b64",
+                "efb26a06-f373-450b-ba57-e7a8d4dd5b65",
+            ])
+        assert exc_info.value.status_code == 404
+
+
+@pytest.mark.asyncio
+async def test_validate_segments_exists_success():
+    with patch("pecha_api.texts.segments.segments_utils.check_all_segment_exists", new_callable=AsyncMock, return_value=True):
+        assert await SegmentUtils.validate_segments_exists(segment_ids=[
+            "efb26a06-f373-450b-ba57-e7a8d4dd5b64",
+            "efb26a06-f373-450b-ba57-e7a8d4dd5b65",
+        ]) is True
