@@ -99,5 +99,5 @@ def get_tasks_by_plan_item_id(db: Session, plan_item_id: UUID) -> List[PlanTask]
     )
     return tasks
 
-def update_tasks(db: Session, tasks: List[PlanTask]) -> None:
+def update_tasks(db: Session) -> None:
     db.commit()
