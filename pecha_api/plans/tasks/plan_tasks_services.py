@@ -133,10 +133,10 @@ async def change_task_order_service(token: str, task_id: UUID, update_task_order
             ]
             order_adjustment = 1
         
-        for task in tasks_to_shift:
-            task.display_order += order_adjustment
-
-        update_tasks(db, tasks_to_shift)
+        if tasks_to_shift:
+            for task in tasks_to_shift:
+                task.display_order += order_adjustment
+            update_tasks(db)
         
         current_task.display_order = target_display_order
         update_current_task_display_order = update_task_order(db=db, task=current_task)

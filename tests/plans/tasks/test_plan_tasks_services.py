@@ -982,7 +982,7 @@ async def test_change_task_order_service_success():
          patch("pecha_api.plans.tasks.plan_tasks_services.SessionLocal", return_value=session_cm), \
          patch("pecha_api.plans.tasks.plan_tasks_services.get_task_by_id", return_value=current_task) as mock_get_task, \
          patch("pecha_api.plans.tasks.plan_tasks_services.get_tasks_by_plan_item_id", return_value=all_tasks) as mock_get_all_tasks, \
-         patch("pecha_api.plans.tasks.plan_tasks_services.shift_tasks_order") as mock_shift, \
+         patch("pecha_api.plans.tasks.plan_tasks_services.update_tasks") as mock_update_tasks, \
          patch("pecha_api.plans.tasks.plan_tasks_services.update_task_order", return_value=updated_current_task) as mock_update:
         
         mock_validate.return_value = SimpleNamespace(email=author_email)
@@ -1002,11 +1002,8 @@ async def test_change_task_order_service_success():
         assert mock_get_all_tasks.call_count == 1
         mock_get_all_tasks.assert_called_with(db=db_mock, plan_item_id=plan_item_id)
         
-        assert mock_shift.call_count == 1
-        call_args = mock_shift.call_args
-        assert call_args.kwargs["db"] == db_mock
-        assert len(call_args.kwargs["tasks_to_update"]) == 2
-        assert call_args.kwargs["order_adjustment"] == 1
+        assert mock_update_tasks.call_count == 1
+        mock_update_tasks.assert_called_with(db_mock)
         
         assert mock_update.call_count == 1
         assert mock_update.call_args.kwargs["db"] == db_mock
@@ -1052,7 +1049,7 @@ async def test_change_task_order_service_move_up():
          patch("pecha_api.plans.tasks.plan_tasks_services.SessionLocal", return_value=session_cm), \
          patch("pecha_api.plans.tasks.plan_tasks_services.get_task_by_id", return_value=current_task), \
          patch("pecha_api.plans.tasks.plan_tasks_services.get_tasks_by_plan_item_id", return_value=all_tasks), \
-         patch("pecha_api.plans.tasks.plan_tasks_services.shift_tasks_order") as mock_shift, \
+         patch("pecha_api.plans.tasks.plan_tasks_services.update_tasks") as mock_update_tasks, \
          patch("pecha_api.plans.tasks.plan_tasks_services.update_task_order", return_value=updated_current_task):
         
         mock_validate.return_value = SimpleNamespace(email=author_email)
@@ -1063,11 +1060,8 @@ async def test_change_task_order_service_move_up():
             update_task_order_request=request,
         )
         
-        assert mock_shift.call_count == 1
-        call_args = mock_shift.call_args
-        assert call_args.kwargs["db"] == db_mock
-        assert len(call_args.kwargs["tasks_to_update"]) == 3
-        assert call_args.kwargs["order_adjustment"] == 1
+        assert mock_update_tasks.call_count == 1
+        mock_update_tasks.assert_called_with(db_mock)
         
         assert result.display_order == 2
 
@@ -1107,7 +1101,7 @@ async def test_change_task_order_service_move_down():
          patch("pecha_api.plans.tasks.plan_tasks_services.SessionLocal", return_value=session_cm), \
          patch("pecha_api.plans.tasks.plan_tasks_services.get_task_by_id", return_value=current_task), \
          patch("pecha_api.plans.tasks.plan_tasks_services.get_tasks_by_plan_item_id", return_value=all_tasks), \
-         patch("pecha_api.plans.tasks.plan_tasks_services.shift_tasks_order") as mock_shift, \
+         patch("pecha_api.plans.tasks.plan_tasks_services.update_tasks") as mock_update_tasks, \
          patch("pecha_api.plans.tasks.plan_tasks_services.update_task_order", return_value=updated_current_task):
         
         mock_validate.return_value = SimpleNamespace(email=author_email)
@@ -1118,11 +1112,8 @@ async def test_change_task_order_service_move_down():
             update_task_order_request=request,
         )
         
-        assert mock_shift.call_count == 1
-        call_args = mock_shift.call_args
-        assert call_args.kwargs["db"] == db_mock
-        assert len(call_args.kwargs["tasks_to_update"]) == 3
-        assert call_args.kwargs["order_adjustment"] == -1 
+        assert mock_update_tasks.call_count == 1
+        mock_update_tasks.assert_called_with(db_mock)
         
         assert result.display_order == 5
 
@@ -1162,7 +1153,7 @@ async def test_change_task_order_service_to_first_position():
          patch("pecha_api.plans.tasks.plan_tasks_services.SessionLocal", return_value=session_cm), \
          patch("pecha_api.plans.tasks.plan_tasks_services.get_task_by_id", return_value=current_task), \
          patch("pecha_api.plans.tasks.plan_tasks_services.get_tasks_by_plan_item_id", return_value=all_tasks), \
-         patch("pecha_api.plans.tasks.plan_tasks_services.shift_tasks_order"), \
+         patch("pecha_api.plans.tasks.plan_tasks_services.update_tasks") as mock_update_tasks, \
          patch("pecha_api.plans.tasks.plan_tasks_services.update_task_order", return_value=updated_current_task):
         
         mock_validate.return_value = SimpleNamespace(email=author_email)
@@ -1172,6 +1163,9 @@ async def test_change_task_order_service_to_first_position():
             task_id=task_id,
             update_task_order_request=request,
         )
+        
+        assert mock_update_tasks.call_count == 1
+        mock_update_tasks.assert_called_with(db_mock)
         
         assert result.display_order == 1
 
@@ -1291,7 +1285,7 @@ async def test_change_task_order_service_update_failed():
          patch("pecha_api.plans.tasks.plan_tasks_services.SessionLocal", return_value=session_cm), \
          patch("pecha_api.plans.tasks.plan_tasks_services.get_task_by_id", return_value=current_task), \
          patch("pecha_api.plans.tasks.plan_tasks_services.get_tasks_by_plan_item_id", return_value=all_tasks), \
-         patch("pecha_api.plans.tasks.plan_tasks_services.shift_tasks_order"), \
+         patch("pecha_api.plans.tasks.plan_tasks_services.update_tasks") as mock_update_tasks, \
          patch("pecha_api.plans.tasks.plan_tasks_services.update_task_order", return_value=None):
         
         mock_validate.return_value = SimpleNamespace(email=author_email)
@@ -1336,8 +1330,8 @@ async def test_change_task_order_service_database_error():
          patch("pecha_api.plans.tasks.plan_tasks_services.SessionLocal", return_value=session_cm), \
          patch("pecha_api.plans.tasks.plan_tasks_services.get_task_by_id", return_value=current_task), \
          patch("pecha_api.plans.tasks.plan_tasks_services.get_tasks_by_plan_item_id", return_value=all_tasks), \
-         patch("pecha_api.plans.tasks.plan_tasks_services.shift_tasks_order", 
-               side_effect=Exception("Database connection error")):
+         patch("pecha_api.plans.tasks.plan_tasks_services.update_tasks", 
+               side_effect=Exception("Database connection error")) as mock_update_tasks:
         
         mock_validate.return_value = SimpleNamespace(email=author_email)
         
@@ -1383,7 +1377,7 @@ async def test_change_task_order_service_same_position():
          patch("pecha_api.plans.tasks.plan_tasks_services.SessionLocal", return_value=session_cm), \
          patch("pecha_api.plans.tasks.plan_tasks_services.get_task_by_id", return_value=current_task), \
          patch("pecha_api.plans.tasks.plan_tasks_services.get_tasks_by_plan_item_id", return_value=all_tasks), \
-         patch("pecha_api.plans.tasks.plan_tasks_services.shift_tasks_order") as mock_shift, \
+         patch("pecha_api.plans.tasks.plan_tasks_services.update_tasks") as mock_update_tasks, \
          patch("pecha_api.plans.tasks.plan_tasks_services.update_task_order", return_value=updated_current_task):
         
         mock_validate.return_value = SimpleNamespace(email=author_email)
@@ -1394,6 +1388,6 @@ async def test_change_task_order_service_same_position():
             update_task_order_request=request,
         )
         
-        assert mock_shift.call_count == 0  
+        assert mock_update_tasks.call_count == 0  
         
         assert result.display_order == 3
