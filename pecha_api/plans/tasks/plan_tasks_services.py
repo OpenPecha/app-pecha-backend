@@ -1,4 +1,4 @@
-from pecha_api.plans.tasks.plan_tasks_repository import save_task, get_task_by_id, delete_task, update_task_day, update_task_title, update_task_order, shift_tasks_order, get_tasks_by_plan_item_id
+from pecha_api.plans.tasks.plan_tasks_repository import save_task, get_task_by_id, delete_task, update_task_day, update_task_title, update_task_order, update_tasks, get_tasks_by_plan_item_id
 from pecha_api.plans.tasks.plan_tasks_response_model import CreateTaskRequest, TaskDTO, UpdateTaskDayRequest, UpdatedTaskDayResponse, GetTaskResponse, UpdateTaskTitleRequest, UpdateTaskTitleResponse, ContentAndImageUrl, UpdateTaskOrderRequest, UpdatedTaskOrderResponse
 from pecha_api.plans.tasks.sub_tasks.plan_sub_tasks_response_model import SubTaskDTO
 from pecha_api.plans.authors.plan_authors_service import validate_and_extract_author_details
@@ -133,8 +133,10 @@ async def change_task_order_service(token: str, task_id: UUID, update_task_order
             ]
             order_adjustment = 1
         
-        if tasks_to_shift:
-            shift_tasks_order(db=db, tasks_to_update=tasks_to_shift, order_adjustment=order_adjustment)
+        for task in tasks_to_shift:
+            task.display_order += order_adjustment
+
+        update_tasks(db, tasks_to_shift)
         
         current_task.display_order = target_display_order
         update_current_task_display_order = update_task_order(db=db, task=current_task)

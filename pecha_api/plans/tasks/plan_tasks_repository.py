@@ -99,9 +99,5 @@ def get_tasks_by_plan_item_id(db: Session, plan_item_id: UUID) -> List[PlanTask]
     )
     return tasks
 
-def shift_tasks_order(db: Session, tasks_to_update: List[PlanTask], order_adjustment: int):
-
-    for task in tasks_to_update:
-        task.display_order += order_adjustment
-    
+def update_tasks(db: Session, tasks: List[PlanTask]) -> None:
     db.commit()
