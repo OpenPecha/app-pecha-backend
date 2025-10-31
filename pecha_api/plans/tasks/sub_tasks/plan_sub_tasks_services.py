@@ -7,7 +7,7 @@ from starlette import status
 from pecha_api.db.database import SessionLocal
 from pecha_api.plans.auth.plan_auth_models import ResponseError
 from pecha_api.plans.authors.plan_authors_service import validate_and_extract_author_details
-from pecha_api.plans.response_message import BAD_REQUEST, FORBIDDEN, UNAUTHORIZED_TASK_ACCESS, NOT_FOUND, SUBTASK_ORDER_FAILED
+from pecha_api.plans.response_message import BAD_REQUEST, FORBIDDEN, UNAUTHORIZED_TASK_ACCESS, SUBTASK_ORDER_FAILED
 from pecha_api.plans.tasks.plan_tasks_repository import get_task_by_id
 from pecha_api.plans.tasks.sub_tasks.plan_sub_tasks_models import PlanSubTask
 from pecha_api.plans.tasks.sub_tasks.plan_sub_tasks_repository import (
@@ -99,7 +99,6 @@ async def update_sub_task_by_task_id(token: str, update_sub_task_request: Update
             if subtask.id is None
         ]
 
-        # Compute deletions BEFORE creating new sub tasks to avoid deleting freshly created records
         existing_in_db = get_sub_tasks_by_task_id(db=db, task_id=update_sub_task_request.task_id)
         existing_ids_in_db = [sub_task.id for sub_task in existing_in_db]
         requested_existing_ids = [sub_task.id for sub_task in existing_sub_tasks_to_update]
@@ -107,10 +106,8 @@ async def update_sub_task_by_task_id(token: str, update_sub_task_request: Update
 
         delete_sub_tasks_bulk(db=db, sub_tasks_ids=sub_tasks_ids_to_delete)
 
-        # Update only existing sub tasks
         update_sub_tasks_bulk(db=db, sub_tasks=existing_sub_tasks_to_update)
 
-        # Finally, create new sub tasks
         if new_sub_tasks_to_create:
             save_sub_tasks_bulk(db=db, sub_tasks=new_sub_tasks_to_create)
 
