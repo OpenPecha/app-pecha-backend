@@ -8,8 +8,14 @@ from pecha_api.plans.tasks.sub_tasks.plan_sub_tasks_response_model import (
     SubTaskRequestFields,
     SubTaskResponse,
     UpdateSubTaskRequest,
+    SubTaskOrderRequest,
+    SubTaskOrderResponse,
 )
-from pecha_api.plans.tasks.sub_tasks.plan_sub_tasks_views import create_sub_tasks, update_sub_task
+from pecha_api.plans.tasks.sub_tasks.plan_sub_tasks_views import (
+    create_sub_tasks,
+    update_sub_task,
+    change_subtask_order,
+)
 
 
 class _Creds:
@@ -91,3 +97,69 @@ async def test_update_sub_task_no_content_success():
 
         assert resp is None
 
+
+@pytest.mark.asyncio
+async def test_change_subtask_order_success():
+    sub_task_id = uuid.uuid4()
+    request = SubTaskOrderRequest(target_order=3)
+    
+    expected = SubTaskOrderResponse(
+        sub_task_id=sub_task_id,
+        display_order=3
+    )
+    
+    creds = _Creds(token="token123")
+    
+    with patch(
+        "pecha_api.plans.tasks.sub_tasks.plan_sub_tasks_views.change_subtask_order_service",
+        return_value=expected,
+        new_callable=AsyncMock,
+    ) as mock_change_order:
+        resp = await change_subtask_order(
+            sub_task_id=sub_task_id,
+            authentication_credential=creds,
+            update_subtask_order_request=request,
+        )
+        
+        assert mock_change_order.call_count == 1
+        assert mock_change_order.call_args.kwargs == {
+            "token": "token123",
+            "sub_task_id": sub_task_id,
+            "update_subtask_order_request": request,
+        }
+        
+        assert resp == expected
+        assert resp.sub_task_id == sub_task_id
+        assert resp.display_order == 3
+
+
+@pytest.mark.asyncio
+async def test_change_subtask_order_with_different_target():
+    sub_task_id = uuid.uuid4()
+    request = SubTaskOrderRequest(target_order=1)
+    
+    expected = SubTaskOrderResponse(
+        sub_task_id=sub_task_id,
+        display_order=1
+    )
+    
+    creds = _Creds(token="token456")
+    
+    with patch(
+        "pecha_api.plans.tasks.sub_tasks.plan_sub_tasks_views.change_subtask_order_service",
+        return_value=expected,
+        new_callable=AsyncMock,
+    ) as mock_change_order:
+        resp = await change_subtask_order(
+            sub_task_id=sub_task_id,
+            authentication_credential=creds,
+            update_subtask_order_request=request,
+        )
+        
+        assert mock_change_order.call_count == 1
+        assert mock_change_order.call_args.kwargs["token"] == "token456"
+        assert mock_change_order.call_args.kwargs["sub_task_id"] == sub_task_id
+        assert mock_change_order.call_args.kwargs["update_subtask_order_request"].target_order == 1
+        
+        assert resp.sub_task_id == sub_task_id
+        assert resp.display_order == 1
