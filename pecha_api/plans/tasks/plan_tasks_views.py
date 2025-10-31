@@ -62,15 +62,15 @@ async def update_task_title(
         update_request=update_request,
     )
 
-@plans_router.put("/{task_id}/order", response_model=UpdatedTaskOrderResponse)
+@plans_router.put("/{day_id}/order", response_model=UpdatedTaskOrderResponse)
 async def change_task_order(
+    day_id: UUID,
     authentication_credential: Annotated[HTTPAuthorizationCredentials, Depends(oauth2_scheme)],
-    task_id: UUID,
     update_task_order_request: UpdateTaskOrderRequest,
 )-> UpdatedTaskOrderResponse:    
     return await change_task_order_service(
         token=authentication_credential.credentials,
-        task_id=task_id,
+        day_id=day_id,
         update_task_order_request=update_task_order_request,
     )
 

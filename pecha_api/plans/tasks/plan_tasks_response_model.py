@@ -35,8 +35,12 @@ class UpdateTaskTitleResponse(BaseModel):
     task_id: UUID
     title: str
 
+class TaskOrderItem(BaseModel):
+    task_id: UUID
+    display_order: int
+
 class UpdateTaskOrderRequest(BaseModel):
-    target_order: int
+    tasks: List[TaskOrderItem]
     
 class UpdatedTaskOrderResponse(BaseModel):
     task_id: UUID

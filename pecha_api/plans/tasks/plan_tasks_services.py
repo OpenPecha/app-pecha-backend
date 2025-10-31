@@ -105,59 +105,33 @@ async def update_task_title_service(token: str, task_id: UUID, update_request: U
         )
 
 
-async def change_task_order_service(token: str, task_id: UUID, update_task_order_request: UpdateTaskOrderRequest) -> UpdatedTaskOrderResponse:
+async def change_task_order_service(token: str, day_id: UUID, update_task_order_request: UpdateTaskOrderRequest) -> UpdatedTaskOrderResponse:
     current_author = validate_and_extract_author_details(token=token)
 
     with SessionLocal() as db:
-        current_task = get_task_by_id(db=db, task_id=task_id)
+        updated_tasks = []
+        for task_order_item in update_task_order_request.tasks:
+            task = get_task_by_id(db=db, task_id=task_order_item.task_id)
+            
+            if task.plan_item_id != day_id:
+                raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=ResponseError(error=BAD_REQUEST, message=f"Task {task_order_item.task_id} does not belong to day {day_id}").model_dump())
+            
+            if task.created_by != current_author.email:
+                raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail=ResponseError(error=FORBIDDEN, message=UNAUTHORIZED_TASK_ACCESS).model_dump())
+            
+            task.display_order = task_order_item.display_order
+            updated_task = update_task_order(db=db, task=task)
+            
+            if not updated_task:
+                raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=ResponseError(error=BAD_REQUEST, message=TASK_ORDER_UPDATE_FAIL).model_dump())
+            
+            updated_tasks.append({
+                "task_id": updated_task.id,
+                "display_order": updated_task.display_order
+            })
 
-        if current_task.created_by != current_author.email:
-            raise HTTPException(
-                status_code=status.HTTP_403_FORBIDDEN, 
-                detail=ResponseError(error=FORBIDDEN, message=UNAUTHORIZED_TASK_ACCESS).model_dump()
-            )
-        
-        current_display_order = current_task.display_order
-        plan_item_id = current_task.plan_item_id
-        target_display_order = update_task_order_request.target_order
-        
-        all_tasks = get_tasks_by_plan_item_id(db=db, plan_item_id=plan_item_id)
-        
-        tasks_to_shift = []
-        if current_display_order < target_display_order:
-            tasks_to_shift = [
-                task for task in all_tasks 
-                if task.id != task_id and current_display_order < task.display_order <= target_display_order
-            ]
-            order_adjustment = -1
-        else:
-            tasks_to_shift = [
-                task for task in all_tasks 
-                if task.id != task_id and target_display_order <= task.display_order < current_display_order
-            ]
-            order_adjustment = 1
-        
-        if tasks_to_shift:
-            for task in tasks_to_shift:
-                task.display_order += order_adjustment
-            update_tasks(db)
-        
-        current_task.display_order = target_display_order
-        update_current_task_display_order = update_task_order(db=db, task=current_task)
+        return UpdatedTaskOrderResponse(updated_tasks=updated_tasks)
 
-        if not update_current_task_display_order:
-            raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST, 
-                detail=ResponseError(
-                    error=BAD_REQUEST, 
-                    message=TASK_ORDER_UPDATE_FAIL
-                ).model_dump()
-            )
-
-        return UpdatedTaskOrderResponse(
-            task_id=update_current_task_display_order.id,
-            display_order=update_current_task_display_order.display_order,
-        )
 
 
 async def get_task_subtasks_service(task_id: UUID, token: str) -> GetTaskResponse:
