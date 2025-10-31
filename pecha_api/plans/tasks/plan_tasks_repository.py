@@ -86,13 +86,6 @@ def reorder_day_tasks_display_order(db: Session, tasks: List[PlanTask]):
     except Exception as e:
         db.rollback()
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=ResponseError(error=BAD_REQUEST, message=str(e)).model_dump())
-def update_task_title(db: Session, task_id: UUID, title: str) -> PlanTask:
-    task = get_task_by_id(db=db, task_id=task_id)
-    task.title = title
-    db.commit()
-    db.refresh(task)
-    return task
-
 
 def update_task_order(db: Session, task: PlanTask) -> PlanTask:
     db.commit()
