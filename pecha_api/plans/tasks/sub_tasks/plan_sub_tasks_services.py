@@ -7,7 +7,7 @@ from starlette import status
 from pecha_api.db.database import SessionLocal
 from pecha_api.plans.auth.plan_auth_models import ResponseError
 from pecha_api.plans.authors.plan_authors_service import validate_and_extract_author_details
-from pecha_api.plans.response_message import BAD_REQUEST, FORBIDDEN, UNAUTHORIZED_TASK_ACCESS
+from pecha_api.plans.response_message import BAD_REQUEST, FORBIDDEN, UNAUTHORIZED_TASK_ACCESS, NOT_FOUND, SUBTASK_ORDER_FAILED
 from pecha_api.plans.tasks.plan_tasks_repository import get_task_by_id
 from pecha_api.plans.tasks.sub_tasks.plan_sub_tasks_models import PlanSubTask
 from pecha_api.plans.tasks.sub_tasks.plan_sub_tasks_repository import (
@@ -115,50 +115,31 @@ async def update_sub_task_by_task_id(token: str, update_sub_task_request: Update
             save_sub_tasks_bulk(db=db, sub_tasks=new_sub_tasks_to_create)
 
 
-async def change_subtask_order_service(token: str, sub_task_id: UUID, update_subtask_order_request: SubTaskOrderRequest) -> SubTaskOrderResponse:
-    
+async def change_subtask_order_service(token: str, task_id: UUID, update_subtask_order_request: SubTaskOrderRequest) -> SubTaskOrderResponse:
     current_author = validate_and_extract_author_details(token=token)
     
     with SessionLocal() as db:
-        
-        current_subtask = get_sub_task_by_id(db=db, sub_task_id=sub_task_id)
-        task = get_task_by_id(db=db, task_id=current_subtask.task_id)
+        task = get_task_by_id(db=db, task_id=task_id)
         
         if task.created_by != current_author.email:
-            raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail=ResponseError(error=FORBIDDEN, message=UNAUTHORIZED_TASK_ACCESS).model_dump())
+            raise HTTPException(status_code=status.HTTP_403_FORBIDDEN,detail=ResponseError(error=FORBIDDEN, message=UNAUTHORIZED_TASK_ACCESS).model_dump())
         
-        current_display_order = current_subtask.display_order
-        target_display_order = update_subtask_order_request.target_order
-        task_id = current_subtask.task_id
+        updated_subtasks = []
+        for subtask_order_item in update_subtask_order_request.subtasks:
+            subtask = get_sub_task_by_id(db=db, sub_task_id=subtask_order_item.sub_task_id)
+            
+            if subtask.task_id != task_id:
+                raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST,detail=ResponseError(error=BAD_REQUEST, message=f"Subtask {subtask_order_item.sub_task_id} does not belong to task {task_id}").model_dump())
+            
+            subtask.display_order = subtask_order_item.display_order
+            updated_subtask = update_sub_task_order(db=db, sub_task=subtask)
+            
+            if not updated_subtask:
+                raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST,detail=ResponseError(error=BAD_REQUEST, message=SUBTASK_ORDER_FAILED).model_dump())
+            
+            updated_subtasks.append({
+                "sub_task_id": updated_subtask.id,
+                "display_order": updated_subtask.display_order
+            })
         
-        all_subtasks = get_sub_tasks_by_task_id(db=db, task_id=task_id)
-        
-        subtasks_to_shift = []
-        if current_display_order < target_display_order:
-            subtasks_to_shift = [
-                subtask for subtask in all_subtasks 
-                if subtask.id != sub_task_id and current_display_order < subtask.display_order <= target_display_order
-            ]
-            order_adjustment = -1
-        else:
-            subtasks_to_shift = [
-                subtask for subtask in all_subtasks 
-                if subtask.id != sub_task_id and target_display_order <= subtask.display_order < current_display_order
-            ]
-            order_adjustment = 1
-        
-        if subtasks_to_shift:
-            for subtask in subtasks_to_shift:
-                subtask.display_order += order_adjustment
-            update_sub_tasks(db)
-        
-        current_subtask.display_order = target_display_order
-        updated_subtask = update_sub_task_order(db=db, sub_task=current_subtask)
-        
-        if not updated_subtask:
-            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=ResponseError(error=BAD_REQUEST, message=SUBTASK_ORDER_FAILED).model_dump())
-        
-        return SubTaskOrderResponse(
-            sub_task_id=updated_subtask.id,
-            display_order=updated_subtask.display_order
-        )
+        return SubTaskOrderResponse(updated_subtasks=updated_subtasks)

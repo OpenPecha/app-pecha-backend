@@ -35,9 +35,16 @@ class UpdateSubTaskRequest(BaseModel):
 class UpdateSubTaskResponse(BaseModel):
     sub_task_id: UUID
 
-class SubTaskOrderRequest(BaseModel):
-    target_order: int
+class SubtaskOrderItem(BaseModel):
+    sub_task_id: UUID
+    display_order: int    
 
-class SubTaskOrderResponse(BaseModel):
+class SubTaskOrderRequest(BaseModel):
+    subtasks: List[SubtaskOrderItem]
+
+class UpdatedSubtaskOrderItem(BaseModel):
     sub_task_id: UUID
     display_order: int
+
+class SubTaskOrderResponse(BaseModel):
+    updated_subtasks: List[UpdatedSubtaskOrderItem]

@@ -34,15 +34,14 @@ async def update_sub_task(
         update_sub_task_request=update_sub_task_request,
     )
 
-@sub_tasks_router.put("/{sub_task_id}/order", status_code=status.HTTP_200_OK, response_model=SubTaskOrderResponse)
+@sub_tasks_router.put("/{task_id}/order", status_code=status.HTTP_200_OK, response_model=SubTaskOrderResponse)
 async def change_subtask_order(
-    sub_task_id: UUID,
+    task_id: UUID,
     authentication_credential: Annotated[HTTPAuthorizationCredentials, Depends(oauth2_scheme)],
     update_subtask_order_request: SubTaskOrderRequest,
 ):
-
     return await change_subtask_order_service(
         token=authentication_credential.credentials,
-        sub_task_id=sub_task_id,
+        task_id=task_id,
         update_subtask_order_request=update_subtask_order_request,
     )
