@@ -1140,7 +1140,7 @@ async def test_update_task_title_service_empty_title():
         
         assert mock_validate.call_count == 1
         assert mock_get_author_task.call_count == 1
-        assert mock_get_task.call_count == 1
+        assert mock_update.call_count == 1
 
 @pytest.mark.asyncio
 async def test_change_task_order_service_success():
