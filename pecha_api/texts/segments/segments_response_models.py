@@ -55,7 +55,7 @@ class SegmentCommentry(BaseModel):
     segment_id: str
     text_id: str
     title: str
-    content: str
+    content: List[str]
     language: str
     count: int
 

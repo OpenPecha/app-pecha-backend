@@ -3,7 +3,7 @@ import pytest
 from types import SimpleNamespace
 from unittest.mock import patch, MagicMock
 from fastapi import HTTPException
-from pecha_api.plans.response_message import BAD_REQUEST, PLAN_DAY_NOT_FOUND, FORBIDDEN, UNAUTHORIZED_TASK_ACCESS
+from pecha_api.plans.response_message import BAD_REQUEST, PLAN_DAY_NOT_FOUND, FORBIDDEN, UNAUTHORIZED_TASK_ACCESS, TASK_NOT_FOUND
 from pecha_api.plans.tasks.plan_tasks_response_model import (
     CreateTaskRequest,
     TaskDTO,
@@ -21,6 +21,9 @@ from pecha_api.plans.tasks.plan_tasks_services import (
     delete_task_by_id,
     get_task_subtasks_service,
     update_task_title_service,
+    _get_max_display_order,
+    _reorder_sequentially,
+    _get_author_task,
 )
 
 
@@ -139,6 +142,7 @@ async def test_delete_task_by_id_success():
         id=task_id,
         title="Test Task",
         created_by=author_email,
+        plan_item_id=uuid.uuid4(),
     )
 
     db_mock = MagicMock()
@@ -156,7 +160,12 @@ async def test_delete_task_by_id_success():
         return_value=mock_task,
     ) as mock_get_task, patch(
         "pecha_api.plans.tasks.plan_tasks_services.delete_task",
-    ) as mock_delete:
+    ) as mock_delete, patch(
+        "pecha_api.plans.tasks.plan_tasks_services.get_tasks_by_plan_item_id",
+        return_value=[SimpleNamespace(id=uuid.uuid4(), display_order=2)],
+    ) as mock_get_tasks, patch(
+        "pecha_api.plans.tasks.plan_tasks_services._reorder_sequentially",
+    ) as mock_reorder:
         await delete_task_by_id(task_id=task_id, token=token)
 
         assert mock_validate.call_count == 1
@@ -168,6 +177,14 @@ async def test_delete_task_by_id_success():
 
         assert mock_delete.call_count == 1
         assert mock_delete.call_args.kwargs == {"db": db_mock, "task_id": task_id}
+
+        # ensure tasks fetched and reorder is triggered with fetched tasks
+        assert mock_get_tasks.call_count == 1
+        assert mock_get_tasks.call_args.kwargs == {"db": db_mock, "plan_item_id": mock_task.plan_item_id}
+        assert mock_reorder.call_count == 1
+        # _reorder_sequentially(db, tasks)
+        assert "db" in mock_reorder.call_args.kwargs
+        assert "tasks" in mock_reorder.call_args.kwargs
 
 
 @pytest.mark.asyncio
@@ -184,6 +201,7 @@ async def test_delete_task_by_id_unauthorized():
         id=task_id,
         title="Test Task",
         created_by=different_author_email,
+        plan_item_id=uuid.uuid4(),
     )
 
     db_mock = MagicMock()
@@ -201,7 +219,11 @@ async def test_delete_task_by_id_unauthorized():
         return_value=mock_task,
     ) as mock_get_task, patch(
         "pecha_api.plans.tasks.plan_tasks_services.delete_task",
-    ) as mock_delete:
+    ) as mock_delete, patch(
+        "pecha_api.plans.tasks.plan_tasks_services.get_tasks_by_plan_item_id",
+    ) as mock_get_tasks, patch(
+        "pecha_api.plans.tasks.plan_tasks_services._reorder_sequentially",
+    ) as mock_reorder:
         with pytest.raises(HTTPException) as exc_info:
             await delete_task_by_id(task_id=task_id, token=token)
 
@@ -211,6 +233,10 @@ async def test_delete_task_by_id_unauthorized():
 
         assert mock_validate.call_count == 1
         assert mock_get_task.call_count == 1
+        # ensure delete, get_tasks and reorder were not called
+        assert mock_delete.call_count == 0
+        assert mock_get_tasks.call_count == 0
+        assert mock_reorder.call_count == 0
 
 
 @pytest.mark.asyncio
@@ -306,7 +332,11 @@ async def test_delete_task_by_id_task_not_found():
         side_effect=HTTPException(status_code=404, detail={"error": "BAD_REQUEST", "message": "Task not found"}),
     ) as mock_get_task, patch(
         "pecha_api.plans.tasks.plan_tasks_services.delete_task",
-    ) as mock_delete:
+    ) as mock_delete, patch(
+        "pecha_api.plans.tasks.plan_tasks_services.get_tasks_by_plan_item_id",
+    ) as mock_get_tasks, patch(
+        "pecha_api.plans.tasks.plan_tasks_services._reorder_sequentially",
+    ) as mock_reorder:
         with pytest.raises(HTTPException) as exc_info:
             await delete_task_by_id(task_id=task_id, token=token)
 
@@ -317,6 +347,7 @@ async def test_delete_task_by_id_task_not_found():
         assert mock_get_task.call_count == 1
 
         assert mock_delete.call_count == 0
+        assert mock_reorder.call_count == 0
 
 
 @pytest.mark.asyncio
@@ -334,7 +365,11 @@ async def test_delete_task_by_id_invalid_token():
         "pecha_api.plans.tasks.plan_tasks_services.get_task_by_id",
     ) as mock_get_task, patch(
         "pecha_api.plans.tasks.plan_tasks_services.delete_task",
-    ) as mock_delete:
+    ) as mock_delete, patch(
+        "pecha_api.plans.tasks.plan_tasks_services.get_tasks_by_plan_item_id",
+    ) as mock_get_tasks, patch(
+        "pecha_api.plans.tasks.plan_tasks_services._reorder_sequentially",
+    ) as mock_reorder:
         with pytest.raises(HTTPException) as exc_info:
             await delete_task_by_id(task_id=task_id, token=token)
 
@@ -344,6 +379,8 @@ async def test_delete_task_by_id_invalid_token():
         assert mock_session.call_count == 0
         assert mock_get_task.call_count == 0
         assert mock_delete.call_count == 0
+        assert mock_get_tasks.call_count == 0
+        assert mock_reorder.call_count == 0
 
 
 @pytest.mark.asyncio
@@ -359,6 +396,7 @@ async def test_delete_task_by_id_database_error():
         id=task_id,
         title="Test Task",
         created_by=author_email,
+        plan_item_id=uuid.uuid4(),
     )
 
     db_mock = MagicMock()
@@ -377,7 +415,11 @@ async def test_delete_task_by_id_database_error():
     ) as mock_get_task, patch(
         "pecha_api.plans.tasks.plan_tasks_services.delete_task",
         side_effect=HTTPException(status_code=400, detail={"error": "BAD_REQUEST", "message": "Database error"}),
-    ) as mock_delete:
+    ) as mock_delete, patch(
+        "pecha_api.plans.tasks.plan_tasks_services.get_tasks_by_plan_item_id",
+    ) as mock_get_tasks, patch(
+        "pecha_api.plans.tasks.plan_tasks_services._reorder_sequentially",
+    ) as mock_reorder:
         with pytest.raises(HTTPException) as exc_info:
             await delete_task_by_id(task_id=task_id, token=token)
 
@@ -386,6 +428,9 @@ async def test_delete_task_by_id_database_error():
         assert mock_validate.call_count == 1
         assert mock_get_task.call_count == 1
         assert mock_delete.call_count == 1
+        # get_tasks and reorder should not be called if delete fails
+        assert mock_get_tasks.call_count == 0
+        assert mock_reorder.call_count == 0
 
 
 @pytest.mark.asyncio
@@ -419,6 +464,16 @@ async def test_change_task_day_service_success():
         "pecha_api.plans.tasks.plan_tasks_services.get_plan_item_by_id",
         return_value=SimpleNamespace(id=target_day_id),
     ) as mock_get_day, patch(
+        "pecha_api.plans.tasks.plan_tasks_services._get_author_task",
+        return_value=SimpleNamespace(
+            id=task_id,
+            plan_item_id=uuid.uuid4(),
+            display_order=None,
+            estimated_time=None,
+            title="Moved Task",
+            created_by="creator@example.com",
+        ),
+    ) as mock_get_author_task, patch(
         "pecha_api.plans.tasks.plan_tasks_services.update_task_day",
         return_value=updated_task,
     ) as mock_update:
@@ -433,13 +488,11 @@ async def test_change_task_day_service_success():
         assert mock_get_max.call_args.kwargs == {"plan_item_id": target_day_id}
         assert mock_get_day.call_count == 1
         assert mock_get_day.call_args.kwargs == {"db": db_mock, "day_id": target_day_id}
+        assert mock_get_author_task.call_count == 1
+        # update_task_day should be called with the mutated task instance
         assert mock_update.call_count == 1
-        assert mock_update.call_args.kwargs == {
-            "db": db_mock,
-            "task_id": task_id,
-            "target_day_id": target_day_id,
-            "display_order": 3,
-        }
+        assert set(mock_update.call_args.kwargs.keys()) == {"db", "updated_task"}
+        assert mock_update.call_args.kwargs["db"] is db_mock
 
         expected = UpdatedTaskDayResponse(
             task_id=updated_task.id,
@@ -595,6 +648,63 @@ async def test_get_task_subtasks_service_forbidden_when_not_creator():
         assert mock_get_task.call_count == 1
 
 
+def test__get_max_display_order_returns_zero_when_no_tasks():
+    plan_item_id = uuid.uuid4()
+
+    db_mock = MagicMock()
+
+    # Chain: db.query(...).filter(...).scalar() -> None
+    query_mock = MagicMock()
+    filter_mock = MagicMock()
+    filter_mock.scalar.return_value = None
+    query_mock.filter.return_value = filter_mock
+    db_mock.query.return_value = query_mock
+
+    session_cm = MagicMock()
+    session_cm.__enter__.return_value = db_mock
+
+    with patch(
+        "pecha_api.plans.tasks.plan_tasks_services.SessionLocal",
+        return_value=session_cm,
+    ):
+        result = _get_max_display_order(plan_item_id=plan_item_id)
+
+    # None -> coalesce to 0
+    assert result == 0
+    assert db_mock.query.call_count == 1
+    assert query_mock.filter.call_count == 1
+    assert filter_mock.scalar.call_count == 1
+
+
+def test__get_max_display_order_returns_max_value():
+    plan_item_id = uuid.uuid4()
+
+    db_mock = MagicMock()
+
+    # Chain: db.query(...).filter(...).scalar() -> 7
+    query_mock = MagicMock()
+    filter_mock = MagicMock()
+    filter_mock.scalar.return_value = 7
+    query_mock.filter.return_value = filter_mock
+    db_mock.query.return_value = query_mock
+
+    session_cm = MagicMock()
+    session_cm.__enter__.return_value = db_mock
+
+    with patch(
+        "pecha_api.plans.tasks.plan_tasks_services.SessionLocal",
+        return_value=session_cm,
+    ):
+        result = _get_max_display_order(plan_item_id=plan_item_id)
+
+    assert result == 7
+    assert db_mock.query.call_count == 1
+    assert query_mock.filter.call_count == 1
+    assert filter_mock.scalar.call_count == 1
+
+
+    
+
 @pytest.mark.asyncio
 async def test_get_task_subtasks_service_invalid_token():
     task_id = uuid.uuid4()
@@ -678,9 +788,9 @@ async def test_update_task_title_service_success():
         "pecha_api.plans.tasks.plan_tasks_services.SessionLocal",
         return_value=session_cm,
     ), patch(
-        "pecha_api.plans.tasks.plan_tasks_services.get_task_by_id",
+        "pecha_api.plans.tasks.plan_tasks_services._get_author_task",
         return_value=mock_task,
-    ) as mock_get_task, patch(
+    ) as mock_get_author_task, patch(
         "pecha_api.plans.tasks.plan_tasks_services.update_task_title",
         return_value=mock_updated_task,
     ) as mock_update:
@@ -694,14 +804,14 @@ async def test_update_task_title_service_success():
         assert mock_validate.call_count == 1
         assert mock_validate.call_args.kwargs == {"token": "valid_token_123"}
         
-        assert mock_get_task.call_count == 1
-        assert mock_get_task.call_args.kwargs == {"db": db_mock, "task_id": task_id}
+        assert mock_get_author_task.call_count == 1
+        # title should be set on the task object before repository call
+        assert mock_task.title == new_title
         
         assert mock_update.call_count == 1
         assert mock_update.call_args.kwargs == {
             "db": db_mock,
-            "task_id": task_id,
-            "title": new_title,
+            "updated_task": mock_task,
         }
         
         assert isinstance(result, UpdateTaskTitleResponse)
@@ -725,12 +835,6 @@ async def test_update_task_title_service_unauthorized():
         last_name="Smith",
     )
     
-    mock_task = SimpleNamespace(
-        id=task_id,
-        title="Old Title",
-        created_by=author_email,
-    )
-    
     db_mock = MagicMock()
     session_cm = MagicMock()
     session_cm.__enter__.return_value = db_mock
@@ -742,9 +846,9 @@ async def test_update_task_title_service_unauthorized():
         "pecha_api.plans.tasks.plan_tasks_services.SessionLocal",
         return_value=session_cm,
     ), patch(
-        "pecha_api.plans.tasks.plan_tasks_services.get_task_by_id",
-        return_value=mock_task,
-    ) as mock_get_task:
+        "pecha_api.plans.tasks.plan_tasks_services._get_author_task",
+        side_effect=HTTPException(status_code=403, detail={"error": FORBIDDEN, "message": UNAUTHORIZED_TASK_ACCESS}),
+    ) as mock_get_author_task:
         
         with pytest.raises(HTTPException) as exc_info:
             await update_task_title_service(
@@ -758,7 +862,7 @@ async def test_update_task_title_service_unauthorized():
         assert exc_info.value.detail["message"] == UNAUTHORIZED_TASK_ACCESS
         
         assert mock_validate.call_count == 1
-        assert mock_get_task.call_count == 1
+        assert mock_get_author_task.call_count == 1
 
 
 @pytest.mark.asyncio
@@ -786,12 +890,12 @@ async def test_update_task_title_service_task_not_found():
         "pecha_api.plans.tasks.plan_tasks_services.SessionLocal",
         return_value=session_cm,
     ), patch(
-        "pecha_api.plans.tasks.plan_tasks_services.get_task_by_id",
+        "pecha_api.plans.tasks.plan_tasks_services._get_author_task",
         side_effect=HTTPException(
             status_code=404,
             detail={"error": "NOT_FOUND", "message": "Task not found"}
         ),
-    ) as mock_get_task:
+    ) as mock_get_author_task:
         
         with pytest.raises(HTTPException) as exc_info:
             await update_task_title_service(
@@ -804,7 +908,7 @@ async def test_update_task_title_service_task_not_found():
         assert exc_info.value.detail["error"] == "NOT_FOUND"
         
         assert mock_validate.call_count == 1
-        assert mock_get_task.call_count == 1
+        assert mock_get_author_task.call_count == 1
 
 
 @pytest.mark.asyncio
@@ -867,9 +971,9 @@ async def test_update_task_title_service_database_error():
         "pecha_api.plans.tasks.plan_tasks_services.SessionLocal",
         return_value=session_cm,
     ), patch(
-        "pecha_api.plans.tasks.plan_tasks_services.get_task_by_id",
+        "pecha_api.plans.tasks.plan_tasks_services._get_author_task",
         return_value=mock_task,
-    ) as mock_get_task, patch(
+    ) as mock_get_author_task, patch(
         "pecha_api.plans.tasks.plan_tasks_services.update_task_title",
         side_effect=Exception("Database connection error"),
     ) as mock_update:
@@ -884,8 +988,97 @@ async def test_update_task_title_service_database_error():
         assert str(exc_info.value) == "Database connection error"
         
         assert mock_validate.call_count == 1
-        assert mock_get_task.call_count == 1
+        assert mock_get_author_task.call_count == 1
         assert mock_update.call_count == 1
+
+
+def test__reorder_sequentially_updates_only_when_needed_and_calls_repository():
+    db = MagicMock()
+    # Current orders: 1, 3, 3 -> should become 1, 2, 3; only second task changes
+    t1 = SimpleNamespace(id=1, display_order=1)
+    t2 = SimpleNamespace(id=2, display_order=3)
+    t3 = SimpleNamespace(id=3, display_order=3)
+
+    with patch(
+        "pecha_api.plans.tasks.plan_tasks_services.reorder_day_tasks_display_order",
+    ) as mock_repo_reorder:
+        _reorder_sequentially(db=db, tasks=[t1, t2, t3])
+
+    # Only tasks with mismatched order should be updated before calling repo
+    assert t1.display_order == 1
+    assert t2.display_order == 2
+    assert t3.display_order == 3
+
+    # Repository called with tasks that needed updating (t2 only)
+    assert mock_repo_reorder.call_count == 1
+    called_tasks = mock_repo_reorder.call_args.kwargs["tasks"]
+    assert [t.id for t in called_tasks] == [2]
+
+
+def test__reorder_sequentially_no_changes_does_not_call_repository():
+    db = MagicMock()
+    tasks = [
+        SimpleNamespace(id=1, display_order=1),
+        SimpleNamespace(id=2, display_order=2),
+        SimpleNamespace(id=3, display_order=3),
+    ]
+
+    with patch(
+        "pecha_api.plans.tasks.plan_tasks_services.reorder_day_tasks_display_order",
+    ) as mock_repo_reorder:
+        _reorder_sequentially(db=db, tasks=tasks)
+
+    assert mock_repo_reorder.call_count == 0
+
+
+def test__get_author_task_success():
+    db = MagicMock()
+    task_id = uuid.uuid4()
+    current_author = SimpleNamespace(email="owner@example.com")
+
+    # Return a task owned by current_author
+    with patch(
+        "pecha_api.plans.tasks.plan_tasks_services.get_task_by_id",
+        return_value=SimpleNamespace(id=task_id, created_by="owner@example.com"),
+    ) as mock_get:
+        task = _get_author_task(db=db, task_id=task_id, current_author=current_author)
+
+    assert task.id == task_id
+    assert mock_get.call_count == 1
+
+
+def test__get_author_task_not_found_raises_404():
+    db = MagicMock()
+    task_id = uuid.uuid4()
+    current_author = SimpleNamespace(email="owner@example.com")
+
+    with patch(
+        "pecha_api.plans.tasks.plan_tasks_services.get_task_by_id",
+        return_value=None,
+    ):
+        with pytest.raises(HTTPException) as exc_info:
+            _get_author_task(db=db, task_id=task_id, current_author=current_author)
+
+    assert exc_info.value.status_code == 404
+    assert exc_info.value.detail["error"] == BAD_REQUEST
+    assert exc_info.value.detail["message"] == TASK_NOT_FOUND
+
+
+def test__get_author_task_unauthorized_raises_403():
+    db = MagicMock()
+    task_id = uuid.uuid4()
+    current_author = SimpleNamespace(email="owner@example.com")
+
+    with patch(
+        "pecha_api.plans.tasks.plan_tasks_services.get_task_by_id",
+        return_value=SimpleNamespace(id=task_id, created_by="other@example.com"),
+    ):
+        with pytest.raises(HTTPException) as exc_info:
+            _get_author_task(db=db, task_id=task_id, current_author=current_author)
+
+    assert exc_info.value.status_code == 403
+    assert exc_info.value.detail["error"] == FORBIDDEN
+    assert exc_info.value.detail["message"] == UNAUTHORIZED_TASK_ACCESS
 
 
 @pytest.mark.asyncio
@@ -925,9 +1118,9 @@ async def test_update_task_title_service_empty_title():
         "pecha_api.plans.tasks.plan_tasks_services.SessionLocal",
         return_value=session_cm,
     ), patch(
-        "pecha_api.plans.tasks.plan_tasks_services.get_task_by_id",
+        "pecha_api.plans.tasks.plan_tasks_services._get_author_task",
         return_value=mock_task,
-    ) as mock_get_task, patch(
+    ) as mock_get_author_task, patch(
         "pecha_api.plans.tasks.plan_tasks_services.update_task_title",
         return_value=mock_updated_task,
     ) as mock_update:
@@ -943,5 +1136,5 @@ async def test_update_task_title_service_empty_title():
         assert result.title == ""
         
         assert mock_validate.call_count == 1
-        assert mock_get_task.call_count == 1
+        assert mock_get_author_task.call_count == 1
         assert mock_update.call_count == 1
