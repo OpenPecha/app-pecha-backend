@@ -26,7 +26,7 @@ def save_plan_items(db: Session, plan_items: List[PlanItem]):
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND, 
             detail=ResponseError(error=BAD_REQUEST, 
-            message=e.orig).model_dump()
+            message=str(e.orig)).model_dump()
         )
 
 
@@ -56,7 +56,7 @@ def save_plan_item(db: Session, plan_item: PlanItem) -> PlanItem:
     except IntegrityError as e:
         db.rollback()
         print(f"Integrity error: {e.orig}")
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=ResponseError(error=BAD_REQUEST, message=e.orig).model_dump())
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=ResponseError(error=BAD_REQUEST, message=str(e.orig)).model_dump())
 
 def get_plan_items_by_plan_id(db: Session, plan_id: UUID) -> List[PlanItem]:
     return (
