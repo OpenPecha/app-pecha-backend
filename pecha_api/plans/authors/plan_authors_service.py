@@ -18,7 +18,7 @@ from pecha_api.plans.authors.plan_authors_repository import get_author_by_email,
 import jose
 
 from pecha_api.plans.authors.plan_authors_response_models import AuthorInfoResponse, SocialMediaProfile, \
-    AuthorsResponse, AuthorInfoRequest
+    AuthorsResponse, AuthorInfoRequest, AuthorUpdateResponse
 from pecha_api.plans.plans_response_models import PlansResponse
 from pecha_api.plans.shared.utils import load_plans_from_json
 from pecha_api.uploads.S3_utils import generate_presigned_access_url
@@ -77,7 +77,7 @@ def update_social_profiles(author: Author, social_profiles: List[SocialMediaProf
                 profile_url=url
             ))
 
-async def update_author_info(token: str, author_info_request: AuthorInfoRequest) -> Author:
+async def update_author_info(token: str, author_info_request: AuthorInfoRequest) -> AuthorUpdateResponse:
     current_author = validate_and_extract_author_details(token=token)
     current_author.first_name = author_info_request.firstname
     current_author.last_name = author_info_request.lastname
@@ -88,7 +88,15 @@ async def update_author_info(token: str, author_info_request: AuthorInfoRequest)
             db_session.add(current_author)
             update_social_profiles(author=current_author, social_profiles=author_info_request.social_profiles)
             updated_user = update_author(db=db_session, author=current_author)
-            return updated_user
+            return AuthorUpdateResponse(
+                id=updated_user.id,
+                firstname=updated_user.first_name,
+                lastname=updated_user.last_name,
+                email=updated_user.email,
+                image_url=generate_presigned_access_url(bucket_name=get("AWS_BUCKET_NAME"), s3_key= updated_user.image_url),
+                image_key=updated_user.image_url,
+                bio=updated_user.bio
+            )
         except Exception as e:
             db_session.rollback()
             logging.error(f"Failed to update user info: {e}")

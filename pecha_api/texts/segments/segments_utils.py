@@ -99,14 +99,19 @@ class SegmentUtils:
         """
         text_ids = [segment.text_id for segment in segments]
         text_details_dict = await TextUtils.get_text_details_by_ids(text_ids=text_ids)
+        grouped_segments = SegmentUtils._group_segment_content_by_text_id(segments=segments)
         filtered_segments = []
+        appended_commentary_text_ids = []
         for segment in segments:
             text_detail = text_details_dict.get(segment.text_id)
+
             if not text_detail:
                 continue
+
             if text_detail.type == "version" and type == "version":
                 if text_id is not None and text_id != segment.text_id:
                     continue
+
                 filtered_segments.append(
                     SegmentTranslation(
                         segment_id=str(segment.id),
@@ -120,16 +125,22 @@ class SegmentUtils:
             elif text_detail.type == "commentary" and type == "commentary":
                 if text_id is not None and text_id != segment.text_id:
                     continue
+                if segment.text_id in appended_commentary_text_ids:
+                    continue
+                segment_contents = [segment_item.content for segment_item in grouped_segments.get(segment.text_id, [])]
+                count = len(segment_contents)
                 filtered_segments.append(
                     SegmentCommentry(
                         segment_id=str(segment.id),
                         text_id=segment.text_id,
                         title=text_detail.title,
-                        content=segment.content,
+                        content=segment_contents,
                         language=text_detail.language,
-                        count=1
+                        count=count
                     )
                 )
+                appended_commentary_text_ids.append(segment.text_id)
+                
         return filtered_segments
     
     @staticmethod
@@ -246,7 +257,12 @@ class SegmentUtils:
                         )
                     )
         return list_of_segment_root_mapping
-            
-                    
-                    
-            
+
+    @staticmethod
+    def _group_segment_content_by_text_id(segments: List[SegmentDTO]) -> Dict[str, List[SegmentDTO]]:
+        grouped_segments = {}
+        for segment in segments:
+            if segment.text_id not in grouped_segments:
+                grouped_segments[segment.text_id] = []
+            grouped_segments[segment.text_id].append(segment)
+        return grouped_segments

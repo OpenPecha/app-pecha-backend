@@ -1,4 +1,5 @@
 from uuid import UUID
+from sqlalchemy import select, update, func
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session, joinedload
 from sqlalchemy import func
@@ -59,13 +60,32 @@ def delete_task(db: Session, task_id: UUID):
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=ResponseError(error=BAD_REQUEST, message=str(e)).model_dump())
     return db.query(PlanTask).filter(PlanTask.id == task_id).first()
 
-def update_task_day(db: Session, task_id: UUID, target_day_id: UUID, display_order: int) -> PlanTask:
-    task = get_task_by_id(db=db, task_id=task_id)
-    task.plan_item_id = target_day_id
-    task.display_order = display_order
+def update_task_day(db: Session, updated_task: PlanTask) -> PlanTask:
     db.commit()
-    return task
+    db.refresh(updated_task)
+    return updated_task
 
+def update_task_title(db: Session, updated_task: PlanTask) -> PlanTask:
+    db.commit()
+    db.refresh(updated_task)
+    return updated_task
+
+def get_tasks_by_plan_item_id(db: Session, plan_item_id: UUID) -> List[PlanTask]:
+    return (db.query(PlanTask)
+        .filter(PlanTask.plan_item_id == plan_item_id)
+        .order_by(PlanTask.display_order)
+        .all()
+    )
+
+
+def reorder_day_tasks_display_order(db: Session, tasks: List[PlanTask]):
+    try:
+        for task in tasks:
+            db.commit()
+            db.refresh(task)
+    except Exception as e:
+        db.rollback()
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=ResponseError(error=BAD_REQUEST, message=str(e)).model_dump())
 def update_task_title(db: Session, task_id: UUID, title: str) -> PlanTask:
     task = get_task_by_id(db=db, task_id=task_id)
     task.title = title
