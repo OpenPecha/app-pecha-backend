@@ -450,49 +450,19 @@ async def test_update_task_title_database_error():
 @pytest.mark.asyncio
 async def test_change_task_order_success():
     """Test successful task order change with valid authentication and authorization."""
-    task_id = uuid.uuid4()
+    day_id = uuid.uuid4()
+    task_id_1 = uuid.uuid4()
+    task_id_2 = uuid.uuid4()
     creds = _Creds(token="valid_token_123")
     
-    request = UpdateTaskOrderRequest(target_order=3)
+    from pecha_api.plans.tasks.plan_tasks_response_model import TaskOrderItem
+    request = UpdateTaskOrderRequest(tasks=[
+        TaskOrderItem(task_id=task_id_1, display_order=2),
+        TaskOrderItem(task_id=task_id_2, display_order=1),
+    ])
     
     expected_response = UpdatedTaskOrderResponse(
-        task_id=task_id,
-        display_order=3,
-    )
-    
-    with patch(
-        "pecha_api.plans.tasks.plan_tasks_views.change_task_order_service",
-        return_value=expected_response,
-        new_callable=AsyncMock,
-    ) as mock_change_order:
-        result = await change_task_order(
-            authentication_credential=creds,
-            task_id=task_id,
-            update_task_order_request=request,
-        )
-        
-        assert mock_change_order.call_count == 1
-        assert mock_change_order.call_args.kwargs == {
-            "token": "valid_token_123",
-            "task_id": task_id,
-            "update_task_order_request": request,
-        }
-        
-        assert result == expected_response
-        assert result.task_id == task_id
-        assert result.display_order == 3
-
-
-@pytest.mark.asyncio
-async def test_change_task_order_move_up():
-    """Test moving task order up (from position 5 to position 2)."""
-    task_id = uuid.uuid4()
-    creds = _Creds(token="valid_token_123")
-    
-    request = UpdateTaskOrderRequest(target_order=2)
-    
-    expected_response = UpdatedTaskOrderResponse(
-        task_id=task_id,
+        task_id=task_id_1,
         display_order=2,
     )
     
@@ -503,20 +473,68 @@ async def test_change_task_order_move_up():
     ) as mock_change_order:
         result = await change_task_order(
             authentication_credential=creds,
-            task_id=task_id,
+            day_id=day_id,
             update_task_order_request=request,
         )
         
+        assert mock_change_order.call_count == 1
+        assert mock_change_order.call_args.kwargs == {
+            "token": "valid_token_123",
+            "day_id": day_id,
+            "update_task_order_request": request,
+        }
+        
+        assert result == expected_response
+        assert result.task_id == task_id_1
         assert result.display_order == 2
 
 
 @pytest.mark.asyncio
-async def test_change_task_order_move_down():
-    """Test moving task order down (from position 2 to position 5)."""
+async def test_change_task_order_multiple_tasks():
+    """Test reordering multiple tasks within a day."""
+    day_id = uuid.uuid4()
+    task_id_1 = uuid.uuid4()
+    task_id_2 = uuid.uuid4()
+    task_id_3 = uuid.uuid4()
+    creds = _Creds(token="valid_token_123")
+    
+    from pecha_api.plans.tasks.plan_tasks_response_model import TaskOrderItem
+    request = UpdateTaskOrderRequest(tasks=[
+        TaskOrderItem(task_id=task_id_1, display_order=3),
+        TaskOrderItem(task_id=task_id_2, display_order=1),
+        TaskOrderItem(task_id=task_id_3, display_order=2),
+    ])
+    
+    expected_response = UpdatedTaskOrderResponse(
+        task_id=task_id_1,
+        display_order=3,
+    )
+    
+    with patch(
+        "pecha_api.plans.tasks.plan_tasks_views.change_task_order_service",
+        return_value=expected_response,
+        new_callable=AsyncMock,
+    ) as mock_change_order:
+        result = await change_task_order(
+            authentication_credential=creds,
+            day_id=day_id,
+            update_task_order_request=request,
+        )
+        
+        assert result.display_order == 3
+
+
+@pytest.mark.asyncio
+async def test_change_task_order_single_task():
+    """Test reordering a single task within a day."""
+    day_id = uuid.uuid4()
     task_id = uuid.uuid4()
     creds = _Creds(token="valid_token_123")
     
-    request = UpdateTaskOrderRequest(target_order=5)
+    from pecha_api.plans.tasks.plan_tasks_response_model import TaskOrderItem
+    request = UpdateTaskOrderRequest(tasks=[
+        TaskOrderItem(task_id=task_id, display_order=5),
+    ])
     
     expected_response = UpdatedTaskOrderResponse(
         task_id=task_id,
@@ -530,7 +548,7 @@ async def test_change_task_order_move_down():
     ) as mock_change_order:
         result = await change_task_order(
             authentication_credential=creds,
-            task_id=task_id,
+            day_id=day_id,
             update_task_order_request=request,
         )
         
@@ -540,10 +558,14 @@ async def test_change_task_order_move_down():
 @pytest.mark.asyncio
 async def test_change_task_order_to_first_position():
     """Test moving task to first position (order 1)."""
+    day_id = uuid.uuid4()
     task_id = uuid.uuid4()
     creds = _Creds(token="valid_token_123")
     
-    request = UpdateTaskOrderRequest(target_order=1)
+    from pecha_api.plans.tasks.plan_tasks_response_model import TaskOrderItem
+    request = UpdateTaskOrderRequest(tasks=[
+        TaskOrderItem(task_id=task_id, display_order=1),
+    ])
     
     expected_response = UpdatedTaskOrderResponse(
         task_id=task_id,
@@ -557,7 +579,7 @@ async def test_change_task_order_to_first_position():
     ) as mock_change_order:
         result = await change_task_order(
             authentication_credential=creds,
-            task_id=task_id,
+            day_id=day_id,
             update_task_order_request=request,
         )
         
@@ -567,10 +589,14 @@ async def test_change_task_order_to_first_position():
 @pytest.mark.asyncio
 async def test_change_task_order_unauthorized():
     """Test task order change fails when user is not the task creator."""
+    day_id = uuid.uuid4()
     task_id = uuid.uuid4()
     creds = _Creds(token="unauthorized_token")
     
-    request = UpdateTaskOrderRequest(target_order=3)
+    from pecha_api.plans.tasks.plan_tasks_response_model import TaskOrderItem
+    request = UpdateTaskOrderRequest(tasks=[
+        TaskOrderItem(task_id=task_id, display_order=3),
+    ])
     
     with patch(
         "pecha_api.plans.tasks.plan_tasks_views.change_task_order_service",
@@ -583,7 +609,7 @@ async def test_change_task_order_unauthorized():
         with pytest.raises(HTTPException) as exc_info:
             await change_task_order(
                 authentication_credential=creds,
-                task_id=task_id,
+                day_id=day_id,
                 update_task_order_request=request,
             )
         
@@ -594,10 +620,14 @@ async def test_change_task_order_unauthorized():
 @pytest.mark.asyncio
 async def test_change_task_order_task_not_found():
     """Test task order change fails when task doesn't exist."""
+    day_id = uuid.uuid4()
     task_id = uuid.uuid4()
     creds = _Creds(token="valid_token_123")
     
-    request = UpdateTaskOrderRequest(target_order=3)
+    from pecha_api.plans.tasks.plan_tasks_response_model import TaskOrderItem
+    request = UpdateTaskOrderRequest(tasks=[
+        TaskOrderItem(task_id=task_id, display_order=3),
+    ])
     
     with patch(
         "pecha_api.plans.tasks.plan_tasks_views.change_task_order_service",
@@ -610,7 +640,7 @@ async def test_change_task_order_task_not_found():
         with pytest.raises(HTTPException) as exc_info:
             await change_task_order(
                 authentication_credential=creds,
-                task_id=task_id,
+                day_id=day_id,
                 update_task_order_request=request,
             )
         
@@ -621,10 +651,14 @@ async def test_change_task_order_task_not_found():
 @pytest.mark.asyncio
 async def test_change_task_order_invalid_token():
     """Test task order change fails with invalid authentication token."""
+    day_id = uuid.uuid4()
     task_id = uuid.uuid4()
     creds = _Creds(token="invalid_token")
     
-    request = UpdateTaskOrderRequest(target_order=3)
+    from pecha_api.plans.tasks.plan_tasks_response_model import TaskOrderItem
+    request = UpdateTaskOrderRequest(tasks=[
+        TaskOrderItem(task_id=task_id, display_order=3),
+    ])
     
     with patch(
         "pecha_api.plans.tasks.plan_tasks_views.change_task_order_service",
@@ -637,7 +671,7 @@ async def test_change_task_order_invalid_token():
         with pytest.raises(HTTPException) as exc_info:
             await change_task_order(
                 authentication_credential=creds,
-                task_id=task_id,
+                day_id=day_id,
                 update_task_order_request=request,
             )
         
@@ -646,39 +680,47 @@ async def test_change_task_order_invalid_token():
 
 
 @pytest.mark.asyncio
-async def test_change_task_order_invalid_target_order():
-    """Test task order change fails with invalid target order (e.g., negative or zero)."""
+async def test_change_task_order_task_not_in_day():
+    """Test task order change fails when task doesn't belong to the specified day."""
+    day_id = uuid.uuid4()
     task_id = uuid.uuid4()
     creds = _Creds(token="valid_token_123")
     
-    request = UpdateTaskOrderRequest(target_order=0)
+    from pecha_api.plans.tasks.plan_tasks_response_model import TaskOrderItem
+    request = UpdateTaskOrderRequest(tasks=[
+        TaskOrderItem(task_id=task_id, display_order=3),
+    ])
     
     with patch(
         "pecha_api.plans.tasks.plan_tasks_views.change_task_order_service",
         new_callable=AsyncMock,
         side_effect=HTTPException(
             status_code=400, 
-            detail={"error": "BAD_REQUEST", "message": "Invalid target order"}
+            detail={"error": "BAD_REQUEST", "message": f"Task {task_id} does not belong to day {day_id}"}
         ),
     ) as mock_change_order:
         with pytest.raises(HTTPException) as exc_info:
             await change_task_order(
                 authentication_credential=creds,
-                task_id=task_id,
+                day_id=day_id,
                 update_task_order_request=request,
             )
         
         assert exc_info.value.status_code == 400
-        assert "Invalid" in exc_info.value.detail["message"]
+        assert "does not belong to day" in exc_info.value.detail["message"]
 
 
 @pytest.mark.asyncio
 async def test_change_task_order_database_error():
     """Test task order change handles database errors gracefully."""
+    day_id = uuid.uuid4()
     task_id = uuid.uuid4()
     creds = _Creds(token="valid_token_123")
     
-    request = UpdateTaskOrderRequest(target_order=3)
+    from pecha_api.plans.tasks.plan_tasks_response_model import TaskOrderItem
+    request = UpdateTaskOrderRequest(tasks=[
+        TaskOrderItem(task_id=task_id, display_order=3),
+    ])
     
     with patch(
         "pecha_api.plans.tasks.plan_tasks_views.change_task_order_service",
@@ -691,7 +733,7 @@ async def test_change_task_order_database_error():
         with pytest.raises(HTTPException) as exc_info:
             await change_task_order(
                 authentication_credential=creds,
-                task_id=task_id,
+                day_id=day_id,
                 update_task_order_request=request,
             )
         
@@ -701,10 +743,14 @@ async def test_change_task_order_database_error():
 @pytest.mark.asyncio
 async def test_change_task_order_update_failed():
     """Test task order change fails when update operation fails."""
+    day_id = uuid.uuid4()
     task_id = uuid.uuid4()
     creds = _Creds(token="valid_token_123")
     
-    request = UpdateTaskOrderRequest(target_order=3)
+    from pecha_api.plans.tasks.plan_tasks_response_model import TaskOrderItem
+    request = UpdateTaskOrderRequest(tasks=[
+        TaskOrderItem(task_id=task_id, display_order=3),
+    ])
     
     with patch(
         "pecha_api.plans.tasks.plan_tasks_views.change_task_order_service",
@@ -717,7 +763,7 @@ async def test_change_task_order_update_failed():
         with pytest.raises(HTTPException) as exc_info:
             await change_task_order(
                 authentication_credential=creds,
-                task_id=task_id,
+                day_id=day_id,
                 update_task_order_request=request,
             )
         
