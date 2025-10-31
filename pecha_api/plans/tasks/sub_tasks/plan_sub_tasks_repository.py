@@ -63,3 +63,11 @@ def update_sub_tasks_bulk(db: Session, sub_tasks: List[SubTaskDTO]) -> None:
             synchronize_session=False,
         )
     db.commit()
+
+def update_sub_task_order(db: Session, sub_task: PlanSubTask) -> PlanSubTask:
+    db.commit()
+    db.refresh(sub_task)
+    return sub_task
+
+def update_sub_tasks(db: Session) -> None:
+    db.commit()

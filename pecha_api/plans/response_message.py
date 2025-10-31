@@ -36,3 +36,5 @@ TASK_NOT_FOUND = "Task not found"
 TASK_TITLE_UPDATE_SUCCESS = "Task title updated successfully"
 UNAUTHORIZED_TASK_DELETE = "You are not authorized to delete this task"
 UNAUTHORIZED_TASK_ACCESS = "You are not authorized to access this task"
+
+SUBTASK_ORDER_FAILED = "Subtask order update failed"

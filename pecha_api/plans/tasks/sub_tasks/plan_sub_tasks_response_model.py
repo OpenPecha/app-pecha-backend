@@ -34,3 +34,10 @@ class UpdateSubTaskRequest(BaseModel):
 
 class UpdateSubTaskResponse(BaseModel):
     sub_task_id: UUID
+
+class SubTaskOrderRequest(BaseModel):
+    target_order: int
+
+class SubTaskOrderResponse(BaseModel):
+    sub_task_id: UUID
+    display_order: int
