@@ -5,9 +5,13 @@ import pytest
 
 
 def test_send_email_success():
-    with patch('pecha_api.notification.email_provider.SendGridAPIClient') as mock_client:
+    with patch('pecha_api.notification.email_provider.mt.MailtrapClient') as mock_client:
         mock_instance = mock_client.return_value
-        mock_instance.send.return_value = Mock(status_code=202)
+        mock_response = Mock()
+        mock_response.status_code = 200
+        mock_response.body = "Success"
+        mock_response.headers = {}
+        mock_instance.send.return_value = mock_response
 
         send_email('test@example.com', 'Test Subject', 'Test Message')
 
@@ -15,7 +19,7 @@ def test_send_email_success():
 
 
 def test_send_email_failure():
-    with patch('pecha_api.notification.email_provider.SendGridAPIClient') as mock_client:
+    with patch('pecha_api.notification.email_provider.mt.MailtrapClient') as mock_client:
         mock_instance = mock_client.return_value
         mock_instance.send.side_effect = Exception("Send failed")
 
