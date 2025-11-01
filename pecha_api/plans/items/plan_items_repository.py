@@ -5,7 +5,7 @@ from .plan_items_models import PlanItem
 from pecha_api.plans.tasks.plan_tasks_models import PlanTask
 from fastapi import HTTPException
 from starlette import status
-from sqlalchemy import func, asc, text
+from sqlalchemy import func, asc, update, bindparam
 from uuid import UUID
 from typing import List, Tuple
 from pecha_api.plans.auth.plan_auth_models import ResponseError
@@ -137,11 +137,12 @@ def update_day_by_id(db: Session, plan_id: UUID, day_id: UUID, day_number: int) 
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=ResponseError(error=BAD_REQUEST, message=str(e)).model_dump())
 
 
-def update_days_in_bulk_by_plan_id(db: Session, days: List[ItemDayNumberDTO]) -> None:
-
+def update_days_in_bulk_by_plan_id(db: Session, plan_id: UUID, days: List[ItemDayNumberDTO]) -> None:
     try:
-        for day in days:
-            db.query(PlanItem).filter(PlanItem.id == day.id).update({"day_number": day.day_number})
+        db.execute(
+            update(PlanItem).where(PlanItem.plan_id == plan_id).execution_options(synchronize_session=False),
+            [{"id": day.id, "day_number": day.day_number} for day in days]
+        )
         db.commit()
     except Exception as e:
         db.rollback()
