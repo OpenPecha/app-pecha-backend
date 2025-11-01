@@ -23,8 +23,9 @@ class UserPlanStatus(enum.Enum):
 class PlanStatus(enum.Enum):
     DRAFT = "DRAFT"
     PUBLISHED = "PUBLISHED"
+    UNPUBLISHED = "UNPUBLISHED"
     ARCHIVED = "ARCHIVED"
-    UNDER_REVIEW = "UNDER_REVIEW"
+    DELETED = "DELETED"
 
 class LanguageCode(enum.Enum):
     EN = "EN"
