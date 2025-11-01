@@ -53,10 +53,8 @@ async def delete_task_by_id(task_id: UUID, token: str):
     current_author = validate_and_extract_author_details(token=token)
     
     with SessionLocal() as db:
-        task = get_task_by_id(db=db, task_id=task_id)
-        if task.created_by != current_author.email:
-            raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail=ResponseError(error=FORBIDDEN, message=UNAUTHORIZED_TASK_DELETE).model_dump())
-        delete_task(db=db, task_id=task_id)
+        task = _get_author_task(db=db, task_id=task_id, current_author=current_author)
+        delete_task(db=db, task_id=task.id)
 
         tasks = get_tasks_by_plan_item_id(db=db, plan_item_id=task.plan_item_id)
         if tasks:
@@ -119,11 +117,8 @@ async def get_task_subtasks_service(task_id: UUID, token: str) -> GetTaskRespons
     current_user = validate_and_extract_author_details(token=token)
 
     with SessionLocal() as db:
-        task = get_task_by_id(db=db, task_id=task_id)
+        task = _get_author_task(db=db, task_id=task_id, current_author=current_user)
 
-        if task.created_by != current_user.email:
-            raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail=ResponseError(error=FORBIDDEN, message=UNAUTHORIZED_TASK_ACCESS).model_dump())
-        
         subtasks_dto = []
         for sub_task in task.sub_tasks:
             content_and_image_url = _generate_image_url_content_type(
