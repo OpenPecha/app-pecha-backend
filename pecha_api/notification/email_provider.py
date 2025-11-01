@@ -15,9 +15,7 @@ def send_email(to_email: str, subject: str, message: str):
     try:
         client = mt.MailtrapClient(token=get('MAILTRAP_API_KEY'))
         response = client.send(mail)
-        print(response.status_code)
-        print(response.body)
-        print(response.headers)
+        print(response)
     except Exception as e:
         logging.error(e)
         raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="Email send failed.")
