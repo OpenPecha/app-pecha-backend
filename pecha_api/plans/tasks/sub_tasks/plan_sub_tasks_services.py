@@ -121,19 +121,7 @@ async def change_subtask_order_service(token: str, task_id: UUID, update_subtask
         if task.created_by != current_author.email:
             raise HTTPException(status_code=status.HTTP_403_FORBIDDEN,detail=ResponseError(error=FORBIDDEN, message=UNAUTHORIZED_TASK_ACCESS).model_dump())
         
-        updated_subtasks = []
-        for subtask_order_item in update_subtask_order_request.subtasks:
-            subtask = get_sub_task_by_id(db=db, sub_task_id=subtask_order_item.sub_task_id)
-            
-            subtask.display_order = subtask_order_item.display_order
-            updated_subtask = update_sub_task_order(db=db, sub_task=subtask)
-            
-            if not updated_subtask:
-                raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST,detail=ResponseError(error=BAD_REQUEST, message=SUBTASK_ORDER_FAILED).model_dump())
-            
-            updated_subtasks.append({
-                "sub_task_id": updated_subtask.id,
-                "display_order": updated_subtask.display_order
-            })
+        updated_subtasks = update_sub_task_order(db=db, update_subtask_order_request=update_subtask_order_request)
         
         return SubTaskOrderResponse(updated_subtasks=updated_subtasks)
+

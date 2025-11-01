@@ -69,5 +69,13 @@ def update_sub_task_order(db: Session, sub_task: PlanSubTask) -> PlanSubTask:
     db.refresh(sub_task)
     return sub_task
 
+def update_sub_task_order_in_bulk_by_task_id(db: Session, sub_task_list: List[PlanSubTask], task_id: UUID) -> List[PlanSubTask]:
+    try:
+        db.execute(update(PlanSubTask).where(PlanSubTask.task_id == task_id).execution_options(synchronize_session=False), sub_task_list)
+        db.commit()
+    except Exception as e:
+        db.rollback()
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=ResponseError(error=BAD_REQUEST, message=str(e)).model_dump())
+
 def update_sub_tasks(db: Session) -> None:
     db.commit()
