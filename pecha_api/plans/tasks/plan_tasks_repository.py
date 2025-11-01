@@ -51,6 +51,8 @@ def get_task_by_id(db: Session, task_id: UUID) -> PlanTask:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=ResponseError(error=BAD_REQUEST, message=TASK_NOT_FOUND).model_dump())
     return task
 
+
+
 def delete_task(db: Session, task_id: UUID):
     task = get_task_by_id(db=db, task_id=task_id)
     try:

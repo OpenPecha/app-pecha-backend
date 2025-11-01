@@ -4,8 +4,8 @@ from typing import Annotated
 from uuid import UUID
 from starlette import status
 
-from pecha_api.plans.tasks.sub_tasks.plan_sub_tasks_response_model import SubTaskRequest, SubTaskResponse, UpdateSubTaskRequest
-from pecha_api.plans.tasks.sub_tasks.plan_sub_tasks_services import create_new_sub_tasks, update_sub_task_by_task_id
+from pecha_api.plans.tasks.sub_tasks.plan_sub_tasks_response_model import (SubTaskRequest, SubTaskResponse, UpdateSubTaskRequest, SubTaskOrderRequest, SubTaskOrderResponse)
+from pecha_api.plans.tasks.sub_tasks.plan_sub_tasks_services import (create_new_sub_tasks, update_sub_task_by_task_id, change_subtask_order_service)
 
 sub_tasks_router = APIRouter(
     prefix="/cms/sub-tasks",
@@ -32,4 +32,16 @@ async def update_sub_task(
     return await update_sub_task_by_task_id(
         token=authentication_credential.credentials,
         update_sub_task_request=update_sub_task_request,
+    )
+
+@sub_tasks_router.put("/{task_id}/order", status_code=status.HTTP_204_NO_CONTENT)
+async def change_subtask_order(
+    task_id: UUID,
+    authentication_credential: Annotated[HTTPAuthorizationCredentials, Depends(oauth2_scheme)],
+    update_subtask_order_request: SubTaskOrderRequest,
+):
+    return await change_subtask_order_service(
+        token=authentication_credential.credentials,
+        task_id=task_id,
+        update_subtask_order=update_subtask_order_request,
     )

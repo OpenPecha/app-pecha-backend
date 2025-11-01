@@ -2,7 +2,7 @@ from typing import List
 from uuid import UUID
 
 from fastapi import HTTPException
-from sqlalchemy import func
+from sqlalchemy import func, update
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 from starlette import status
@@ -37,8 +37,8 @@ def save_sub_tasks_bulk(db: Session, sub_tasks: List[PlanSubTask]) -> List[PlanS
             detail=ResponseError(error=BAD_REQUEST, message=str(e.orig)).model_dump(),
         )
 
-def get_sub_task_by_id(db: Session, sub_task_id: UUID) -> PlanSubTask:
-    return db.query(PlanSubTask).filter(PlanSubTask.id == sub_task_id).first()
+def get_sub_task_by_id(db: Session, sub_task_id: UUID, task_id: UUID) -> PlanSubTask:
+    return db.query(PlanSubTask).filter(PlanSubTask.id == sub_task_id, PlanSubTask.task_id == task_id).first()
 
 
 def get_sub_tasks_by_task_id(db: Session, task_id: UUID) -> List[PlanSubTask]:
@@ -62,4 +62,20 @@ def update_sub_tasks_bulk(db: Session, sub_tasks: List[SubTaskDTO]) -> None:
             },
             synchronize_session=False,
         )
+    db.commit()
+
+def update_sub_task_order(db: Session, sub_task: PlanSubTask) -> PlanSubTask:
+    db.commit()
+    db.refresh(sub_task)
+    return sub_task
+
+def update_sub_task_order_in_bulk_by_task_id(db: Session, sub_task_list: List[PlanSubTask], task_id: UUID) -> List[PlanSubTask]:
+    try:
+        db.execute(update(PlanSubTask).where(PlanSubTask.task_id == task_id).execution_options(synchronize_session=False), sub_task_list)
+        db.commit()
+    except Exception as e:
+        db.rollback()
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=ResponseError(error=BAD_REQUEST, message=str(e)).model_dump())
+
+def update_sub_tasks(db: Session) -> None:
     db.commit()

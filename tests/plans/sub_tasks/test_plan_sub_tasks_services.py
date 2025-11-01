@@ -9,8 +9,14 @@ from pecha_api.plans.tasks.sub_tasks.plan_sub_tasks_response_model import (
     SubTaskRequestFields,
     SubTaskResponse,
     UpdateSubTaskRequest,
+    SubTaskOrderRequest,
+    SubtaskOrderItem,
 )
-from pecha_api.plans.tasks.sub_tasks.plan_sub_tasks_services import create_new_sub_tasks, update_sub_task_by_task_id
+from pecha_api.plans.tasks.sub_tasks.plan_sub_tasks_services import (
+    create_new_sub_tasks,
+    update_sub_task_by_task_id,
+    change_subtask_order_service,
+)
 from pecha_api.plans.response_message import BAD_REQUEST, FORBIDDEN, UNAUTHORIZED_TASK_ACCESS
 from pecha_api.plans.plans_enums import ContentType
 
@@ -26,7 +32,6 @@ async def test_create_new_sub_tasks_builds_and_saves_with_incremented_display_or
         ]
     )
 
-    # Mock DB session as context manager
     db_mock = MagicMock()
     session_cm = MagicMock()
     session_cm.__enter__.return_value = db_mock
@@ -47,8 +52,8 @@ async def test_create_new_sub_tasks_builds_and_saves_with_incremented_display_or
         "pecha_api.plans.tasks.sub_tasks.plan_sub_tasks_services.SessionLocal",
         return_value=session_cm,
     ) as mock_session, patch(
-        "pecha_api.plans.tasks.sub_tasks.plan_sub_tasks_services.get_task_by_id",
-        return_value=SimpleNamespace(id=task_id),
+        "pecha_api.plans.tasks.sub_tasks.plan_sub_tasks_services._get_author_task",
+        return_value=SimpleNamespace(id=task_id, created_by="author@example.com"),
     ) as mock_get_task, patch(
         "pecha_api.plans.tasks.sub_tasks.plan_sub_tasks_services.get_max_display_order_for_sub_task",
         return_value=5,
@@ -58,7 +63,6 @@ async def test_create_new_sub_tasks_builds_and_saves_with_incremented_display_or
         "pecha_api.plans.tasks.sub_tasks.plan_sub_tasks_services.save_sub_tasks_bulk",
         return_value=saved_items,
     ) as mock_save:
-        # build return instances for each call
         constructed_1 = SimpleNamespace(
             task_id=task_id,
             content_type="TEXT",
@@ -90,7 +94,6 @@ async def test_create_new_sub_tasks_builds_and_saves_with_incremented_display_or
         assert mock_get_max.call_count == 1
         assert mock_get_max.call_args.kwargs == {"db": db_mock, "task_id": task_id}
 
-        # constructor called twice with expected args
         call1 = MockPlanSubTask.call_args_list[0].kwargs
         call2 = MockPlanSubTask.call_args_list[1].kwargs
         assert call1 == {
@@ -111,10 +114,8 @@ async def test_create_new_sub_tasks_builds_and_saves_with_incremented_display_or
         assert mock_save.call_count == 1
         save_kwargs = mock_save.call_args.kwargs
         assert save_kwargs["db"] is db_mock
-        # verify the same constructed instances were passed
         assert save_kwargs["sub_tasks"] == [constructed_1, constructed_2]
 
-        # response mapping
         expected = SubTaskResponse(
             sub_tasks=[
                 SubTaskDTO(
@@ -143,6 +144,8 @@ async def test_create_new_sub_tasks_task_not_found_raises_http_exception():
         sub_tasks=[SubTaskRequestFields(content_type="TEXT", content="First")]
     )
 
+    from fastapi import HTTPException
+    
     db_mock = MagicMock()
     session_cm = MagicMock()
     session_cm.__enter__.return_value = db_mock
@@ -154,21 +157,18 @@ async def test_create_new_sub_tasks_task_not_found_raises_http_exception():
         "pecha_api.plans.tasks.sub_tasks.plan_sub_tasks_services.SessionLocal",
         return_value=session_cm,
     ), patch(
-        "pecha_api.plans.tasks.sub_tasks.plan_sub_tasks_services.get_task_by_id",
-        return_value=None,
+        "pecha_api.plans.tasks.sub_tasks.plan_sub_tasks_services._get_author_task",
+        side_effect=HTTPException(status_code=404, detail={"error": BAD_REQUEST, "message": "Task not found"}),
     ):
-        from fastapi import HTTPException
-
         with pytest.raises(HTTPException) as exc:
             await create_new_sub_tasks(
                 token="token123",
                 create_task_request=request,
             )
 
-        assert exc.value.status_code == 400
+        assert exc.value.status_code == 404
         detail = exc.value.detail
         assert detail["error"] == BAD_REQUEST
-        # message is set from ErrorConstants.TASK_NOT_FOUND; validate presence
         assert "not found" in detail["message"].lower()
 
 
@@ -197,7 +197,7 @@ async def test_update_sub_task_by_task_id_deletes_missing_and_updates_existing_a
         "pecha_api.plans.tasks.sub_tasks.plan_sub_tasks_services.SessionLocal",
         return_value=session_cm,
     ) as mock_session, patch(
-        "pecha_api.plans.tasks.sub_tasks.plan_sub_tasks_services.get_task_by_id",
+        "pecha_api.plans.tasks.sub_tasks.plan_sub_tasks_services._get_author_task",
         return_value=SimpleNamespace(id=task_id, created_by="author@example.com"),
     ) as mock_get_task, patch(
         "pecha_api.plans.tasks.sub_tasks.plan_sub_tasks_services.get_sub_tasks_by_task_id",
@@ -224,13 +224,11 @@ async def test_update_sub_task_by_task_id_deletes_missing_and_updates_existing_a
         assert mock_get_subtasks.call_count == 1
         assert mock_get_subtasks.call_args.kwargs == {"db": db_mock, "task_id": task_id}
 
-        # deleted only the missing id
         assert mock_delete_bulk.call_count == 1
         delete_kwargs = mock_delete_bulk.call_args.kwargs
         assert delete_kwargs["db"] is db_mock
         assert delete_kwargs["sub_tasks_ids"] == [existing_to_delete_id]
 
-        # update called with provided DTOs list
         assert mock_update_bulk.call_count == 1
         update_kwargs = mock_update_bulk.call_args.kwargs
         assert update_kwargs["db"] is db_mock
@@ -250,6 +248,8 @@ async def test_update_sub_task_by_task_id_unauthorized_raises_http_exception_403
         ],
     )
 
+    from fastapi import HTTPException
+    
     db_mock = MagicMock()
     session_cm = MagicMock()
     session_cm.__enter__.return_value = db_mock
@@ -261,10 +261,9 @@ async def test_update_sub_task_by_task_id_unauthorized_raises_http_exception_403
         "pecha_api.plans.tasks.sub_tasks.plan_sub_tasks_services.SessionLocal",
         return_value=session_cm,
     ), patch(
-        "pecha_api.plans.tasks.sub_tasks.plan_sub_tasks_services.get_task_by_id",
-        return_value=SimpleNamespace(id=task_id, created_by="someoneelse@example.com"),
+        "pecha_api.plans.tasks.sub_tasks.plan_sub_tasks_services._get_author_task",
+        side_effect=HTTPException(status_code=403, detail={"error": FORBIDDEN, "message": UNAUTHORIZED_TASK_ACCESS}),
     ):
-        from fastapi import HTTPException
 
         with pytest.raises(HTTPException) as exc:
             await update_sub_task_by_task_id(
@@ -318,7 +317,7 @@ async def test_update_sub_task_by_task_id_creates_new_sub_tasks_for_none_ids():
         "pecha_api.plans.tasks.sub_tasks.plan_sub_tasks_services.SessionLocal",
         return_value=session_cm,
     ), patch(
-        "pecha_api.plans.tasks.sub_tasks.plan_sub_tasks_services.get_task_by_id",
+        "pecha_api.plans.tasks.sub_tasks.plan_sub_tasks_services._get_author_task",
         return_value=SimpleNamespace(id=task_id, created_by="author@example.com"),
     ), patch(
         "pecha_api.plans.tasks.sub_tasks.plan_sub_tasks_services.get_sub_tasks_by_task_id",
@@ -339,16 +338,13 @@ async def test_update_sub_task_by_task_id_creates_new_sub_tasks_for_none_ids():
             update_sub_task_request=request,
         )
 
-        # No deletions
         assert mock_get_subtasks.call_count == 1
         assert mock_delete_bulk.call_count == 1
         assert mock_delete_bulk.call_args.kwargs["sub_tasks_ids"] == []
 
-        # Update existing
         assert mock_update_bulk.call_count == 1
         assert mock_update_bulk.call_args.kwargs["sub_tasks"] == [request.sub_tasks[0]]
 
-        # Create two new sub tasks
         assert MockPlanSubTask.call_count == 2
         call1 = MockPlanSubTask.call_args_list[0].kwargs
         call2 = MockPlanSubTask.call_args_list[1].kwargs
@@ -383,6 +379,8 @@ async def test_update_sub_task_by_task_id_task_not_found_raises_http_exception_4
         sub_tasks=[],
     )
 
+    from fastapi import HTTPException
+    
     db_mock = MagicMock()
     session_cm = MagicMock()
     session_cm.__enter__.return_value = db_mock
@@ -394,18 +392,397 @@ async def test_update_sub_task_by_task_id_task_not_found_raises_http_exception_4
         "pecha_api.plans.tasks.sub_tasks.plan_sub_tasks_services.SessionLocal",
         return_value=session_cm,
     ), patch(
-        "pecha_api.plans.tasks.sub_tasks.plan_sub_tasks_services.get_task_by_id",
-        return_value=None,
+        "pecha_api.plans.tasks.sub_tasks.plan_sub_tasks_services._get_author_task",
+        side_effect=HTTPException(status_code=404, detail={"error": BAD_REQUEST, "message": "Task not found"}),
     ):
-        from fastapi import HTTPException
-
         with pytest.raises(HTTPException) as exc:
             await update_sub_task_by_task_id(
                 token="token123",
                 update_sub_task_request=request,
             )
 
-        assert exc.value.status_code == 400
+        assert exc.value.status_code == 404
         detail = exc.value.detail
         assert detail["error"] == BAD_REQUEST
         assert "not found" in detail["message"].lower()
+
+@pytest.mark.asyncio
+async def test_change_subtask_order_service_success():
+    """Test successful subtask order change with proper authentication and all operations"""
+    task_id = uuid.uuid4()
+    sub_task_id_1 = uuid.uuid4()
+    sub_task_id_2 = uuid.uuid4()
+    sub_task_id_3 = uuid.uuid4()
+    
+    task = SimpleNamespace(id=task_id, created_by="author@example.com")
+    
+    request = SubTaskOrderRequest(
+        subtasks=[
+            SubtaskOrderItem(id=sub_task_id_1, display_order=3),
+            SubtaskOrderItem(id=sub_task_id_2, display_order=1),
+            SubtaskOrderItem(id=sub_task_id_3, display_order=2),
+        ]
+    )
+    
+    db_mock = MagicMock()
+    session_cm = MagicMock()
+    session_cm.__enter__.return_value = db_mock
+    
+    with patch(
+        "pecha_api.plans.tasks.sub_tasks.plan_sub_tasks_services.validate_and_extract_author_details",
+        return_value=SimpleNamespace(email="author@example.com"),
+    ) as mock_validate, patch(
+        "pecha_api.plans.tasks.sub_tasks.plan_sub_tasks_services.SessionLocal",
+        return_value=session_cm,
+    ), patch(
+        "pecha_api.plans.tasks.sub_tasks.plan_sub_tasks_services._get_author_task",
+        return_value=task,
+    ) as mock_get_task, patch(
+        "pecha_api.plans.tasks.sub_tasks.plan_sub_tasks_services.update_sub_task_order_in_bulk_by_task_id",
+        return_value=None,
+    ) as mock_update_bulk:
+        
+        result = await change_subtask_order_service(
+            token="token123",
+            task_id=task_id,
+            update_subtask_order=request,
+        )
+        
+        mock_validate.assert_called_once_with(token="token123")
+        
+        mock_get_task.assert_called_once_with(
+            db=db_mock,
+            task_id=task_id,
+            current_author=mock_validate.return_value
+        )
+        
+        mock_update_bulk.assert_called_once_with(
+            db=db_mock,
+            sub_task_list=request.subtasks,
+            task_id=task.id
+        )
+        
+        assert result is None
+
+
+@pytest.mark.asyncio
+async def test_change_subtask_order_service_move_up():
+    """Test moving subtask from position 5 to position 2"""
+    task_id = uuid.uuid4()
+    sub_task_ids = [uuid.uuid4() for _ in range(5)]
+    
+    task = SimpleNamespace(id=task_id, created_by="author@example.com")
+    
+    request = SubTaskOrderRequest(
+        subtasks=[
+            SubtaskOrderItem(id=sub_task_ids[0], display_order=1),
+            SubtaskOrderItem(id=sub_task_ids[4], display_order=2),  # Moved from 5 to 2
+            SubtaskOrderItem(id=sub_task_ids[1], display_order=3),
+            SubtaskOrderItem(id=sub_task_ids[2], display_order=4),
+            SubtaskOrderItem(id=sub_task_ids[3], display_order=5),
+        ]
+    )
+    
+    db_mock = MagicMock()
+    session_cm = MagicMock()
+    session_cm.__enter__.return_value = db_mock
+    
+    with patch(
+        "pecha_api.plans.tasks.sub_tasks.plan_sub_tasks_services.validate_and_extract_author_details",
+        return_value=SimpleNamespace(email="author@example.com"),
+    ), patch(
+        "pecha_api.plans.tasks.sub_tasks.plan_sub_tasks_services.SessionLocal",
+        return_value=session_cm,
+    ), patch(
+        "pecha_api.plans.tasks.sub_tasks.plan_sub_tasks_services._get_author_task",
+        return_value=task,
+    ), patch(
+        "pecha_api.plans.tasks.sub_tasks.plan_sub_tasks_services.update_sub_task_order_in_bulk_by_task_id",
+        return_value=None,
+    ) as mock_update_bulk:
+        
+        result = await change_subtask_order_service(
+            token="token456",
+            task_id=task_id,
+            update_subtask_order=request,
+        )
+        
+        assert mock_update_bulk.call_count == 1
+        assert len(mock_update_bulk.call_args.kwargs["sub_task_list"]) == 5
+        assert result is None
+
+
+@pytest.mark.asyncio
+async def test_change_subtask_order_service_move_down():
+    """Test moving subtask from position 2 to position 5"""
+    task_id = uuid.uuid4()
+    sub_task_ids = [uuid.uuid4() for _ in range(5)]
+    
+    task = SimpleNamespace(id=task_id, created_by="author@example.com")
+    
+    request = SubTaskOrderRequest(
+        subtasks=[
+            SubtaskOrderItem(id=sub_task_ids[0], display_order=1),
+            SubtaskOrderItem(id=sub_task_ids[2], display_order=2),
+            SubtaskOrderItem(id=sub_task_ids[3], display_order=3),
+            SubtaskOrderItem(id=sub_task_ids[4], display_order=4),
+            SubtaskOrderItem(id=sub_task_ids[1], display_order=5),
+        ]
+    )
+    
+    db_mock = MagicMock()
+    session_cm = MagicMock()
+    session_cm.__enter__.return_value = db_mock
+    
+    with patch(
+        "pecha_api.plans.tasks.sub_tasks.plan_sub_tasks_services.validate_and_extract_author_details",
+        return_value=SimpleNamespace(email="author@example.com"),
+    ), patch(
+        "pecha_api.plans.tasks.sub_tasks.plan_sub_tasks_services.SessionLocal",
+        return_value=session_cm,
+    ), patch(
+        "pecha_api.plans.tasks.sub_tasks.plan_sub_tasks_services._get_author_task",
+        return_value=task,
+    ), patch(
+        "pecha_api.plans.tasks.sub_tasks.plan_sub_tasks_services.update_sub_task_order_in_bulk_by_task_id",
+        return_value=None,
+    ) as mock_update_bulk:
+        
+        result = await change_subtask_order_service(
+            token="test_token",
+            task_id=task_id,
+            update_subtask_order=request,
+        )
+        
+        assert mock_update_bulk.call_count == 1
+        assert len(mock_update_bulk.call_args.kwargs["sub_task_list"]) == 5
+        assert result is None
+
+
+@pytest.mark.asyncio
+async def test_change_subtask_order_service_to_first_position():
+    """Test moving subtask to first position (order 1)"""
+    task_id = uuid.uuid4()
+    sub_task_ids = [uuid.uuid4() for _ in range(3)]
+    
+    task = SimpleNamespace(id=task_id, created_by="author@example.com")
+    
+    request = SubTaskOrderRequest(
+        subtasks=[
+            SubtaskOrderItem(id=sub_task_ids[2], display_order=1),
+            SubtaskOrderItem(id=sub_task_ids[0], display_order=2),
+            SubtaskOrderItem(id=sub_task_ids[1], display_order=3),
+        ]
+    )
+    
+    db_mock = MagicMock()
+    session_cm = MagicMock()
+    session_cm.__enter__.return_value = db_mock
+    
+    with patch(
+        "pecha_api.plans.tasks.sub_tasks.plan_sub_tasks_services.validate_and_extract_author_details",
+        return_value=SimpleNamespace(email="author@example.com"),
+    ), patch(
+        "pecha_api.plans.tasks.sub_tasks.plan_sub_tasks_services.SessionLocal",
+        return_value=session_cm,
+    ), patch(
+        "pecha_api.plans.tasks.sub_tasks.plan_sub_tasks_services._get_author_task",
+        return_value=task,
+    ), patch(
+        "pecha_api.plans.tasks.sub_tasks.plan_sub_tasks_services.update_sub_task_order_in_bulk_by_task_id",
+        return_value=None,
+    ):
+        
+        result = await change_subtask_order_service(
+            token="auth_token",
+            task_id=task_id,
+            update_subtask_order=request,
+        )
+        
+        assert result is None
+
+
+@pytest.mark.asyncio
+async def test_change_subtask_order_service_invalid_token():
+    """Test subtask order change with invalid authentication token (401 Unauthorized)"""
+    from fastapi import HTTPException
+    
+    task_id = uuid.uuid4()
+    sub_task_id = uuid.uuid4()
+    
+    request = SubTaskOrderRequest(
+        subtasks=[SubtaskOrderItem(id=sub_task_id, display_order=1)]
+    )
+    
+    with patch(
+        "pecha_api.plans.tasks.sub_tasks.plan_sub_tasks_services.validate_and_extract_author_details",
+        side_effect=HTTPException(status_code=401, detail="Invalid or expired token"),
+    ):
+        
+        with pytest.raises(HTTPException) as exc:
+            await change_subtask_order_service(
+                token="expired_token",
+                task_id=task_id,
+                update_subtask_order=request,
+            )
+        
+        assert exc.value.status_code == 401
+
+
+@pytest.mark.asyncio
+async def test_change_subtask_order_service_task_not_found():
+    """Test subtask order change when task doesn't exist (404 Not Found)"""
+    from fastapi import HTTPException
+    
+    task_id = uuid.uuid4()
+    sub_task_id = uuid.uuid4()
+    
+    request = SubTaskOrderRequest(
+        subtasks=[SubtaskOrderItem(id=sub_task_id, display_order=1)]
+    )
+    
+    db_mock = MagicMock()
+    session_cm = MagicMock()
+    session_cm.__enter__.return_value = db_mock
+    
+    with patch(
+        "pecha_api.plans.tasks.sub_tasks.plan_sub_tasks_services.validate_and_extract_author_details",
+        return_value=SimpleNamespace(email="author@example.com"),
+    ), patch(
+        "pecha_api.plans.tasks.sub_tasks.plan_sub_tasks_services.SessionLocal",
+        return_value=session_cm,
+    ), patch(
+        "pecha_api.plans.tasks.sub_tasks.plan_sub_tasks_services._get_author_task",
+        side_effect=HTTPException(status_code=404, detail="Task not found"),
+    ):
+        
+        with pytest.raises(HTTPException) as exc:
+            await change_subtask_order_service(
+                token="valid_token",
+                task_id=task_id,
+                update_subtask_order=request,
+            )
+        
+        assert exc.value.status_code == 404
+
+
+@pytest.mark.asyncio
+async def test_change_subtask_order_service_unauthorized():
+    """Test subtask order change with unauthorized user (403 Forbidden)"""
+    from fastapi import HTTPException
+    
+    task_id = uuid.uuid4()
+    sub_task_id = uuid.uuid4()
+    
+    request = SubTaskOrderRequest(
+        subtasks=[SubtaskOrderItem(id=sub_task_id, display_order=1)]
+    )
+    
+    db_mock = MagicMock()
+    session_cm = MagicMock()
+    session_cm.__enter__.return_value = db_mock
+    
+    with patch(
+        "pecha_api.plans.tasks.sub_tasks.plan_sub_tasks_services.validate_and_extract_author_details",
+        return_value=SimpleNamespace(email="author@example.com"),
+    ), patch(
+        "pecha_api.plans.tasks.sub_tasks.plan_sub_tasks_services.SessionLocal",
+        return_value=session_cm,
+    ), patch(
+        "pecha_api.plans.tasks.sub_tasks.plan_sub_tasks_services._get_author_task",
+        side_effect=HTTPException(status_code=403, detail={"error": FORBIDDEN, "message": UNAUTHORIZED_TASK_ACCESS}),
+    ):
+        
+        with pytest.raises(HTTPException) as exc:
+            await change_subtask_order_service(
+                token="invalid_token",
+                task_id=task_id,
+                update_subtask_order=request,
+            )
+        
+        assert exc.value.status_code == 403
+
+
+@pytest.mark.asyncio
+async def test_change_subtask_order_service_database_error():
+    """Test subtask order change with database error (500 Internal Server Error)"""
+    from fastapi import HTTPException
+    
+    task_id = uuid.uuid4()
+    sub_task_ids = [uuid.uuid4() for _ in range(3)]
+    
+    task = SimpleNamespace(id=task_id, created_by="author@example.com")
+    
+    request = SubTaskOrderRequest(
+        subtasks=[
+            SubtaskOrderItem(id=sub_task_ids[0], display_order=1),
+            SubtaskOrderItem(id=sub_task_ids[1], display_order=2),
+            SubtaskOrderItem(id=sub_task_ids[2], display_order=3),
+        ]
+    )
+    
+    db_mock = MagicMock()
+    session_cm = MagicMock()
+    session_cm.__enter__.return_value = db_mock
+    
+    with patch(
+        "pecha_api.plans.tasks.sub_tasks.plan_sub_tasks_services.validate_and_extract_author_details",
+        return_value=SimpleNamespace(email="author@example.com"),
+    ), patch(
+        "pecha_api.plans.tasks.sub_tasks.plan_sub_tasks_services.SessionLocal",
+        side_effect=Exception("Database connection error"),
+    ):
+        
+        with pytest.raises(Exception) as exc:
+            await change_subtask_order_service(
+                token="valid_token",
+                task_id=task_id,
+                update_subtask_order=request,
+            )
+        
+        assert "Database connection error" in str(exc.value)
+
+
+@pytest.mark.asyncio
+async def test_change_subtask_order_service_update_failed():
+    """Test subtask order change when update operation fails (400 Bad Request)"""
+    from fastapi import HTTPException
+    
+    task_id = uuid.uuid4()
+    sub_task_ids = [uuid.uuid4() for _ in range(2)]
+    
+    task = SimpleNamespace(id=task_id, created_by="author@example.com")
+    
+    request = SubTaskOrderRequest(
+        subtasks=[
+            SubtaskOrderItem(id=sub_task_ids[0], display_order=2),
+            SubtaskOrderItem(id=sub_task_ids[1], display_order=1),
+        ]
+    )
+    
+    db_mock = MagicMock()
+    session_cm = MagicMock()
+    session_cm.__enter__.return_value = db_mock
+    
+    with patch(
+        "pecha_api.plans.tasks.sub_tasks.plan_sub_tasks_services.validate_and_extract_author_details",
+        return_value=SimpleNamespace(email="author@example.com"),
+    ), patch(
+        "pecha_api.plans.tasks.sub_tasks.plan_sub_tasks_services.SessionLocal",
+        return_value=session_cm,
+    ), patch(
+        "pecha_api.plans.tasks.sub_tasks.plan_sub_tasks_services._get_author_task",
+        return_value=task,
+    ), patch(
+        "pecha_api.plans.tasks.sub_tasks.plan_sub_tasks_services.update_sub_task_order_in_bulk_by_task_id",
+        side_effect=HTTPException(status_code=400, detail={"error": BAD_REQUEST, "message": "Subtask order update failed"}),
+    ):
+        
+        with pytest.raises(HTTPException) as exc:
+            await change_subtask_order_service(
+                token="valid_token",
+                task_id=task_id,
+                update_subtask_order=request,
+            )
+        
+        assert exc.value.status_code == 400
