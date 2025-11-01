@@ -462,8 +462,10 @@ async def test_change_task_order_success():
     ])
     
     expected_response = UpdatedTaskOrderResponse(
-        task_id=task_id_1,
-        display_order=2,
+        updated_tasks=[
+            TaskOrderItem(task_id=task_id_1, display_order=2),
+            TaskOrderItem(task_id=task_id_2, display_order=1),
+        ]
     )
     
     with patch(
@@ -485,8 +487,11 @@ async def test_change_task_order_success():
         }
         
         assert result == expected_response
-        assert result.task_id == task_id_1
-        assert result.display_order == 2
+        assert len(result.updated_tasks) == 2
+        assert result.updated_tasks[0].task_id == task_id_1
+        assert result.updated_tasks[0].display_order == 2
+        assert result.updated_tasks[1].task_id == task_id_2
+        assert result.updated_tasks[1].display_order == 1
 
 
 @pytest.mark.asyncio
@@ -506,8 +511,11 @@ async def test_change_task_order_multiple_tasks():
     ])
     
     expected_response = UpdatedTaskOrderResponse(
-        task_id=task_id_1,
-        display_order=3,
+        updated_tasks=[
+            TaskOrderItem(task_id=task_id_1, display_order=3),
+            TaskOrderItem(task_id=task_id_2, display_order=1),
+            TaskOrderItem(task_id=task_id_3, display_order=2),
+        ]
     )
     
     with patch(
@@ -521,7 +529,8 @@ async def test_change_task_order_multiple_tasks():
             update_task_order_request=request,
         )
         
-        assert result.display_order == 3
+        assert len(result.updated_tasks) == 3
+        assert result.updated_tasks[0].display_order == 3
 
 
 @pytest.mark.asyncio
@@ -537,8 +546,9 @@ async def test_change_task_order_single_task():
     ])
     
     expected_response = UpdatedTaskOrderResponse(
-        task_id=task_id,
-        display_order=5,
+        updated_tasks=[
+            TaskOrderItem(task_id=task_id, display_order=5),
+        ]
     )
     
     with patch(
@@ -552,7 +562,8 @@ async def test_change_task_order_single_task():
             update_task_order_request=request,
         )
         
-        assert result.display_order == 5
+        assert len(result.updated_tasks) == 1
+        assert result.updated_tasks[0].display_order == 5
 
 
 @pytest.mark.asyncio
@@ -568,8 +579,9 @@ async def test_change_task_order_to_first_position():
     ])
     
     expected_response = UpdatedTaskOrderResponse(
-        task_id=task_id,
-        display_order=1,
+        updated_tasks=[
+            TaskOrderItem(task_id=task_id, display_order=1),
+        ]
     )
     
     with patch(
@@ -583,7 +595,8 @@ async def test_change_task_order_to_first_position():
             update_task_order_request=request,
         )
         
-        assert result.display_order == 1
+        assert len(result.updated_tasks) == 1
+        assert result.updated_tasks[0].display_order == 1
 
 
 @pytest.mark.asyncio
