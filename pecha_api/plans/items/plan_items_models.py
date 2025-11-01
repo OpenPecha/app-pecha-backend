@@ -20,7 +20,6 @@ class PlanItem(Base):
 
     
     __table_args__ = (
-        UniqueConstraint("plan_id", "day_number", name="uq_plan_items_plan_day"),
         Index("idx_plan_items_plan_day", "plan_id", "day_number"),
     )
 
