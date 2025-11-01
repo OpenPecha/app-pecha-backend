@@ -141,7 +141,7 @@ def update_days_in_bulk_by_plan_id(db: Session, plan_id: UUID, days: List[ItemDa
     try:
         db.execute(
             update(PlanItem).where(PlanItem.plan_id == plan_id).execution_options(synchronize_session=False),
-            [{"id": day.id, "day_number": day.day_number} for day in days]
+            days
         )
         db.commit()
     except Exception as e:
