@@ -44,7 +44,7 @@ def test_create_plan_item_success():
 
         resp = create_plan_item(token="dummy-token", plan_id=plan_id)
 
-        assert mock_validate_author.call_count == 2
+        assert mock_validate_author.call_count == 1
         mock_get_plan_by_id.assert_called_once_with(db=db_session, plan_id=plan_id, created_by=author.email)
         mock_get_last_day_number.assert_called_once_with(db=db_session, plan_id=plan_id)
 
@@ -131,7 +131,7 @@ def test_delete_plan_day_success_reorders():
 
         delete_plan_day_by_id(token="dummy-token", plan_id=plan_id, day_id=day_id)
 
-        assert mock_validate_author.call_count == 2
+        assert mock_validate_author.call_count == 1
         mock_get_plan_by_id.assert_called_once_with(db=db_session, plan_id=plan_id, created_by=author.email)
         mock_get_day.assert_called_once_with(db=db_session, plan_id=plan_id, day_id=day_id)
         mock_delete.assert_called_once_with(db=db_session, plan_id=plan_id, day_id=item_to_delete.id)
@@ -249,8 +249,8 @@ def test_update_plans_day_number_success_calls_bulk_update():
 
         update_plans_day_number(token="dummy-token", plan_id=plan_id, reorder_days_request=payload)
 
-        # validate called twice (directly and via _get_author_plan)
-        assert mock_validate_author.call_count == 2
+        # validate called once in the service
+        assert mock_validate_author.call_count == 1
         mock_get_plan_by_id.assert_called_once_with(db=db_session, plan_id=plan_id, created_by=author.email)
         mock_bulk_update.assert_called_once()
         called_kwargs = mock_bulk_update.call_args.kwargs
