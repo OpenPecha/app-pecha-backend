@@ -34,7 +34,6 @@ async def test_create_new_sub_tasks_builds_and_saves_with_incremented_display_or
         ]
     )
 
-    # Mock DB session as context manager
     db_mock = MagicMock()
     session_cm = MagicMock()
     session_cm.__enter__.return_value = db_mock
@@ -55,8 +54,8 @@ async def test_create_new_sub_tasks_builds_and_saves_with_incremented_display_or
         "pecha_api.plans.tasks.sub_tasks.plan_sub_tasks_services.SessionLocal",
         return_value=session_cm,
     ) as mock_session, patch(
-        "pecha_api.plans.tasks.sub_tasks.plan_sub_tasks_services.get_task_by_id",
-        return_value=SimpleNamespace(id=task_id),
+        "pecha_api.plans.tasks.sub_tasks.plan_sub_tasks_services._get_author_task",
+        return_value=SimpleNamespace(id=task_id, created_by="author@example.com"),
     ) as mock_get_task, patch(
         "pecha_api.plans.tasks.sub_tasks.plan_sub_tasks_services.get_max_display_order_for_sub_task",
         return_value=5,
@@ -66,7 +65,6 @@ async def test_create_new_sub_tasks_builds_and_saves_with_incremented_display_or
         "pecha_api.plans.tasks.sub_tasks.plan_sub_tasks_services.save_sub_tasks_bulk",
         return_value=saved_items,
     ) as mock_save:
-        # build return instances for each call
         constructed_1 = SimpleNamespace(
             task_id=task_id,
             content_type="TEXT",
@@ -98,7 +96,6 @@ async def test_create_new_sub_tasks_builds_and_saves_with_incremented_display_or
         assert mock_get_max.call_count == 1
         assert mock_get_max.call_args.kwargs == {"db": db_mock, "task_id": task_id}
 
-        # constructor called twice with expected args
         call1 = MockPlanSubTask.call_args_list[0].kwargs
         call2 = MockPlanSubTask.call_args_list[1].kwargs
         assert call1 == {
@@ -119,10 +116,8 @@ async def test_create_new_sub_tasks_builds_and_saves_with_incremented_display_or
         assert mock_save.call_count == 1
         save_kwargs = mock_save.call_args.kwargs
         assert save_kwargs["db"] is db_mock
-        # verify the same constructed instances were passed
         assert save_kwargs["sub_tasks"] == [constructed_1, constructed_2]
 
-        # response mapping
         expected = SubTaskResponse(
             sub_tasks=[
                 SubTaskDTO(
@@ -151,6 +146,8 @@ async def test_create_new_sub_tasks_task_not_found_raises_http_exception():
         sub_tasks=[SubTaskRequestFields(content_type="TEXT", content="First")]
     )
 
+    from fastapi import HTTPException
+    
     db_mock = MagicMock()
     session_cm = MagicMock()
     session_cm.__enter__.return_value = db_mock
@@ -162,21 +159,18 @@ async def test_create_new_sub_tasks_task_not_found_raises_http_exception():
         "pecha_api.plans.tasks.sub_tasks.plan_sub_tasks_services.SessionLocal",
         return_value=session_cm,
     ), patch(
-        "pecha_api.plans.tasks.sub_tasks.plan_sub_tasks_services.get_task_by_id",
-        return_value=None,
+        "pecha_api.plans.tasks.sub_tasks.plan_sub_tasks_services._get_author_task",
+        side_effect=HTTPException(status_code=404, detail={"error": BAD_REQUEST, "message": "Task not found"}),
     ):
-        from fastapi import HTTPException
-
         with pytest.raises(HTTPException) as exc:
             await create_new_sub_tasks(
                 token="token123",
                 create_task_request=request,
             )
 
-        assert exc.value.status_code == 400
+        assert exc.value.status_code == 404
         detail = exc.value.detail
         assert detail["error"] == BAD_REQUEST
-        # message is set from ErrorConstants.TASK_NOT_FOUND; validate presence
         assert "not found" in detail["message"].lower()
 
 
@@ -205,7 +199,7 @@ async def test_update_sub_task_by_task_id_deletes_missing_and_updates_existing_a
         "pecha_api.plans.tasks.sub_tasks.plan_sub_tasks_services.SessionLocal",
         return_value=session_cm,
     ) as mock_session, patch(
-        "pecha_api.plans.tasks.sub_tasks.plan_sub_tasks_services.get_task_by_id",
+        "pecha_api.plans.tasks.sub_tasks.plan_sub_tasks_services._get_author_task",
         return_value=SimpleNamespace(id=task_id, created_by="author@example.com"),
     ) as mock_get_task, patch(
         "pecha_api.plans.tasks.sub_tasks.plan_sub_tasks_services.get_sub_tasks_by_task_id",
@@ -232,13 +226,11 @@ async def test_update_sub_task_by_task_id_deletes_missing_and_updates_existing_a
         assert mock_get_subtasks.call_count == 1
         assert mock_get_subtasks.call_args.kwargs == {"db": db_mock, "task_id": task_id}
 
-        # deleted only the missing id
         assert mock_delete_bulk.call_count == 1
         delete_kwargs = mock_delete_bulk.call_args.kwargs
         assert delete_kwargs["db"] is db_mock
         assert delete_kwargs["sub_tasks_ids"] == [existing_to_delete_id]
 
-        # update called with provided DTOs list
         assert mock_update_bulk.call_count == 1
         update_kwargs = mock_update_bulk.call_args.kwargs
         assert update_kwargs["db"] is db_mock
@@ -258,6 +250,8 @@ async def test_update_sub_task_by_task_id_unauthorized_raises_http_exception_403
         ],
     )
 
+    from fastapi import HTTPException
+    
     db_mock = MagicMock()
     session_cm = MagicMock()
     session_cm.__enter__.return_value = db_mock
@@ -269,10 +263,9 @@ async def test_update_sub_task_by_task_id_unauthorized_raises_http_exception_403
         "pecha_api.plans.tasks.sub_tasks.plan_sub_tasks_services.SessionLocal",
         return_value=session_cm,
     ), patch(
-        "pecha_api.plans.tasks.sub_tasks.plan_sub_tasks_services.get_task_by_id",
-        return_value=SimpleNamespace(id=task_id, created_by="someoneelse@example.com"),
+        "pecha_api.plans.tasks.sub_tasks.plan_sub_tasks_services._get_author_task",
+        side_effect=HTTPException(status_code=403, detail={"error": FORBIDDEN, "message": UNAUTHORIZED_TASK_ACCESS}),
     ):
-        from fastapi import HTTPException
 
         with pytest.raises(HTTPException) as exc:
             await update_sub_task_by_task_id(
@@ -326,7 +319,7 @@ async def test_update_sub_task_by_task_id_creates_new_sub_tasks_for_none_ids():
         "pecha_api.plans.tasks.sub_tasks.plan_sub_tasks_services.SessionLocal",
         return_value=session_cm,
     ), patch(
-        "pecha_api.plans.tasks.sub_tasks.plan_sub_tasks_services.get_task_by_id",
+        "pecha_api.plans.tasks.sub_tasks.plan_sub_tasks_services._get_author_task",
         return_value=SimpleNamespace(id=task_id, created_by="author@example.com"),
     ), patch(
         "pecha_api.plans.tasks.sub_tasks.plan_sub_tasks_services.get_sub_tasks_by_task_id",
@@ -347,16 +340,13 @@ async def test_update_sub_task_by_task_id_creates_new_sub_tasks_for_none_ids():
             update_sub_task_request=request,
         )
 
-        # No deletions
         assert mock_get_subtasks.call_count == 1
         assert mock_delete_bulk.call_count == 1
         assert mock_delete_bulk.call_args.kwargs["sub_tasks_ids"] == []
 
-        # Update existing
         assert mock_update_bulk.call_count == 1
         assert mock_update_bulk.call_args.kwargs["sub_tasks"] == [request.sub_tasks[0]]
 
-        # Create two new sub tasks
         assert MockPlanSubTask.call_count == 2
         call1 = MockPlanSubTask.call_args_list[0].kwargs
         call2 = MockPlanSubTask.call_args_list[1].kwargs
@@ -391,6 +381,8 @@ async def test_update_sub_task_by_task_id_task_not_found_raises_http_exception_4
         sub_tasks=[],
     )
 
+    from fastapi import HTTPException
+    
     db_mock = MagicMock()
     session_cm = MagicMock()
     session_cm.__enter__.return_value = db_mock
@@ -402,18 +394,16 @@ async def test_update_sub_task_by_task_id_task_not_found_raises_http_exception_4
         "pecha_api.plans.tasks.sub_tasks.plan_sub_tasks_services.SessionLocal",
         return_value=session_cm,
     ), patch(
-        "pecha_api.plans.tasks.sub_tasks.plan_sub_tasks_services.get_task_by_id",
-        return_value=None,
+        "pecha_api.plans.tasks.sub_tasks.plan_sub_tasks_services._get_author_task",
+        side_effect=HTTPException(status_code=404, detail={"error": BAD_REQUEST, "message": "Task not found"}),
     ):
-        from fastapi import HTTPException
-
         with pytest.raises(HTTPException) as exc:
             await update_sub_task_by_task_id(
                 token="token123",
                 update_sub_task_request=request,
             )
 
-        assert exc.value.status_code == 400
+        assert exc.value.status_code == 404
         detail = exc.value.detail
         assert detail["error"] == BAD_REQUEST
         assert "not found" in detail["message"].lower()
