@@ -125,9 +125,6 @@ async def change_subtask_order_service(token: str, task_id: UUID, update_subtask
         for subtask_order_item in update_subtask_order_request.subtasks:
             subtask = get_sub_task_by_id(db=db, sub_task_id=subtask_order_item.sub_task_id)
             
-            if subtask.task_id != task_id:
-                raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST,detail=ResponseError(error=BAD_REQUEST, message=f"Subtask {subtask_order_item.sub_task_id} does not belong to task {task_id}").model_dump())
-            
             subtask.display_order = subtask_order_item.display_order
             updated_subtask = update_sub_task_order(db=db, sub_task=subtask)
             

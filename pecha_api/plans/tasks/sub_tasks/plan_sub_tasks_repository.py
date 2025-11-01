@@ -37,8 +37,8 @@ def save_sub_tasks_bulk(db: Session, sub_tasks: List[PlanSubTask]) -> List[PlanS
             detail=ResponseError(error=BAD_REQUEST, message=str(e.orig)).model_dump(),
         )
 
-def get_sub_task_by_id(db: Session, sub_task_id: UUID) -> PlanSubTask:
-    return db.query(PlanSubTask).filter(PlanSubTask.id == sub_task_id).first()
+def get_sub_task_by_id(db: Session, sub_task_id: UUID, task_id: UUID) -> PlanSubTask:
+    return db.query(PlanSubTask).filter(PlanSubTask.id == sub_task_id, PlanSubTask.task_id == task_id).first()
 
 
 def get_sub_tasks_by_task_id(db: Session, task_id: UUID) -> List[PlanSubTask]:
