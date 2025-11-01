@@ -110,17 +110,9 @@ async def test_change_subtask_order_success():
     
     request = SubTaskOrderRequest(
         subtasks=[
-            SubtaskOrderItem(sub_task_id=sub_task_id_1, display_order=3),
-            SubtaskOrderItem(sub_task_id=sub_task_id_2, display_order=1),
-            SubtaskOrderItem(sub_task_id=sub_task_id_3, display_order=2),
-        ]
-    )
-    
-    expected = SubTaskOrderResponse(
-        updated_subtasks=[
-            UpdatedSubtaskOrderItem(sub_task_id=sub_task_id_1, display_order=3),
-            UpdatedSubtaskOrderItem(sub_task_id=sub_task_id_2, display_order=1),
-            UpdatedSubtaskOrderItem(sub_task_id=sub_task_id_3, display_order=2),
+            SubtaskOrderItem(id=sub_task_id_1, display_order=3),
+            SubtaskOrderItem(id=sub_task_id_2, display_order=1),
+            SubtaskOrderItem(id=sub_task_id_3, display_order=2),
         ]
     )
     
@@ -128,7 +120,7 @@ async def test_change_subtask_order_success():
     
     with patch(
         "pecha_api.plans.tasks.sub_tasks.plan_sub_tasks_views.change_subtask_order_service",
-        return_value=expected,
+        return_value=None,
         new_callable=AsyncMock,
     ) as mock_change_order:
         resp = await change_subtask_order(
@@ -141,34 +133,25 @@ async def test_change_subtask_order_success():
         assert mock_change_order.call_args.kwargs == {
             "token": "token123",
             "task_id": task_id,
-            "update_subtask_order_request": request,
+            "update_subtask_order": request,
         }
         
-        assert resp == expected
-        assert len(resp.updated_subtasks) == 3
-        assert resp.updated_subtasks[0].sub_task_id == sub_task_id_1
-        assert resp.updated_subtasks[0].display_order == 3
-        assert resp.updated_subtasks[1].sub_task_id == sub_task_id_2
-        assert resp.updated_subtasks[1].display_order == 1
-        assert resp.updated_subtasks[2].sub_task_id == sub_task_id_3
-        assert resp.updated_subtasks[2].display_order == 2
+        assert resp is None
 
 
 @pytest.mark.asyncio
-async def test_change_subtask_order_single_subtask():
-    """Test subtask order change with single subtask"""
+async def test_change_subtask_order_move_up():
+    """Test moving subtask from position 5 to position 2"""
     task_id = uuid.uuid4()
-    sub_task_id = uuid.uuid4()
+    sub_task_ids = [uuid.uuid4() for _ in range(5)]
     
     request = SubTaskOrderRequest(
         subtasks=[
-            SubtaskOrderItem(sub_task_id=sub_task_id, display_order=1),
-        ]
-    )
-    
-    expected = SubTaskOrderResponse(
-        updated_subtasks=[
-            UpdatedSubtaskOrderItem(sub_task_id=sub_task_id, display_order=1),
+            SubtaskOrderItem(id=sub_task_ids[0], display_order=1),
+            SubtaskOrderItem(id=sub_task_ids[4], display_order=2),
+            SubtaskOrderItem(id=sub_task_ids[1], display_order=3),
+            SubtaskOrderItem(id=sub_task_ids[2], display_order=4),
+            SubtaskOrderItem(id=sub_task_ids[3], display_order=5),
         ]
     )
     
@@ -176,7 +159,7 @@ async def test_change_subtask_order_single_subtask():
     
     with patch(
         "pecha_api.plans.tasks.sub_tasks.plan_sub_tasks_views.change_subtask_order_service",
-        return_value=expected,
+        return_value=None,
         new_callable=AsyncMock,
     ) as mock_change_order:
         resp = await change_subtask_order(
@@ -188,37 +171,23 @@ async def test_change_subtask_order_single_subtask():
         assert mock_change_order.call_count == 1
         assert mock_change_order.call_args.kwargs["token"] == "token456"
         assert mock_change_order.call_args.kwargs["task_id"] == task_id
-        assert len(mock_change_order.call_args.kwargs["update_subtask_order_request"].subtasks) == 1
-        
-        assert len(resp.updated_subtasks) == 1
-        assert resp.updated_subtasks[0].sub_task_id == sub_task_id
-        assert resp.updated_subtasks[0].display_order == 1
+        assert len(mock_change_order.call_args.kwargs["update_subtask_order"].subtasks) == 5
+        assert resp is None
 
 
 @pytest.mark.asyncio
-async def test_change_subtask_order_reordering_multiple():
-    """Test reordering multiple subtasks to different positions"""
+async def test_change_subtask_order_move_down():
+    """Test moving subtask from position 2 to position 5"""
     task_id = uuid.uuid4()
     sub_task_ids = [uuid.uuid4() for _ in range(5)]
     
-    # Reorder from [1,2,3,4,5] to [5,3,1,4,2]
     request = SubTaskOrderRequest(
         subtasks=[
-            SubtaskOrderItem(sub_task_id=sub_task_ids[4], display_order=1),
-            SubtaskOrderItem(sub_task_id=sub_task_ids[2], display_order=2),
-            SubtaskOrderItem(sub_task_id=sub_task_ids[0], display_order=3),
-            SubtaskOrderItem(sub_task_id=sub_task_ids[3], display_order=4),
-            SubtaskOrderItem(sub_task_id=sub_task_ids[1], display_order=5),
-        ]
-    )
-    
-    expected = SubTaskOrderResponse(
-        updated_subtasks=[
-            UpdatedSubtaskOrderItem(sub_task_id=sub_task_ids[4], display_order=1),
-            UpdatedSubtaskOrderItem(sub_task_id=sub_task_ids[2], display_order=2),
-            UpdatedSubtaskOrderItem(sub_task_id=sub_task_ids[0], display_order=3),
-            UpdatedSubtaskOrderItem(sub_task_id=sub_task_ids[3], display_order=4),
-            UpdatedSubtaskOrderItem(sub_task_id=sub_task_ids[1], display_order=5),
+            SubtaskOrderItem(id=sub_task_ids[0], display_order=1),
+            SubtaskOrderItem(id=sub_task_ids[2], display_order=2),
+            SubtaskOrderItem(id=sub_task_ids[3], display_order=3),
+            SubtaskOrderItem(id=sub_task_ids[4], display_order=4),
+            SubtaskOrderItem(id=sub_task_ids[1], display_order=5),
         ]
     )
     
@@ -226,7 +195,7 @@ async def test_change_subtask_order_reordering_multiple():
     
     with patch(
         "pecha_api.plans.tasks.sub_tasks.plan_sub_tasks_views.change_subtask_order_service",
-        return_value=expected,
+        return_value=None,
         new_callable=AsyncMock,
     ) as mock_change_order:
         resp = await change_subtask_order(
@@ -236,9 +205,202 @@ async def test_change_subtask_order_reordering_multiple():
         )
         
         assert mock_change_order.call_count == 1
-        assert len(resp.updated_subtasks) == 5
-        # Verify the new order
-        assert resp.updated_subtasks[0].sub_task_id == sub_task_ids[4]
-        assert resp.updated_subtasks[0].display_order == 1
-        assert resp.updated_subtasks[4].sub_task_id == sub_task_ids[1]
-        assert resp.updated_subtasks[4].display_order == 5
+        assert len(mock_change_order.call_args.kwargs["update_subtask_order"].subtasks) == 5
+        assert resp is None
+
+
+@pytest.mark.asyncio
+async def test_change_subtask_order_to_first_position():
+    """Test moving subtask to first position (order 1)"""
+    task_id = uuid.uuid4()
+    sub_task_ids = [uuid.uuid4() for _ in range(3)]
+    
+    request = SubTaskOrderRequest(
+        subtasks=[
+            SubtaskOrderItem(id=sub_task_ids[2], display_order=1),
+            SubtaskOrderItem(id=sub_task_ids[0], display_order=2),
+            SubtaskOrderItem(id=sub_task_ids[1], display_order=3),
+        ]
+    )
+    
+    creds = _Creds(token="auth_token")
+    
+    with patch(
+        "pecha_api.plans.tasks.sub_tasks.plan_sub_tasks_views.change_subtask_order_service",
+        return_value=None,
+        new_callable=AsyncMock,
+    ) as mock_change_order:
+        resp = await change_subtask_order(
+            task_id=task_id,
+            authentication_credential=creds,
+            update_subtask_order_request=request,
+        )
+        
+        assert mock_change_order.call_count == 1
+        assert resp is None
+
+
+@pytest.mark.asyncio
+async def test_change_subtask_order_unauthorized():
+    """Test subtask order change with unauthorized user (403 Forbidden)"""
+    from fastapi import HTTPException
+    
+    task_id = uuid.uuid4()
+    sub_task_id = uuid.uuid4()
+    
+    request = SubTaskOrderRequest(
+        subtasks=[
+            SubtaskOrderItem(id=sub_task_id, display_order=1),
+        ]
+    )
+    
+    creds = _Creds(token="invalid_token")
+    
+    with patch(
+        "pecha_api.plans.tasks.sub_tasks.plan_sub_tasks_views.change_subtask_order_service",
+        side_effect=HTTPException(status_code=403, detail="User not authorized to change subtask order"),
+        new_callable=AsyncMock,
+    ) as mock_change_order:
+        with pytest.raises(HTTPException) as exc_info:
+            await change_subtask_order(
+                task_id=task_id,
+                authentication_credential=creds,
+                update_subtask_order_request=request,
+            )
+        
+        assert exc_info.value.status_code == 403
+        assert "not authorized" in exc_info.value.detail.lower()
+        assert mock_change_order.call_count == 1
+
+
+@pytest.mark.asyncio
+async def test_change_subtask_order_task_not_found():
+    """Test subtask order change when task doesn't exist (404 Not Found)"""
+    from fastapi import HTTPException
+    
+    task_id = uuid.uuid4()
+    sub_task_id = uuid.uuid4()
+    
+    request = SubTaskOrderRequest(
+        subtasks=[
+            SubtaskOrderItem(id=sub_task_id, display_order=1),
+        ]
+    )
+    
+    creds = _Creds(token="valid_token")
+    
+    with patch(
+        "pecha_api.plans.tasks.sub_tasks.plan_sub_tasks_views.change_subtask_order_service",
+        side_effect=HTTPException(status_code=404, detail="Task not found"),
+        new_callable=AsyncMock,
+    ) as mock_change_order:
+        with pytest.raises(HTTPException) as exc_info:
+            await change_subtask_order(
+                task_id=task_id,
+                authentication_credential=creds,
+                update_subtask_order_request=request,
+            )
+        
+        assert exc_info.value.status_code == 404
+        assert "not found" in exc_info.value.detail.lower()
+        assert mock_change_order.call_count == 1
+
+
+@pytest.mark.asyncio
+async def test_change_subtask_order_invalid_token():
+    """Test subtask order change with invalid authentication token (401 Unauthorized)"""
+    from fastapi import HTTPException
+    
+    task_id = uuid.uuid4()
+    sub_task_id = uuid.uuid4()
+    
+    request = SubTaskOrderRequest(
+        subtasks=[
+            SubtaskOrderItem(id=sub_task_id, display_order=1),
+        ]
+    )
+    
+    creds = _Creds(token="expired_token")
+    
+    with patch(
+        "pecha_api.plans.tasks.sub_tasks.plan_sub_tasks_views.change_subtask_order_service",
+        side_effect=HTTPException(status_code=401, detail="Invalid or expired token"),
+        new_callable=AsyncMock,
+    ) as mock_change_order:
+        with pytest.raises(HTTPException) as exc_info:
+            await change_subtask_order(
+                task_id=task_id,
+                authentication_credential=creds,
+                update_subtask_order_request=request,
+            )
+        
+        assert exc_info.value.status_code == 401
+        assert mock_change_order.call_count == 1
+
+
+@pytest.mark.asyncio
+async def test_change_subtask_order_database_error():
+    """Test subtask order change with database error (500 Internal Server Error)"""
+    from fastapi import HTTPException
+    
+    task_id = uuid.uuid4()
+    sub_task_ids = [uuid.uuid4() for _ in range(3)]
+    
+    request = SubTaskOrderRequest(
+        subtasks=[
+            SubtaskOrderItem(id=sub_task_ids[0], display_order=1),
+            SubtaskOrderItem(id=sub_task_ids[1], display_order=2),
+            SubtaskOrderItem(id=sub_task_ids[2], display_order=3),
+        ]
+    )
+    
+    creds = _Creds(token="valid_token")
+    
+    with patch(
+        "pecha_api.plans.tasks.sub_tasks.plan_sub_tasks_views.change_subtask_order_service",
+        side_effect=HTTPException(status_code=500, detail="Database connection error"),
+        new_callable=AsyncMock,
+    ) as mock_change_order:
+        with pytest.raises(HTTPException) as exc_info:
+            await change_subtask_order(
+                task_id=task_id,
+                authentication_credential=creds,
+                update_subtask_order_request=request,
+            )
+        
+        assert exc_info.value.status_code == 500
+        assert mock_change_order.call_count == 1
+
+
+@pytest.mark.asyncio
+async def test_change_subtask_order_update_failed():
+    """Test subtask order change when update operation fails (400 Bad Request)"""
+    from fastapi import HTTPException
+    
+    task_id = uuid.uuid4()
+    sub_task_ids = [uuid.uuid4() for _ in range(2)]
+    
+    request = SubTaskOrderRequest(
+        subtasks=[
+            SubtaskOrderItem(id=sub_task_ids[0], display_order=2),
+            SubtaskOrderItem(id=sub_task_ids[1], display_order=1),
+        ]
+    )
+    
+    creds = _Creds(token="valid_token")
+    
+    with patch(
+        "pecha_api.plans.tasks.sub_tasks.plan_sub_tasks_views.change_subtask_order_service",
+        side_effect=HTTPException(status_code=400, detail="Subtask order update failed"),
+        new_callable=AsyncMock,
+    ) as mock_change_order:
+        with pytest.raises(HTTPException) as exc_info:
+            await change_subtask_order(
+                task_id=task_id,
+                authentication_credential=creds,
+                update_subtask_order_request=request,
+            )
+        
+        assert exc_info.value.status_code == 400
+        assert "failed" in exc_info.value.detail.lower()
+        assert mock_change_order.call_count == 1
