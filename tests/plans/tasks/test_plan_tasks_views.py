@@ -2,7 +2,7 @@ import uuid
 import pytest
 from unittest.mock import patch, AsyncMock
 from fastapi import HTTPException
-from pecha_api.plans.tasks.plan_tasks_response_model import CreateTaskRequest, TaskDTO, UpdateTaskDayRequest, UpdatedTaskDayResponse, GetTaskResponse, UpdateTaskOrderRequest, UpdatedTaskOrderResponse
+from pecha_api.plans.tasks.plan_tasks_response_model import CreateTaskRequest, TaskDTO, UpdateTaskDayRequest, UpdatedTaskDayResponse, GetTaskResponse, UpdateTaskOrderRequest
 from pecha_api.plans.tasks.plan_tasks_views import create_task, change_task_day, delete_task, get_task, change_task_order
 
 
@@ -457,20 +457,13 @@ async def test_change_task_order_success():
     
     from pecha_api.plans.tasks.plan_tasks_response_model import TaskOrderItem
     request = UpdateTaskOrderRequest(tasks=[
-        TaskOrderItem(task_id=task_id_1, display_order=2),
-        TaskOrderItem(task_id=task_id_2, display_order=1),
+        TaskOrderItem(id=task_id_1, display_order=2),
+        TaskOrderItem(id=task_id_2, display_order=1),
     ])
-    
-    expected_response = UpdatedTaskOrderResponse(
-        updated_tasks=[
-            TaskOrderItem(task_id=task_id_1, display_order=2),
-            TaskOrderItem(task_id=task_id_2, display_order=1),
-        ]
-    )
     
     with patch(
         "pecha_api.plans.tasks.plan_tasks_views.change_task_order_service",
-        return_value=expected_response,
+        return_value=None,
         new_callable=AsyncMock,
     ) as mock_change_order:
         result = await change_task_order(
@@ -486,12 +479,7 @@ async def test_change_task_order_success():
             "update_task_order_request": request,
         }
         
-        assert result == expected_response
-        assert len(result.updated_tasks) == 2
-        assert result.updated_tasks[0].task_id == task_id_1
-        assert result.updated_tasks[0].display_order == 2
-        assert result.updated_tasks[1].task_id == task_id_2
-        assert result.updated_tasks[1].display_order == 1
+        assert result is None
 
 
 @pytest.mark.asyncio
@@ -505,22 +493,14 @@ async def test_change_task_order_multiple_tasks():
     
     from pecha_api.plans.tasks.plan_tasks_response_model import TaskOrderItem
     request = UpdateTaskOrderRequest(tasks=[
-        TaskOrderItem(task_id=task_id_1, display_order=3),
-        TaskOrderItem(task_id=task_id_2, display_order=1),
-        TaskOrderItem(task_id=task_id_3, display_order=2),
+        TaskOrderItem(id=task_id_1, display_order=3),
+        TaskOrderItem(id=task_id_2, display_order=1),
+        TaskOrderItem(id=task_id_3, display_order=2),
     ])
-    
-    expected_response = UpdatedTaskOrderResponse(
-        updated_tasks=[
-            TaskOrderItem(task_id=task_id_1, display_order=3),
-            TaskOrderItem(task_id=task_id_2, display_order=1),
-            TaskOrderItem(task_id=task_id_3, display_order=2),
-        ]
-    )
     
     with patch(
         "pecha_api.plans.tasks.plan_tasks_views.change_task_order_service",
-        return_value=expected_response,
+        return_value=None,
         new_callable=AsyncMock,
     ) as mock_change_order:
         result = await change_task_order(
@@ -529,8 +509,7 @@ async def test_change_task_order_multiple_tasks():
             update_task_order_request=request,
         )
         
-        assert len(result.updated_tasks) == 3
-        assert result.updated_tasks[0].display_order == 3
+        assert result is None
 
 
 @pytest.mark.asyncio
@@ -542,18 +521,12 @@ async def test_change_task_order_single_task():
     
     from pecha_api.plans.tasks.plan_tasks_response_model import TaskOrderItem
     request = UpdateTaskOrderRequest(tasks=[
-        TaskOrderItem(task_id=task_id, display_order=5),
+        TaskOrderItem(id=task_id, display_order=5),
     ])
-    
-    expected_response = UpdatedTaskOrderResponse(
-        updated_tasks=[
-            TaskOrderItem(task_id=task_id, display_order=5),
-        ]
-    )
     
     with patch(
         "pecha_api.plans.tasks.plan_tasks_views.change_task_order_service",
-        return_value=expected_response,
+        return_value=None,
         new_callable=AsyncMock,
     ) as mock_change_order:
         result = await change_task_order(
@@ -562,8 +535,7 @@ async def test_change_task_order_single_task():
             update_task_order_request=request,
         )
         
-        assert len(result.updated_tasks) == 1
-        assert result.updated_tasks[0].display_order == 5
+        assert result is None
 
 
 @pytest.mark.asyncio
@@ -575,18 +547,12 @@ async def test_change_task_order_to_first_position():
     
     from pecha_api.plans.tasks.plan_tasks_response_model import TaskOrderItem
     request = UpdateTaskOrderRequest(tasks=[
-        TaskOrderItem(task_id=task_id, display_order=1),
+        TaskOrderItem(id=task_id, display_order=1),
     ])
-    
-    expected_response = UpdatedTaskOrderResponse(
-        updated_tasks=[
-            TaskOrderItem(task_id=task_id, display_order=1),
-        ]
-    )
     
     with patch(
         "pecha_api.plans.tasks.plan_tasks_views.change_task_order_service",
-        return_value=expected_response,
+        return_value=None,
         new_callable=AsyncMock,
     ) as mock_change_order:
         result = await change_task_order(
@@ -595,8 +561,7 @@ async def test_change_task_order_to_first_position():
             update_task_order_request=request,
         )
         
-        assert len(result.updated_tasks) == 1
-        assert result.updated_tasks[0].display_order == 1
+        assert result is None
 
 
 @pytest.mark.asyncio
@@ -608,7 +573,7 @@ async def test_change_task_order_unauthorized():
     
     from pecha_api.plans.tasks.plan_tasks_response_model import TaskOrderItem
     request = UpdateTaskOrderRequest(tasks=[
-        TaskOrderItem(task_id=task_id, display_order=3),
+        TaskOrderItem(id=task_id, display_order=3),
     ])
     
     with patch(
@@ -639,7 +604,7 @@ async def test_change_task_order_task_not_found():
     
     from pecha_api.plans.tasks.plan_tasks_response_model import TaskOrderItem
     request = UpdateTaskOrderRequest(tasks=[
-        TaskOrderItem(task_id=task_id, display_order=3),
+        TaskOrderItem(id=task_id, display_order=3),
     ])
     
     with patch(
@@ -670,7 +635,7 @@ async def test_change_task_order_invalid_token():
     
     from pecha_api.plans.tasks.plan_tasks_response_model import TaskOrderItem
     request = UpdateTaskOrderRequest(tasks=[
-        TaskOrderItem(task_id=task_id, display_order=3),
+        TaskOrderItem(id=task_id, display_order=3),
     ])
     
     with patch(
@@ -701,7 +666,7 @@ async def test_change_task_order_task_not_in_day():
     
     from pecha_api.plans.tasks.plan_tasks_response_model import TaskOrderItem
     request = UpdateTaskOrderRequest(tasks=[
-        TaskOrderItem(task_id=task_id, display_order=3),
+        TaskOrderItem(id=task_id, display_order=3),
     ])
     
     with patch(
@@ -732,7 +697,7 @@ async def test_change_task_order_database_error():
     
     from pecha_api.plans.tasks.plan_tasks_response_model import TaskOrderItem
     request = UpdateTaskOrderRequest(tasks=[
-        TaskOrderItem(task_id=task_id, display_order=3),
+        TaskOrderItem(id=task_id, display_order=3),
     ])
     
     with patch(
@@ -762,7 +727,7 @@ async def test_change_task_order_update_failed():
     
     from pecha_api.plans.tasks.plan_tasks_response_model import TaskOrderItem
     request = UpdateTaskOrderRequest(tasks=[
-        TaskOrderItem(task_id=task_id, display_order=3),
+        TaskOrderItem(id=task_id, display_order=3),
     ])
     
     with patch(
