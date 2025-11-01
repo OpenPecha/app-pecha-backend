@@ -1,5 +1,5 @@
 import logging
-from typing import List
+from typing import List, Dict
 from uuid import UUID
 
 from fastapi import HTTPException
@@ -76,6 +76,7 @@ def update_social_profiles(author: Author, social_profiles: List[SocialMediaProf
                 platform_name=platform,
                 profile_url=url
             ))
+    delete_social_profiles(author=author, social_profiles=social_profiles, existing_profiles=existing_profiles)
 
 async def update_author_info(token: str, author_info_request: AuthorInfoRequest) -> AuthorUpdateResponse:
     current_author = validate_and_extract_author_details(token=token)
@@ -176,3 +177,10 @@ def validate_and_extract_author_details(token: str) -> Author:
     except JWTError as jwt_exception:
         logging.debug(f"exception: {jwt_exception}")
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail=ErrorConstants.TOKEN_ERROR_MESSAGE)
+
+def delete_social_profiles(author: Author, social_profiles: List[SocialMediaProfile], existing_profiles: Dict[str, SocialMediaProfile]) -> None:
+    social_profile_names = [social_profile.account.name for social_profile in social_profiles]
+    for profile in existing_profiles.keys():
+        if profile not in social_profile_names:
+            social_profile_to_delete = existing_profiles[profile]
+            author.social_media_accounts.remove(social_profile_to_delete)
