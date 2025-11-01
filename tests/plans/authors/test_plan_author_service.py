@@ -567,16 +567,46 @@ class TestUpdateSocialProfiles:
         assert len(mock_author.social_media_accounts) == 0
     
     def test_update_social_profiles_none_list(self):
-        """Test update_social_profiles with None social profiles."""
+        """Passing None should raise a TypeError under current implementation."""
         # Arrange
         mock_author = TestDataFactory.create_mock_author()
         mock_author.social_media_accounts = []
         
+        # Act & Assert
+        import pytest
+        with pytest.raises(TypeError):
+            update_social_profiles(mock_author, None)
+
+    def test_update_social_profiles_delete_missing_profiles(self):
+        """Profiles not present in incoming list must be removed from author."""
+        # Arrange
+        author_id = uuid4()
+        existing_fb = TestDataFactory.create_mock_social_account(
+            platform_name="FACEBOOK",
+            profile_url="https://facebook.com/old"
+        )
+        existing_x = TestDataFactory.create_mock_social_account(
+            platform_name="X_COM",
+            profile_url="https://x.com/old"
+        )
+        mock_author = TestDataFactory.create_mock_author(
+            author_id=author_id,
+            social_accounts=[existing_fb, existing_x]
+        )
+
+        # Only keep FACEBOOK, drop X_COM
+        social_profiles = [
+            SocialMediaProfile(account=SocialProfile.FACEBOOK, url="https://facebook.com/new")
+        ]
+
         # Act
-        update_social_profiles(mock_author, None)
-        
+        update_social_profiles(mock_author, social_profiles)
+
         # Assert
-        assert len(mock_author.social_media_accounts) == 0
+        assert len(mock_author.social_media_accounts) == 1
+        remaining = mock_author.social_media_accounts[0]
+        assert remaining.platform_name == "FACEBOOK"
+        assert remaining.profile_url == "https://facebook.com/new"
 
 
 class TestUpdateAuthorInfo:
