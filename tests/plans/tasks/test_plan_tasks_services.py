@@ -26,6 +26,7 @@ from pecha_api.plans.tasks.plan_tasks_services import (
     _reorder_sequentially,
     _get_author_task,
     change_task_order_service,
+    _check_duplicate_task_order,
 )
 
 
@@ -1031,6 +1032,36 @@ def test__reorder_sequentially_no_changes_does_not_call_repository():
         _reorder_sequentially(db=db, tasks=tasks)
 
     assert mock_repo_reorder.call_count == 0
+
+
+def test__check_duplicate_task_order_no_duplicates():
+    from pecha_api.plans.tasks.plan_tasks_response_model import TaskOrderItem
+
+    # Unique display orders should not raise
+    items = [
+        TaskOrderItem(id=uuid.uuid4(), display_order=1),
+        TaskOrderItem(id=uuid.uuid4(), display_order=2),
+        TaskOrderItem(id=uuid.uuid4(), display_order=3),
+    ]
+
+    assert _check_duplicate_task_order(update_task_orders=items) is None
+
+
+def test__check_duplicate_task_order_with_duplicates_raises_400():
+    from pecha_api.plans.tasks.plan_tasks_response_model import TaskOrderItem
+
+    # Duplicate display orders should raise HTTPException 400 with DUPLICATE_TASK_ORDER
+    items = [
+        TaskOrderItem(id=uuid.uuid4(), display_order=1),
+        TaskOrderItem(id=uuid.uuid4(), display_order=1),
+    ]
+
+    with pytest.raises(HTTPException) as exc_info:
+        _check_duplicate_task_order(update_task_orders=items)
+
+    assert exc_info.value.status_code == 400
+    assert exc_info.value.detail["error"] == BAD_REQUEST
+    assert exc_info.value.detail["message"] == DUPLICATE_TASK_ORDER
 
 
 def test__get_author_task_success():

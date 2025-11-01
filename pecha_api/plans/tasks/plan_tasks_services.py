@@ -107,7 +107,7 @@ async def change_task_order_service(token: str, day_id: UUID, update_task_order_
     validate_and_extract_author_details(token=token)
 
     with SessionLocal() as db:
-        _check_duplicate_task_order(db=db, day_id=day_id, update_task_orders=update_task_order_request.tasks)
+        _check_duplicate_task_order(update_task_orders=update_task_order_request.tasks)
         update_task_order(db=db, day_id=day_id, update_task_orders=update_task_order_request.tasks)
 
 
@@ -173,7 +173,7 @@ def _get_author_task(db: SessionLocal(), task_id: UUID, current_author: Author) 
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail=ResponseError(error=FORBIDDEN, message=UNAUTHORIZED_TASK_ACCESS).model_dump())
     return task
 
-def _check_duplicate_task_order(db: SessionLocal(), day_id: UUID, update_task_orders: List[TaskOrderItem]) -> None:
+def _check_duplicate_task_order(update_task_orders: List[TaskOrderItem]) -> None:
     task_orders = [task_order.display_order for task_order in update_task_orders]
     if len(task_orders) != len(set(task_orders)):
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=ResponseError(error=BAD_REQUEST, message=DUPLICATE_TASK_ORDER).model_dump())
