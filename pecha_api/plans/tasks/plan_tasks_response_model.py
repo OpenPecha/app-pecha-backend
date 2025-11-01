@@ -36,7 +36,7 @@ class UpdateTaskTitleResponse(BaseModel):
     title: str
 
 class TaskOrderItem(BaseModel):
-    task_id: UUID
+    id: UUID
     display_order: int
 
 class UpdateTaskOrderRequest(BaseModel):

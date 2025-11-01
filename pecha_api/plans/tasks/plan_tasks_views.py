@@ -62,12 +62,12 @@ async def update_task_title(
         update_request=update_request,
     )
 
-@plans_router.put("/{day_id}/order", response_model=UpdatedTaskOrderResponse)
+@plans_router.put("/{day_id}/order", status_code=status.HTTP_204_NO_CONTENT)
 async def change_task_order(
     day_id: UUID,
     authentication_credential: Annotated[HTTPAuthorizationCredentials, Depends(oauth2_scheme)],
     update_task_order_request: UpdateTaskOrderRequest,
-)-> UpdatedTaskOrderResponse:    
+):    
     return await change_task_order_service(
         token=authentication_credential.credentials,
         day_id=day_id,

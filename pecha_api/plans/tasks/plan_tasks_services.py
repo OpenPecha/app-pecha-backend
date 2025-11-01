@@ -1,5 +1,5 @@
-from pecha_api.plans.tasks.plan_tasks_repository import save_task, get_task_by_id, delete_task, update_task_day, update_task_title, get_tasks_by_plan_item_id, reorder_day_tasks_display_order, update_task_order, update_tasks, get_tasks_by_plan_item_id
-from pecha_api.plans.tasks.plan_tasks_response_model import CreateTaskRequest, TaskDTO, UpdateTaskDayRequest, UpdatedTaskDayResponse, GetTaskResponse, UpdateTaskTitleRequest, UpdateTaskTitleResponse, ContentAndImageUrl, UpdateTaskOrderRequest, UpdatedTaskOrderResponse
+from pecha_api.plans.tasks.plan_tasks_repository import save_task, get_task_by_id, delete_task, update_task_day, update_task_title, get_tasks_by_plan_item_id, reorder_day_tasks_display_order, update_task_order, get_tasks_by_plan_item_id
+from pecha_api.plans.tasks.plan_tasks_response_model import CreateTaskRequest, TaskDTO, UpdateTaskDayRequest, UpdatedTaskDayResponse, GetTaskResponse, UpdateTaskTitleRequest, UpdateTaskTitleResponse, ContentAndImageUrl, UpdateTaskOrderRequest, UpdatedTaskOrderResponse, TaskOrderItem
 from pecha_api.plans.tasks.sub_tasks.plan_sub_tasks_response_model import SubTaskDTO
 from pecha_api.plans.authors.plan_authors_service import validate_and_extract_author_details
 from uuid import UUID
@@ -12,7 +12,7 @@ from typing import List
 from pecha_api.plans.authors.plan_authors_model import Author
 from fastapi import HTTPException
 from starlette import status
-from pecha_api.plans.response_message import PLAN_DAY_NOT_FOUND, BAD_REQUEST, TASK_SAME_DAY_NOT_ALLOWED, FORBIDDEN, UNAUTHORIZED_TASK_DELETE, UNAUTHORIZED_TASK_ACCESS, TASK_TITLE_UPDATE_SUCCESS, TASK_NOT_FOUND, TASK_ORDER_UPDATE_FAIL
+from pecha_api.plans.response_message import PLAN_DAY_NOT_FOUND, BAD_REQUEST, TASK_SAME_DAY_NOT_ALLOWED, FORBIDDEN, UNAUTHORIZED_TASK_DELETE, UNAUTHORIZED_TASK_ACCESS, TASK_TITLE_UPDATE_SUCCESS, TASK_NOT_FOUND, TASK_ORDER_UPDATE_FAIL, DUPLICATE_TASK_ORDER
 from pecha_api.plans.auth.plan_auth_models import ResponseError
 from pecha_api.uploads.S3_utils import generate_presigned_access_url
 from pecha_api.config import get
@@ -106,31 +106,12 @@ async def update_task_title_service(token: str, task_id: UUID, update_request: U
 
 
 async def change_task_order_service(token: str, day_id: UUID, update_task_order_request: UpdateTaskOrderRequest) -> UpdatedTaskOrderResponse:
-    current_author = validate_and_extract_author_details(token=token)
+    validate_and_extract_author_details(token=token)
 
     with SessionLocal() as db:
-        updated_tasks = []
-        for task_order_item in update_task_order_request.tasks:
-            task = get_task_by_id(db=db, task_id=task_order_item.task_id)
-            
-            if task.plan_item_id != day_id:
-                raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=ResponseError(error=BAD_REQUEST, message=f"Task {task_order_item.task_id} does not belong to day {day_id}").model_dump())
-            
-            if task.created_by != current_author.email:
-                raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail=ResponseError(error=FORBIDDEN, message=UNAUTHORIZED_TASK_ACCESS).model_dump())
-            
-            task.display_order = task_order_item.display_order
-            updated_task = update_task_order(db=db, task=task)
-            
-            if not updated_task:
-                raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=ResponseError(error=BAD_REQUEST, message=TASK_ORDER_UPDATE_FAIL).model_dump())
-            
-            updated_tasks.append({
-                "task_id": updated_task.id,
-                "display_order": updated_task.display_order
-            })
+        _check_duplicate_task_order(db=db, day_id=day_id, update_task_orders=update_task_order_request.tasks)
+        update_task_order(db=db, day_id=day_id, update_task_orders=update_task_order_request.tasks)
 
-        return UpdatedTaskOrderResponse(updated_tasks=updated_tasks)
 
 
 
@@ -196,3 +177,8 @@ def _get_author_task(db: SessionLocal(), task_id: UUID, current_author: Author) 
     if task.created_by != current_author.email:
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail=ResponseError(error=FORBIDDEN, message=UNAUTHORIZED_TASK_ACCESS).model_dump())
     return task
+
+def _check_duplicate_task_order(db: SessionLocal(), day_id: UUID, update_task_orders: List[TaskOrderItem]) -> None:
+    task_orders = [task_order.display_order for task_order in update_task_orders]
+    if len(task_orders) != len(set(task_orders)):
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=ResponseError(error=BAD_REQUEST, message=DUPLICATE_TASK_ORDER).model_dump())
