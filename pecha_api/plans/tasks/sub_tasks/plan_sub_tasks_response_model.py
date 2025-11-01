@@ -36,7 +36,7 @@ class UpdateSubTaskResponse(BaseModel):
     sub_task_id: UUID
 
 class SubtaskOrderItem(BaseModel):
-    sub_task_id: UUID
+    id: UUID
     display_order: int    
 
 class SubTaskOrderRequest(BaseModel):
