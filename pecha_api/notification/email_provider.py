@@ -1,21 +1,20 @@
 import logging
 from ..config import get
-from sendgrid import SendGridAPIClient
-from sendgrid.helpers.mail import Mail
 from fastapi import HTTPException
 from starlette import status
-
+import mailtrap as mt
 
 def send_email(to_email: str, subject: str, message: str):
-    message = Mail(
-        from_email=get('SENDGRID_SENDER_EMAIL'),
-        to_emails=to_email,
+    mail = mt.Mail(
+        sender=mt.Address(email=get('SENDER_EMAIL'), name=get('SENDER_NAME')),
+        to=[mt.Address(email=to_email)],
         subject=subject,
-        html_content=message
+        text=subject,
+        html=message
     )
     try:
-        sg = SendGridAPIClient(get('SENDGRID_API_KEY'))
-        response = sg.send(message)
+        client = mt.MailtrapClient(token=get('MAILTRAP_API_KEY'))
+        response = client.send(mail)
         print(response.status_code)
         print(response.body)
         print(response.headers)
