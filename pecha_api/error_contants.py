@@ -14,7 +14,7 @@ class ErrorConstants:
     SHEET_TITLE_REQUIRED_MESSAGE="Sheet title is required"
     # Image Error Messages
     IMAGE_ERROR_MESSAGE = "Only image files are allowed"
-    IMAGE_SIZE_ERROR_MESSAGE = "File size exceeds 5MB limit"
+    IMAGE_SIZE_ERROR_MESSAGE = "File size exceeds 1MB limit"
     IMAGE_PROCESSING_ERROR_MESSAGE = "Failed to process the image"
 
     INVALID_GROUP_ID_MESSAGE="Invalid group ID"
