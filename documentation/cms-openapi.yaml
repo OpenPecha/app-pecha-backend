@@ -186,7 +186,7 @@ paths:
                 $ref: '#/components/schemas/Error'
               example:
                 error: "file_too_large"
-                message: "File size exceeds 5MB limit"
+                message: "File size exceeds 1MB limit"
 
   # Plans Endpoints
   /cms/plans:
