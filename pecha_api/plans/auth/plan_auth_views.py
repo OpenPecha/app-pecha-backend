@@ -42,9 +42,8 @@ async def password_reset_request(reset_request: PasswordResetRequest):
     return request_reset_password(email=reset_request.email)   
 
 @plan_auth_router.post("/reset-password", status_code=status.HTTP_200_OK)
-def password_reset(reset_password_request: ResetPasswordRequest,
-                   authentication_credential: Annotated[HTTPAuthorizationCredentials, Depends(oauth2_scheme)]):
-    update_password(token=authentication_credential.credentials, password=reset_password_request.password)
+def password_reset(reset_password_request: ResetPasswordRequest):
+    update_password(token=reset_password_request.token, password=reset_password_request.password)
 
 
 @plan_auth_router.post("/refresh-token", status_code=status.HTTP_200_OK)
