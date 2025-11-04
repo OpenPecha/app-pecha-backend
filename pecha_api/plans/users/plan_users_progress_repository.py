@@ -21,3 +21,6 @@ def save_plan_progress(db: Session, plan_progress: UserPlanProgress):
 
 def get_plan_progress(db: Session, plan_id: UUID) -> List[UserPlanProgress]:
     return db.query(UserPlanProgress).filter(UserPlanProgress.plan_id == plan_id).all()
+
+def get_plan_progress_by_user_id_and_plan_id(db: Session, user_id: UUID, plan_id: UUID) -> UserPlanProgress:
+    return db.query(UserPlanProgress).filter(UserPlanProgress.user_id == user_id, UserPlanProgress.plan_id == plan_id).first()

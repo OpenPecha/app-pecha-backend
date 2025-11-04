@@ -9,7 +9,11 @@ from pecha_api.plans.plans_response_models import PlansResponse
 from pecha_api.plans.shared.utils import load_plans_from_json, convert_plan_model_to_dto
 from pecha_api.plans.users.plan_users_response_models import UserPlanProgress, UserPlanEnrollRequest
 from pecha_api.users.users_service import validate_and_extract_user_details
-
+from pecha_api.db.database import SessionLocal
+from pecha_api.plans.cms.cms_plans_repository import get_plan_by_id
+from pecha_api.plans.auth.plan_auth_models import ResponseError
+from pecha_api.plans.response_message import BAD_REQUEST, PLAN_NOT_FOUND, ALREADY_ENROLLED_IN_PLAN
+from pecha_api.plans.users.plan_users_progress_repository import get_plan_progress_by_user_id_and_plan_id, save_plan_progress
 
 # Mock user progress data - in real implementation this would be from database
 MOCK_USER_PROGRESS = [
@@ -77,62 +81,34 @@ async def get_user_enrolled_plans(
 
 async def enroll_user_in_plan(token: str, enroll_request: UserPlanEnrollRequest) -> PlansResponse:
     """Enroll user in a plan"""
-    
     current_user = validate_and_extract_user_details(token=token)
-    # Load plans from JSON file
-    plan_listing = load_plans_from_json()
-    
-    # Check if plan exists and is published
-    plan_model = next(
-        (p for p in plan_listing.plans if p.id == str(enroll_request.plan_id) and p.status == "PUBLISHED"),
-        None
+    with SessionLocal() as db:
+        plan_model = get_plan_by_id(db=db, plan_id=enroll_request.plan_id)
+        if not plan_model:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail=ResponseError(error=BAD_REQUEST, message=PLAN_NOT_FOUND).model_dump()
+            )
+        existing_enrollment = get_plan_progress_by_user_id_and_plan_id(db=db, user_id=current_user.id, plan_id=enroll_request.plan_id)
+        if existing_enrollment:
+            raise HTTPException(
+                status_code=status.HTTP_409_CONFLICT,
+                detail=ResponseError(error=BAD_REQUEST, message=ALREADY_ENROLLED_IN_PLAN).model_dump()
+            )
+
+    new_progress = UserPlanProgress(
+        user_id=current_user.id,
+        plan_id=plan_model.id,
+        started_at=datetime.now(),
+        streak_count=0,
+        longest_streak=0,
+        status=plan_model.status,
+        is_completed=False,
+        completed_at=None,
+        created_at=datetime.now()
     )
-    
-    if not plan_model:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail=ErrorConstants.PLAN_NOT_FOUND
-        )
-    
-    # Check if user is already enrolled
-    existing_enrollment = next(
-        (p for p in MOCK_USER_PROGRESS 
-         if p["user_id"] == str(current_user.id) and p["plan_id"] == str(enroll_request.plan_id)),
-        None
-    )
-    
-    if existing_enrollment:
-        raise HTTPException(
-            status_code=status.HTTP_409_CONFLICT,
-            detail="Already enrolled in this plan"
-        )
-    
-    # Create new enrollment record
-    new_progress = {
-        "id": str(uuid4()),
-        "user_id": str(current_user.id),
-        "plan_id": str(enroll_request.plan_id),
-        "started_at": datetime.now().isoformat() + "Z",
-        "streak_count": 0,
-        "longest_streak": 0,
-        "status": "not_started",
-        "is_completed": False,
-        "completed_at": None,
-        "created_at": datetime.now().isoformat() + "Z"
-    }
-    
-    # Add to mock data (in real implementation, save to database)
-    MOCK_USER_PROGRESS.append(new_progress)
-    
-    # Return the enrolled plan
-    plan_dto = convert_plan_model_to_dto(plan_model)
-    
-    return PlansResponse(
-        plans=[plan_dto],
-        skip=0,
-        limit=1,
-        total=1
-    )
+    save_plan_progress(db=db, plan_progress=new_progress)
+    return convert_plan_model_to_dto(plan_model)
 
 
 async def get_user_plan_progress(token: str, plan_id: UUID) -> UserPlanProgress:
