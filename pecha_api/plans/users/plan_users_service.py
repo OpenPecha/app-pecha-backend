@@ -79,7 +79,7 @@ async def get_user_enrolled_plans(
     )
 
 
-async def enroll_user_in_plan(token: str, enroll_request: UserPlanEnrollRequest) -> PlansResponse:
+async def enroll_user_in_plan(token: str, enroll_request: UserPlanEnrollRequest) -> None:
     """Enroll user in a plan"""
     current_user = validate_and_extract_user_details(token=token)
     with SessionLocal() as db:
@@ -96,19 +96,19 @@ async def enroll_user_in_plan(token: str, enroll_request: UserPlanEnrollRequest)
                 detail=ResponseError(error=BAD_REQUEST, message=ALREADY_ENROLLED_IN_PLAN).model_dump()
             )
 
-    new_progress = UserPlanProgress(
-        user_id=current_user.id,
-        plan_id=plan_model.id,
-        started_at=datetime.now(),
-        streak_count=0,
-        longest_streak=0,
-        status=plan_model.status,
-        is_completed=False,
-        completed_at=None,
-        created_at=datetime.now()
-    )
-    save_plan_progress(db=db, plan_progress=new_progress)
-    return convert_plan_model_to_dto(plan_model)
+        new_progress = UserPlanProgress(
+            user_id=current_user.id,
+            plan_id=plan_model.id,
+            started_at=datetime.now(),
+            streak_count=0,
+            longest_streak=0,
+            status=plan_model.status,
+            is_completed=False,
+            completed_at=None,
+            created_at=datetime.now()
+        )
+        save_plan_progress(db=db, plan_progress=new_progress)
+    
 
 
 async def get_user_plan_progress(token: str, plan_id: UUID) -> UserPlanProgress:
