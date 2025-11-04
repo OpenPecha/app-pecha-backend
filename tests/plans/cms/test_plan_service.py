@@ -193,6 +193,7 @@ async def test_get_filtered_plans_success():
         assert p1.title == plan1.title
         assert p1.description == plan1.description
         assert p1.image_url == plan1.image_url
+        assert p1.plan_image_url == plan1.image_url
         assert p1.total_days == 5
         assert p1.status == PlanStatus.PUBLISHED
         assert p1.subscription_count == 2
@@ -211,6 +212,7 @@ async def test_get_filtered_plans_success():
         assert p2.status == PlanStatus.DRAFT
         # language preserved when provided on plan
         assert p2.language == "en"
+        assert p2.plan_image_url == plan2.image_url
         assert p2.author == AuthorDTO(
             id=plan2.author_id,
             firstname="B",
@@ -284,6 +286,7 @@ async def test_get_details_plan_success():
         assert len(response.days) == 2
         # Image URL should be the same as input since we stub presign to echo key
         assert response.image_url == plan.image_url
+        assert response.plan_image_url == plan.image_url
 
         day1 = next(d for d in response.days if d.id == item1.id)
         assert day1.day_number == 1
@@ -501,6 +504,7 @@ async def test_update_plan_details_success():
         assert response.difficulty_level == update_request.difficulty_level
         assert response.total_days == 5
         assert response.subscription_count == 10
+        assert response.plan_image_url == update_request.image_url
 
 
 @pytest.mark.asyncio
@@ -641,6 +645,7 @@ async def test_update_plan_details_with_image_url_generation():
         mock_get_config.assert_called_with("AWS_BUCKET_NAME")
         mock_presigned_url.assert_called_once_with("test-bucket", "images/plan_images/test.jpg")
         assert response.image_url == presigned_url
+        assert response.plan_image_url == "images/plan_images/test.jpg"
 
 
 @pytest.mark.asyncio
@@ -693,6 +698,7 @@ async def test_update_plan_details_image_url_generation_failure():
         )
         
         assert response.image_url == "images/plan_images/test.jpg"
+        assert response.plan_image_url == "images/plan_images/test.jpg"
 
 
 @pytest.mark.asyncio
@@ -740,6 +746,7 @@ async def test_update_plan_details_no_image_url():
         )
         
         assert response.image_url is None
+        assert response.plan_image_url is None
 
 
 @pytest.mark.asyncio
@@ -791,6 +798,7 @@ async def test_update_selected_plan_status_success_db_backed():
         assert resp.status == PlanStatus.PUBLISHED
         assert resp.total_days == len(items)
         assert resp.subscription_count == len(user_progress)
+        assert resp.plan_image_url == mock_plan.image_url
 
 
 @pytest.mark.asyncio
