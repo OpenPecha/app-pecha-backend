@@ -12,7 +12,7 @@ class UserPlanStatus(BaseModel):
     status: str  # not_started, active, paused, completed, abandoned
 
 
-class ResponseUserPlanProgress(BaseModel):
+class UserPlanProgressResponse(BaseModel):
     id: UUID
     user_id: UUID
     plan_id: UUID
