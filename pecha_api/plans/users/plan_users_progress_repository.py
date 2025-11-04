@@ -1,6 +1,7 @@
 from uuid import UUID
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
+from pecha_api.plans.users.plan_users_response_models import EnrolledUserPlan
 from .plan_users_model import UserPlanProgress
 from fastapi import HTTPException
 from starlette import status
@@ -8,12 +9,11 @@ from pecha_api.plans.auth.plan_auth_models import ResponseError
 from pecha_api.plans.response_message import BAD_REQUEST
 from typing import List
 
-def save_plan_progress(db: Session, plan_progress: UserPlanProgress):
+def save_plan_progress(db: Session, plan_progress: EnrolledUserPlan):
     try:
         db.add(plan_progress)
         db.commit()
         db.refresh(plan_progress)
-        return plan_progress
     except IntegrityError as e:
         db.rollback()
         print(f"Integrity error: {e.orig}")

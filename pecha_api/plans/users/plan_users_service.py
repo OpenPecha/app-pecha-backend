@@ -1,13 +1,15 @@
 from typing import Optional
 from uuid import UUID, uuid4
-from datetime import datetime
+from datetime import datetime, timezone
 from fastapi import HTTPException
 from starlette import status
 
 from pecha_api.error_contants import ErrorConstants
+from pecha_api.plans.plans_enums import UserPlanStatusEnum
 from pecha_api.plans.plans_response_models import PlansResponse
 from pecha_api.plans.shared.utils import load_plans_from_json, convert_plan_model_to_dto
-from pecha_api.plans.users.plan_users_response_models import UserPlanProgress, UserPlanEnrollRequest
+from pecha_api.plans.users.plan_users_model import UserPlanProgress
+from pecha_api.plans.users.plan_users_response_models import UserPlanEnrollRequest
 from pecha_api.users.users_service import validate_and_extract_user_details
 from pecha_api.db.database import SessionLocal
 from pecha_api.plans.cms.cms_plans_repository import get_plan_by_id
@@ -79,7 +81,7 @@ async def get_user_enrolled_plans(
     )
 
 
-async def enroll_user_in_plan(token: str, enroll_request: UserPlanEnrollRequest) -> None:
+def enroll_user_in_plan(token: str, enroll_request: UserPlanEnrollRequest) -> None:
     """Enroll user in a plan"""
     current_user = validate_and_extract_user_details(token=token)
     with SessionLocal() as db:
@@ -99,13 +101,11 @@ async def enroll_user_in_plan(token: str, enroll_request: UserPlanEnrollRequest)
         new_progress = UserPlanProgress(
             user_id=current_user.id,
             plan_id=plan_model.id,
-            started_at=datetime.now(),
             streak_count=0,
             longest_streak=0,
-            status=plan_model.status,
+            status='NOT_STARTED',
+            created_at=datetime.now(timezone.utc), 
             is_completed=False,
-            completed_at=None,
-            created_at=datetime.now()
         )
         save_plan_progress(db=db, plan_progress=new_progress)
     

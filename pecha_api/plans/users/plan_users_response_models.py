@@ -25,6 +25,14 @@ class UserPlanProgress(BaseModel):
     completed_at: Optional[datetime] = None
     created_at: datetime
 
+class EnrolledUserPlan(BaseModel):
+    user_id: UUID
+    plan_id: UUID
+    streak_count: int
+    longest_streak: int
+    status: str
+    created_at: datetime
+    is_completed: bool
 
 class UserPlanProgressUpdate(BaseModel):
     status: str
