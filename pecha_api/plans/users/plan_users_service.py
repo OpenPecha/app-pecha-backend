@@ -5,7 +5,7 @@ from fastapi import HTTPException
 from starlette import status
 
 from pecha_api.error_contants import ErrorConstants
-from pecha_api.plans.plans_enums import UserPlanStatusEnum
+from pecha_api.plans.plans_enums import UserPlanStatus
 from pecha_api.plans.plans_response_models import PlansResponse
 from pecha_api.plans.shared.utils import load_plans_from_json, convert_plan_model_to_dto
 from pecha_api.plans.users.plan_users_model import UserPlanProgress
@@ -103,7 +103,7 @@ def enroll_user_in_plan(token: str, enroll_request: UserPlanEnrollRequest) -> No
             plan_id=plan_model.id,
             streak_count=0,
             longest_streak=0,
-            status='NOT_STARTED',
+            status= UserPlanStatus.NOT_STARTED,
             created_at=datetime.now(timezone.utc), 
             is_completed=False,
         )
