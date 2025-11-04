@@ -6,7 +6,7 @@ from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from typing import Annotated
 
 from pecha_api.plans.plans_response_models import PlansResponse
-from pecha_api.plans.users.plan_users_response_models import UserPlanEnrollRequest, UserPlanProgress
+from pecha_api.plans.users.plan_users_response_models import UserPlanEnrollRequest, ResponseUserPlanProgress
 from pecha_api.plans.users.plan_users_service import (
     get_user_enrolled_plans,
     enroll_user_in_plan,
@@ -50,7 +50,7 @@ def enroll_in_plan(
     )
 
 
-@user_progress_router.get("/plans/{plan_id}", status_code=status.HTTP_200_OK, response_model=UserPlanProgress)
+@user_progress_router.get("/plans/{plan_id}", status_code=status.HTTP_200_OK, response_model=ResponseUserPlanProgress)
 async def get_user_plan_progress_details(
     plan_id: UUID,
     authentication_credential: Annotated[HTTPAuthorizationCredentials, Depends(oauth2_scheme)]
