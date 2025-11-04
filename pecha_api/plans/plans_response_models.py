@@ -18,6 +18,7 @@ class CreatePlanRequest(BaseModel):
 class UpdatePlanRequest(BaseModel):
     title: Optional[str] = None
     description: Optional[str] = None
+    language: Optional[str] = None
     difficulty_level: Optional[DifficultyLevel] = None
     total_days: Optional[int] = None
     image_url: Optional[str] = None
