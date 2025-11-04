@@ -77,6 +77,7 @@ async def get_user_enrolled_plans(
 
 async def enroll_user_in_plan(token: str, enroll_request: UserPlanEnrollRequest) -> PlansResponse:
     """Enroll user in a plan"""
+    
     current_user = validate_and_extract_user_details(token=token)
     # Load plans from JSON file
     plan_listing = load_plans_from_json()
