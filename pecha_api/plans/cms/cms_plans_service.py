@@ -262,6 +262,8 @@ async def update_plan_details(token: str, plan_id: UUID, update_plan_request: Up
             plan.image_url = update_plan_request.image_url
         if update_plan_request.tags is not None:
             plan.tags = update_plan_request.tags
+        if update_plan_request.language is not None:
+            plan.language = update_plan_request.language
         
         plan.updated_at = datetime.now(timezone.utc)
         plan.updated_by = author_details.email
