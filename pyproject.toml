@@ -4,7 +4,7 @@ build-backend = "poetry.core.masonry.api"
 
 [tool.poetry]
 name = "pecha-api"
-version = "2025.10.22.0602"
+version = "2025.11.05.0708"
 description = ""
 authors = [ "tenzinsamten <iamsamten>",]
 readme = "README.md"
