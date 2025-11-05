@@ -90,6 +90,7 @@ async def get_texts_by_collection(collection_id: str, language: str, skip: int, 
     return await Text.get_texts_by_collection_id(collection_id=collection_id, language=language, skip=skip, limit=limit)
 
 async def get_texts_by_group_id(group_id: str, skip: int, limit: int) -> List[TextDTO]:
+    print(">>>>>>>>>>>>>>>>>>>>>>>>>", group_id, skip, limit)
     texts = await Text.get_texts_by_group_id(group_id=group_id, skip=skip, limit=limit)
     return [
         TextDTO(
@@ -134,8 +135,8 @@ async def create_table_of_content_detail(table_of_content_request: TableOfConten
     saved_table_of_content = await new_table_of_content.insert()
     return saved_table_of_content
 
-async def get_contents_by_id(text_id: str) -> List[TableOfContent]:
-    return await TableOfContent.get_table_of_contents_by_text_id(text_id=text_id)
+async def get_contents_by_id(text_id: str, skip: int = None, limit: int = None) -> List[TableOfContent]:
+    return await TableOfContent.get_table_of_contents_by_text_id(text_id=text_id, skip=skip, limit=limit)
     
 async def get_table_of_content_by_content_id(content_id: str, skip: int = None, limit: int = None) -> Optional[TableOfContent]:
     return await TableOfContent.get_table_of_content_by_content_id(content_id=content_id, skip=skip, limit=limit)

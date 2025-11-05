@@ -24,8 +24,11 @@ class TableOfContent(Document):
         collection = "table_of_contents"
     
     @classmethod
-    async def get_table_of_contents_by_text_id(cls, text_id: str) -> List["TableOfContent"]: # this methods is getting all the available table of content for a text
-        return await cls.find(cls.text_id == text_id).to_list()
+    async def get_table_of_contents_by_text_id(cls, text_id: str, skip: int = None, limit: int = None) -> List["TableOfContent"]: # this methods is getting all the available table of content for a text
+        query = cls.find(cls.text_id == text_id)
+        if skip is not None and limit is not None:
+            query = query.skip(skip).limit(limit)
+        return await query.to_list()
 
     @classmethod
     async def delete_table_of_content_by_text_id(cls, text_id: str):
@@ -39,7 +42,7 @@ class TableOfContent(Document):
         return 0
     
     @classmethod
-    async def get_table_of_content_by_content_id(cls, content_id: str, skip: int, limit: int) -> Optional["TableOfContent"]:
+    async def get_table_of_content_by_content_id(cls, content_id: str, skip: int = None, limit: int = None) -> Optional["TableOfContent"]:
         contents = await cls.find_one(cls.id == UUID(content_id))
         if contents and skip is not None and limit is not None:
             contents.sections.sort(key=lambda section: section.section_number)
@@ -117,12 +120,13 @@ class Text(Document):
         }
         texts = (
             await cls.find(query)
-            .to_list()
+            .to_list(length=limit)
         )
         return texts
     
     @classmethod
     async def get_texts_by_group_id(cls, group_id: str, skip: int, limit: int) -> List["Text"]:
+        print(">>>>>>>>>>>>>>>>>>>>>>>>> get_texts_by_group_id", group_id, skip, limit)
         query = {
             "group_id": group_id
         }
@@ -132,6 +136,7 @@ class Text(Document):
             .limit(limit)
             .to_list()
         )
+        print(">>>>>>>>>>>>>>>>>>>>>>>>> get_texts_by_group_id", len(texts), texts[0])
         return texts
     
     @classmethod
