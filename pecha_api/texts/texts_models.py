@@ -124,7 +124,6 @@ class Text(Document):
     
     @classmethod
     async def get_texts_by_group_id(cls, group_id: str, skip: int, limit: int) -> List["Text"]:
-        print(">>>>>>>>>>>>>>>>>>>>>>>>> get_texts_by_group_id", group_id, skip, limit)
         query = {
             "group_id": group_id
         }
@@ -134,7 +133,6 @@ class Text(Document):
             .limit(limit)
             .to_list()
         )
-        print(">>>>>>>>>>>>>>>>>>>>>>>>> get_texts_by_group_id", len(texts), texts[0])
         return texts
     
     @classmethod

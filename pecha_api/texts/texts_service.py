@@ -174,7 +174,7 @@ async def get_table_of_contents_by_text_id(text_id: str, language: str = None, s
             TableOfContent(
                 id=str(content.id),
                 text_id=content.text_id,
-                sections=get_paginated_sections(sections=content.sections, skip=skip, limit=limit)
+                sections=_get_paginated_sections(sections=content.sections, skip=skip, limit=limit)
             )
             for content in table_of_contents
         ]
@@ -182,8 +182,25 @@ async def get_table_of_contents_by_text_id(text_id: str, language: str = None, s
     
     return response
 
-def get_paginated_sections(sections: List[Section], skip: int, limit: int) -> List[Section]:
-    return sections[skip:skip+limit]
+def _get_paginated_sections(sections: List[Section], skip: int, limit: int) -> List[Section]:
+    filtered_sections = [] 
+    for section in sections:
+        first_segment = section.segments[0]
+        if section.segments:
+            new_section = Section(
+                id=section.id,
+                title=section.title,
+                section_number=section.section_number,
+                parent_id=section.parent_id,
+                segments=[first_segment],
+                sections=section.sections if section.sections else None,
+                created_date=section.created_date,
+                updated_date=section.updated_date,
+                published_date=section.published_date
+            )
+            filtered_sections.append(new_section)
+
+    return filtered_sections[skip:skip+limit]
 
 async def remove_table_of_content_by_text_id(text_id: str):
     is_valid_text = await TextUtils.validate_text_exists(text_id=text_id)
