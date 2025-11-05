@@ -150,7 +150,7 @@ async def get_table_of_content_by_sheet_id(sheet_id: str) -> Optional[TableOfCon
     
     return table_of_content
 
-async def get_table_of_contents_by_text_id(text_id: str, language: str = None, skip: int = 0, limit: int = 5) -> TableOfContentResponse:
+async def get_table_of_contents_by_text_id(text_id: str, language: str = None, skip: int = 0, limit: int = 10) -> TableOfContentResponse:
     
     if language is None:
         language = get("DEFAULT_LANGUAGE")
@@ -166,20 +166,24 @@ async def get_table_of_contents_by_text_id(text_id: str, language: str = None, s
     root_text: TextDTO = filtered_text_on_root_and_version["root_text"]
     if root_text is None:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=ErrorConstants.TEXT_NOT_FOUND_MESSAGE)
-    table_of_contents: List[TableOfContent] = await get_contents_by_id(text_id=root_text.id, skip=skip, limit=limit)
+    table_of_contents: List[TableOfContent] = await get_contents_by_id(text_id=root_text.id)
+
     response = TableOfContentResponse(
         text_detail=root_text,
         contents=[
             TableOfContent(
                 id=str(content.id),
                 text_id=content.text_id,
-                sections=content.sections
+                sections=get_paginated_sections(sections=content.sections, skip=skip, limit=limit)
             )
             for content in table_of_contents
         ]
     )
     
     return response
+
+def get_paginated_sections(sections: List[Section], skip: int, limit: int) -> List[Section]:
+    return sections[skip:skip+limit]
 
 async def remove_table_of_content_by_text_id(text_id: str):
     is_valid_text = await TextUtils.validate_text_exists(text_id=text_id)

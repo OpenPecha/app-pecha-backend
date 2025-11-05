@@ -24,10 +24,8 @@ class TableOfContent(Document):
         collection = "table_of_contents"
     
     @classmethod
-    async def get_table_of_contents_by_text_id(cls, text_id: str, skip: int = None, limit: int = None) -> List["TableOfContent"]: # this methods is getting all the available table of content for a text
+    async def get_table_of_contents_by_text_id(cls, text_id: str) -> List["TableOfContent"]: # this methods is getting all the available table of content for a text
         query = cls.find(cls.text_id == text_id)
-        if skip is not None and limit is not None:
-            query = query.skip(skip).limit(limit)
         return await query.to_list()
 
     @classmethod

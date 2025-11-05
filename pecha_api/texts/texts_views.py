@@ -77,7 +77,7 @@ async def get_contents(
         text_id: str,
         language: str = Query(default=None),
         skip: int = Query(default=0),
-        limit: int = Query(default=5)
+        limit: int = Query(default=10)
 ) -> TableOfContentResponse:
     return await get_table_of_contents_by_text_id(text_id=text_id, language=language, skip=skip, limit=limit)
 
