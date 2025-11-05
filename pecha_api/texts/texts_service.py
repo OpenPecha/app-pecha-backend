@@ -161,7 +161,7 @@ async def get_table_of_contents_by_text_id(text_id: str, language: str = None, s
     
     text_detail: TextDTO = await TextUtils.get_text_detail_by_id(text_id=text_id)
     group_id: str = text_detail.group_id
-    texts: List[TextDTO] = await get_texts_by_group_id(group_id=group_id, skip=skip, limit=limit)
+    texts: List[TextDTO] = await get_texts_by_group_id(group_id=group_id, skip=0, limit=limit)
     filtered_text_on_root_and_version = TextUtils.filter_text_on_root_and_version(texts=texts, language=language)
     root_text: TextDTO = filtered_text_on_root_and_version["root_text"]
     if root_text is None:
