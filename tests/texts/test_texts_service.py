@@ -486,7 +486,12 @@ async def test_get_table_of_contents_by_text_id_success():
                     title="section_1",
                     section_number=1,
                     parent_id="id_1",
-                    segments=[],
+                    segments=[
+                        TextSegment(
+                            segment_id="seg_1",
+                            segment_number=1
+                        )
+                    ],
                     sections=[],
                     created_date="2025-03-16 04:40:54.757652",
                     updated_date="2025-03-16 04:40:54.757652",
@@ -586,7 +591,12 @@ async def test_get_table_of_contents_by_text_id_success_language_is_none():
                     title="section_1",
                     section_number=1,
                     parent_id="id_1",
-                    segments=[],
+                    segments=[
+                        TextSegment(
+                            segment_id="seg_1",
+                            segment_number=1
+                        )
+                    ],
                     sections=[],
                     created_date="2025-03-16 04:40:54.757652",
                     updated_date="2025-03-16 04:40:54.757652",
