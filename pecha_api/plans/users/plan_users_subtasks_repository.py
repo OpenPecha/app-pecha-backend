@@ -15,5 +15,4 @@ def save_user_sub_task_completions(db: Session, user_sub_task_completions: UserS
         db.refresh(user_sub_task_completions)
     except IntegrityError as e:
         db.rollback()
-        print(f"Integrity error: {e.orig}")
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=ResponseError(error=BAD_REQUEST, message=e.orig).model_dump())
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=ResponseError(error=BAD_REQUEST, message=str(e.orig)).model_dump())

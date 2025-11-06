@@ -168,7 +168,7 @@ def complete_sub_task_service(token: str, id: UUID) -> None:
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,
                 detail=ResponseError(error=BAD_REQUEST, message=SUB_TASK_NOT_FOUND).model_dump()
-            )
+            )       
         new_sub_task_completion = UserSubTaskCompletion(
             user_id=current_user.id,
             sub_task_id=existing_sub_task.id,
