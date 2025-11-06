@@ -139,7 +139,7 @@ def test_complete_sub_task_service_success():
         "pecha_api.plans.users.plan_users_service.SessionLocal",
         return_value=session_cm,
     ), patch(
-        "pecha_api.plans.users.plan_users_service.get_sub_task_by_id",
+        "pecha_api.plans.users.plan_users_service.get_sub_task_by_subtask_id",
         return_value=SimpleNamespace(id=sub_task_id),
     ) as mock_get_sub_task, patch(
         "pecha_api.plans.users.plan_users_service.UserSubTaskCompletion",
@@ -178,7 +178,7 @@ def test_complete_sub_task_service_sub_task_not_found_raises_404():
         "pecha_api.plans.users.plan_users_service.SessionLocal",
         return_value=session_cm,
     ), patch(
-        "pecha_api.plans.users.plan_users_service.get_sub_task_by_id",
+        "pecha_api.plans.users.plan_users_service.get_sub_task_by_subtask_id",
         return_value=None,
     ):
         with pytest.raises(HTTPException) as exc_info:

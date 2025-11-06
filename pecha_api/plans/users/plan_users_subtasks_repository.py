@@ -17,6 +17,3 @@ def save_user_sub_task_completions(db: Session, user_sub_task_completions: UserS
         db.rollback()
         print(f"Integrity error: {e.orig}")
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=ResponseError(error=BAD_REQUEST, message=e.orig).model_dump())
-
-def get_sub_task_by_id(db: Session, id: UUID) -> PlanSubTask:
-    return db.query(PlanSubTask).filter(PlanSubTask.id == id).first()

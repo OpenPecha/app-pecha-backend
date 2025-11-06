@@ -10,7 +10,8 @@ from pecha_api.plans.plans_response_models import PlansResponse
 from pecha_api.plans.shared.utils import load_plans_from_json, convert_plan_model_to_dto
 from pecha_api.plans.users.plan_users_model import UserPlanProgress, UserSubTaskCompletion
 from pecha_api.plans.users.plan_users_response_models import UserPlanEnrollRequest
-from pecha_api.plans.users.plan_users_subtasks_repository import get_sub_task_by_id, save_user_sub_task_completions
+from pecha_api.plans.users.plan_users_subtasks_repository import save_user_sub_task_completions
+from pecha_api.plans.tasks.sub_tasks.plan_sub_tasks_repository import get_sub_task_by_subtask_id
 from pecha_api.users.users_service import validate_and_extract_user_details
 from pecha_api.db.database import SessionLocal
 from pecha_api.plans.cms.cms_plans_repository import get_plan_by_id
@@ -162,7 +163,7 @@ def complete_sub_task_service(token: str, id: UUID) -> None:
     """Complete a sub task"""
     current_user = validate_and_extract_user_details(token=token)
     with SessionLocal() as db:
-        existing_sub_task = get_sub_task_by_id(db=db, id=id)
+        existing_sub_task = get_sub_task_by_subtask_id(db=db, id=id)
         if not existing_sub_task:
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,
