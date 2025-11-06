@@ -7,7 +7,7 @@ from sqlalchemy.orm import sessionmaker
 from pecha_api.db.database import Base
 from pecha_api.plans.plans_models import Plan
 from pecha_api.plans.items.plan_items_models import PlanItem
-from pecha_api.plans.users.plan_users_model import UserPlanProgress
+from pecha_api.plans.users.plan_users_models import UserPlanProgress
 from pecha_api.plans.authors.plan_authors_model import Author
 from pecha_api.plans.cms.cms_plans_repository import save_plan, get_plans_by_author_id
 from pecha_api.plans.plans_response_models import PlansRepositoryResponse

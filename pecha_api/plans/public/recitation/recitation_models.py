@@ -13,5 +13,5 @@ class Recitation(Base):
     content = Column(JSON, nullable=True)
 
     __table_args__ = (
-        Index("idx_recitation_title", "title")
+        Index("idx_recitation_title", "title"),
     )
