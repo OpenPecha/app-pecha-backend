@@ -1,17 +1,15 @@
-from typing import Optional
-from uuid import UUID
-from fastapi import HTTPException
-from starlette import status
 import logging
-
+from uuid import UUID
+from typing import Optional
+from fastapi import HTTPException
+from pecha_api.config import get
+from starlette import status
 from pecha_api.error_contants import ErrorConstants
-from pecha_api.plans.plans_enums import PlanStatus
 from pecha_api.plans.plans_response_models import PlansResponse, PlanDTO, PlanDayDTO, AuthorDTO
 from pecha_api.plans.public.plan_models import PlanDaysResponse, PlanDayBasic
 from pecha_api.db.database import SessionLocal
-from pecha_api.config import get
 from pecha_api.uploads.S3_utils import generate_presigned_access_url
-from pecha_api.plans.public.plan_repository import get_published_plans_from_db, get_published_plan_by_id
+from pecha_api.plans.public.plan_repository import (get_published_plans_from_db, get_published_plans_count, get_published_plan_by_id)
 
 logger = logging.getLogger(__name__)
 
@@ -46,12 +44,94 @@ def _generate_author_avatar_url(image_url: str) -> Optional[str]:
 
 async def get_published_plans(search: Optional[str] = None, language: Optional[str] = None, sort_by: str = "title", sort_order: str = "asc", skip: int = 0, limit: int = 20) -> PlansResponse:
     
-    with SessionLocal() as db:
-        repo_response = get_published_plans_from_db(db=db, search=search, language=language, sort_by=sort_by, sort_order=sort_order, skip=skip, limit=limit)
-        
-        plan_dtos = []
-        for plan_aggregate in repo_response.plan_info:
-            plan = plan_aggregate.plan
+    try:
+        with SessionLocal() as db:
+            plan_aggregates = get_published_plans_from_db(db=db, skip=skip, limit=limit)
+            
+            filtered_plans = []
+            for plan_aggregate in plan_aggregates:
+                plan = plan_aggregate.plan
+                
+                if search and search.lower() not in plan.title.lower():
+                    continue
+                
+                if language:
+                    plan_language = plan.language.value if hasattr(plan.language, 'value') else plan.language
+                    if plan_language.lower() != language.lower():
+                        continue
+                
+                filtered_plans.append(plan_aggregate)
+            
+            sort_key_map = {
+                "title": lambda x: x.plan.title.lower(),
+                "total_days": lambda x: x.total_days,
+                "subscription_count": lambda x: x.subscription_count,
+            }
+            sort_key = sort_key_map.get(sort_by, sort_key_map["title"])
+            reverse = (sort_order == "desc")
+            sorted_plans = sorted(filtered_plans, key=sort_key, reverse=reverse)
+            
+            plan_dtos = []
+            for plan_aggregate in sorted_plans:
+                plan = plan_aggregate.plan
+                
+                plan_image_url = _generate_plan_image_url(plan.image_url)
+                
+                author_dto = None
+                if plan.author:
+                    author_avatar_url = _generate_author_avatar_url(plan.author.image_url)
+                    author_dto = AuthorDTO(
+                        id=plan.author.id,
+                        firstname=plan.author.first_name,
+                        lastname=plan.author.last_name,
+                        image_url=author_avatar_url, 
+                        image_key=plan.author.image_url 
+                    )
+                
+                plan_dto = PlanDTO(
+                    id=plan.id,
+                    title=plan.title,
+                    description=plan.description,
+                    language=plan.language.value if hasattr(plan.language, 'value') else plan.language,
+                    difficulty_level=plan.difficulty_level,
+                    image_url=plan_image_url, 
+                    image_key=plan.image_url, 
+                    total_days=plan_aggregate.total_days,
+                    tags=plan.tags if plan.tags else [],
+                    status=plan.status,
+                    subscription_count=plan_aggregate.subscription_count,
+                    author=author_dto
+                )
+                plan_dtos.append(plan_dto)
+            
+            total = get_published_plans_count(db=db)
+            
+            return PlansResponse(
+                plans=plan_dtos,
+                skip=skip,
+                limit=limit,
+                total=total
+            )
+    
+    except Exception as e:
+        logger.error(f"Error fetching published plans: {str(e)}", exc_info=True)
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Failed to fetch published plans: {str(e)}"
+        )
+
+
+async def get_published_plan_details(plan_id: UUID) -> PlanDTO:
+    
+    try:
+        with SessionLocal() as db:
+            plan = get_published_plan_by_id(db=db, plan_id=plan_id)
+            
+            if not plan:
+                raise HTTPException(
+                    status_code=status.HTTP_404_NOT_FOUND,
+                    detail=ErrorConstants.PLAN_NOT_FOUND
+                )
             
             plan_image_url = _generate_plan_image_url(plan.image_url)
             
@@ -66,7 +146,15 @@ async def get_published_plans(search: Optional[str] = None, language: Optional[s
                     image_key=plan.author.image_url 
                 )
             
-            plan_dto = PlanDTO(
+            from pecha_api.plans.items.plan_items_models import PlanItem
+            total_days = db.query(PlanItem).filter(PlanItem.plan_id == plan_id).count()
+            
+            from pecha_api.plans.users.plan_users_model import UserPlanProgress
+            subscription_count = db.query(UserPlanProgress).filter(
+                UserPlanProgress.plan_id == plan_id
+            ).distinct(UserPlanProgress.user_id).count()
+            
+            return PlanDTO(
                 id=plan.id,
                 title=plan.title,
                 description=plan.description,
@@ -74,68 +162,18 @@ async def get_published_plans(search: Optional[str] = None, language: Optional[s
                 difficulty_level=plan.difficulty_level,
                 image_url=plan_image_url, 
                 image_key=plan.image_url, 
-                total_days=plan_aggregate.total_days,
+                total_days=total_days,
                 tags=plan.tags if plan.tags else [],
                 status=plan.status,
-                subscription_count=plan_aggregate.subscription_count,
+                subscription_count=subscription_count,
                 author=author_dto
             )
-            plan_dtos.append(plan_dto)
-        
-        return PlansResponse(
-            plans=plan_dtos,
-            skip=skip,
-            limit=limit,
-            total=repo_response.total
-        )
-
-
-async def get_published_plan_details(plan_id: UUID) -> PlanDTO:
-    """Get published plan details for public consumption (no authentication required)"""
     
-    with SessionLocal() as db:
-        plan = get_published_plan_by_id(db=db, plan_id=plan_id)
-        
-        if not plan:
-            raise HTTPException(
-                status_code=status.HTTP_404_NOT_FOUND,
-                detail=ErrorConstants.PLAN_NOT_FOUND
-            )
-        
-        plan_image_url = _generate_plan_image_url(plan.image_url)
-        
-        author_dto = None
-        if plan.author:
-            author_avatar_url = _generate_author_avatar_url(plan.author.image_url)
-            author_dto = AuthorDTO(
-                id=plan.author.id,
-                firstname=plan.author.first_name,
-                lastname=plan.author.last_name,
-                image_url=author_avatar_url, 
-                image_key=plan.author.image_url 
-            )
-        
-        from pecha_api.plans.items.plan_items_models import PlanItem
-        total_days = db.query(PlanItem).filter(PlanItem.plan_id == plan_id).count()
-        
-        from pecha_api.plans.users.plan_users_model import UserPlanProgress
-        subscription_count = db.query(UserPlanProgress).filter(
-            UserPlanProgress.plan_id == plan_id
-        ).distinct(UserPlanProgress.user_id).count()
-        
-        return PlanDTO(
-            id=plan.id,
-            title=plan.title,
-            description=plan.description,
-            language=plan.language.value if hasattr(plan.language, 'value') else plan.language,
-            difficulty_level=plan.difficulty_level,
-            image_url=plan_image_url, 
-            image_key=plan.image_url, 
-            total_days=total_days,
-            tags=plan.tags if plan.tags else [],
-            status=plan.status,
-            subscription_count=subscription_count,
-            author=author_dto
+    except Exception as e:
+        logger.error(f"Error fetching published plan details: {str(e)}", exc_info=True)
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Failed to fetch published plan details: {str(e)}"
         )
 
 
