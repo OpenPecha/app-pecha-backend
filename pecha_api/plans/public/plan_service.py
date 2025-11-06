@@ -14,7 +14,7 @@ from pecha_api.plans.public.plan_repository import (get_published_plans_from_db,
 logger = logging.getLogger(__name__)
 
 
-def _generate_plan_image_url(image_url: str) -> Optional[str]:
+def generate_plan_image_url(image_url: str) -> Optional[str]:
     
     if not image_url:
         return None
@@ -28,7 +28,7 @@ def _generate_plan_image_url(image_url: str) -> Optional[str]:
         return None
 
 
-def _generate_author_avatar_url(image_url: str) -> Optional[str]:
+def generate_author_avatar_url(image_url: str) -> Optional[str]:
 
     if not image_url:
         return None
@@ -42,7 +42,14 @@ def _generate_author_avatar_url(image_url: str) -> Optional[str]:
         return None
 
 
-async def get_published_plans(search: Optional[str] = None, language: Optional[str] = None, sort_by: str = "title", sort_order: str = "asc", skip: int = 0, limit: int = 20) -> PlansResponse:
+async def get_published_plans(
+    search: Optional[str] = None, 
+    language: Optional[str] = None, 
+    sort_by: str = "title", 
+    sort_order: str = "asc", 
+    skip: int = 0, 
+    limit: int = 20
+    ) -> PlansResponse:
     
     try:
         with SessionLocal() as db:
@@ -75,11 +82,11 @@ async def get_published_plans(search: Optional[str] = None, language: Optional[s
             for plan_aggregate in sorted_plans:
                 plan = plan_aggregate.plan
                 
-                plan_image_url = _generate_plan_image_url(plan.image_url)
+                plan_image_url = generate_plan_image_url(plan.image_url)
                 
                 author_dto = None
                 if plan.author:
-                    author_avatar_url = _generate_author_avatar_url(plan.author.image_url)
+                    author_avatar_url = generate_author_avatar_url(plan.author.image_url)
                     author_dto = AuthorDTO(
                         id=plan.author.id,
                         firstname=plan.author.first_name,
@@ -133,11 +140,11 @@ async def get_published_plan_details(plan_id: UUID) -> PlanDTO:
                     detail=ErrorConstants.PLAN_NOT_FOUND
                 )
             
-            plan_image_url = _generate_plan_image_url(plan.image_url)
+            plan_image_url = generate_plan_image_url(plan.image_url)
             
             author_dto = None
             if plan.author:
-                author_avatar_url = _generate_author_avatar_url(plan.author.image_url)
+                author_avatar_url = generate_author_avatar_url(plan.author.image_url)
                 author_dto = AuthorDTO(
                     id=plan.author.id,
                     firstname=plan.author.first_name,
