@@ -6,11 +6,12 @@ from unittest.mock import patch, MagicMock
 from fastapi import HTTPException
 
 from pecha_api.plans.users.plan_users_response_models import UserPlanEnrollRequest
-from pecha_api.plans.users.plan_users_service import enroll_user_in_plan
+from pecha_api.plans.users.plan_users_service import enroll_user_in_plan, complete_sub_task_service
 from pecha_api.plans.response_message import (
     BAD_REQUEST,
     PLAN_NOT_FOUND,
     ALREADY_ENROLLED_IN_PLAN,
+    SUB_TASK_NOT_FOUND,
 )
 
 
@@ -125,5 +126,64 @@ def test_enroll_user_in_plan_already_enrolled_raises_409():
         assert exc_info.value.detail["message"] == ALREADY_ENROLLED_IN_PLAN
 
 
+def test_complete_sub_task_service_success():
+    user_id = uuid.uuid4()
+    sub_task_id = uuid.uuid4()
+
+    db_mock, session_cm = _mock_session_with_db()
+
+    with patch(
+        "pecha_api.plans.users.plan_users_service.validate_and_extract_user_details",
+        return_value=SimpleNamespace(id=user_id),
+    ) as mock_validate, patch(
+        "pecha_api.plans.users.plan_users_service.SessionLocal",
+        return_value=session_cm,
+    ), patch(
+        "pecha_api.plans.users.plan_users_service.get_sub_task_by_id",
+        return_value=SimpleNamespace(id=sub_task_id),
+    ) as mock_get_sub_task, patch(
+        "pecha_api.plans.users.plan_users_service.UserSubTaskCompletion",
+    ) as MockUserSubTaskCompletion, patch(
+        "pecha_api.plans.users.plan_users_service.save_user_sub_task_completions",
+    ) as mock_save:
+        constructed = SimpleNamespace(user_id=user_id, sub_task_id=sub_task_id)
+        MockUserSubTaskCompletion.return_value = constructed
+
+        result = complete_sub_task_service(token="token123", id=sub_task_id)
+
+        assert result is None
+
+        mock_validate.assert_called_once_with(token="token123")
+        mock_get_sub_task.assert_called_once_with(db=db_mock, id=sub_task_id)
+
+        ctor_kwargs = MockUserSubTaskCompletion.call_args.kwargs
+        assert ctor_kwargs["user_id"] == user_id
+        assert ctor_kwargs["sub_task_id"] == sub_task_id
+
+        mock_save.assert_called_once()
+        assert mock_save.call_args.kwargs["db"] is db_mock
+        assert mock_save.call_args.kwargs["user_sub_task_completions"] is constructed
 
 
+def test_complete_sub_task_service_sub_task_not_found_raises_404():
+    user_id = uuid.uuid4()
+    sub_task_id = uuid.uuid4()
+
+    _, session_cm = _mock_session_with_db()
+
+    with patch(
+        "pecha_api.plans.users.plan_users_service.validate_and_extract_user_details",
+        return_value=SimpleNamespace(id=user_id),
+    ), patch(
+        "pecha_api.plans.users.plan_users_service.SessionLocal",
+        return_value=session_cm,
+    ), patch(
+        "pecha_api.plans.users.plan_users_service.get_sub_task_by_id",
+        return_value=None,
+    ):
+        with pytest.raises(HTTPException) as exc_info:
+            complete_sub_task_service(token="token123", id=sub_task_id)
+
+        assert exc_info.value.status_code == 404
+        assert exc_info.value.detail["error"] == BAD_REQUEST
+        assert exc_info.value.detail["message"] == SUB_TASK_NOT_FOUND
