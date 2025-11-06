@@ -161,7 +161,7 @@ async def get_table_of_contents_by_text_id(text_id: str, language: str = None, s
     
     text_detail: TextDTO = await TextUtils.get_text_detail_by_id(text_id=text_id)
     group_id: str = text_detail.group_id
-    texts: List[TextDTO] = await get_texts_by_group_id(group_id=group_id, skip=0, limit=limit)
+    texts: List[TextDTO] = await get_texts_by_group_id(group_id=group_id, skip=skip, limit=limit)
     filtered_text_on_root_and_version = TextUtils.filter_text_on_root_and_version(texts=texts, language=language)
     root_text: TextDTO = filtered_text_on_root_and_version["root_text"]
     if root_text is None:
@@ -184,6 +184,8 @@ async def get_table_of_contents_by_text_id(text_id: str, language: str = None, s
 
 def _get_paginated_sections(sections: List[Section], skip: int, limit: int) -> List[Section]:
     filtered_sections = [] 
+    skip_index = skip
+    limit_index = skip + limit
     for section in sections:
         first_segment = section.segments[0]
         if section.segments:
@@ -200,7 +202,7 @@ def _get_paginated_sections(sections: List[Section], skip: int, limit: int) -> L
             )
             filtered_sections.append(new_section)
 
-    return filtered_sections[skip:skip+limit]
+    return filtered_sections[skip_index:limit_index]
 
 async def remove_table_of_content_by_text_id(text_id: str):
     is_valid_text = await TextUtils.validate_text_exists(text_id=text_id)
