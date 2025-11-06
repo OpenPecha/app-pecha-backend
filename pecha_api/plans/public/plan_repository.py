@@ -11,15 +11,7 @@ from fastapi import HTTPException
 from starlette import status
 
 
-def get_published_plans_from_db(
-    db: Session,
-    search: Optional[str] = None,
-    language: Optional[str] = None,
-    sort_by: str = "title",
-    sort_order: str = "asc",
-    skip: int = 0,
-    limit: int = 20,
-) -> PlansRepositoryResponse:
+def get_published_plans_from_db(db: Session, search: Optional[str] = None, language: Optional[str] = None, sort_by: str = "title", sort_order: str = "asc", skip: int = 0, limit: int = 20) -> PlansRepositoryResponse:
 
     try:
         filters = [
@@ -101,4 +93,58 @@ def get_published_plan_by_id(db: Session, plan_id: UUID) -> Optional[Plan]:
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Failed to fetch plan: {str(e)}"
+        )
+
+
+def get_plan_items_by_plan_id(db: Session, plan_id: UUID) -> list[PlanItem]:
+    try:
+        plan = get_published_plan_by_id(db, plan_id)
+        if not plan:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="Plan not found or not published"
+            )
+        
+        return (
+            db.query(PlanItem)
+            .filter(PlanItem.plan_id == plan_id)
+            .order_by(PlanItem.day_number)
+            .all()
+        )
+    except HTTPException:
+        raise
+    except Exception as e:
+        db.rollback()
+        print(f"Error fetching plan items: {str(e)}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Failed to fetch plan days: {str(e)}"
+        )
+
+
+def get_plan_item_by_day_number(db: Session, plan_id: UUID, day_number: int) -> Optional[PlanItem]:
+    try:
+        plan = get_published_plan_by_id(db, plan_id)
+        if not plan:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="Plan not found or not published"
+            )
+        
+        return (
+            db.query(PlanItem)
+            .filter(
+                PlanItem.plan_id == plan_id,
+                PlanItem.day_number == day_number
+            )
+            .first()
+        )
+    except HTTPException:
+        raise
+    except Exception as e:
+        db.rollback()
+        print(f"Error fetching plan item: {str(e)}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Failed to fetch plan day: {str(e)}"
         )

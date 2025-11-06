@@ -2,91 +2,141 @@ from typing import Optional
 from uuid import UUID
 from fastapi import HTTPException
 from starlette import status
+import logging
 
 from pecha_api.error_contants import ErrorConstants
 from pecha_api.plans.plans_enums import PlanStatus
-from pecha_api.plans.plans_response_models import PlansResponse, PlanDTO, PlanDayDTO
-from pecha_api.plans.shared.utils import load_plans_from_json, convert_plan_model_to_dto, convert_day_model_to_dto
+from pecha_api.plans.plans_response_models import PlansResponse, PlanDTO, PlanDayDTO, AuthorDTO
 from pecha_api.plans.public.plan_models import PlanDaysResponse, PlanDayBasic
+from pecha_api.db.database import SessionLocal
+from pecha_api.config import get
+from pecha_api.uploads.S3_utils import generate_presigned_access_url
+from pecha_api.plans.public.plan_repository import get_published_plans_from_db, get_published_plan_by_id
+
+logger = logging.getLogger(__name__)
 
 
-async def get_published_plans(
-    search: Optional[str] = None, 
-    language: Optional[str] = None,
-    sort_by: str = "title", 
-    sort_order: str = "asc", 
-    skip: int = 0, 
-    limit: int = 20
-) -> PlansResponse:
-    """Get published plans for public consumption (no authentication required)"""
+def _generate_plan_image_url(image_url: str) -> Optional[str]:
     
-    # Load plans from JSON file
-    plan_listing = load_plans_from_json()
+    if not image_url:
+        return None
+    try:
+        return generate_presigned_access_url(
+            bucket_name=get("AWS_BUCKET_NAME"), 
+            s3_key=image_url
+        )
+    except Exception as e:
+        logger.error(f"Failed to generate presigned URL for plan image: {e}", exc_info=True)
+        return None
+
+
+def _generate_author_avatar_url(image_url: str) -> Optional[str]:
+
+    if not image_url:
+        return None
+    try:
+        return generate_presigned_access_url(
+            bucket_name=get("AWS_BUCKET_NAME"), 
+            s3_key=image_url
+        )
+    except Exception as e:
+        logger.error(f"Failed to generate presigned URL for author avatar: {e}", exc_info=True)
+        return None
+
+
+async def get_published_plans(search: Optional[str] = None, language: Optional[str] = None, sort_by: str = "title", sort_order: str = "asc", skip: int = 0, limit: int = 20) -> PlansResponse:
     
-    # Filter only published plans and convert to DTOs
-    published_plans = [
-        convert_plan_model_to_dto(p) 
-        for p in plan_listing.plans 
-        if p.status == "PUBLISHED"
-    ]
-    
-    # Apply search filter
-    if search:
-        published_plans = [p for p in published_plans if search.lower() in p.title.lower()]
-    
-    # Apply language filter
-    if language:
-        published_plans = [p for p in published_plans if p.language.lower() == language.lower()]
-    
-    # Sort plans
-    reverse = sort_order == "desc"
-    if sort_by == "title":
-        published_plans.sort(key=lambda x: x.title, reverse=reverse)
-    elif sort_by == "total_days":
-        published_plans.sort(key=lambda x: x.total_days, reverse=reverse)
-    elif sort_by == "subscription_count":
-        published_plans.sort(key=lambda x: x.subscription_count, reverse=reverse)
-    
-    # Apply pagination
-    total = len(published_plans)
-    paginated_plans = published_plans[skip:skip + limit]
-    
-    return PlansResponse(
-        plans=paginated_plans,
-        skip=skip,
-        limit=limit,
-        total=total
-    )
+    with SessionLocal() as db:
+        repo_response = get_published_plans_from_db(db=db, search=search, language=language, sort_by=sort_by, sort_order=sort_order, skip=skip, limit=limit)
+        
+        plan_dtos = []
+        for plan_aggregate in repo_response.plan_info:
+            plan = plan_aggregate.plan
+            
+            plan_image_url = _generate_plan_image_url(plan.image_url)
+            
+            author_dto = None
+            if plan.author:
+                author_avatar_url = _generate_author_avatar_url(plan.author.image_url)
+                author_dto = AuthorDTO(
+                    id=plan.author.id,
+                    firstname=plan.author.first_name,
+                    lastname=plan.author.last_name,
+                    image_url=author_avatar_url, 
+                    image_key=plan.author.image_url 
+                )
+            
+            plan_dto = PlanDTO(
+                id=plan.id,
+                title=plan.title,
+                description=plan.description,
+                language=plan.language.value if hasattr(plan.language, 'value') else plan.language,
+                difficulty_level=plan.difficulty_level,
+                image_url=plan_image_url, 
+                image_key=plan.image_url, 
+                total_days=plan_aggregate.total_days,
+                tags=plan.tags if plan.tags else [],
+                status=plan.status,
+                subscription_count=plan_aggregate.subscription_count,
+                author=author_dto
+            )
+            plan_dtos.append(plan_dto)
+        
+        return PlansResponse(
+            plans=plan_dtos,
+            skip=skip,
+            limit=limit,
+            total=repo_response.total
+        )
 
 
 async def get_published_plan_details(plan_id: UUID) -> PlanDTO:
     """Get published plan details for public consumption (no authentication required)"""
     
-    # Load plans from JSON file
-    plan_listing = load_plans_from_json()
-    
-    # Find plan by ID and ensure it's published
-    plan_model = next(
-        (p for p in plan_listing.plans if p.id == str(plan_id) and p.status == "PUBLISHED"), 
-        None
-    )
-    
-    if not plan_model:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail=ErrorConstants.PLAN_NOT_FOUND
+    with SessionLocal() as db:
+        plan = get_published_plan_by_id(db=db, plan_id=plan_id)
+        
+        if not plan:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail=ErrorConstants.PLAN_NOT_FOUND
+            )
+        
+        plan_image_url = _generate_plan_image_url(plan.image_url)
+        
+        author_dto = None
+        if plan.author:
+            author_avatar_url = _generate_author_avatar_url(plan.author.image_url)
+            author_dto = AuthorDTO(
+                id=plan.author.id,
+                firstname=plan.author.first_name,
+                lastname=plan.author.last_name,
+                image_url=author_avatar_url, 
+                image_key=plan.author.image_url 
+            )
+        
+        from pecha_api.plans.items.plan_items_models import PlanItem
+        total_days = db.query(PlanItem).filter(PlanItem.plan_id == plan_id).count()
+        
+        from pecha_api.plans.users.plan_users_model import UserPlanProgress
+        subscription_count = db.query(UserPlanProgress).filter(
+            UserPlanProgress.plan_id == plan_id
+        ).distinct(UserPlanProgress.user_id).count()
+        
+        return PlanDTO(
+            id=plan.id,
+            title=plan.title,
+            description=plan.description,
+            language=plan.language.value if hasattr(plan.language, 'value') else plan.language,
+            difficulty_level=plan.difficulty_level,
+            image_url=plan_image_url, 
+            image_key=plan.image_url, 
+            total_days=total_days,
+            tags=plan.tags if plan.tags else [],
+            status=plan.status,
+            subscription_count=subscription_count,
+            author=author_dto
         )
-    
-    return PlanDTO(
-        id=UUID(plan_model.id),
-        title=plan_model.title,
-        description=plan_model.description,
-        image_url=plan_model.image_url,
-        total_days=plan_model.total_days,
-        language=plan_model.language,
-        status=PlanStatus(plan_model.status),
-        subscription_count=plan_model.subscription_count
-    )
 
 
 async def get_plan_days(plan_id: UUID) -> PlanDaysResponse:
