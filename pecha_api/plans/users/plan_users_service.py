@@ -8,13 +8,14 @@ from pecha_api.error_contants import ErrorConstants
 from pecha_api.plans.plans_enums import UserPlanStatus
 from pecha_api.plans.plans_response_models import PlansResponse
 from pecha_api.plans.shared.utils import load_plans_from_json, convert_plan_model_to_dto
-from pecha_api.plans.users.plan_users_model import UserPlanProgress
+from pecha_api.plans.users.plan_users_model import UserPlanProgress, UserSubTaskCompletion
 from pecha_api.plans.users.plan_users_response_models import UserPlanEnrollRequest
+from pecha_api.plans.users.plan_users_subtasks_repository import get_sub_task_by_id, save_user_sub_task_completions
 from pecha_api.users.users_service import validate_and_extract_user_details
 from pecha_api.db.database import SessionLocal
 from pecha_api.plans.cms.cms_plans_repository import get_plan_by_id
 from pecha_api.plans.auth.plan_auth_models import ResponseError
-from pecha_api.plans.response_message import BAD_REQUEST, PLAN_NOT_FOUND, ALREADY_ENROLLED_IN_PLAN
+from pecha_api.plans.response_message import ALREADY_COMPLETED_SUB_TASK, BAD_REQUEST, PLAN_NOT_FOUND, ALREADY_ENROLLED_IN_PLAN, SUB_TASK_NOT_FOUND
 from pecha_api.plans.users.plan_users_progress_repository import get_plan_progress_by_user_id_and_plan_id, save_plan_progress
 
 # Mock user progress data - in real implementation this would be from database
@@ -156,3 +157,19 @@ async def get_user_plan_progress(token: str, plan_id: UUID) -> UserPlanProgress:
         completed_at=datetime.fromisoformat(progress_record["completed_at"].replace("Z", "+00:00")) if progress_record["completed_at"] else None,
         created_at=datetime.fromisoformat(progress_record["created_at"].replace("Z", "+00:00"))
     )
+
+def complete_sub_task_service(token: str, id: UUID) -> None:
+    """Complete a sub task"""
+    current_user = validate_and_extract_user_details(token=token)
+    with SessionLocal() as db:
+        existing_sub_task = get_sub_task_by_id(db=db, id=id)
+        if not existing_sub_task:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail=ResponseError(error=BAD_REQUEST, message=SUB_TASK_NOT_FOUND).model_dump()
+            )
+        new_sub_task_completion = UserSubTaskCompletion(
+            user_id=current_user.id,
+            sub_task_id=existing_sub_task.id,
+        )
+        save_user_sub_task_completions(db=db, user_sub_task_completions=new_sub_task_completion)
