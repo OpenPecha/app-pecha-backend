@@ -7,7 +7,7 @@ from pecha_api.plans.plans_response_models import PlansResponse, PlanDTO, PlanDa
 from pecha_api.plans.public.plan_models import PlanDaysResponse
 from pecha_api.plans.public.plan_service import (
     get_published_plans, 
-    get_published_plan_details, 
+    get_published_plan, 
     get_plan_days,
     get_plan_day_details
 )
@@ -32,7 +32,7 @@ async def get_plans(
 
 @public_plans_router.get("/{plan_id}", status_code=status.HTTP_200_OK, response_model=PlanDTO)
 async def get_plan_details(plan_id: UUID):
-    return await get_published_plan_details(plan_id=plan_id)
+    return await get_published_plan(plan_id=plan_id)
 
 
 @public_plans_router.get("/{plan_id}/days", status_code=status.HTTP_200_OK, response_model=PlanDaysResponse)

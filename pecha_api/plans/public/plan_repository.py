@@ -53,33 +53,19 @@ def get_published_plans_count(db: Session) -> int:
 
 
 def get_published_plan_by_id(db: Session, plan_id: UUID) -> Optional[Plan]:
-    return (
-        db.query(Plan)
-        .options(selectinload(Plan.author))
-        .filter(
+    return db.query(Plan).options(selectinload(Plan.author)).filter(
             Plan.id == plan_id,
             Plan.status == PlanStatus.PUBLISHED,
             Plan.deleted_at.is_(None)
-        )
-        .first()
-    )
+        ).first()
 
 
 def get_plan_items_by_plan_id(db: Session, plan_id: UUID) -> list[PlanItem]:
-    return (
-        db.query(PlanItem)
-        .filter(PlanItem.plan_id == plan_id)
-        .order_by(PlanItem.day_number)
-        .all()
-    )
+    return db.query(PlanItem).filter(PlanItem.plan_id == plan_id).order_by(PlanItem.day_number).all()
 
 
 def get_plan_item_by_day_number(db: Session, plan_id: UUID, day_number: int) -> Optional[PlanItem]:
-    return (
-        db.query(PlanItem)
-        .filter(
+    return db.query(PlanItem).filter(
             PlanItem.plan_id == plan_id,
             PlanItem.day_number == day_number
-        )
-        .first()
-    )
+        ).first()

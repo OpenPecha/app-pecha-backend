@@ -1,13 +1,15 @@
 import logging
 from uuid import UUID
 from typing import Optional
-from fastapi import HTTPException
-from pecha_api.config import get
 from starlette import status
+from pecha_api.config import get
+from fastapi import HTTPException
+from pecha_api.db.database import SessionLocal
 from pecha_api.error_contants import ErrorConstants
 from pecha_api.plans.plans_response_models import PlansResponse, PlanDTO, PlanDayDTO, AuthorDTO
 from pecha_api.plans.public.plan_models import PlanDaysResponse, PlanDayBasic
-from pecha_api.db.database import SessionLocal
+from pecha_api.plans.users.plan_users_model import UserPlanProgress
+from pecha_api.plans.items.plan_items_models import PlanItem
 from pecha_api.uploads.S3_utils import generate_presigned_access_url
 from pecha_api.plans.public.plan_repository import (get_published_plans_from_db, get_published_plans_count, get_published_plan_by_id)
 
@@ -128,38 +130,26 @@ async def get_published_plans(
         )
 
 
-async def get_published_plan_details(plan_id: UUID) -> PlanDTO:
-    
+async def get_published_plan(plan_id: UUID) -> PlanDTO:
+
     try:
         with SessionLocal() as db:
             plan = get_published_plan_by_id(db=db, plan_id=plan_id)
             
             if not plan:
-                raise HTTPException(
-                    status_code=status.HTTP_404_NOT_FOUND,
-                    detail=ErrorConstants.PLAN_NOT_FOUND
-                )
+                raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=ErrorConstants.PLAN_NOT_FOUND)
             
             plan_image_url = generate_plan_image_url(plan.image_url)
             
             author_dto = None
             if plan.author:
                 author_avatar_url = generate_author_avatar_url(plan.author.image_url)
-                author_dto = AuthorDTO(
-                    id=plan.author.id,
-                    firstname=plan.author.first_name,
-                    lastname=plan.author.last_name,
-                    image_url=author_avatar_url, 
-                    image_key=plan.author.image_url 
-                )
+                author_dto = AuthorDTO(id=plan.author.id, firstname=plan.author.first_name, lastname=plan.author.last_name, image_url=author_avatar_url, image_key=plan.author.image_url)
             
-            from pecha_api.plans.items.plan_items_models import PlanItem
+            
             total_days = db.query(PlanItem).filter(PlanItem.plan_id == plan_id).count()
             
-            from pecha_api.plans.users.plan_users_model import UserPlanProgress
-            subscription_count = db.query(UserPlanProgress).filter(
-                UserPlanProgress.plan_id == plan_id
-            ).distinct(UserPlanProgress.user_id).count()
+            subscription_count = db.query(UserPlanProgress).filter(UserPlanProgress.plan_id == plan_id).distinct(UserPlanProgress.user_id).count()
             
             return PlanDTO(
                 id=plan.id,
