@@ -14,7 +14,7 @@ from fastapi.testclient import TestClient
 from starlette import status
 
 from pecha_api.app import api
-from pecha_api.plans.plans_response_models import PlansResponse, PlanDTO, AuthorDTO
+from pecha_api.plans.public.plan_response_models import PlansResponse, PlanDTO, AuthorDTO
 from pecha_api.plans.plans_enums import PlanStatus, DifficultyLevel
 from pecha_api.error_contants import ErrorConstants
 
@@ -36,7 +36,7 @@ def sample_author_dto():
 
 @pytest.fixture
 def sample_plan_dto(sample_author_dto):
-    """Sample plan DTO for testing."""
+    """Sample plan DTO for testing - matches actual PlanDTO model structure."""
     return PlanDTO(
         id=uuid4(),
         title="Introduction to Meditation",
@@ -44,11 +44,8 @@ def sample_plan_dto(sample_author_dto):
         language="en",
         difficulty_level=DifficultyLevel.BEGINNER,
         image_url="https://bucket.s3.amazonaws.com/presigned-url",
-        image_key="images/plan_images/plan-id/uuid/image.jpg",
         total_days=30,
         tags=["meditation", "mindfulness", "beginner"],
-        status=PlanStatus.PUBLISHED,
-        subscription_count=150,
         author=sample_author_dto
     )
 
@@ -65,7 +62,7 @@ def sample_plans_response(sample_plan_dto):
 
 @pytest.mark.asyncio
 async def test_get_plans_success(sample_plans_response):
-    """Test successful retrieval of published plans."""
+    """Test successful retrieval of published plans with default language='en'."""
     with patch("pecha_api.plans.public.plan_views.get_published_plans", return_value=sample_plans_response) as mock_service:
         response = client.get("/api/v1/plans")
         
@@ -86,12 +83,11 @@ async def test_get_plans_success(sample_plans_response):
         assert plan["title"] == "Introduction to Meditation"
         assert plan["language"] == "en"
         assert plan["total_days"] == 30
-        assert plan["subscription_count"] == 150
         assert "author" in plan
         
         mock_service.assert_called_once_with(
             search=None,
-            language=None,
+            language="en",
             sort_by="title",
             sort_order="asc",
             skip=0,
@@ -101,7 +97,7 @@ async def test_get_plans_success(sample_plans_response):
 
 @pytest.mark.asyncio
 async def test_get_plans_with_search_filter(sample_plans_response):
-    """Test retrieval of plans with search filter."""
+    """Test retrieval of plans with search filter and default language='en'."""
     with patch("pecha_api.plans.public.plan_views.get_published_plans", return_value=sample_plans_response) as mock_service:
         response = client.get("/api/v1/plans?search=meditation")
         
@@ -111,7 +107,7 @@ async def test_get_plans_with_search_filter(sample_plans_response):
         
         mock_service.assert_called_once_with(
             search="meditation",
-            language=None,
+            language="en",
             sort_by="title",
             sort_order="asc",
             skip=0,
@@ -141,7 +137,7 @@ async def test_get_plans_with_language_filter(sample_plans_response):
 
 @pytest.mark.asyncio
 async def test_get_plans_with_sorting(sample_plans_response):
-    """Test retrieval of plans with custom sorting."""
+    """Test retrieval of plans with custom sorting and default language='en'."""
     with patch("pecha_api.plans.public.plan_views.get_published_plans", return_value=sample_plans_response) as mock_service:
         response = client.get("/api/v1/plans?sort_by=subscription_count&sort_order=desc")
         
@@ -151,7 +147,7 @@ async def test_get_plans_with_sorting(sample_plans_response):
         
         mock_service.assert_called_once_with(
             search=None,
-            language=None,
+            language="en",
             sort_by="subscription_count",
             sort_order="desc",
             skip=0,
@@ -161,7 +157,7 @@ async def test_get_plans_with_sorting(sample_plans_response):
 
 @pytest.mark.asyncio
 async def test_get_plans_with_pagination(sample_plans_response):
-    """Test retrieval of plans with pagination parameters."""
+    """Test retrieval of plans with pagination parameters and default language='en'."""
     with patch("pecha_api.plans.public.plan_views.get_published_plans", return_value=sample_plans_response) as mock_service:
         response = client.get("/api/v1/plans?skip=10&limit=5")
         
@@ -170,7 +166,7 @@ async def test_get_plans_with_pagination(sample_plans_response):
         
         mock_service.assert_called_once_with(
             search=None,
-            language=None,
+            language="en",
             sort_by="title",
             sort_order="asc",
             skip=10,
@@ -214,19 +210,21 @@ async def test_get_plans_empty_result():
 
 
 @pytest.mark.asyncio
-async def test_get_plans_invalid_sort_by():
-    """Test retrieval with invalid sort_by parameter."""
-    response = client.get("/api/v1/plans?sort_by=invalid_field")
-    
-    assert response.status_code == status.HTTP_200_OK
+async def test_get_plans_invalid_sort_by(sample_plans_response):
+    """Test retrieval with invalid sort_by parameter - endpoint accepts and uses default."""
+    with patch("pecha_api.plans.public.plan_views.get_published_plans", return_value=sample_plans_response):
+        response = client.get("/api/v1/plans?sort_by=invalid_field")
+        
+        assert response.status_code == status.HTTP_200_OK
 
 
 @pytest.mark.asyncio
-async def test_get_plans_invalid_sort_order():
-    """Test retrieval with invalid sort_order parameter."""
-    response = client.get("/api/v1/plans?sort_order=invalid_order")
-    
-    assert response.status_code == status.HTTP_200_OK
+async def test_get_plans_invalid_sort_order(sample_plans_response):
+    """Test retrieval with invalid sort_order parameter - endpoint accepts and uses default."""
+    with patch("pecha_api.plans.public.plan_views.get_published_plans", return_value=sample_plans_response):
+        response = client.get("/api/v1/plans?sort_order=invalid_order")
+        
+        assert response.status_code == status.HTTP_200_OK
 
 
 @pytest.mark.asyncio
@@ -275,16 +273,13 @@ async def test_get_plan_details_success(sample_plan_dto):
         assert data["language"] == "en"
         assert data["difficulty_level"] == "BEGINNER"
         assert data["total_days"] == 30
-        assert data["subscription_count"] == 150
-        assert data["status"] == "PUBLISHED"
-        assert len(data["tags"]) == 3
+        assert data["tags"] == ["meditation", "mindfulness", "beginner"]
         
         assert "author" in data
         assert data["author"]["firstname"] == "John"
         assert data["author"]["lastname"] == "Doe"
         
         assert "image_url" in data
-        assert "image_key" in data
         assert data["author"]["image_url"] is not None
         assert data["author"]["image_key"] is not None
         
