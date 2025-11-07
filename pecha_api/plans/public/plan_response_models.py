@@ -55,7 +55,7 @@ class PlanWithDays(BaseModel):
     days: List[PlanDayDTO]
 
 class PublicPlansResponse(BaseModel):
-    plans: List[PlanDTO]
+    plans: List[PublicPlanDTO]
     skip: int
     limit: int
     total: int

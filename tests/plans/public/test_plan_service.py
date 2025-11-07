@@ -5,7 +5,7 @@ from fastapi import HTTPException
 from starlette import status
 
 from pecha_api.plans.public.plan_service import get_published_plans, get_published_plan
-from pecha_api.plans.public.plan_response_models import PlansResponse, PlanDTO
+from pecha_api.plans.public.plan_response_models import PublicPlansResponse, PublicPlanDTO
 from pecha_api.plans.plans_enums import PlanStatus, DifficultyLevel, LanguageCode
 
 
@@ -70,7 +70,7 @@ async def test_get_published_plans_success(sample_plan_aggregate, mock_db_sessio
             limit=20
         )
         
-        assert isinstance(result, PlansResponse)
+        assert isinstance(result, PublicPlansResponse)
         assert len(result.plans) == 1
         assert result.skip == 0
         assert result.limit == 20
@@ -348,7 +348,7 @@ async def test_get_published_plans_empty_result(mock_db_session):
         
         result = await get_published_plans()
         
-        assert isinstance(result, PlansResponse)
+        assert isinstance(result, PublicPlansResponse)
         assert len(result.plans) == 0
         assert result.total == 0
 
@@ -442,7 +442,7 @@ async def test_get_published_plan_success(sample_plan, sample_author, mock_db_se
         
         result = await get_published_plan(plan_id=plan_id)
         
-        assert isinstance(result, PlanDTO)
+        assert isinstance(result, PublicPlanDTO)
         assert result.id == plan_id
         assert result.title == "Introduction to Meditation"
         assert result.language == "EN" 

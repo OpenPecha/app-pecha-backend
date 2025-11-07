@@ -14,7 +14,7 @@ from fastapi.testclient import TestClient
 from starlette import status
 
 from pecha_api.app import api
-from pecha_api.plans.public.plan_response_models import PlansResponse, PlanDTO, AuthorDTO
+from pecha_api.plans.public.plan_response_models import PublicPlansResponse, PublicPlanDTO, AuthorDTO
 from pecha_api.plans.plans_enums import PlanStatus, DifficultyLevel
 from pecha_api.error_contants import ErrorConstants
 
@@ -36,8 +36,8 @@ def sample_author_dto():
 
 @pytest.fixture
 def sample_plan_dto(sample_author_dto):
-    """Sample plan DTO for testing - matches actual PlanDTO model structure."""
-    return PlanDTO(
+    """Sample plan DTO for testing - matches actual PublicPlanDTO model structure."""
+    return PublicPlanDTO(
         id=uuid4(),
         title="Introduction to Meditation",
         description="A comprehensive guide to meditation practices",
@@ -53,7 +53,7 @@ def sample_plan_dto(sample_author_dto):
 @pytest.fixture
 def sample_plans_response(sample_plan_dto):
     """Sample plans response for testing."""
-    return PlansResponse(
+    return PublicPlansResponse(
         plans=[sample_plan_dto],
         skip=0,
         limit=20,
@@ -198,7 +198,7 @@ async def test_get_plans_with_all_filters(sample_plans_response):
 @pytest.mark.asyncio
 async def test_get_plans_empty_result():
     """Test retrieval when no plans are found."""
-    empty_response = PlansResponse(plans=[], skip=0, limit=20, total=0)
+    empty_response = PublicPlansResponse(plans=[], skip=0, limit=20, total=0)
     
     with patch("pecha_api.plans.public.plan_views.get_published_plans", return_value=empty_response):
         response = client.get("/api/v1/plans")
@@ -312,7 +312,7 @@ async def test_get_plan_details_invalid_uuid():
 @pytest.mark.asyncio
 async def test_get_plan_details_without_author(sample_plan_dto):
     """Test retrieval of plan without author information."""
-    plan_dto_no_author = PlanDTO(
+    plan_dto_no_author = PublicPlanDTO(
         id=uuid4(),
         title="Test Plan",
         description="Test Description",
