@@ -19,7 +19,6 @@ from pecha_api.plans.response_message import (
     ALREADY_ENROLLED_IN_PLAN,
     SUB_TASK_NOT_FOUND,
     TASK_NOT_FOUND,
-    SUB_TASKS_NOT_COMPLETED,
 )
 from pecha_api.plans.plans_response_models import PlanDTO
 from pecha_api.plans.plans_enums import DifficultyLevel, PlanStatus
@@ -387,16 +386,14 @@ def test_complete_task_service_success():
         "pecha_api.plans.users.plan_users_service.get_task_by_id",
         return_value=SimpleNamespace(id=task_id),
     ), patch(
-        "pecha_api.plans.users.plan_users_service.get_sub_tasks_by_task_id",
-        return_value=[SimpleNamespace(id=uuid.UUID(int=1))],
-    ), patch(
-        "pecha_api.plans.users.plan_users_service._check_subtasks_completions",
-        return_value=True,
-    ), patch(
         "pecha_api.plans.users.plan_users_service.UserTaskCompletion",
     ) as MockUserTaskCompletion, patch(
         "pecha_api.plans.users.plan_users_service.save_user_task_completion",
-    ) as mock_save:
+    ) as mock_save, patch(
+        "pecha_api.plans.users.plan_users_service.complete_all_subtasks_completions",
+    ) as mock_complete_all_subtasks, patch(
+        "pecha_api.plans.users.plan_users_service.check_day_completion",
+    ) as mock_check_day_completion:
         constructed = SimpleNamespace(user_id=user_id, task_id=task_id)
         MockUserTaskCompletion.return_value = constructed
 
@@ -406,6 +403,17 @@ def test_complete_task_service_success():
         mock_save.assert_called_once()
         assert mock_save.call_args.kwargs["db"] is db_mock
         assert mock_save.call_args.kwargs["user_task_completion"] is constructed
+
+        mock_complete_all_subtasks.assert_called_once()
+        assert mock_complete_all_subtasks.call_args.kwargs["db"] is db_mock
+        assert mock_complete_all_subtasks.call_args.kwargs["user_id"] == user_id
+        assert mock_complete_all_subtasks.call_args.kwargs["task_id"] == task_id
+
+        mock_check_day_completion.assert_called_once()
+        assert mock_check_day_completion.call_args.kwargs["db"] is db_mock
+        assert mock_check_day_completion.call_args.kwargs["user_id"] == user_id
+        # task object identity isn't critical here; ensure it carries the id
+        assert getattr(mock_check_day_completion.call_args.kwargs["task"], "id", None) == task_id
 
 
 def test_complete_task_service_task_not_found_raises_404():
@@ -430,33 +438,3 @@ def test_complete_task_service_task_not_found_raises_404():
         assert exc_info.value.status_code == 404
         assert exc_info.value.detail["error"] == BAD_REQUEST
         assert exc_info.value.detail["message"] == TASK_NOT_FOUND
-
-
-def test_complete_task_service_subtasks_not_completed_raises_400():
-    user_id = uuid.uuid4()
-    task_id = uuid.uuid4()
-
-    _, session_cm = _mock_session_with_db_and_task_flow()
-
-    with patch(
-        "pecha_api.plans.users.plan_users_service.validate_and_extract_user_details",
-        return_value=SimpleNamespace(id=user_id),
-    ), patch(
-        "pecha_api.plans.users.plan_users_service.SessionLocal",
-        return_value=session_cm,
-    ), patch(
-        "pecha_api.plans.users.plan_users_service.get_task_by_id",
-        return_value=SimpleNamespace(id=task_id),
-    ), patch(
-        "pecha_api.plans.users.plan_users_service.get_sub_tasks_by_task_id",
-        return_value=[SimpleNamespace(id=uuid.UUID(int=1))],
-    ), patch(
-        "pecha_api.plans.users.plan_users_service._check_subtasks_completions",
-        return_value=False,
-    ):
-        with pytest.raises(HTTPException) as exc_info:
-            complete_task_service(token="tok", task_id=task_id)
-
-        assert exc_info.value.status_code == 400
-        assert exc_info.value.detail["error"] == BAD_REQUEST
-        assert exc_info.value.detail["message"] == SUB_TASKS_NOT_COMPLETED
