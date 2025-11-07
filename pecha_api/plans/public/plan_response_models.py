@@ -5,27 +5,6 @@ from uuid import UUID
 from pecha_api.plans.plans_models import Plan
 
 
-class CreatePlanRequest(BaseModel):
-    title: str
-    description: str
-    difficulty_level: DifficultyLevel
-    total_days: int
-    language: str
-    image_url: Optional[str] = None
-    tags: Optional[List[str]] = []
-
-class UpdatePlanRequest(BaseModel):
-    title: Optional[str] = None
-    description: Optional[str] = None
-    language: Optional[str] = None
-    difficulty_level: Optional[DifficultyLevel] = None
-    total_days: Optional[int] = None
-    image_url: Optional[str] = None
-    tags: Optional[List[str]] = None
-
-class PlanStatusUpdate(BaseModel):
-    status: PlanStatus
-
 class AuthorDTO(BaseModel):
     id: UUID
     firstname: str
