@@ -21,7 +21,7 @@ public_plans_router = APIRouter(
 @public_plans_router.get("", status_code=status.HTTP_200_OK, response_model=PlansResponse)
 async def get_plans(
     search: Optional[str] = Query(None, description="Search by plan title"),
-    language: Optional[str] = Query(None, description="Filter by language code (e.g., 'bo', 'en', 'zh')"),
+    language: str = Query("en", description="Filter by language code (e.g., 'bo', 'en', 'zh'). Defaults to 'en'."),
     sort_by: str = Query("title", enum=["title", "total_days", "subscription_count"]),
     sort_order: str = Query("asc", enum=["asc", "desc"]),
     skip: int = Query(0, ge=0),

@@ -18,7 +18,7 @@ logger = logging.getLogger(__name__)
 
 async def get_published_plans(
     search: Optional[str] = None, 
-    language: Optional[str] = None, 
+    language: str = "en", 
     sort_by: str = "title", 
     sort_order: str = "asc", 
     skip: int = 0, 
