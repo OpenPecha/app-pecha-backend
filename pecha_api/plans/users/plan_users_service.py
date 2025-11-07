@@ -9,12 +9,12 @@ from pecha_api.error_contants import ErrorConstants
 from pecha_api.plans.plans_enums import UserPlanStatus
 from pecha_api.plans.plans_response_models import PlansResponse
 from pecha_api.plans.shared.utils import load_plans_from_json, convert_plan_model_to_dto
-from pecha_api.plans.users.plan_users_model import UserPlanProgress, UserSubTaskCompletion, UserTaskCompletion
+from pecha_api.plans.users.plan_users_model import UserPlanProgress, UserSubTaskCompletion, UserTaskCompletion, UserDayCompletion
 from pecha_api.plans.users.plan_users_response_models import UserPlanEnrollRequest
 from pecha_api.plans.users.plan_users_subtasks_repository import save_user_sub_task_completions, get_user_subtask_completions_by_user_id_and_sub_task_ids, save_user_sub_task_completions_bulk
 from pecha_api.plans.tasks.sub_tasks.plan_sub_tasks_repository import get_sub_task_by_subtask_id, get_sub_tasks_by_task_id
 from pecha_api.users.users_service import validate_and_extract_user_details
-from pecha_api.plans.tasks.plan_tasks_repository import get_task_by_id
+from pecha_api.plans.tasks.plan_tasks_repository import get_task_by_id, get_tasks_by_plan_item_id
 from pecha_api.plans.tasks.sub_tasks.plan_sub_tasks_models import PlanSubTask
 from pecha_api.db.database import SessionLocal
 from pecha_api.plans.cms.cms_plans_repository import get_plan_by_id
@@ -27,8 +27,10 @@ from pecha_api.plans.response_message import (
     TASK_NOT_FOUND, 
     SUB_TASKS_NOT_COMPLETED
 )
+from pecha_api.plans.tasks.plan_tasks_models import PlanTask
+from pecha_api.plans.users.plan_user_day_repository import save_user_day_completion
 from pecha_api.plans.users.plan_users_progress_repository import get_plan_progress_by_user_id_and_plan_id, save_plan_progress
-from pecha_api.plans.users.plan_user_task_repository import save_user_task_completion
+from pecha_api.plans.users.plan_user_task_repository import save_user_task_completion, get_user_task_completions_by_user_id_and_task_ids
 # Mock user progress data - in real implementation this would be from database
 MOCK_USER_PROGRESS = [
     {
@@ -199,6 +201,7 @@ def complete_task_service(token: str, task_id: UUID) -> None:
             task_id=task.id
         )
         save_user_task_completion(db=db, user_task_completion=new_task_completion)
+        check_day_completion(db=db, user_id=current_user.id, task=task)
 
 
 def complete_all_subtasks_completions(db:SessionLocal(), user_id: UUID, task_id: UUID) -> None:
@@ -210,3 +213,15 @@ def complete_all_subtasks_completions(db:SessionLocal(), user_id: UUID, task_id:
     new_user_subtask_ids = [sub_task_id for sub_task_id in sub_tasks_ids if sub_task_id not in user_subtask_completions_ids]
     new_subtask_to_create = [UserSubTaskCompletion(user_id=user_id, sub_task_id=sub_task_id) for sub_task_id in new_user_subtask_ids]
     save_user_sub_task_completions_bulk(db=db, user_sub_task_completions=new_subtask_to_create)
+
+def check_day_completion(db:SessionLocal(), user_id: UUID, task: PlanTask) -> None:
+    tasks = get_tasks_by_plan_item_id(db=db, plan_item_id=task.plan_item_id)
+    task_ids = [task.id for task in tasks]
+    user_task_completions = get_user_task_completions_by_user_id_and_task_ids(db=db, user_id=user_id, task_ids=task_ids)
+    user_task_completions_ids = [user_task_completion.task_id for user_task_completion in user_task_completions]
+    new_task_ids = [task_id for task_id in task_ids if task_id not in user_task_completions_ids]
+
+    if len(new_task_ids) == 0:
+        save_user_day_completion(db=db, user_day_completion=UserDayCompletion(user_id=user_id, day_id=task.plan_item_id))
+    else:
+        return
