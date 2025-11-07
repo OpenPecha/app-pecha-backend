@@ -6,7 +6,8 @@ from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from typing import Annotated
 
 from pecha_api.plans.plans_response_models import PlansResponse
-from pecha_api.plans.users.plan_users_response_models import UserPlanEnrollRequest, UserPlanProgress
+from pecha_api.plans.users.plan_users_service import complete_sub_task_service
+from pecha_api.plans.users.plan_users_response_models import UserPlanEnrollRequest, UserPlanProgressResponse
 from pecha_api.plans.users.plan_users_service import (
     get_user_enrolled_plans,
     enroll_user_in_plan,
@@ -39,19 +40,18 @@ async def get_user_plans(
     )
 
 
-@user_progress_router.post("/plans", status_code=status.HTTP_201_CREATED, response_model=PlansResponse)
-async def enroll_in_plan(
+@user_progress_router.post("/plans", status_code=status.HTTP_204_NO_CONTENT)
+def enroll_in_plan(
     enroll_request: UserPlanEnrollRequest,
     authentication_credential: Annotated[HTTPAuthorizationCredentials, Depends(oauth2_scheme)]
 ):
-    """Enroll in a plan"""
-    return await enroll_user_in_plan(
+    enroll_user_in_plan(
         token=authentication_credential.credentials,
         enroll_request=enroll_request
     )
 
 
-@user_progress_router.get("/plans/{plan_id}", status_code=status.HTTP_200_OK, response_model=UserPlanProgress)
+@user_progress_router.get("/plans/{plan_id}", status_code=status.HTTP_200_OK, response_model=UserPlanProgressResponse)
 async def get_user_plan_progress_details(
     plan_id: UUID,
     authentication_credential: Annotated[HTTPAuthorizationCredentials, Depends(oauth2_scheme)]
@@ -60,4 +60,14 @@ async def get_user_plan_progress_details(
     return await get_user_plan_progress(
         token=authentication_credential.credentials,
         plan_id=plan_id
+    )
+
+@user_progress_router.post("/sub-tasks/{sub_task_id}/complete", status_code=status.HTTP_204_NO_CONTENT)
+def complete_sub_task(
+    sub_task_id: UUID,
+    authentication_credential: Annotated[HTTPAuthorizationCredentials, Depends(oauth2_scheme)]
+):
+    complete_sub_task_service(
+        token=authentication_credential.credentials,
+        id=sub_task_id
     )
