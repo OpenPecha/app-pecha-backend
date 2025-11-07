@@ -2,6 +2,8 @@ from typing import List, Optional
 from pydantic import BaseModel
 from uuid import UUID
 from datetime import datetime
+from pecha_api.plans.plans_enums import ContentType
+
 
 
 class UserPlanEnrollRequest(BaseModel):
@@ -36,3 +38,23 @@ class EnrolledUserPlan(BaseModel):
 
 class UserPlanProgressUpdate(BaseModel):
     status: str
+
+class UserSubTaskDTO(BaseModel):
+    id: UUID
+    display_order: Optional[int] = None
+    is_completed: bool
+    content_type: ContentType
+    content: str
+
+class UserTaskDTO(BaseModel):
+    id: UUID
+    title: str
+    estimated_time: Optional[int] = None
+    display_order: int
+    sub_tasks: List[UserSubTaskDTO] = []
+
+class UserPlanDayDetailsResponse(BaseModel):
+    id: UUID
+    day_number: int
+    tasks: List[UserTaskDTO]
+    is_completed: bool

@@ -27,3 +27,6 @@ def get_user_task_completions_by_user_id_and_task_ids(db: Session, user_id: UUID
 def delete_user_task_completion(db: Session, user_id: UUID, task_id: UUID) -> None:
     db.query(UserTaskCompletion).filter(UserTaskCompletion.user_id == user_id, UserTaskCompletion.task_id == task_id).delete()
     db.commit()
+
+def get_user_task_completion_by_user_id_and_task_id(db: Session, user_id: UUID, task_id: UUID) -> UserTaskCompletion:
+    return db.query(UserTaskCompletion).filter(UserTaskCompletion.user_id == user_id, UserTaskCompletion.task_id == task_id).first()

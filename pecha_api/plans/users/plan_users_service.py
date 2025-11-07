@@ -10,7 +10,12 @@ from pecha_api.plans.plans_enums import UserPlanStatus
 from pecha_api.plans.plans_response_models import PlansResponse
 from pecha_api.plans.shared.utils import load_plans_from_json, convert_plan_model_to_dto
 from pecha_api.plans.users.plan_users_models import UserPlanProgress, UserSubTaskCompletion, UserTaskCompletion, UserDayCompletion
-from pecha_api.plans.users.plan_users_response_models import UserPlanEnrollRequest
+from pecha_api.plans.users.plan_users_response_models import (
+    UserPlanEnrollRequest, 
+    UserPlanDayDetailsResponse, 
+    UserTaskDTO, 
+    UserSubTaskDTO
+)
 from pecha_api.plans.tasks.sub_tasks.plan_sub_tasks_repository import get_sub_task_by_subtask_id, get_sub_tasks_by_task_id
 from pecha_api.users.users_service import validate_and_extract_user_details
 from pecha_api.plans.tasks.plan_tasks_repository import get_task_by_id, get_tasks_by_plan_item_id
@@ -18,6 +23,7 @@ from pecha_api.plans.tasks.sub_tasks.plan_sub_tasks_models import PlanSubTask
 from pecha_api.db.database import SessionLocal
 from pecha_api.plans.cms.cms_plans_repository import get_plan_by_id
 from pecha_api.plans.auth.plan_auth_models import ResponseError
+from pecha_api.plans.items.plan_items_repository import get_plan_day_with_tasks_and_subtasks
 from pecha_api.plans.response_message import (
     ALREADY_COMPLETED_SUB_TASK, 
     BAD_REQUEST, PLAN_NOT_FOUND, 
@@ -27,18 +33,20 @@ from pecha_api.plans.response_message import (
     SUB_TASKS_NOT_COMPLETED
 )
 from pecha_api.plans.tasks.plan_tasks_models import PlanTask
-from pecha_api.plans.users.plan_user_day_repository import save_user_day_completion, delete_user_day_completion
+from pecha_api.plans.users.plan_user_day_repository import save_user_day_completion, delete_user_day_completion, get_user_day_completion_by_user_id_and_day_id
 from pecha_api.plans.users.plan_users_progress_repository import get_plan_progress_by_user_id_and_plan_id, save_plan_progress
 from pecha_api.plans.users.plan_users_subtasks_repository import (
     save_user_sub_task_completions, 
     get_user_subtask_completions_by_user_id_and_sub_task_ids, 
-    save_user_sub_task_completions_bulk, delete_user_subtask_completion
+    save_user_sub_task_completions_bulk, delete_user_subtask_completion,
+    get_user_subtask_completion_by_user_id_and_sub_task_id
 )
 
 from pecha_api.plans.users.plan_user_task_repository import ( 
     save_user_task_completion, 
     get_user_task_completions_by_user_id_and_task_ids, 
-    delete_user_task_completion
+    delete_user_task_completion,
+    get_user_task_completion_by_user_id_and_task_id
 )
 # Mock user progress data - in real implementation this would be from database
 MOCK_USER_PROGRESS = [
@@ -249,3 +257,50 @@ def delete_task_service(token: str, task_id: UUID) -> None:
         sub_tasks = get_sub_tasks_by_task_id(db=db, task_id=task.id)
         sub_tasks_ids = [sub_task.id for sub_task in sub_tasks]
         delete_user_subtask_completion(db=db, user_id=current_user.id, sub_task_ids=sub_tasks_ids)
+
+
+def get_user_plan_day_details_service(token: str, plan_id: UUID, day_number: int) -> UserPlanDayDetailsResponse:
+    current_user = validate_and_extract_user_details(token=token)
+    with SessionLocal() as db:
+        plan_item = get_plan_day_with_tasks_and_subtasks(db=db, plan_id=plan_id, day_number=day_number)
+
+        
+        user_day_details = UserPlanDayDetailsResponse(
+            id=plan_item.id,
+            day_number=plan_item.day_number,
+            is_completed=is_day_completed(db=db, user_id=current_user.id, day_id=plan_item.id),
+            tasks=[
+                UserTaskDTO(
+                    id=task.id,
+                    title=task.title,
+                    estimated_time=task.estimated_time,
+                    display_order=task.display_order,
+                    is_completed=is_task_completed(db=db, task_id=task.id, user_id=current_user.id),
+                    sub_tasks=_get_user_sub_tasks_dto(db=db, user_id=current_user.id, sub_tasks=task.sub_tasks)
+                ) for task in plan_item.tasks
+            ]
+        )
+        return user_day_details
+
+def is_task_completed(db: SessionLocal(), task_id: UUID, user_id: UUID) -> bool:
+    user_task_completion = get_user_task_completion_by_user_id_and_task_id(db=db, user_id=user_id, task_id=task_id)
+    return user_task_completion is not None
+
+def is_day_completed(db: SessionLocal(), user_id: UUID, day_id: UUID) -> bool:
+    user_day_completion = get_user_day_completion_by_user_id_and_day_id(db=db, user_id=user_id, day_id=day_id)
+    return user_day_completion is not None
+
+def is_sub_task_completed(db: SessionLocal(), user_id: UUID, sub_task_id: UUID) -> bool:
+    user_subtask_completion = get_user_subtask_completion_by_user_id_and_sub_task_id(db=db, user_id=user_id, sub_task_id=sub_task_id)
+    return user_subtask_completion is not None
+
+def _get_user_sub_tasks_dto(db: SessionLocal(), user_id: UUID, sub_tasks: List[PlanSubTask]) -> List[UserSubTaskDTO]:
+    return [
+        UserSubTaskDTO(
+            id=sub_task.id,
+            content_type=sub_task.content_type,
+            content=sub_task.content,
+            display_order=sub_task.display_order,
+            is_completed=is_sub_task_completed(db=db, user_id=user_id, sub_task_id=sub_task.id)
+        ) for sub_task in sub_tasks
+    ]
