@@ -63,7 +63,7 @@ async def test_get_published_plans_success(sample_plan_aggregate, mock_db_sessio
         
         result = await get_published_plans(
             search=None,
-            language=None,
+            language="en",  # Use default language
             sort_by="title",
             sort_order="asc",
             skip=0,
@@ -88,7 +88,7 @@ async def test_get_published_plans_success(sample_plan_aggregate, mock_db_sessio
             skip=0,
             limit=20,
             search=None,
-            language=None,
+            language="EN",  # Service converts to uppercase before calling repository
             sort_by="title",
             sort_order="asc"
         )
@@ -116,7 +116,7 @@ async def test_get_published_plans_with_search(sample_plan_aggregate, mock_db_se
             skip=0,
             limit=20,
             search="meditation",
-            language="en",
+            language="EN",  # Service converts to uppercase before calling repository
             sort_by="title",
             sort_order="asc"
         )
@@ -144,7 +144,7 @@ async def test_get_published_plans_with_language_filter(sample_plan_aggregate, m
             skip=0,
             limit=20,
             search=None,
-            language="en",
+            language="EN",  # Service converts to uppercase before calling repository
             sort_by="title",
             sort_order="asc"
         )
@@ -398,7 +398,7 @@ async def test_get_published_plans_with_pagination(sample_plan_aggregate, mock_d
             skip=10,
             limit=5,
             search=None,
-            language="en",
+            language="EN",  # Service converts to uppercase before calling repository
             sort_by="title",
             sort_order="asc"
         )
