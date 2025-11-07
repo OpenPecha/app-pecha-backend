@@ -20,6 +20,7 @@ def get_published_plans_from_db(db: Session, skip: int = 0, limit: int = 20, sea
         .outerjoin(UserPlanProgress, UserPlanProgress.plan_id == Plan.id)
         .options(selectinload(Plan.author))
         .filter(
+            Plan.language == language,
             Plan.deleted_at.is_(None),
             Plan.status == PlanStatus.PUBLISHED
         )
@@ -28,9 +29,6 @@ def get_published_plans_from_db(db: Session, skip: int = 0, limit: int = 20, sea
     
     if search:
         query = query.filter(Plan.title.ilike(f"%{search}%"))
-    
-    if language:
-        query = query.filter(Plan.language == language)
     
     rows = query.offset(skip).limit(limit).all()
     
