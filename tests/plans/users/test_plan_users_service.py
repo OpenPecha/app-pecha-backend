@@ -12,6 +12,7 @@ from pecha_api.plans.users.plan_users_service import (
     complete_task_service,
     get_user_enrolled_plans,
     get_user_plan_progress,
+    get_user_plan_day_details_service,
     delete_task_service,
 )
 from pecha_api.plans.response_message import (
@@ -24,6 +25,7 @@ from pecha_api.plans.response_message import (
 from pecha_api.plans.plans_response_models import PlanDTO
 from pecha_api.plans.plans_enums import DifficultyLevel, PlanStatus
 from pecha_api.error_contants import ErrorConstants
+from pecha_api.plans.plans_enums import ContentType
 
 
 def _mock_session_with_db():
@@ -668,3 +670,135 @@ async def test_get_user_plan_progress_plan_not_found():
 
         assert exc_info.value.status_code == 404
         assert exc_info.value.detail == ErrorConstants.PLAN_NOT_FOUND
+
+
+def test_get_user_plan_day_details_service_success():
+    user_id = uuid.uuid4()
+    plan_id = uuid.uuid4()
+    day_id = uuid.uuid4()
+
+    task1_id = uuid.uuid4()
+    task2_id = uuid.uuid4()
+    sub1_id = uuid.uuid4()
+    sub2_id = uuid.uuid4()
+
+    plan_item = SimpleNamespace(
+        id=day_id,
+        day_number=3,
+        tasks=[
+            SimpleNamespace(
+                id=task1_id,
+                title="Task 1",
+                estimated_time=10,
+                display_order=1,
+                sub_tasks=[
+                    SimpleNamespace(id=sub1_id, content_type=ContentType.TEXT, content="A", display_order=1),
+                ],
+            ),
+            SimpleNamespace(
+                id=task2_id,
+                title="Task 2",
+                estimated_time=5,
+                display_order=2,
+                sub_tasks=[
+                    SimpleNamespace(id=sub2_id, content_type=ContentType.AUDIO, content="B", display_order=1),
+                ],
+            ),
+        ],
+    )
+
+    db_mock, session_cm = _mock_session_with_db()
+
+    with patch(
+        "pecha_api.plans.users.plan_users_service.validate_and_extract_user_details",
+        return_value=SimpleNamespace(id=user_id),
+    ), patch(
+        "pecha_api.plans.users.plan_users_service.SessionLocal",
+        return_value=session_cm,
+    ), patch(
+        "pecha_api.plans.users.plan_users_service.get_plan_day_with_tasks_and_subtasks",
+        return_value=plan_item,
+    ), patch(
+        "pecha_api.plans.users.plan_users_service.is_day_completed",
+        return_value=True,
+    ) as mock_day_completed, patch(
+        "pecha_api.plans.users.plan_users_service.is_task_completed",
+        side_effect=[True, False],
+    ) as mock_task_completed, patch(
+        "pecha_api.plans.users.plan_users_service.is_sub_task_completed",
+        side_effect=[True, False],
+    ) as mock_sub_completed:
+        result = get_user_plan_day_details_service(token="tok", plan_id=plan_id, day_number=3)
+
+        # Top-level day details
+        assert result.id == day_id
+        assert result.day_number == 3
+        assert result.is_completed is True
+
+        # Tasks mapping and completion flags
+        assert len(result.tasks) == 2
+        assert result.tasks[0].id == task1_id
+        assert result.tasks[0].title == "Task 1"
+        assert result.tasks[0].display_order == 1
+        # is_completed on task should reflect helper
+        assert getattr(result.tasks[0], "is_completed", True) is True
+        assert getattr(result.tasks[1], "is_completed", False) is False
+
+        # Sub-tasks mapping and completion flags
+        assert len(result.tasks[0].sub_tasks) == 1
+        assert result.tasks[0].sub_tasks[0].id == sub1_id
+        assert result.tasks[0].sub_tasks[0].is_completed is True
+
+        assert len(result.tasks[1].sub_tasks) == 1
+        assert result.tasks[1].sub_tasks[0].id == sub2_id
+        assert result.tasks[1].sub_tasks[0].is_completed is False
+
+        # Verify helper invocations
+        mock_day_completed.assert_called_once_with(db=db_mock, user_id=user_id, day_id=day_id)
+        assert mock_task_completed.call_count == 2
+        assert mock_sub_completed.call_count == 2
+
+
+def test_is_completion_helpers_boolean_gateways():
+    from pecha_api.plans.users.plan_users_service import (
+        is_task_completed,
+        is_day_completed,
+        is_sub_task_completed,
+    )
+
+    user_id = uuid.uuid4()
+    day_id = uuid.uuid4()
+    task_id = uuid.uuid4()
+    sub_task_id = uuid.uuid4()
+
+    db_mock = MagicMock()
+
+    # True cases
+    with patch(
+        "pecha_api.plans.users.plan_users_service.get_user_task_completion_by_user_id_and_task_id",
+        return_value=SimpleNamespace(id=uuid.uuid4()),
+    ), patch(
+        "pecha_api.plans.users.plan_users_service.get_user_day_completion_by_user_id_and_day_id",
+        return_value=SimpleNamespace(id=uuid.uuid4()),
+    ), patch(
+        "pecha_api.plans.users.plan_users_service.get_user_subtask_completion_by_user_id_and_sub_task_id",
+        return_value=SimpleNamespace(id=uuid.uuid4()),
+    ):
+        assert is_task_completed(db=db_mock, task_id=task_id, user_id=user_id) is True
+        assert is_day_completed(db=db_mock, user_id=user_id, day_id=day_id) is True
+        assert is_sub_task_completed(db=db_mock, user_id=user_id, sub_task_id=sub_task_id) is True
+
+    # False cases
+    with patch(
+        "pecha_api.plans.users.plan_users_service.get_user_task_completion_by_user_id_and_task_id",
+        return_value=None,
+    ), patch(
+        "pecha_api.plans.users.plan_users_service.get_user_day_completion_by_user_id_and_day_id",
+        return_value=None,
+    ), patch(
+        "pecha_api.plans.users.plan_users_service.get_user_subtask_completion_by_user_id_and_sub_task_id",
+        return_value=None,
+    ):
+        assert is_task_completed(db=db_mock, task_id=task_id, user_id=user_id) is False
+        assert is_day_completed(db=db_mock, user_id=user_id, day_id=day_id) is False
+        assert is_sub_task_completed(db=db_mock, user_id=user_id, sub_task_id=sub_task_id) is False

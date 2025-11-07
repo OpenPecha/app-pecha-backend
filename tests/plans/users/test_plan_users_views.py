@@ -240,3 +240,98 @@ def test_delete_task_unauthenticated(unauthenticated_client):
 
     assert response.status_code == status.HTTP_403_FORBIDDEN
 
+
+def test_get_user_plan_day_details_success(authenticated_client):
+    plan_id = uuid.uuid4()
+    day_number = 4
+
+    payload = {
+        "id": str(uuid.uuid4()),
+        "day_number": day_number,
+        "is_completed": True,
+        "tasks": [
+            {
+                "id": str(uuid.uuid4()),
+                "title": "Task 1",
+                "estimated_time": 10,
+                "display_order": 1,
+                "is_completed": True,
+                "sub_tasks": [
+                    {
+                        "id": str(uuid.uuid4()),
+                        "display_order": 1,
+                        "is_completed": True,
+                        "content_type": "TEXT",
+                        "content": "A",
+                    }
+                ],
+            },
+            {
+                "id": str(uuid.uuid4()),
+                "title": "Task 2",
+                "estimated_time": 5,
+                "display_order": 2,
+                "is_completed": False,
+                "sub_tasks": [
+                    {
+                        "id": str(uuid.uuid4()),
+                        "display_order": 1,
+                        "is_completed": False,
+                        "content_type": "AUDIO",
+                        "content": "B",
+                    }
+                ],
+            },
+        ],
+    }
+
+    with patch(
+        "pecha_api.plans.users.plan_users_views.get_user_plan_day_details_service",
+        return_value=payload,
+    ) as mock_service:
+        response = authenticated_client.get(
+            f"/users/me/plan/{plan_id}/days/{day_number}",
+            headers={"Authorization": f"Bearer {VALID_TOKEN}"},
+        )
+
+        assert response.status_code == status.HTTP_200_OK
+        body = response.json()
+        assert body["day_number"] == day_number
+        assert body["is_completed"] is True
+        assert isinstance(body["tasks"], list) and len(body["tasks"]) == 2
+
+        # Service args
+        assert mock_service.call_args.kwargs.get("token") == VALID_TOKEN
+        assert mock_service.call_args.kwargs.get("plan_id") == plan_id
+        assert mock_service.call_args.kwargs.get("day_number") == day_number
+
+
+def test_get_user_plan_day_details_error_propagates(authenticated_client):
+    plan_id = uuid.uuid4()
+    day_number = 2
+
+    with patch(
+        "pecha_api.plans.users.plan_users_views.get_user_plan_day_details_service"
+    ) as mock_service:
+        mock_service.side_effect = HTTPException(
+            status_code=404,
+            detail={"error": "Not Found", "message": "Day not found"},
+        )
+
+        response = authenticated_client.get(
+            f"/users/me/plan/{plan_id}/days/{day_number}",
+            headers={"Authorization": f"Bearer {VALID_TOKEN}"},
+        )
+
+        assert response.status_code == status.HTTP_404_NOT_FOUND
+        assert response.json()["detail"] == {"error": "Not Found", "message": "Day not found"}
+
+
+def test_get_user_plan_day_details_unauthenticated(unauthenticated_client):
+    plan_id = uuid.uuid4()
+    day_number = 1
+
+    response = unauthenticated_client.get(f"/users/me/plan/{plan_id}/days/{day_number}")
+
+    assert response.status_code == status.HTTP_403_FORBIDDEN
+
