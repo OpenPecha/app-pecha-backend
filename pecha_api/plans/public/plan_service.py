@@ -47,7 +47,7 @@ async def get_published_plans(
                 )
                 plan_dtos.append(plan_dto)
             
-            total = get_published_plans_count(db=db)
+            total = get_published_plans_count(db=db, search=search, language=language)
             
             return PlansResponse(plans=plan_dtos, skip=skip, limit=limit, total=total)
     

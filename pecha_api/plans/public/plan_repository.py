@@ -77,12 +77,15 @@ def get_published_plans_from_db(db: Session,
     return Convert_to_plan_aggregates(rows)
 
 
-def get_published_plans_count(db: Session) -> int:
-
-    return db.query(func.count(Plan.id)).filter(
+def get_published_plans_count(db: Session, search: Optional[str] = None, language: str = "en") -> int:
+    query = db.query(func.count(Plan.id)).filter(
         Plan.deleted_at.is_(None),
-        Plan.status == PlanStatus.PUBLISHED
-    ).scalar()
+        Plan.status == PlanStatus.PUBLISHED,
+        Plan.language == language
+    )
+    if search:
+        query = query.filter(Plan.title.ilike(f"%{search}%"))
+    return query.scalar()
 
 
 def get_published_plan_by_id(db: Session, plan_id: UUID) -> Optional[Plan]:
