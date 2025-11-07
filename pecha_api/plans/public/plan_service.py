@@ -27,25 +27,13 @@ async def get_published_plans(
     
     try:
         with SessionLocal() as db:
-            plan_aggregates = get_published_plans_from_db(db=db, skip=skip, limit=limit, search=search, language=language)
-            
-            sort_key_map = {
-                "title": lambda x: x.plan.title.lower(),
-                "total_days": lambda x: x.total_days,
-                "subscription_count": lambda x: x.subscription_count,
-            }
-            sort_key = sort_key_map.get(sort_by, sort_key_map["title"])
-            reverse = (sort_order == "desc")
-            sorted_plans = sorted(plan_aggregates, key=sort_key, reverse=reverse)
+            plan_aggregates = get_published_plans_from_db(db=db, skip=skip, limit=limit, search=search, language=language, sort_by=sort_by, sort_order=sort_order)
             
             plan_dtos = []
-            for plan_aggregate in sorted_plans:
+            for plan_aggregate in plan_aggregates:
                 plan = plan_aggregate.plan
                 
-                plan_image_url = generate_presigned_access_url(
-                    bucket_name=get("AWS_BUCKET_NAME"), 
-                    s3_key=plan.image_url
-                )
+                plan_image_url = generate_presigned_access_url(bucket_name=get("AWS_BUCKET_NAME"), s3_key=plan.image_url)
                 
                 author_dto = None
                 
@@ -67,12 +55,7 @@ async def get_published_plans(
             
             total = get_published_plans_count(db=db)
             
-            return PlansResponse(
-                plans=plan_dtos,
-                skip=skip,
-                limit=limit,
-                total=total
-            )
+            return PlansResponse(plans=plan_dtos, skip=skip, limit=limit, total=total)
     
     except Exception as e:
         logger.error(f"Error fetching published plans: {str(e)}", exc_info=True)
@@ -91,11 +74,17 @@ async def get_published_plan(plan_id: UUID) -> PlanDTO:
             if not plan:
                 raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=ErrorConstants.PLAN_NOT_FOUND)
             
-            plan_image_url = generate_plan_image_url(plan.image_url)
+            plan_image_url = generate_presigned_access_url(
+                bucket_name=get("AWS_BUCKET_NAME"), 
+                s3_key=plan.image_url
+            )
             
             author_dto = None
             if plan.author:
-                author_avatar_url = generate_author_avatar_url(plan.author.image_url)
+                author_avatar_url = generate_presigned_access_url(
+                    bucket_name=get("AWS_BUCKET_NAME"), 
+                    s3_key=plan.author.image_url
+                )
                 author_dto = AuthorDTO(id=plan.author.id, firstname=plan.author.first_name, lastname=plan.author.last_name, image_url=author_avatar_url, image_key=plan.author.image_url)
             
             
