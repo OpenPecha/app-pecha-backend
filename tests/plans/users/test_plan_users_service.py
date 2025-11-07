@@ -22,6 +22,7 @@ from pecha_api.plans.response_message import (
 )
 from pecha_api.plans.plans_response_models import PlanDTO
 from pecha_api.plans.plans_enums import DifficultyLevel, PlanStatus
+from pecha_api.error_contants import ErrorConstants
 
 
 def _mock_session_with_db():
@@ -438,3 +439,157 @@ def test_complete_task_service_task_not_found_raises_404():
         assert exc_info.value.status_code == 404
         assert exc_info.value.detail["error"] == BAD_REQUEST
         assert exc_info.value.detail["message"] == TASK_NOT_FOUND
+
+
+def test_complete_all_subtasks_completions_creates_missing_only():
+    from pecha_api.plans.users.plan_users_service import complete_all_subtasks_completions
+
+    user_id = uuid.uuid4()
+    task_id = uuid.uuid4()
+
+    sub_a, sub_b, sub_c = uuid.uuid4(), uuid.uuid4(), uuid.uuid4()
+
+    db_mock = MagicMock()
+
+    with patch(
+        "pecha_api.plans.users.plan_users_service.get_sub_tasks_by_task_id",
+        return_value=[SimpleNamespace(id=sub_a), SimpleNamespace(id=sub_b), SimpleNamespace(id=sub_c)],
+    ), patch(
+        "pecha_api.plans.users.plan_users_service.get_user_subtask_completions_by_user_id_and_sub_task_ids",
+        return_value=[SimpleNamespace(sub_task_id=sub_a), SimpleNamespace(sub_task_id=sub_c)],
+    ), patch(
+        "pecha_api.plans.users.plan_users_service.UserSubTaskCompletion",
+        side_effect=lambda user_id, sub_task_id: SimpleNamespace(user_id=user_id, sub_task_id=sub_task_id),
+    ), patch(
+        "pecha_api.plans.users.plan_users_service.save_user_sub_task_completions_bulk",
+    ) as mock_bulk:
+        complete_all_subtasks_completions(db=db_mock, user_id=user_id, task_id=task_id)
+
+        assert mock_bulk.call_count == 1
+        created_list = mock_bulk.call_args.kwargs["user_sub_task_completions"]
+        assert len(created_list) == 1
+        assert created_list[0].user_id == user_id
+        assert created_list[0].sub_task_id == sub_b
+
+
+def test_complete_all_subtasks_completions_no_new_items_calls_bulk_with_empty():
+    from pecha_api.plans.users.plan_users_service import complete_all_subtasks_completions
+
+    user_id = uuid.uuid4()
+    task_id = uuid.uuid4()
+
+    sub_a, sub_b = uuid.uuid4(), uuid.uuid4()
+
+    db_mock = MagicMock()
+
+    with patch(
+        "pecha_api.plans.users.plan_users_service.get_sub_tasks_by_task_id",
+        return_value=[SimpleNamespace(id=sub_a), SimpleNamespace(id=sub_b)],
+    ), patch(
+        "pecha_api.plans.users.plan_users_service.get_user_subtask_completions_by_user_id_and_sub_task_ids",
+        return_value=[SimpleNamespace(sub_task_id=sub_a), SimpleNamespace(sub_task_id=sub_b)],
+    ), patch(
+        "pecha_api.plans.users.plan_users_service.UserSubTaskCompletion",
+        side_effect=lambda user_id, sub_task_id: SimpleNamespace(user_id=user_id, sub_task_id=sub_task_id),
+    ), patch(
+        "pecha_api.plans.users.plan_users_service.save_user_sub_task_completions_bulk",
+    ) as mock_bulk:
+        complete_all_subtasks_completions(db=db_mock, user_id=user_id, task_id=task_id)
+
+        created_list = mock_bulk.call_args.kwargs["user_sub_task_completions"]
+        assert created_list == []
+
+
+def test_check_day_completion_marks_day_complete_when_all_done():
+    from pecha_api.plans.users.plan_users_service import check_day_completion
+
+    user_id = uuid.uuid4()
+    day_id = uuid.uuid4()
+
+    t1, t2 = uuid.uuid4(), uuid.uuid4()
+    task_obj = SimpleNamespace(plan_item_id=day_id, id=uuid.uuid4())
+
+    db_mock = MagicMock()
+
+    with patch(
+        "pecha_api.plans.users.plan_users_service.get_tasks_by_plan_item_id",
+        return_value=[SimpleNamespace(id=t1), SimpleNamespace(id=t2)],
+    ), patch(
+        "pecha_api.plans.users.plan_users_service.get_user_task_completions_by_user_id_and_task_ids",
+        return_value=[SimpleNamespace(task_id=t1), SimpleNamespace(task_id=t2)],
+    ), patch(
+        "pecha_api.plans.users.plan_users_service.UserDayCompletion",
+        side_effect=lambda user_id, day_id: SimpleNamespace(user_id=user_id, day_id=day_id),
+    ), patch(
+        "pecha_api.plans.users.plan_users_service.save_user_day_completion",
+    ) as mock_save:
+        check_day_completion(db=db_mock, user_id=user_id, task=task_obj)
+
+        assert mock_save.call_count == 1
+        udc = mock_save.call_args.kwargs["user_day_completion"]
+        assert udc.user_id == user_id
+        assert udc.day_id == day_id
+
+
+def test_check_day_completion_does_nothing_when_remaining_tasks():
+    from pecha_api.plans.users.plan_users_service import check_day_completion
+
+    user_id = uuid.uuid4()
+    day_id = uuid.uuid4()
+
+    t1, t2 = uuid.uuid4(), uuid.uuid4()
+    task_obj = SimpleNamespace(plan_item_id=day_id, id=uuid.uuid4())
+
+    db_mock = MagicMock()
+
+    with patch(
+        "pecha_api.plans.users.plan_users_service.get_tasks_by_plan_item_id",
+        return_value=[SimpleNamespace(id=t1), SimpleNamespace(id=t2)],
+    ), patch(
+        "pecha_api.plans.users.plan_users_service.get_user_task_completions_by_user_id_and_task_ids",
+        return_value=[SimpleNamespace(task_id=t1)],
+    ), patch(
+        "pecha_api.plans.users.plan_users_service.save_user_day_completion",
+    ) as mock_save:
+        check_day_completion(db=db_mock, user_id=user_id, task=task_obj)
+
+        mock_save.assert_not_called()
+
+
+@pytest.mark.asyncio
+async def test_get_user_plan_progress_plan_not_found():
+    user_id = uuid.uuid4()
+    plan_id = uuid.uuid4()
+
+    mock_progress = [
+        {
+            "id": str(uuid.uuid4()),
+            "user_id": str(user_id),
+            "plan_id": str(plan_id),
+            "started_at": "2024-01-15T10:00:00Z",
+            "streak_count": 1,
+            "longest_streak": 1,
+            "status": "active",
+            "is_completed": False,
+            "completed_at": None,
+            "created_at": "2024-01-15T10:00:00Z",
+        }
+    ]
+
+    with patch(
+        "pecha_api.plans.users.plan_users_service.validate_and_extract_user_details",
+        return_value=SimpleNamespace(id=user_id),
+    ), patch(
+        "pecha_api.plans.users.plan_users_service.MOCK_USER_PROGRESS",
+        new=mock_progress,
+    ), patch(
+        "pecha_api.plans.users.plan_users_service.load_plans_from_json",
+        return_value=SimpleNamespace(plans=[]),  # plan missing
+    ):
+        from pecha_api.plans.users.plan_users_service import get_user_plan_progress
+
+        with pytest.raises(HTTPException) as exc_info:
+            await get_user_plan_progress(token="tok", plan_id=plan_id)
+
+        assert exc_info.value.status_code == 404
+        assert exc_info.value.detail == ErrorConstants.PLAN_NOT_FOUND
