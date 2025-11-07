@@ -15,11 +15,7 @@ def get_published_plans_from_db(db: Session, skip: int = 0, limit: int = 20, sea
     subscription_count_label = func.count(func.distinct(UserPlanProgress.user_id)).label("subscription_count")
     
     query = (
-        db.query(
-            Plan,
-            total_days_label,
-            subscription_count_label,
-        )
+        db.query(Plan,total_days_label,subscription_count_label)
         .outerjoin(PlanItem, PlanItem.plan_id == Plan.id)
         .outerjoin(UserPlanProgress, UserPlanProgress.plan_id == Plan.id)
         .options(selectinload(Plan.author))
@@ -39,11 +35,7 @@ def get_published_plans_from_db(db: Session, skip: int = 0, limit: int = 20, sea
     rows = query.offset(skip).limit(limit).all()
     
     plan_aggregates = [
-        PlanWithAggregates(
-            plan=plan,
-            total_days=total_days,
-            subscription_count=subscription_count
-        )
+        PlanWithAggregates(plan=plan,total_days=total_days,subscription_count=subscription_count)
         for plan, total_days, subscription_count in rows
     ]
     
