@@ -6,6 +6,7 @@ from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from typing import Annotated
 
 from pecha_api.plans.plans_response_models import PlansResponse
+from pecha_api.plans.users.plan_users_service import complete_sub_task_service
 from pecha_api.plans.users.plan_users_response_models import UserPlanEnrollRequest, UserPlanProgressResponse
 from pecha_api.plans.users.plan_users_service import (
     get_user_enrolled_plans,
@@ -59,4 +60,14 @@ async def get_user_plan_progress_details(
     return await get_user_plan_progress(
         token=authentication_credential.credentials,
         plan_id=plan_id
+    )
+
+@user_progress_router.post("/sub-tasks/{sub_task_id}/complete", status_code=status.HTTP_204_NO_CONTENT)
+def complete_sub_task(
+    sub_task_id: UUID,
+    authentication_credential: Annotated[HTTPAuthorizationCredentials, Depends(oauth2_scheme)]
+):
+    complete_sub_task_service(
+        token=authentication_credential.credentials,
+        id=sub_task_id
     )

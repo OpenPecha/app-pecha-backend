@@ -75,3 +75,44 @@ def test_enroll_in_plan_service_error(authenticated_client):
         assert response.json()["detail"] == {"error": "Not Found", "message": "plan not found"}
 
 
+def test_complete_sub_task_success(authenticated_client):
+    sub_task_id = uuid.uuid4()
+
+    with patch("pecha_api.plans.users.plan_users_views.complete_sub_task_service", return_value=None) as mock_complete:
+        response = authenticated_client.post(
+            f"/users/me/sub-tasks/{sub_task_id}/complete", 
+            headers={"Authorization": f"Bearer {VALID_TOKEN}"}
+        )
+
+        assert response.status_code == status.HTTP_204_NO_CONTENT
+        assert response.text == ""
+        assert mock_complete.call_count == 1
+        assert mock_complete.call_args.kwargs.get("token") == VALID_TOKEN
+        assert mock_complete.call_args.kwargs.get("id") == sub_task_id
+
+
+def test_complete_sub_task_service_error_sub_task_not_found(authenticated_client):
+    sub_task_id = uuid.uuid4()
+
+    with patch("pecha_api.plans.users.plan_users_views.complete_sub_task_service") as mock_complete:
+        mock_complete.side_effect = HTTPException(
+            status_code=404,
+            detail={"error": "Bad request", "message": "Sub task not found"}
+        )
+
+        response = authenticated_client.post(
+            f"/users/me/sub-tasks/{sub_task_id}/complete",
+            headers={"Authorization": f"Bearer {VALID_TOKEN}"}
+        )
+
+        assert response.status_code == status.HTTP_404_NOT_FOUND
+        assert response.json()["detail"] == {"error": "Bad request", "message": "Sub task not found"}
+
+def test_complete_sub_task_unauthenticated(unauthenticated_client):
+    sub_task_id = uuid.uuid4()
+
+    response = unauthenticated_client.post(f"/users/me/sub-tasks/{sub_task_id}/complete")
+
+    assert response.status_code == status.HTTP_403_FORBIDDEN
+
+
