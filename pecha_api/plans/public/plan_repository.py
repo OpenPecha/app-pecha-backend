@@ -9,7 +9,7 @@ from pecha_api.plans.plans_enums import PlanStatus
 from pecha_api.plans.plans_response_models import PlanWithAggregates
 
 
-def get_published_plans_from_db(db: Session, skip: int = 0, limit: int = 20):
+def get_published_plans_from_db(db: Session, skip: int = 0, limit: int = 20, search: Optional[str] = None, language: Optional[str] = None):
 
     total_days_label = func.count(func.distinct(PlanItem.id)).label("total_days")
     subscription_count_label = func.count(func.distinct(UserPlanProgress.user_id)).label("subscription_count")
@@ -29,6 +29,12 @@ def get_published_plans_from_db(db: Session, skip: int = 0, limit: int = 20):
         )
         .group_by(Plan.id)
     )
+    
+    if search:
+        query = query.filter(Plan.title.ilike(f"%{search}%"))
+    
+    if language:
+        query = query.filter(Plan.language == language)
     
     rows = query.offset(skip).limit(limit).all()
     

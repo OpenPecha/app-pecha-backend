@@ -55,21 +55,7 @@ async def get_published_plans(
     
     try:
         with SessionLocal() as db:
-            plan_aggregates = get_published_plans_from_db(db=db, skip=skip, limit=limit)
-            
-            filtered_plans = []
-            for plan_aggregate in plan_aggregates:
-                plan = plan_aggregate.plan
-                
-                if search and search.lower() not in plan.title.lower():
-                    continue
-                
-                if language:
-                    plan_language = plan.language.value if hasattr(plan.language, 'value') else plan.language
-                    if plan_language.lower() != language.lower():
-                        continue
-                
-                filtered_plans.append(plan_aggregate)
+            plan_aggregates = get_published_plans_from_db(db=db, skip=skip, limit=limit, search=search, language=language)
             
             sort_key_map = {
                 "title": lambda x: x.plan.title.lower(),
@@ -78,7 +64,7 @@ async def get_published_plans(
             }
             sort_key = sort_key_map.get(sort_by, sort_key_map["title"])
             reverse = (sort_order == "desc")
-            sorted_plans = sorted(filtered_plans, key=sort_key, reverse=reverse)
+            sorted_plans = sorted(plan_aggregates, key=sort_key, reverse=reverse)
             
             plan_dtos = []
             for plan_aggregate in sorted_plans:
