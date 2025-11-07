@@ -12,9 +12,11 @@ from pecha_api.plans.tasks.plan_tasks_models import PlanTask
 from pecha_api.plans.tasks.sub_tasks.plan_sub_tasks_models import PlanSubTask
 from pecha_api.plans.reviews.plan_reviews_models import PlanReview
 from pecha_api.plans.favorites.favorites_models import Favorite
-from pecha_api.plans.users.plan_users_model import UserPlanProgress
-from pecha_api.plans.users.plan_users_model import UserTaskCompletion
+from pecha_api.plans.users.plan_users_models import UserPlanProgress
+from pecha_api.plans.users.plan_users_models import UserTaskCompletion
 from pecha_api.users.users_models import Users, SocialMediaAccount, PasswordReset
+from pecha_api.plans.recitation.plan_recitation_models import Recitation
+from pecha_api.plans.users.recitation.plan_user_recitation_model import UserRecitation
 
 # this is the Alembic Config object, which provides
 # access to the values within the .ini file in use.

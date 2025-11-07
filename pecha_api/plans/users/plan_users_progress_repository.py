@@ -2,7 +2,7 @@ from uuid import UUID
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 from pecha_api.plans.users.plan_users_response_models import EnrolledUserPlan
-from .plan_users_model import UserPlanProgress
+from .plan_users_models import UserPlanProgress
 from fastapi import HTTPException
 from starlette import status
 from pecha_api.plans.auth.plan_auth_models import ResponseError

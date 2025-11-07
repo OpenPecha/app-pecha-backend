@@ -9,7 +9,7 @@ from pecha_api.error_contants import ErrorConstants
 from pecha_api.plans.plans_enums import UserPlanStatus
 from pecha_api.plans.plans_response_models import PlansResponse
 from pecha_api.plans.shared.utils import load_plans_from_json, convert_plan_model_to_dto
-from pecha_api.plans.users.plan_users_model import UserPlanProgress, UserSubTaskCompletion, UserTaskCompletion, UserDayCompletion
+from pecha_api.plans.users.plan_users_models import UserPlanProgress, UserSubTaskCompletion, UserTaskCompletion, UserDayCompletion
 from pecha_api.plans.users.plan_users_response_models import UserPlanEnrollRequest
 from pecha_api.plans.users.plan_users_subtasks_repository import save_user_sub_task_completions, get_user_subtask_completions_by_user_id_and_sub_task_ids, save_user_sub_task_completions_bulk
 from pecha_api.plans.tasks.sub_tasks.plan_sub_tasks_repository import get_sub_task_by_subtask_id, get_sub_tasks_by_task_id
