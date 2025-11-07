@@ -16,34 +16,6 @@ from pecha_api.plans.public.plan_repository import (get_published_plans_from_db,
 logger = logging.getLogger(__name__)
 
 
-def generate_plan_image_url(image_url: str) -> Optional[str]:
-    
-    if not image_url:
-        return None
-    try:
-        return generate_presigned_access_url(
-            bucket_name=get("AWS_BUCKET_NAME"), 
-            s3_key=image_url
-        )
-    except Exception as e:
-        logger.error(f"Failed to generate presigned URL for plan image: {e}", exc_info=True)
-        return None
-
-
-def generate_author_avatar_url(image_url: str) -> Optional[str]:
-
-    if not image_url:
-        return None
-    try:
-        return generate_presigned_access_url(
-            bucket_name=get("AWS_BUCKET_NAME"), 
-            s3_key=image_url
-        )
-    except Exception as e:
-        logger.error(f"Failed to generate presigned URL for author avatar: {e}", exc_info=True)
-        return None
-
-
 async def get_published_plans(
     search: Optional[str] = None, 
     language: Optional[str] = None, 
@@ -70,18 +42,12 @@ async def get_published_plans(
             for plan_aggregate in sorted_plans:
                 plan = plan_aggregate.plan
                 
-                plan_image_url = generate_plan_image_url(plan.image_url)
+                plan_image_url = generate_presigned_access_url(
+                    bucket_name=get("AWS_BUCKET_NAME"), 
+                    s3_key=plan.image_url
+                )
                 
                 author_dto = None
-                if plan.author:
-                    author_avatar_url = generate_author_avatar_url(plan.author.image_url)
-                    author_dto = AuthorDTO(
-                        id=plan.author.id,
-                        firstname=plan.author.first_name,
-                        lastname=plan.author.last_name,
-                        image_url=author_avatar_url, 
-                        image_key=plan.author.image_url 
-                    )
                 
                 plan_dto = PlanDTO(
                     id=plan.id,
