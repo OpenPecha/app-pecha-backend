@@ -6,7 +6,7 @@ from pecha_api.config import get
 from fastapi import HTTPException
 from pecha_api.db.database import SessionLocal
 from pecha_api.error_contants import ErrorConstants
-from pecha_api.plans.plans_response_models import PlansResponse, PlanDTO, PlanDayDTO, AuthorDTO
+from pecha_api.plans.public.plan_response_models import PlansResponse, PlanDTO, PlanDayDTO, AuthorDTO
 from pecha_api.plans.public.plan_models import PlanDaysResponse, PlanDayBasic
 from pecha_api.plans.users.plan_users_model import UserPlanProgress
 from pecha_api.plans.items.plan_items_models import PlanItem
@@ -35,21 +35,15 @@ async def get_published_plans(
                 
                 plan_image_url = generate_presigned_access_url(bucket_name=get("AWS_BUCKET_NAME"), s3_key=plan.image_url)
                 
-                author_dto = None
-                
                 plan_dto = PlanDTO(
                     id=plan.id,
                     title=plan.title,
                     description=plan.description,
                     language=plan.language.value if hasattr(plan.language, 'value') else plan.language,
                     difficulty_level=plan.difficulty_level,
-                    image_url=plan_image_url, 
-                    image_key=plan.image_url, 
+                    image_url=plan_image_url,
                     total_days=plan_aggregate.total_days,
-                    tags=plan.tags if plan.tags else [],
-                    status=plan.status,
-                    subscription_count=plan_aggregate.subscription_count,
-                    author=author_dto
+                    tags=plan.tags if plan.tags else []
                 )
                 plan_dtos.append(plan_dto)
             
@@ -88,22 +82,17 @@ async def get_published_plan(plan_id: UUID) -> PlanDTO:
                 author_dto = AuthorDTO(id=plan.author.id, firstname=plan.author.first_name, lastname=plan.author.last_name, image_url=author_avatar_url, image_key=plan.author.image_url)
             
             
-            total_days = db.query(PlanItem).filter(PlanItem.plan_id == plan_id).count()
-            
-            subscription_count = db.query(UserPlanProgress).filter(UserPlanProgress.plan_id == plan_id).distinct(UserPlanProgress.user_id).count()
-            
+            total_days = db.query(PlanItem).filter(PlanItem.plan_id == plan_id).count()  
+
             return PlanDTO(
                 id=plan.id,
                 title=plan.title,
                 description=plan.description,
                 language=plan.language.value if hasattr(plan.language, 'value') else plan.language,
                 difficulty_level=plan.difficulty_level,
-                image_url=plan_image_url, 
-                image_key=plan.image_url, 
+                image_url=plan_image_url,  
                 total_days=total_days,
                 tags=plan.tags if plan.tags else [],
-                status=plan.status,
-                subscription_count=subscription_count,
                 author=author_dto
             )
     

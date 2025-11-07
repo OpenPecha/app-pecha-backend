@@ -6,7 +6,7 @@ from pecha_api.plans.plans_models import Plan
 from pecha_api.plans.items.plan_items_models import PlanItem
 from pecha_api.plans.users.plan_users_model import UserPlanProgress
 from pecha_api.plans.plans_enums import PlanStatus
-from pecha_api.plans.plans_response_models import PlanWithAggregates
+from pecha_api.plans.public.plan_response_models import PlanWithAggregates
 
 
 def get_aggregate_counts():
