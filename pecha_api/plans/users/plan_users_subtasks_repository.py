@@ -1,3 +1,4 @@
+
 from uuid import UUID
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
@@ -30,6 +31,15 @@ def get_user_subtask_completions_by_user_id_and_sub_task_ids(db: Session, user_i
 def save_user_sub_task_completions_bulk(db: Session, user_sub_task_completions: List[UserSubTaskCompletion]):
     try:
         db.add_all(user_sub_task_completions)
+        db.commit()
+    except Exception as e:
+        db.rollback()
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=ResponseError(error=BAD_REQUEST, message=str(e)).model_dump())
+
+
+def delete_user_subtask_completion(db: Session, user_id: UUID, sub_task_ids: List[UUID]) -> None:
+    try:
+        db.query(UserSubTaskCompletion).filter(UserSubTaskCompletion.user_id == user_id, UserSubTaskCompletion.sub_task_id.in_(sub_task_ids)).delete()
         db.commit()
     except Exception as e:
         db.rollback()
