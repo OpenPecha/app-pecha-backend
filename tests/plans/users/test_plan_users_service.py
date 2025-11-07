@@ -6,13 +6,23 @@ from unittest.mock import patch, MagicMock
 from fastapi import HTTPException
 
 from pecha_api.plans.users.plan_users_response_models import UserPlanEnrollRequest
-from pecha_api.plans.users.plan_users_service import enroll_user_in_plan, complete_sub_task_service
+from pecha_api.plans.users.plan_users_service import (
+    enroll_user_in_plan,
+    complete_sub_task_service,
+    complete_task_service,
+    get_user_enrolled_plans,
+    get_user_plan_progress,
+)
 from pecha_api.plans.response_message import (
     BAD_REQUEST,
     PLAN_NOT_FOUND,
     ALREADY_ENROLLED_IN_PLAN,
     SUB_TASK_NOT_FOUND,
+    TASK_NOT_FOUND,
+    SUB_TASKS_NOT_COMPLETED,
 )
+from pecha_api.plans.plans_response_models import PlanDTO
+from pecha_api.plans.plans_enums import DifficultyLevel, PlanStatus
 
 
 def _mock_session_with_db():
@@ -187,3 +197,266 @@ def test_complete_sub_task_service_sub_task_not_found_raises_404():
         assert exc_info.value.status_code == 404
         assert exc_info.value.detail["error"] == BAD_REQUEST
         assert exc_info.value.detail["message"] == SUB_TASK_NOT_FOUND
+
+
+@pytest.mark.asyncio
+async def test_get_user_enrolled_plans_success_with_filter_and_pagination():
+    user_id = uuid.uuid4()
+    plan_id_1 = uuid.uuid4()
+    plan_id_2 = uuid.uuid4()
+
+    dto1 = PlanDTO(
+        id=plan_id_1,
+        title="Plan 1",
+        description="Desc",
+        language="en",
+        total_days=10,
+        status=PlanStatus.PUBLISHED,
+        subscription_count=1,
+        difficulty_level=DifficultyLevel.BEGINNER,
+        tags=[],
+    )
+    dto2 = PlanDTO(
+        id=plan_id_2,
+        title="Plan 2",
+        description="Desc",
+        language="en",
+        total_days=5,
+        status=PlanStatus.PUBLISHED,
+        subscription_count=2,
+        difficulty_level=DifficultyLevel.BEGINNER,
+        tags=[],
+    )
+
+    mock_progress = [
+        {
+            "id": str(uuid.uuid4()),
+            "user_id": str(user_id),
+            "plan_id": str(plan_id_1),
+            "started_at": "2024-01-15T10:00:00Z",
+            "streak_count": 1,
+            "longest_streak": 1,
+            "status": "active",
+            "is_completed": False,
+            "completed_at": None,
+            "created_at": "2024-01-15T10:00:00Z",
+        },
+        {
+            "id": str(uuid.uuid4()),
+            "user_id": str(user_id),
+            "plan_id": str(plan_id_2),
+            "started_at": "2024-01-15T10:00:00Z",
+            "streak_count": 1,
+            "longest_streak": 1,
+            "status": "paused",
+            "is_completed": False,
+            "completed_at": None,
+            "created_at": "2024-01-15T10:00:00Z",
+        },
+    ]
+
+    # paginate to only first item after filtering to active
+    with patch(
+        "pecha_api.plans.users.plan_users_service.validate_and_extract_user_details",
+        return_value=SimpleNamespace(id=user_id),
+    ), patch(
+        "pecha_api.plans.users.plan_users_service.MOCK_USER_PROGRESS",
+        new=mock_progress,
+    ), patch(
+        "pecha_api.plans.users.plan_users_service.load_plans_from_json",
+        return_value=SimpleNamespace(plans=[SimpleNamespace(id=str(plan_id_1)), SimpleNamespace(id=str(plan_id_2))]),
+    ), patch(
+        "pecha_api.plans.users.plan_users_service.convert_plan_model_to_dto",
+        side_effect=[dto1, dto2],
+    ):
+        result = await get_user_enrolled_plans(token="tok", status_filter="active", skip=0, limit=1)
+
+        assert result.skip == 0
+        assert result.limit == 1
+        assert result.total == 1  # only 1 active
+        assert len(result.plans) == 1
+        assert result.plans[0].id == plan_id_1
+
+
+@pytest.mark.asyncio
+async def test_get_user_plan_progress_success():
+    user_id = uuid.uuid4()
+    plan_id = uuid.uuid4()
+
+    dto = PlanDTO(
+        id=plan_id,
+        title="Plan X",
+        description="desc",
+        language="en",
+        total_days=30,
+        status=PlanStatus.PUBLISHED,
+        subscription_count=0,
+        difficulty_level=DifficultyLevel.BEGINNER,
+        tags=[],
+    )
+
+    mock_progress = [
+        {
+            "id": str(uuid.uuid4()),
+            "user_id": str(user_id),
+            "plan_id": str(plan_id),
+            "started_at": "2024-01-15T10:00:00Z",
+            "streak_count": 2,
+            "longest_streak": 3,
+            "status": "active",
+            "is_completed": False,
+            "completed_at": None,
+            "created_at": "2024-01-15T10:00:00Z",
+        }
+    ]
+
+    with patch(
+        "pecha_api.plans.users.plan_users_service.validate_and_extract_user_details",
+        return_value=SimpleNamespace(id=user_id),
+    ), patch(
+        "pecha_api.plans.users.plan_users_service.MOCK_USER_PROGRESS",
+        new=mock_progress,
+    ), patch(
+        "pecha_api.plans.users.plan_users_service.load_plans_from_json",
+        return_value=SimpleNamespace(plans=[SimpleNamespace(id=str(plan_id))]),
+    ), patch(
+        "pecha_api.plans.users.plan_users_service.convert_plan_model_to_dto",
+        return_value=dto,
+    ), patch(
+        "pecha_api.plans.users.plan_users_service.UserPlanProgress",
+    ) as MockUserPlanProgress:
+        constructed = SimpleNamespace(
+            id=uuid.uuid4(),
+            user_id=user_id,
+            plan_id=plan_id,
+            plan=dto.model_dump(),
+            status="active",
+        )
+        MockUserPlanProgress.return_value = constructed
+
+        result = await get_user_plan_progress(token="tok", plan_id=plan_id)
+
+        # Ensure constructor called with expected kwargs (including plan)
+        ctor_kwargs = MockUserPlanProgress.call_args.kwargs
+        assert ctor_kwargs["user_id"] == user_id
+        assert ctor_kwargs["plan_id"] == plan_id
+        assert ctor_kwargs["plan"]["id"] == plan_id
+        assert ctor_kwargs["status"] == "active"
+
+        # And the function returns the constructed object
+        assert result is constructed
+
+
+@pytest.mark.asyncio
+async def test_get_user_plan_progress_not_enrolled_raises_404():
+    user_id = uuid.uuid4()
+    plan_id = uuid.uuid4()
+
+    with patch(
+        "pecha_api.plans.users.plan_users_service.validate_and_extract_user_details",
+        return_value=SimpleNamespace(id=user_id),
+    ), patch(
+        "pecha_api.plans.users.plan_users_service.MOCK_USER_PROGRESS",
+        new=[],
+    ):
+        with pytest.raises(HTTPException) as exc_info:
+            await get_user_plan_progress(token="tok", plan_id=plan_id)
+
+        assert exc_info.value.status_code == 404
+        assert exc_info.value.detail == "User not enrolled in this plan"
+
+
+def _mock_session_with_db_and_task_flow():
+    db_mock, session_cm = _mock_session_with_db()
+    return db_mock, session_cm
+
+
+def test_complete_task_service_success():
+    user_id = uuid.uuid4()
+    task_id = uuid.uuid4()
+
+    db_mock, session_cm = _mock_session_with_db_and_task_flow()
+
+    with patch(
+        "pecha_api.plans.users.plan_users_service.validate_and_extract_user_details",
+        return_value=SimpleNamespace(id=user_id),
+    ), patch(
+        "pecha_api.plans.users.plan_users_service.SessionLocal",
+        return_value=session_cm,
+    ), patch(
+        "pecha_api.plans.users.plan_users_service.get_task_by_id",
+        return_value=SimpleNamespace(id=task_id),
+    ), patch(
+        "pecha_api.plans.users.plan_users_service.get_sub_tasks_by_task_id",
+        return_value=[SimpleNamespace(id=uuid.UUID(int=1))],
+    ), patch(
+        "pecha_api.plans.users.plan_users_service._check_subtasks_completions",
+        return_value=True,
+    ), patch(
+        "pecha_api.plans.users.plan_users_service.UserTaskCompletion",
+    ) as MockUserTaskCompletion, patch(
+        "pecha_api.plans.users.plan_users_service.save_user_task_completion",
+    ) as mock_save:
+        constructed = SimpleNamespace(user_id=user_id, task_id=task_id)
+        MockUserTaskCompletion.return_value = constructed
+
+        result = complete_task_service(token="tok", task_id=task_id)
+
+        assert result is None
+        mock_save.assert_called_once()
+        assert mock_save.call_args.kwargs["db"] is db_mock
+        assert mock_save.call_args.kwargs["user_task_completion"] is constructed
+
+
+def test_complete_task_service_task_not_found_raises_404():
+    user_id = uuid.uuid4()
+    task_id = uuid.uuid4()
+
+    _, session_cm = _mock_session_with_db_and_task_flow()
+
+    with patch(
+        "pecha_api.plans.users.plan_users_service.validate_and_extract_user_details",
+        return_value=SimpleNamespace(id=user_id),
+    ), patch(
+        "pecha_api.plans.users.plan_users_service.SessionLocal",
+        return_value=session_cm,
+    ), patch(
+        "pecha_api.plans.users.plan_users_service.get_task_by_id",
+        return_value=None,
+    ):
+        with pytest.raises(HTTPException) as exc_info:
+            complete_task_service(token="tok", task_id=task_id)
+
+        assert exc_info.value.status_code == 404
+        assert exc_info.value.detail["error"] == BAD_REQUEST
+        assert exc_info.value.detail["message"] == TASK_NOT_FOUND
+
+
+def test_complete_task_service_subtasks_not_completed_raises_400():
+    user_id = uuid.uuid4()
+    task_id = uuid.uuid4()
+
+    _, session_cm = _mock_session_with_db_and_task_flow()
+
+    with patch(
+        "pecha_api.plans.users.plan_users_service.validate_and_extract_user_details",
+        return_value=SimpleNamespace(id=user_id),
+    ), patch(
+        "pecha_api.plans.users.plan_users_service.SessionLocal",
+        return_value=session_cm,
+    ), patch(
+        "pecha_api.plans.users.plan_users_service.get_task_by_id",
+        return_value=SimpleNamespace(id=task_id),
+    ), patch(
+        "pecha_api.plans.users.plan_users_service.get_sub_tasks_by_task_id",
+        return_value=[SimpleNamespace(id=uuid.UUID(int=1))],
+    ), patch(
+        "pecha_api.plans.users.plan_users_service._check_subtasks_completions",
+        return_value=False,
+    ):
+        with pytest.raises(HTTPException) as exc_info:
+            complete_task_service(token="tok", task_id=task_id)
+
+        assert exc_info.value.status_code == 400
+        assert exc_info.value.detail["error"] == BAD_REQUEST
+        assert exc_info.value.detail["message"] == SUB_TASKS_NOT_COMPLETED
