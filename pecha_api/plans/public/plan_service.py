@@ -4,10 +4,14 @@ from fastapi import HTTPException
 from starlette import status
 
 from pecha_api.error_contants import ErrorConstants
+from pecha_api.plans.items.plan_items_repository import get_days_by_plan_id
 from pecha_api.plans.plans_enums import PlanStatus
 from pecha_api.plans.plans_response_models import PlansResponse, PlanDTO, PlanDayDTO
 from pecha_api.plans.shared.utils import load_plans_from_json, convert_plan_model_to_dto, convert_day_model_to_dto
 from pecha_api.plans.public.plan_models import PlanDaysResponse, PlanDayBasic
+from pecha_api.users.users_service import validate_and_extract_user_details
+from pecha_api.db.database import SessionLocal
+from pecha_api.plans.cms.cms_plans_repository import get_plan_by_id
 
 
 async def get_published_plans(
@@ -89,35 +93,26 @@ async def get_published_plan_details(plan_id: UUID) -> PlanDTO:
     )
 
 
-async def get_plan_days(plan_id: UUID) -> PlanDaysResponse:
+async def get_plan_days(token: str, plan_id: UUID) -> PlanDaysResponse:
     """Get all days for a specific plan"""
     
-    # Load plans from JSON file
-    plan_listing = load_plans_from_json()
-    
-    # Find plan by ID and ensure it's published
-    plan_model = next(
-        (p for p in plan_listing.plans if p.id == str(plan_id) and p.status == "PUBLISHED"), 
-        None
-    )
-    
-    if not plan_model:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail=ErrorConstants.PLAN_NOT_FOUND
-        )
-    
-    # Convert days to basic day info (without tasks for listing)
-    days_basic = []
-    for day_model in plan_model.days:
-        day_basic = PlanDayBasic(
-            id=day_model.id,
-            day_number=day_model.day_number,
-            title=day_model.title
-        )
-        days_basic.append(day_basic)
-    
-    return PlanDaysResponse(days=days_basic)
+    validate_and_extract_user_details(token=token)
+    with SessionLocal() as db:
+        plan_model = get_plan_by_id(db=db, plan_id=plan_id)
+        if not plan_model:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail=ErrorConstants.PLAN_NOT_FOUND
+            )
+        plan_days=get_days_by_plan_id(db=db, plan_id=plan_id)
+        days_basic =[]
+        for day_model in plan_days:
+            day_basic = PlanDayBasic(
+                id=str(day_model.id),
+                day_number=day_model.day_number,
+            )
+            days_basic.append(day_basic)
+        return PlanDaysResponse(days=days_basic)
 
 
 async def get_plan_day_details(plan_id: UUID, day_number: int) -> PlanDayDTO:

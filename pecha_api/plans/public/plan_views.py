@@ -1,8 +1,9 @@
-from fastapi import APIRouter, Query
-from typing import Optional
+from fastapi import APIRouter, Query, Depends
+from typing import Optional, Annotated
 from uuid import UUID
 from starlette import status
 
+from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from pecha_api.plans.plans_response_models import PlansResponse, PlanDTO, PlanDayDTO
 from pecha_api.plans.public.plan_models import PlanDaysResponse
 from pecha_api.plans.public.plan_service import (
@@ -12,6 +13,7 @@ from pecha_api.plans.public.plan_service import (
     get_plan_day_details
 )
 
+oauth2_scheme = HTTPBearer()
 # Create router for public plan endpoints
 public_plans_router = APIRouter(
     prefix="/plans",
@@ -45,9 +47,9 @@ async def get_plan_details(plan_id: UUID):
 
 
 @public_plans_router.get("/{plan_id}/days", status_code=status.HTTP_200_OK, response_model=PlanDaysResponse)
-async def get_plan_days_list(plan_id: UUID):
+async def get_plan_days_list(authentication_credential: Annotated[HTTPAuthorizationCredentials, Depends(oauth2_scheme)],plan_id: UUID):
     """Get all days for a specific plan"""
-    return await get_plan_days(plan_id=plan_id)
+    return await get_plan_days(token=authentication_credential.credentials, plan_id=plan_id)
 
 
 @public_plans_router.get("/{plan_id}/days/{day_number}", status_code=status.HTTP_200_OK, response_model=PlanDayDTO)
