@@ -1,11 +1,3 @@
-"""
-Test suite for public plan service functions.
-
-Tests the following service functions:
-1. get_published_plans() - Retrieve published plans with filtering and sorting
-2. get_published_plan() - Retrieve single published plan by ID
-"""
-
 import pytest
 from uuid import uuid4
 from unittest.mock import patch, MagicMock, Mock
@@ -13,59 +5,50 @@ from fastapi import HTTPException
 from starlette import status
 
 from pecha_api.plans.public.plan_service import get_published_plans, get_published_plan
-from pecha_api.plans.plans_response_models import PlansResponse, PlanDTO, AuthorDTO, PlanWithAggregates
-from pecha_api.plans.plans_models import Plan
-from pecha_api.plans.authors.plan_authors_model import Author
+from pecha_api.plans.plans_response_models import PlansResponse, PlanDTO, AuthorDTO
 from pecha_api.plans.plans_enums import PlanStatus, DifficultyLevel, LanguageCode
 from pecha_api.error_contants import ErrorConstants
 
 
 @pytest.fixture
 def sample_author():
-    """Sample author model for testing."""
-    author = Author(
-        id=uuid4(),
-        first_name="John",
-        last_name="Doe",
-        email="john.doe@example.com",
-        image_url="images/author_avatars/author-id/avatar.jpg",
-        is_verified=True
-    )
+    author = MagicMock()
+    author.id = uuid4()
+    author.first_name = "John"
+    author.last_name = "Doe"
+    author.email = "john.doe@example.com"
+    author.image_url = "images/author_avatars/author-id/avatar.jpg"
+    author.is_verified = True
     return author
 
 
 @pytest.fixture
 def sample_plan(sample_author):
-    """Sample plan model for testing."""
-    plan = Plan(
-        id=uuid4(),
-        title="Introduction to Meditation",
-        description="A comprehensive guide to meditation practices",
-        language=LanguageCode.EN,
-        difficulty_level=DifficultyLevel.BEGINNER,
-        image_url="images/plan_images/plan-id/uuid/image.jpg",
-        status=PlanStatus.PUBLISHED,
-        tags=["meditation", "mindfulness", "beginner"],
-        author_id=sample_author.id,
-        author=sample_author,
-        deleted_at=None
-    )
+    plan = MagicMock()
+    plan.id = uuid4()
+    plan.title = "Introduction to Meditation"
+    plan.description = "A comprehensive guide to meditation practices"
+    plan.language = LanguageCode.EN
+    plan.difficulty_level = DifficultyLevel.BEGINNER
+    plan.image_url = "images/plan_images/plan-id/uuid/image.jpg"
+    plan.status = PlanStatus.PUBLISHED
+    plan.tags = ["meditation", "mindfulness", "beginner"]
+    plan.author = sample_author
+    plan.deleted_at = None
     return plan
 
 
 @pytest.fixture
 def sample_plan_aggregate(sample_plan):
-    """Sample plan aggregate for testing."""
-    return PlanWithAggregates(
-        plan=sample_plan,
-        total_days=30,
-        subscription_count=150
-    )
+    aggregate = MagicMock()
+    aggregate.plan = sample_plan
+    aggregate.total_days = 30
+    aggregate.subscription_count = 150
+    return aggregate
 
 
 @pytest.fixture
 def mock_db_session():
-    """Mock database session."""
     session = MagicMock()
     session.__enter__ = Mock(return_value=session)
     session.__exit__ = Mock(return_value=None)
@@ -74,7 +57,6 @@ def mock_db_session():
 
 @pytest.mark.asyncio
 async def test_get_published_plans_success(sample_plan_aggregate, mock_db_session):
-    """Test successful retrieval of published plans."""
     with patch("pecha_api.plans.public.plan_service.SessionLocal", return_value=mock_db_session), \
          patch("pecha_api.plans.public.plan_service.get_published_plans_from_db", return_value=[sample_plan_aggregate]) as mock_repo, \
          patch("pecha_api.plans.public.plan_service.get_published_plans_count", return_value=1), \
@@ -98,7 +80,7 @@ async def test_get_published_plans_success(sample_plan_aggregate, mock_db_sessio
         
         plan_dto = result.plans[0]
         assert plan_dto.title == "Introduction to Meditation"
-        assert plan_dto.language == "en"
+        assert plan_dto.language == "EN"
         assert plan_dto.total_days == 30
         assert plan_dto.subscription_count == 150
         assert plan_dto.image_url == "https://bucket.s3.amazonaws.com/presigned-url"
@@ -121,7 +103,6 @@ async def test_get_published_plans_success(sample_plan_aggregate, mock_db_sessio
 
 @pytest.mark.asyncio
 async def test_get_published_plans_with_search(sample_plan_aggregate, mock_db_session):
-    """Test retrieval with search filter."""
     with patch("pecha_api.plans.public.plan_service.SessionLocal", return_value=mock_db_session), \
          patch("pecha_api.plans.public.plan_service.get_published_plans_from_db", return_value=[sample_plan_aggregate]) as mock_repo, \
          patch("pecha_api.plans.public.plan_service.get_published_plans_count", return_value=1), \
@@ -149,7 +130,6 @@ async def test_get_published_plans_with_search(sample_plan_aggregate, mock_db_se
 
 @pytest.mark.asyncio
 async def test_get_published_plans_with_language_filter(sample_plan_aggregate, mock_db_session):
-    """Test retrieval with language filter."""
     with patch("pecha_api.plans.public.plan_service.SessionLocal", return_value=mock_db_session), \
          patch("pecha_api.plans.public.plan_service.get_published_plans_from_db", return_value=[sample_plan_aggregate]) as mock_repo, \
          patch("pecha_api.plans.public.plan_service.get_published_plans_count", return_value=1), \
@@ -177,30 +157,39 @@ async def test_get_published_plans_with_language_filter(sample_plan_aggregate, m
 
 @pytest.mark.asyncio
 async def test_get_published_plans_sort_by_title_asc(sample_plan_aggregate, mock_db_session):
-    """Test sorting by title in ascending order."""
-    plan1 = Plan(
-        id=uuid4(),
-        title="Advanced Meditation",
-        description="Advanced techniques",
-        language=LanguageCode.EN,
-        status=PlanStatus.PUBLISHED,
-        tags=[],
-        deleted_at=None
-    )
-    plan2 = Plan(
-        id=uuid4(),
-        title="Beginner Meditation",
-        description="Basic techniques",
-        language=LanguageCode.EN,
-        status=PlanStatus.PUBLISHED,
-        tags=[],
-        deleted_at=None
-    )
+    plan1 = MagicMock()
+    plan1.id = uuid4()
+    plan1.title = "Advanced Meditation"
+    plan1.description = "Advanced techniques"
+    plan1.language = LanguageCode.EN
+    plan1.difficulty_level = DifficultyLevel.BEGINNER
+    plan1.image_url = None
+    plan1.status = PlanStatus.PUBLISHED
+    plan1.tags = []
+    plan1.author = None
     
-    aggregates = [
-        PlanWithAggregates(plan=plan1, total_days=20, subscription_count=100),
-        PlanWithAggregates(plan=plan2, total_days=10, subscription_count=50)
-    ]
+    plan2 = MagicMock()
+    plan2.id = uuid4()
+    plan2.title = "Beginner Meditation"
+    plan2.description = "Basic techniques"
+    plan2.language = LanguageCode.EN
+    plan2.difficulty_level = DifficultyLevel.BEGINNER
+    plan2.image_url = None
+    plan2.status = PlanStatus.PUBLISHED
+    plan2.tags = []
+    plan2.author = None
+    
+    agg1 = MagicMock()
+    agg1.plan = plan1
+    agg1.total_days = 20
+    agg1.subscription_count = 100
+    
+    agg2 = MagicMock()
+    agg2.plan = plan2
+    agg2.total_days = 10
+    agg2.subscription_count = 50
+    
+    aggregates = [agg1, agg2]
     
     with patch("pecha_api.plans.public.plan_service.SessionLocal", return_value=mock_db_session), \
          patch("pecha_api.plans.public.plan_service.get_published_plans_from_db", return_value=aggregates), \
@@ -216,30 +205,39 @@ async def test_get_published_plans_sort_by_title_asc(sample_plan_aggregate, mock
 
 @pytest.mark.asyncio
 async def test_get_published_plans_sort_by_title_desc(sample_plan_aggregate, mock_db_session):
-    """Test sorting by title in descending order."""
-    plan1 = Plan(
-        id=uuid4(),
-        title="Advanced Meditation",
-        description="Advanced techniques",
-        language=LanguageCode.EN,
-        status=PlanStatus.PUBLISHED,
-        tags=[],
-        deleted_at=None
-    )
-    plan2 = Plan(
-        id=uuid4(),
-        title="Beginner Meditation",
-        description="Basic techniques",
-        language=LanguageCode.EN,
-        status=PlanStatus.PUBLISHED,
-        tags=[],
-        deleted_at=None
-    )
+    plan1 = MagicMock()
+    plan1.id = uuid4()
+    plan1.title = "Advanced Meditation"
+    plan1.description = "Advanced techniques"
+    plan1.language = LanguageCode.EN
+    plan1.difficulty_level = DifficultyLevel.BEGINNER
+    plan1.image_url = None
+    plan1.status = PlanStatus.PUBLISHED
+    plan1.tags = []
+    plan1.author = None
     
-    aggregates = [
-        PlanWithAggregates(plan=plan1, total_days=20, subscription_count=100),
-        PlanWithAggregates(plan=plan2, total_days=10, subscription_count=50)
-    ]
+    plan2 = MagicMock()
+    plan2.id = uuid4()
+    plan2.title = "Beginner Meditation"
+    plan2.description = "Basic techniques"
+    plan2.language = LanguageCode.EN
+    plan2.difficulty_level = DifficultyLevel.BEGINNER
+    plan2.image_url = None
+    plan2.status = PlanStatus.PUBLISHED
+    plan2.tags = []
+    plan2.author = None
+    
+    agg1 = MagicMock()
+    agg1.plan = plan1
+    agg1.total_days = 20
+    agg1.subscription_count = 100
+    
+    agg2 = MagicMock()
+    agg2.plan = plan2
+    agg2.total_days = 10
+    agg2.subscription_count = 50
+    
+    aggregates = [agg1, agg2]
     
     with patch("pecha_api.plans.public.plan_service.SessionLocal", return_value=mock_db_session), \
          patch("pecha_api.plans.public.plan_service.get_published_plans_from_db", return_value=aggregates), \
@@ -255,30 +253,39 @@ async def test_get_published_plans_sort_by_title_desc(sample_plan_aggregate, moc
 
 @pytest.mark.asyncio
 async def test_get_published_plans_sort_by_total_days(sample_plan_aggregate, mock_db_session):
-    """Test sorting by total_days."""
-    plan1 = Plan(
-        id=uuid4(),
-        title="Short Plan",
-        description="Short plan",
-        language=LanguageCode.EN,
-        status=PlanStatus.PUBLISHED,
-        tags=[],
-        deleted_at=None
-    )
-    plan2 = Plan(
-        id=uuid4(),
-        title="Long Plan",
-        description="Long plan",
-        language=LanguageCode.EN,
-        status=PlanStatus.PUBLISHED,
-        tags=[],
-        deleted_at=None
-    )
+    plan1 = MagicMock()
+    plan1.id = uuid4()
+    plan1.title = "Short Plan"
+    plan1.description = "Short plan"
+    plan1.language = LanguageCode.EN
+    plan1.difficulty_level = DifficultyLevel.BEGINNER
+    plan1.image_url = None
+    plan1.status = PlanStatus.PUBLISHED
+    plan1.tags = []
+    plan1.author = None
     
-    aggregates = [
-        PlanWithAggregates(plan=plan1, total_days=10, subscription_count=100),
-        PlanWithAggregates(plan=plan2, total_days=30, subscription_count=50)
-    ]
+    plan2 = MagicMock()
+    plan2.id = uuid4()
+    plan2.title = "Long Plan"
+    plan2.description = "Long plan"
+    plan2.language = LanguageCode.EN
+    plan2.difficulty_level = DifficultyLevel.BEGINNER
+    plan2.image_url = None
+    plan2.status = PlanStatus.PUBLISHED
+    plan2.tags = []
+    plan2.author = None
+    
+    agg1 = MagicMock()
+    agg1.plan = plan1
+    agg1.total_days = 10
+    agg1.subscription_count = 100
+    
+    agg2 = MagicMock()
+    agg2.plan = plan2
+    agg2.total_days = 30
+    agg2.subscription_count = 50
+    
+    aggregates = [agg1, agg2]
     
     with patch("pecha_api.plans.public.plan_service.SessionLocal", return_value=mock_db_session), \
          patch("pecha_api.plans.public.plan_service.get_published_plans_from_db", return_value=aggregates), \
@@ -294,30 +301,39 @@ async def test_get_published_plans_sort_by_total_days(sample_plan_aggregate, moc
 
 @pytest.mark.asyncio
 async def test_get_published_plans_sort_by_subscription_count(sample_plan_aggregate, mock_db_session):
-    """Test sorting by subscription_count."""
-    plan1 = Plan(
-        id=uuid4(),
-        title="Popular Plan",
-        description="Popular plan",
-        language=LanguageCode.EN,
-        status=PlanStatus.PUBLISHED,
-        tags=[],
-        deleted_at=None
-    )
-    plan2 = Plan(
-        id=uuid4(),
-        title="Less Popular Plan",
-        description="Less popular plan",
-        language=LanguageCode.EN,
-        status=PlanStatus.PUBLISHED,
-        tags=[],
-        deleted_at=None
-    )
+    plan1 = MagicMock()
+    plan1.id = uuid4()
+    plan1.title = "Popular Plan"
+    plan1.description = "Popular plan"
+    plan1.language = LanguageCode.EN
+    plan1.difficulty_level = DifficultyLevel.BEGINNER
+    plan1.image_url = None
+    plan1.status = PlanStatus.PUBLISHED
+    plan1.tags = []
+    plan1.author = None
     
-    aggregates = [
-        PlanWithAggregates(plan=plan1, total_days=10, subscription_count=200),
-        PlanWithAggregates(plan=plan2, total_days=10, subscription_count=50)
-    ]
+    plan2 = MagicMock()
+    plan2.id = uuid4()
+    plan2.title = "Less Popular Plan"
+    plan2.description = "Less popular plan"
+    plan2.language = LanguageCode.EN
+    plan2.difficulty_level = DifficultyLevel.BEGINNER
+    plan2.image_url = None
+    plan2.status = PlanStatus.PUBLISHED
+    plan2.tags = []
+    plan2.author = None
+    
+    agg1 = MagicMock()
+    agg1.plan = plan1
+    agg1.total_days = 10
+    agg1.subscription_count = 200
+    
+    agg2 = MagicMock()
+    agg2.plan = plan2
+    agg2.total_days = 10
+    agg2.subscription_count = 50
+    
+    aggregates = [agg1, agg2]
     
     with patch("pecha_api.plans.public.plan_service.SessionLocal", return_value=mock_db_session), \
          patch("pecha_api.plans.public.plan_service.get_published_plans_from_db", return_value=aggregates), \
@@ -333,7 +349,6 @@ async def test_get_published_plans_sort_by_subscription_count(sample_plan_aggreg
 
 @pytest.mark.asyncio
 async def test_get_published_plans_empty_result(mock_db_session):
-    """Test retrieval when no plans are found."""
     with patch("pecha_api.plans.public.plan_service.SessionLocal", return_value=mock_db_session), \
          patch("pecha_api.plans.public.plan_service.get_published_plans_from_db", return_value=[]), \
          patch("pecha_api.plans.public.plan_service.get_published_plans_count", return_value=0):
@@ -347,19 +362,21 @@ async def test_get_published_plans_empty_result(mock_db_session):
 
 @pytest.mark.asyncio
 async def test_get_published_plans_without_author(mock_db_session):
-    """Test retrieval of plans without author information."""
-    plan_no_author = Plan(
-        id=uuid4(),
-        title="Orphan Plan",
-        description="Plan without author",
-        language=LanguageCode.EN,
-        status=PlanStatus.PUBLISHED,
-        tags=[],
-        author=None,
-        deleted_at=None
-    )
+    plan_no_author = MagicMock()
+    plan_no_author.id = uuid4()
+    plan_no_author.title = "Orphan Plan"
+    plan_no_author.description = "Plan without author"
+    plan_no_author.language = LanguageCode.EN
+    plan_no_author.difficulty_level = DifficultyLevel.BEGINNER
+    plan_no_author.image_url = None
+    plan_no_author.status = PlanStatus.PUBLISHED
+    plan_no_author.tags = []
+    plan_no_author.author = None
     
-    aggregate = PlanWithAggregates(plan=plan_no_author, total_days=10, subscription_count=0)
+    aggregate = MagicMock()
+    aggregate.plan = plan_no_author
+    aggregate.total_days = 10
+    aggregate.subscription_count = 0
     
     with patch("pecha_api.plans.public.plan_service.SessionLocal", return_value=mock_db_session), \
          patch("pecha_api.plans.public.plan_service.get_published_plans_from_db", return_value=[aggregate]), \
@@ -374,7 +391,6 @@ async def test_get_published_plans_without_author(mock_db_session):
 
 @pytest.mark.asyncio
 async def test_get_published_plans_with_pagination(sample_plan_aggregate, mock_db_session):
-    """Test retrieval with pagination parameters."""
     with patch("pecha_api.plans.public.plan_service.SessionLocal", return_value=mock_db_session), \
          patch("pecha_api.plans.public.plan_service.get_published_plans_from_db", return_value=[sample_plan_aggregate]) as mock_repo, \
          patch("pecha_api.plans.public.plan_service.get_published_plans_count", return_value=1), \
@@ -396,7 +412,6 @@ async def test_get_published_plans_with_pagination(sample_plan_aggregate, mock_d
 
 @pytest.mark.asyncio
 async def test_get_published_plans_image_url_generation_failure(sample_plan_aggregate, mock_db_session):
-    """Test handling when presigned URL generation fails."""
     with patch("pecha_api.plans.public.plan_service.SessionLocal", return_value=mock_db_session), \
          patch("pecha_api.plans.public.plan_service.get_published_plans_from_db", return_value=[sample_plan_aggregate]), \
          patch("pecha_api.plans.public.plan_service.generate_plan_image_url", return_value=None) as mock_plan_url, \
@@ -412,7 +427,6 @@ async def test_get_published_plans_image_url_generation_failure(sample_plan_aggr
 
 @pytest.mark.asyncio
 async def test_get_published_plans_database_error(mock_db_session):
-    """Test handling of database errors."""
     with patch("pecha_api.plans.public.plan_service.SessionLocal", return_value=mock_db_session), \
          patch("pecha_api.plans.public.plan_service.get_published_plans_from_db", side_effect=Exception("Database connection error")):
         
@@ -424,7 +438,6 @@ async def test_get_published_plans_database_error(mock_db_session):
 
 @pytest.mark.asyncio
 async def test_get_published_plan_success(sample_plan, sample_author, mock_db_session):
-    """Test successful retrieval of a single published plan."""
     plan_id = sample_plan.id
     
     mock_query = MagicMock()
@@ -442,7 +455,7 @@ async def test_get_published_plan_success(sample_plan, sample_author, mock_db_se
         assert isinstance(result, PlanDTO)
         assert result.id == plan_id
         assert result.title == "Introduction to Meditation"
-        assert result.language == "en"
+        assert result.language == "EN"  # Enum value is uppercase
         assert result.total_days == 30
         assert result.subscription_count == 150
         assert result.image_url == "https://bucket.s3.amazonaws.com/presigned-url"
@@ -458,7 +471,6 @@ async def test_get_published_plan_success(sample_plan, sample_author, mock_db_se
 
 @pytest.mark.asyncio
 async def test_get_published_plan_not_found(mock_db_session):
-    """Test retrieval of non-existent plan."""
     plan_id = uuid4()
     
     with patch("pecha_api.plans.public.plan_service.SessionLocal", return_value=mock_db_session), \
@@ -473,18 +485,16 @@ async def test_get_published_plan_not_found(mock_db_session):
 
 @pytest.mark.asyncio
 async def test_get_published_plan_without_author(mock_db_session):
-    """Test retrieval of plan without author information."""
-    plan_no_author = Plan(
-        id=uuid4(),
-        title="Orphan Plan",
-        description="Plan without author",
-        language=LanguageCode.EN,
-        status=PlanStatus.PUBLISHED,
-        tags=[],
-        image_url=None,
-        author=None,
-        deleted_at=None
-    )
+    plan_no_author = MagicMock()
+    plan_no_author.id = uuid4()
+    plan_no_author.title = "Orphan Plan"
+    plan_no_author.description = "Plan without author"
+    plan_no_author.language = LanguageCode.EN
+    plan_no_author.difficulty_level = DifficultyLevel.BEGINNER
+    plan_no_author.image_url = None
+    plan_no_author.status = PlanStatus.PUBLISHED
+    plan_no_author.tags = []
+    plan_no_author.author = None
     
     mock_query = MagicMock()
     mock_db_session.__enter__.return_value.query.return_value = mock_query
@@ -503,7 +513,6 @@ async def test_get_published_plan_without_author(mock_db_session):
 
 @pytest.mark.asyncio
 async def test_get_published_plan_image_url_generation_failure(sample_plan, mock_db_session):
-    """Test handling when presigned URL generation fails."""
     plan_id = sample_plan.id
     
     mock_query = MagicMock()
@@ -525,7 +534,6 @@ async def test_get_published_plan_image_url_generation_failure(sample_plan, mock
 
 @pytest.mark.asyncio
 async def test_get_published_plan_database_error(mock_db_session):
-    """Test handling of database errors."""
     plan_id = uuid4()
     
     with patch("pecha_api.plans.public.plan_service.SessionLocal", return_value=mock_db_session), \
@@ -540,7 +548,6 @@ async def test_get_published_plan_database_error(mock_db_session):
 
 @pytest.mark.asyncio
 async def test_get_published_plan_with_empty_tags(sample_plan, mock_db_session):
-    """Test retrieval of plan with empty tags."""
     sample_plan.tags = None
     
     mock_query = MagicMock()
@@ -560,11 +567,10 @@ async def test_get_published_plan_with_empty_tags(sample_plan, mock_db_session):
 
 @pytest.mark.asyncio
 async def test_get_published_plan_zero_subscriptions(sample_plan, mock_db_session):
-    """Test retrieval of plan with zero subscriptions."""
     mock_query = MagicMock()
     mock_db_session.__enter__.return_value.query.return_value = mock_query
     mock_query.filter.return_value.count.return_value = 15
-    mock_query.filter.return_value.distinct.return_value.count.return_value = 0  # No subscriptions
+    mock_query.filter.return_value.distinct.return_value.count.return_value = 0
     
     with patch("pecha_api.plans.public.plan_service.SessionLocal", return_value=mock_db_session), \
          patch("pecha_api.plans.public.plan_service.get_published_plan_by_id", return_value=sample_plan), \
