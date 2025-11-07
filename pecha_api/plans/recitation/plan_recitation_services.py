@@ -4,8 +4,9 @@ from pecha_api.plans.authors.plan_authors_service import validate_and_extract_au
 from pecha_api.db.database import SessionLocal
 from pecha_api.plans.recitation.plan_recitation_repository import save_recitation
 
-async def create_recitation(token: str, create_recitation_request: CreateRecitationRequest) -> None:
-    current_author = validate_and_extract_author_details(token=token)
+async def create_recitation_service(token: str, create_recitation_request: CreateRecitationRequest) -> None:
+    """create a new recitation"""
+    validate_and_extract_author_details(token=token)
     with SessionLocal() as db:
         new_recitation = Recitation(
             title=create_recitation_request.title,
