@@ -27,7 +27,8 @@ async def get_published_plans(
     
     try:
         with SessionLocal() as db:
-            plan_aggregates = get_published_plans_from_db(db=db, skip=skip, limit=limit, search=search, language=language, sort_by=sort_by, sort_order=sort_order)
+            language_upper = language.upper()
+            plan_aggregates = get_published_plans_from_db(db=db, skip=skip, limit=limit, search=search, language=language_upper, sort_by=sort_by, sort_order=sort_order)
             
             plan_dtos = []
             for plan_aggregate in plan_aggregates:
@@ -47,7 +48,7 @@ async def get_published_plans(
                 )
                 plan_dtos.append(plan_dto)
             
-            total = get_published_plans_count(db=db, search=search, language=language)
+            total = get_published_plans_count(db=db, search=search, language=language_upper)
             
             return PublicPlansResponse(plans=plan_dtos, skip=skip, limit=limit, total=total)
     

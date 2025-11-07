@@ -64,7 +64,7 @@ def get_published_plans_from_db(db: Session,
     skip: int = 0, 
     limit: int = 20, 
     search: Optional[str] = None, 
-    language: str = "en",  
+    language: str = "EN",  
     sort_by: str = "title",
     sort_order: str = "asc"
 ):
@@ -77,7 +77,7 @@ def get_published_plans_from_db(db: Session,
     return Convert_to_plan_aggregates(rows)
 
 
-def get_published_plans_count(db: Session, search: Optional[str] = None, language: str = "en") -> int:
+def get_published_plans_count(db: Session, search: Optional[str] = None, language: str = "EN") -> int:
     query = db.query(func.count(Plan.id)).filter(
         Plan.deleted_at.is_(None),
         Plan.status == PlanStatus.PUBLISHED,
