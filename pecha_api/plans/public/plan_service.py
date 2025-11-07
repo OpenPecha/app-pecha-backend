@@ -6,7 +6,7 @@ from pecha_api.config import get
 from fastapi import HTTPException
 from pecha_api.db.database import SessionLocal
 from pecha_api.error_contants import ErrorConstants
-from pecha_api.plans.public.plan_response_models import PlansResponse, PlanDTO, PlanDayDTO, AuthorDTO
+from pecha_api.plans.public.plan_response_models import PublicPlansResponse, PublicPlanDTO, PlanDayDTO, AuthorDTO
 from pecha_api.plans.public.plan_models import PlanDaysResponse, PlanDayBasic
 from pecha_api.plans.users.plan_users_models import UserPlanProgress
 from pecha_api.plans.items.plan_items_models import PlanItem
@@ -23,7 +23,7 @@ async def get_published_plans(
     sort_order: str = "asc", 
     skip: int = 0, 
     limit: int = 20
-    ) -> PlansResponse:
+    ) -> PublicPlansResponse:
     
     try:
         with SessionLocal() as db:
@@ -35,7 +35,7 @@ async def get_published_plans(
                 
                 plan_image_url = generate_presigned_access_url(bucket_name=get("AWS_BUCKET_NAME"), s3_key=plan.image_url)
                 
-                plan_dto = PlanDTO(
+                plan_dto = PublicPlanDTO(
                     id=plan.id,
                     title=plan.title,
                     description=plan.description,
@@ -49,7 +49,7 @@ async def get_published_plans(
             
             total = get_published_plans_count(db=db, search=search, language=language)
             
-            return PlansResponse(plans=plan_dtos, skip=skip, limit=limit, total=total)
+            return PublicPlansResponse(plans=plan_dtos, skip=skip, limit=limit, total=total)
     
     except Exception as e:
         logger.error(f"Error fetching published plans: {str(e)}", exc_info=True)
@@ -59,7 +59,7 @@ async def get_published_plans(
         )
 
 
-async def get_published_plan(plan_id: UUID) -> PlanDTO:
+async def get_published_plan(plan_id: UUID) -> PublicPlanDTO:
 
     try:
         with SessionLocal() as db:
@@ -84,7 +84,7 @@ async def get_published_plan(plan_id: UUID) -> PlanDTO:
             
             total_days = db.query(PlanItem).filter(PlanItem.plan_id == plan_id).count()  
 
-            return PlanDTO(
+            return PublicPlanDTO(
                 id=plan.id,
                 title=plan.title,
                 description=plan.description,

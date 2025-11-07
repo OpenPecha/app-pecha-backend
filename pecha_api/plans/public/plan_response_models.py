@@ -12,7 +12,7 @@ class AuthorDTO(BaseModel):
     image_url: Optional[str] = None 
     image_key: Optional[str] = None  
 
-class PlanDTO(BaseModel):
+class PublicPlanDTO(BaseModel):
     id: UUID
     title: str
     description: str
@@ -54,7 +54,7 @@ class PlanWithDays(BaseModel):
     tags: List[str]
     days: List[PlanDayDTO]
 
-class PlansResponse(BaseModel):
+class PublicPlansResponse(BaseModel):
     plans: List[PlanDTO]
     skip: int
     limit: int

@@ -3,7 +3,7 @@ from typing import Optional
 from uuid import UUID
 from starlette import status
 
-from pecha_api.plans.public.plan_response_models import PlansResponse, PlanDTO, PlanDayDTO
+from pecha_api.plans.public.plan_response_models import PublicPlansResponse, PublicPlanDTO, PlanDayDTO
 from pecha_api.plans.public.plan_models import PlanDaysResponse
 from pecha_api.plans.public.plan_service import (
     get_published_plans, 
@@ -18,7 +18,7 @@ public_plans_router = APIRouter(
 )
 
 
-@public_plans_router.get("", status_code=status.HTTP_200_OK, response_model=PlansResponse)
+@public_plans_router.get("", status_code=status.HTTP_200_OK, response_model=PublicPlansResponse)
 async def get_plans(
     search: Optional[str] = Query(None, description="Search by plan title"),
     language: str = Query("en", description="Filter by language code (e.g., 'bo', 'en', 'zh'). Defaults to 'en'."),
@@ -30,7 +30,7 @@ async def get_plans(
     return await get_published_plans(search=search, language=language, sort_by=sort_by, sort_order=sort_order, skip=skip, limit=limit)
 
 
-@public_plans_router.get("/{plan_id}", status_code=status.HTTP_200_OK, response_model=PlanDTO)
+@public_plans_router.get("/{plan_id}", status_code=status.HTTP_200_OK, response_model=PublicPlanDTO)
 async def get_plan_details(plan_id: UUID):
     return await get_published_plan(plan_id=plan_id)
 
