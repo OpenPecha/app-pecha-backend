@@ -5,7 +5,7 @@ from fastapi import HTTPException
 from starlette import status
 
 from pecha_api.plans.public.plan_service import get_plan_days
-from pecha_api.plans.public.plan_models import PlanDaysResponse, PlanDayBasic
+from pecha_api.plans.public.plan_response_models import PlanDaysResponse
 from pecha_api.error_contants import ErrorConstants
 
 

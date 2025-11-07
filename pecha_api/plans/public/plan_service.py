@@ -8,7 +8,7 @@ from pecha_api.plans.items.plan_items_repository import get_days_by_plan_id
 from pecha_api.plans.plans_enums import PlanStatus
 from pecha_api.plans.plans_response_models import PlansResponse, PlanDTO, PlanDayDTO
 from pecha_api.plans.shared.utils import load_plans_from_json, convert_plan_model_to_dto, convert_day_model_to_dto
-from pecha_api.plans.public.plan_models import PlanDaysResponse, PlanDayBasic
+from pecha_api.plans.public.plan_response_models import PlanDaysResponse, PlanDayBasic
 from pecha_api.users.users_service import validate_and_extract_user_details
 from pecha_api.db.database import SessionLocal
 from pecha_api.plans.cms.cms_plans_repository import get_plan_by_id

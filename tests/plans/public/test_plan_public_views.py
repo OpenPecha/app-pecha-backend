@@ -2,7 +2,7 @@ import uuid
 import pytest
 from unittest.mock import patch, AsyncMock
 
-from pecha_api.plans.public.plan_models import PlanDaysResponse, PlanDayBasic
+from pecha_api.plans.public.plan_response_models import PlanDaysResponse, PlanDayBasic
 from pecha_api.plans.public.plan_views import get_plan_days_list
 
 

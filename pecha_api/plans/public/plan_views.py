@@ -5,7 +5,7 @@ from starlette import status
 
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from pecha_api.plans.plans_response_models import PlansResponse, PlanDTO, PlanDayDTO
-from pecha_api.plans.public.plan_models import PlanDaysResponse
+from pecha_api.plans.public.plan_response_models import PlanDaysResponse
 from pecha_api.plans.public.plan_service import (
     get_published_plans, 
     get_published_plan_details, 
