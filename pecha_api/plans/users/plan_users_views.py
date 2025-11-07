@@ -13,6 +13,7 @@ from pecha_api.plans.users.plan_users_service import (
     get_user_plan_progress,
     complete_task_service,
     complete_sub_task_service,
+    delete_task_service
 )
 
 

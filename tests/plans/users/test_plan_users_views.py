@@ -198,3 +198,45 @@ def test_complete_task_success(authenticated_client):
         assert mock_complete.call_args.kwargs.get("task_id") == task_id
 
 
+# New tests for delete task endpoint
+def test_delete_task_success(authenticated_client):
+    task_id = uuid.uuid4()
+
+    with patch("pecha_api.plans.users.plan_users_views.delete_task_service", return_value=None) as mock_delete:
+        response = authenticated_client.delete(
+            f"/users/me/task/{task_id}",
+            headers={"Authorization": f"Bearer {VALID_TOKEN}"},
+        )
+
+        assert response.status_code == status.HTTP_204_NO_CONTENT
+        assert response.text == ""
+        assert mock_delete.call_count == 1
+        assert mock_delete.call_args.kwargs.get("token") == VALID_TOKEN
+        assert mock_delete.call_args.kwargs.get("task_id") == task_id
+
+
+def test_delete_task_service_error_propagates(authenticated_client):
+    task_id = uuid.uuid4()
+
+    with patch("pecha_api.plans.users.plan_users_views.delete_task_service") as mock_delete:
+        mock_delete.side_effect = HTTPException(
+            status_code=404,
+            detail={"error": "Bad request", "message": "Task not found"},
+        )
+
+        response = authenticated_client.delete(
+            f"/users/me/task/{task_id}",
+            headers={"Authorization": f"Bearer {VALID_TOKEN}"},
+        )
+
+        assert response.status_code == status.HTTP_404_NOT_FOUND
+        assert response.json()["detail"] == {"error": "Bad request", "message": "Task not found"}
+
+
+def test_delete_task_unauthenticated(unauthenticated_client):
+    task_id = uuid.uuid4()
+
+    response = unauthenticated_client.delete(f"/users/me/task/{task_id}")
+
+    assert response.status_code == status.HTTP_403_FORBIDDEN
+
