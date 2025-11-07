@@ -41,7 +41,8 @@ class PlanDTO(BaseModel):
     difficulty_level: Optional[DifficultyLevel] = None
     image_url: Optional[str] = None
     total_days: int
-    tags: Optional[List[str]] = []
+    tags: Optional[List[str]] = [],
+    author: Optional[AuthorDTO] = None
 
 class SubTaskDTO(BaseModel):
     id: UUID
