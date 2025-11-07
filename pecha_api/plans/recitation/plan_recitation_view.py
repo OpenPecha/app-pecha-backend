@@ -12,7 +12,7 @@ recitation_router=APIRouter(
     tags=["Recitation"],
 )
 
-@recitation_router.post("/recitation",status_code=status.HTTP_201_CREATED)
+@recitation_router.post("/recitation",status_code=status.HTTP_204_NO_CONTENT)
 async def create_recitation(authentication_credential: Annotated[HTTPAuthorizationCredentials, Depends(oauth2_scheme)],
                             create_recitation_request: CreateRecitationRequest):
     return await create_recitation_service(
