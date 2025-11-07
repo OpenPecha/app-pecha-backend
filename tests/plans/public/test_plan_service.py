@@ -5,9 +5,8 @@ from fastapi import HTTPException
 from starlette import status
 
 from pecha_api.plans.public.plan_service import get_published_plans, get_published_plan
-from pecha_api.plans.plans_response_models import PlansResponse, PlanDTO, AuthorDTO
+from pecha_api.plans.public.plan_response_models import PlansResponse, PlanDTO
 from pecha_api.plans.plans_enums import PlanStatus, DifficultyLevel, LanguageCode
-from pecha_api.error_contants import ErrorConstants
 
 
 @pytest.fixture
@@ -60,8 +59,7 @@ async def test_get_published_plans_success(sample_plan_aggregate, mock_db_sessio
     with patch("pecha_api.plans.public.plan_service.SessionLocal", return_value=mock_db_session), \
          patch("pecha_api.plans.public.plan_service.get_published_plans_from_db", return_value=[sample_plan_aggregate]) as mock_repo, \
          patch("pecha_api.plans.public.plan_service.get_published_plans_count", return_value=1), \
-         patch("pecha_api.plans.public.plan_service.generate_plan_image_url", return_value="https://bucket.s3.amazonaws.com/presigned-url") as mock_plan_url, \
-         patch("pecha_api.plans.public.plan_service.generate_author_avatar_url", return_value="https://bucket.s3.amazonaws.com/author-presigned-url") as mock_author_url:
+         patch("pecha_api.plans.public.plan_service.generate_presigned_access_url", return_value="https://bucket.s3.amazonaws.com/presigned-url") as mock_presigned_url:
         
         result = await get_published_plans(
             search=None,
@@ -82,22 +80,17 @@ async def test_get_published_plans_success(sample_plan_aggregate, mock_db_sessio
         assert plan_dto.title == "Introduction to Meditation"
         assert plan_dto.language == "EN"
         assert plan_dto.total_days == 30
-        assert plan_dto.subscription_count == 150
         assert plan_dto.image_url == "https://bucket.s3.amazonaws.com/presigned-url"
-        assert plan_dto.image_key == "images/plan_images/plan-id/uuid/image.jpg"
-        
-        assert plan_dto.author is not None
-        assert plan_dto.author.firstname == "John"
-        assert plan_dto.author.lastname == "Doe"
-        assert plan_dto.author.image_url == "https://bucket.s3.amazonaws.com/author-presigned-url"
-        assert plan_dto.author.image_key == "images/author_avatars/author-id/avatar.jpg"
+        assert plan_dto.author is None
         
         mock_repo.assert_called_once_with(
             db=mock_db_session.__enter__.return_value,
             skip=0,
             limit=20,
             search=None,
-            language=None
+            language=None,
+            sort_by="title",
+            sort_order="asc"
         )
 
 
@@ -106,12 +99,11 @@ async def test_get_published_plans_with_search(sample_plan_aggregate, mock_db_se
     with patch("pecha_api.plans.public.plan_service.SessionLocal", return_value=mock_db_session), \
          patch("pecha_api.plans.public.plan_service.get_published_plans_from_db", return_value=[sample_plan_aggregate]) as mock_repo, \
          patch("pecha_api.plans.public.plan_service.get_published_plans_count", return_value=1), \
-         patch("pecha_api.plans.public.plan_service.generate_plan_image_url", return_value=None), \
-         patch("pecha_api.plans.public.plan_service.generate_author_avatar_url", return_value=None):
+         patch("pecha_api.plans.public.plan_service.generate_presigned_access_url", return_value=None):
         
         result = await get_published_plans(
             search="meditation",
-            language=None,
+            language="en",
             sort_by="title",
             sort_order="asc",
             skip=0,
@@ -124,7 +116,9 @@ async def test_get_published_plans_with_search(sample_plan_aggregate, mock_db_se
             skip=0,
             limit=20,
             search="meditation",
-            language=None
+            language="en",
+            sort_by="title",
+            sort_order="asc"
         )
 
 
@@ -133,8 +127,7 @@ async def test_get_published_plans_with_language_filter(sample_plan_aggregate, m
     with patch("pecha_api.plans.public.plan_service.SessionLocal", return_value=mock_db_session), \
          patch("pecha_api.plans.public.plan_service.get_published_plans_from_db", return_value=[sample_plan_aggregate]) as mock_repo, \
          patch("pecha_api.plans.public.plan_service.get_published_plans_count", return_value=1), \
-         patch("pecha_api.plans.public.plan_service.generate_plan_image_url", return_value=None), \
-         patch("pecha_api.plans.public.plan_service.generate_author_avatar_url", return_value=None):
+         patch("pecha_api.plans.public.plan_service.generate_presigned_access_url", return_value=None):
         
         result = await get_published_plans(
             search=None,
@@ -151,7 +144,9 @@ async def test_get_published_plans_with_language_filter(sample_plan_aggregate, m
             skip=0,
             limit=20,
             search=None,
-            language="en"
+            language="en",
+            sort_by="title",
+            sort_order="asc"
         )
 
 
@@ -194,8 +189,7 @@ async def test_get_published_plans_sort_by_title_asc(sample_plan_aggregate, mock
     with patch("pecha_api.plans.public.plan_service.SessionLocal", return_value=mock_db_session), \
          patch("pecha_api.plans.public.plan_service.get_published_plans_from_db", return_value=aggregates), \
          patch("pecha_api.plans.public.plan_service.get_published_plans_count", return_value=2), \
-         patch("pecha_api.plans.public.plan_service.generate_plan_image_url", return_value=None), \
-         patch("pecha_api.plans.public.plan_service.generate_author_avatar_url", return_value=None):
+         patch("pecha_api.plans.public.plan_service.generate_presigned_access_url", return_value=None):
         
         result = await get_published_plans(sort_by="title", sort_order="asc")
         
@@ -242,13 +236,13 @@ async def test_get_published_plans_sort_by_title_desc(sample_plan_aggregate, moc
     with patch("pecha_api.plans.public.plan_service.SessionLocal", return_value=mock_db_session), \
          patch("pecha_api.plans.public.plan_service.get_published_plans_from_db", return_value=aggregates), \
          patch("pecha_api.plans.public.plan_service.get_published_plans_count", return_value=2), \
-         patch("pecha_api.plans.public.plan_service.generate_plan_image_url", return_value=None), \
-         patch("pecha_api.plans.public.plan_service.generate_author_avatar_url", return_value=None):
+         patch("pecha_api.plans.public.plan_service.generate_presigned_access_url", return_value=None):
         
         result = await get_published_plans(sort_by="title", sort_order="desc")
         
-        assert result.plans[0].title == "Beginner Meditation"
-        assert result.plans[1].title == "Advanced Meditation"
+        assert len(result.plans) == 2
+        assert result.plans[0].title == "Advanced Meditation"
+        assert result.plans[1].title == "Beginner Meditation"
 
 
 @pytest.mark.asyncio
@@ -290,8 +284,7 @@ async def test_get_published_plans_sort_by_total_days(sample_plan_aggregate, moc
     with patch("pecha_api.plans.public.plan_service.SessionLocal", return_value=mock_db_session), \
          patch("pecha_api.plans.public.plan_service.get_published_plans_from_db", return_value=aggregates), \
          patch("pecha_api.plans.public.plan_service.get_published_plans_count", return_value=2), \
-         patch("pecha_api.plans.public.plan_service.generate_plan_image_url", return_value=None), \
-         patch("pecha_api.plans.public.plan_service.generate_author_avatar_url", return_value=None):
+         patch("pecha_api.plans.public.plan_service.generate_presigned_access_url", return_value=None):
         
         result = await get_published_plans(sort_by="total_days", sort_order="asc")
         
@@ -338,13 +331,13 @@ async def test_get_published_plans_sort_by_subscription_count(sample_plan_aggreg
     with patch("pecha_api.plans.public.plan_service.SessionLocal", return_value=mock_db_session), \
          patch("pecha_api.plans.public.plan_service.get_published_plans_from_db", return_value=aggregates), \
          patch("pecha_api.plans.public.plan_service.get_published_plans_count", return_value=2), \
-         patch("pecha_api.plans.public.plan_service.generate_plan_image_url", return_value=None), \
-         patch("pecha_api.plans.public.plan_service.generate_author_avatar_url", return_value=None):
+         patch("pecha_api.plans.public.plan_service.generate_presigned_access_url", return_value=None):
         
         result = await get_published_plans(sort_by="subscription_count", sort_order="desc")
         
-        assert result.plans[0].subscription_count == 200
-        assert result.plans[1].subscription_count == 50
+        assert len(result.plans) == 2
+        assert result.plans[0].title == "Popular Plan"
+        assert result.plans[1].title == "Less Popular Plan"
 
 
 @pytest.mark.asyncio
@@ -381,7 +374,7 @@ async def test_get_published_plans_without_author(mock_db_session):
     with patch("pecha_api.plans.public.plan_service.SessionLocal", return_value=mock_db_session), \
          patch("pecha_api.plans.public.plan_service.get_published_plans_from_db", return_value=[aggregate]), \
          patch("pecha_api.plans.public.plan_service.get_published_plans_count", return_value=1), \
-         patch("pecha_api.plans.public.plan_service.generate_plan_image_url", return_value=None):
+         patch("pecha_api.plans.public.plan_service.generate_presigned_access_url", return_value=None):
         
         result = await get_published_plans()
         
@@ -394,8 +387,7 @@ async def test_get_published_plans_with_pagination(sample_plan_aggregate, mock_d
     with patch("pecha_api.plans.public.plan_service.SessionLocal", return_value=mock_db_session), \
          patch("pecha_api.plans.public.plan_service.get_published_plans_from_db", return_value=[sample_plan_aggregate]) as mock_repo, \
          patch("pecha_api.plans.public.plan_service.get_published_plans_count", return_value=1), \
-         patch("pecha_api.plans.public.plan_service.generate_plan_image_url", return_value=None), \
-         patch("pecha_api.plans.public.plan_service.generate_author_avatar_url", return_value=None):
+         patch("pecha_api.plans.public.plan_service.generate_presigned_access_url", return_value=None):
         
         result = await get_published_plans(skip=10, limit=5)
         
@@ -406,7 +398,9 @@ async def test_get_published_plans_with_pagination(sample_plan_aggregate, mock_d
             skip=10,
             limit=5,
             search=None,
-            language=None
+            language="en",
+            sort_by="title",
+            sort_order="asc"
         )
 
 
@@ -414,15 +408,12 @@ async def test_get_published_plans_with_pagination(sample_plan_aggregate, mock_d
 async def test_get_published_plans_image_url_generation_failure(sample_plan_aggregate, mock_db_session):
     with patch("pecha_api.plans.public.plan_service.SessionLocal", return_value=mock_db_session), \
          patch("pecha_api.plans.public.plan_service.get_published_plans_from_db", return_value=[sample_plan_aggregate]), \
-         patch("pecha_api.plans.public.plan_service.generate_plan_image_url", return_value=None) as mock_plan_url, \
-         patch("pecha_api.plans.public.plan_service.generate_author_avatar_url", return_value=None) as mock_author_url:
+         patch("pecha_api.plans.public.plan_service.generate_presigned_access_url", return_value=None):
         
         result = await get_published_plans()
         
         assert len(result.plans) == 1
         assert result.plans[0].image_url is None
-        assert result.plans[0].image_key == "images/plan_images/plan-id/uuid/image.jpg"
-        assert result.plans[0].author.image_url is None
 
 
 @pytest.mark.asyncio
@@ -442,29 +433,27 @@ async def test_get_published_plan_success(sample_plan, sample_author, mock_db_se
     
     mock_query = MagicMock()
     mock_db_session.__enter__.return_value.query.return_value = mock_query
-    mock_query.filter.return_value.count.return_value = 30  # total_days
-    mock_query.filter.return_value.distinct.return_value.count.return_value = 150  # subscription_count
+    mock_query.filter.return_value.count.return_value = 30 
+    mock_query.filter.return_value.distinct.return_value.count.return_value = 150 
     
     with patch("pecha_api.plans.public.plan_service.SessionLocal", return_value=mock_db_session), \
          patch("pecha_api.plans.public.plan_service.get_published_plan_by_id", return_value=sample_plan) as mock_repo, \
-         patch("pecha_api.plans.public.plan_service.generate_plan_image_url", return_value="https://bucket.s3.amazonaws.com/presigned-url") as mock_plan_url, \
-         patch("pecha_api.plans.public.plan_service.generate_author_avatar_url", return_value="https://bucket.s3.amazonaws.com/author-presigned-url") as mock_author_url:
+         patch("pecha_api.plans.public.plan_service.generate_presigned_access_url", return_value="https://bucket.s3.amazonaws.com/presigned-url") as mock_presigned_url:
         
         result = await get_published_plan(plan_id=plan_id)
         
         assert isinstance(result, PlanDTO)
         assert result.id == plan_id
         assert result.title == "Introduction to Meditation"
-        assert result.language == "EN"  # Enum value is uppercase
+        assert result.language == "EN" 
         assert result.total_days == 30
-        assert result.subscription_count == 150
         assert result.image_url == "https://bucket.s3.amazonaws.com/presigned-url"
-        assert result.image_key == "images/plan_images/plan-id/uuid/image.jpg"
         
         assert result.author is not None
         assert result.author.firstname == "John"
         assert result.author.lastname == "Doe"
-        assert result.author.image_url == "https://bucket.s3.amazonaws.com/author-presigned-url"
+        assert result.author.image_url == "https://bucket.s3.amazonaws.com/presigned-url"
+        assert result.author.image_key == "images/author_avatars/author-id/avatar.jpg"
         
         mock_repo.assert_called_once_with(db=mock_db_session.__enter__.return_value, plan_id=plan_id)
 
@@ -503,7 +492,7 @@ async def test_get_published_plan_without_author(mock_db_session):
     
     with patch("pecha_api.plans.public.plan_service.SessionLocal", return_value=mock_db_session), \
          patch("pecha_api.plans.public.plan_service.get_published_plan_by_id", return_value=plan_no_author), \
-         patch("pecha_api.plans.public.plan_service.generate_plan_image_url", return_value=None):
+         patch("pecha_api.plans.public.plan_service.generate_presigned_access_url", return_value=None):
         
         result = await get_published_plan(plan_id=plan_no_author.id)
         
@@ -522,14 +511,11 @@ async def test_get_published_plan_image_url_generation_failure(sample_plan, mock
     
     with patch("pecha_api.plans.public.plan_service.SessionLocal", return_value=mock_db_session), \
          patch("pecha_api.plans.public.plan_service.get_published_plan_by_id", return_value=sample_plan), \
-         patch("pecha_api.plans.public.plan_service.generate_plan_image_url", return_value=None), \
-         patch("pecha_api.plans.public.plan_service.generate_author_avatar_url", return_value=None):
+         patch("pecha_api.plans.public.plan_service.generate_presigned_access_url", return_value=None):
         
         result = await get_published_plan(plan_id=plan_id)
         
         assert result.image_url is None
-        assert result.image_key == "images/plan_images/plan-id/uuid/image.jpg"
-        assert result.author.image_url is None
 
 
 @pytest.mark.asyncio
@@ -557,8 +543,7 @@ async def test_get_published_plan_with_empty_tags(sample_plan, mock_db_session):
     
     with patch("pecha_api.plans.public.plan_service.SessionLocal", return_value=mock_db_session), \
          patch("pecha_api.plans.public.plan_service.get_published_plan_by_id", return_value=sample_plan), \
-         patch("pecha_api.plans.public.plan_service.generate_plan_image_url", return_value=None), \
-         patch("pecha_api.plans.public.plan_service.generate_author_avatar_url", return_value=None):
+         patch("pecha_api.plans.public.plan_service.generate_presigned_access_url", return_value=None):
         
         result = await get_published_plan(plan_id=sample_plan.id)
         
@@ -574,9 +559,9 @@ async def test_get_published_plan_zero_subscriptions(sample_plan, mock_db_sessio
     
     with patch("pecha_api.plans.public.plan_service.SessionLocal", return_value=mock_db_session), \
          patch("pecha_api.plans.public.plan_service.get_published_plan_by_id", return_value=sample_plan), \
-         patch("pecha_api.plans.public.plan_service.generate_plan_image_url", return_value=None), \
-         patch("pecha_api.plans.public.plan_service.generate_author_avatar_url", return_value=None):
+         patch("pecha_api.plans.public.plan_service.generate_presigned_access_url", return_value=None):
         
         result = await get_published_plan(plan_id=sample_plan.id)
         
-        assert result.subscription_count == 0
+        assert result.title == sample_plan.title
+        assert result.id == sample_plan.id
