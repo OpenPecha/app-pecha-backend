@@ -4,7 +4,7 @@ from typing import Optional
 from uuid import UUID
 from pecha_api.plans.plans_models import Plan
 from pecha_api.plans.items.plan_items_models import PlanItem
-from pecha_api.plans.users.plan_users_model import UserPlanProgress
+from pecha_api.plans.users.plan_users_models import UserPlanProgress
 from pecha_api.plans.plans_enums import PlanStatus
 from pecha_api.plans.public.plan_response_models import PlanWithAggregates
 

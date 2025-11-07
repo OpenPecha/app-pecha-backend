@@ -8,7 +8,7 @@ from pecha_api.db.database import SessionLocal
 from pecha_api.error_contants import ErrorConstants
 from pecha_api.plans.public.plan_response_models import PlansResponse, PlanDTO, PlanDayDTO, AuthorDTO
 from pecha_api.plans.public.plan_models import PlanDaysResponse, PlanDayBasic
-from pecha_api.plans.users.plan_users_model import UserPlanProgress
+from pecha_api.plans.users.plan_users_models import UserPlanProgress
 from pecha_api.plans.items.plan_items_models import PlanItem
 from pecha_api.uploads.S3_utils import generate_presigned_access_url
 from pecha_api.plans.public.plan_repository import (get_published_plans_from_db, get_published_plans_count, get_published_plan_by_id)
