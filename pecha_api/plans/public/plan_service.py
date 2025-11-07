@@ -1,14 +1,16 @@
-from typing import Optional
+from typing import Optional, List
 from uuid import UUID
 from fastapi import HTTPException
 from starlette import status
 
 from pecha_api.error_contants import ErrorConstants
-from pecha_api.plans.items.plan_items_repository import get_days_by_plan_id
+from pecha_api.plans.items.plan_items_repository import get_days_by_plan_id, get_plan_day_with_tasks_and_subtasks
 from pecha_api.plans.plans_enums import PlanStatus
-from pecha_api.plans.plans_response_models import PlansResponse, PlanDTO, PlanDayDTO
-from pecha_api.plans.shared.utils import load_plans_from_json, convert_plan_model_to_dto, convert_day_model_to_dto
-from pecha_api.plans.public.plan_response_models import PlanDaysResponse, PlanDayBasic
+from pecha_api.plans.plans_response_models import PlansResponse, PlanDTO
+from pecha_api.plans.public.plan_response_models import PlanDayDTO
+from pecha_api.plans.shared.utils import load_plans_from_json, convert_plan_model_to_dto
+from pecha_api.plans.public.plan_response_models import PlanDaysResponse, PlanDayBasic, SubTaskDTO, TaskDTO
+from pecha_api.plans.tasks.sub_tasks.plan_sub_tasks_models import PlanSubTask
 from pecha_api.users.users_service import validate_and_extract_user_details
 from pecha_api.db.database import SessionLocal
 from pecha_api.plans.cms.cms_plans_repository import get_plan_by_id
@@ -114,36 +116,37 @@ async def get_plan_days(token: str, plan_id: UUID) -> PlanDaysResponse:
             days_basic.append(day_basic)
         return PlanDaysResponse(days=days_basic)
 
+def _get_task_subtasks_dto(subtasks: List[PlanSubTask]) -> List[SubTaskDTO]:
 
-async def get_plan_day_details(plan_id: UUID, day_number: int) -> PlanDayDTO:
+    subtasks_dto = [SubTaskDTO(
+            id=subtask.id,
+            content_type=subtask.content_type,
+            content=subtask.content,
+            display_order=subtask.display_order,
+        )
+        for subtask in subtasks
+    ]
+    
+    return subtasks_dto
+
+async def get_plan_day_details(token: str, plan_id: UUID, day_number: int) -> PlanDayDTO:
     """Get specific day's content with tasks"""
     
-    # Load plans from JSON file
-    plan_listing = load_plans_from_json()
-    
-    # Find plan by ID and ensure it's published
-    plan_model = next(
-        (p for p in plan_listing.plans if p.id == str(plan_id) and p.status == "PUBLISHED"), 
-        None
-    )
-    
-    if not plan_model:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail=ErrorConstants.PLAN_NOT_FOUND
-        )
-    
-    # Find the specific day
-    day_model = next(
-        (d for d in plan_model.days if d.day_number == day_number),
-        None
-    )
-    
-    if not day_model:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="Day not found"
-        )
-    
-    # Convert day model to DTO with all tasks
-    return convert_day_model_to_dto(day_model)
+    validate_and_extract_user_details(token=token)
+    with SessionLocal() as db:
+        plan_item = get_plan_day_with_tasks_and_subtasks(db=db, plan_id=plan_id, day_number=day_number)
+        plan_day_dto: PlanDayDTO = PlanDayDTO(
+            id=plan_item.id,
+            day_number=plan_item.day_number,
+            tasks=[
+                TaskDTO(
+                    id=task.id,
+                    title=task.title,
+                    estimated_time=task.estimated_time,
+                    display_order=task.display_order,
+                    subtasks=_get_task_subtasks_dto(task.sub_tasks)
+                )
+                for task in plan_item.tasks
+            ]
+        )   
+        return plan_day_dto
