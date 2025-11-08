@@ -8,6 +8,12 @@ from pecha_api.plans.users.plan_users_models import UserPlanProgress
 from pecha_api.plans.plans_enums import PlanStatus
 from pecha_api.plans.public.plan_response_models import PlanWithAggregates
 
+DEFAULT_SKIP = 0
+DEFAULT_LIMIT = 20
+DEFAULT_LANGUAGE = "EN"
+DEFAULT_SEARCH = None
+DEFAULT_SORT_BY = "title"
+DEFAULT_SORT_ORDER = "asc"
 
 def get_aggregate_counts():
     total_days_label = func.count(func.distinct(PlanItem.id)).label("total_days")
@@ -53,7 +59,7 @@ def apply_sorting(query, sort_by: str, sort_order: str, total_days_label, subscr
         return query.order_by(asc(sort_column))
 
 
-def Convert_to_plan_aggregates(rows):
+def convert_to_plan_aggregates(rows):
     return [
         PlanWithAggregates(plan=plan, total_days=total_days, subscription_count=subscription_count)
         for plan, total_days, subscription_count in rows
@@ -61,12 +67,12 @@ def Convert_to_plan_aggregates(rows):
 
 
 def get_published_plans_from_db(db: Session, 
-    skip: int = 0, 
-    limit: int = 20, 
-    search: Optional[str] = None, 
-    language: str = "EN",  
-    sort_by: str = "title",
-    sort_order: str = "asc"
+    skip: int = DEFAULT_SKIP, 
+    limit: int = DEFAULT_LIMIT, 
+    search: Optional[str] = DEFAULT_SEARCH, 
+    language: str = DEFAULT_LANGUAGE,  
+    sort_by: str = DEFAULT_SORT_BY,
+    sort_order: str = DEFAULT_SORT_ORDER
 ):
     total_days_label, subscription_count_label = get_aggregate_counts()
     query = get_published_plans_query(db, total_days_label, subscription_count_label, language)
@@ -74,10 +80,10 @@ def get_published_plans_from_db(db: Session,
     query = apply_sorting(query, sort_by, sort_order, total_days_label, subscription_count_label)
     rows = query.offset(skip).limit(limit).all()
     
-    return Convert_to_plan_aggregates(rows)
+    return convert_to_plan_aggregates(rows)
 
 
-def get_published_plans_count(db: Session, search: Optional[str] = None, language: str = "EN") -> int:
+def get_published_plans_count(db: Session, search: Optional[str] = DEFAULT_SEARCH, language: str = DEFAULT_LANGUAGE) -> int:
     query = db.query(func.count(Plan.id)).filter(
         Plan.deleted_at.is_(None),
         Plan.status == PlanStatus.PUBLISHED,
