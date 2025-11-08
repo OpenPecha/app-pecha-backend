@@ -1,0 +1,107 @@
+from sqlalchemy.orm import Session, selectinload
+from sqlalchemy import func, desc, asc
+from typing import Optional
+from uuid import UUID
+from pecha_api.plans.plans_models import Plan
+from pecha_api.plans.items.plan_items_models import PlanItem
+from pecha_api.plans.users.plan_users_models import UserPlanProgress
+from pecha_api.plans.plans_enums import PlanStatus
+from pecha_api.plans.public.plan_response_models import PlanWithAggregates
+
+
+def get_aggregate_counts():
+    total_days_label = func.count(func.distinct(PlanItem.id)).label("total_days")
+    subscription_count_label = func.count(func.distinct(UserPlanProgress.user_id)).label("subscription_count")
+    return total_days_label, subscription_count_label
+
+
+def get_published_plans_query(db: Session, total_days_label, subscription_count_label, language: str):
+    query = (
+        db.query(Plan, total_days_label, subscription_count_label)
+        .outerjoin(PlanItem, PlanItem.plan_id == Plan.id)
+        .outerjoin(UserPlanProgress, UserPlanProgress.plan_id == Plan.id)
+        .options(selectinload(Plan.author))
+        .filter(
+            Plan.language == language,
+            Plan.deleted_at.is_(None),
+            Plan.status == PlanStatus.PUBLISHED
+        )
+        .group_by(Plan.id)
+    )
+    
+    return query
+
+
+def apply_search_filter(query, search: Optional[str]):
+    if search:
+        query = query.filter(Plan.title.ilike(f"%{search}%"))
+    return query
+
+
+def apply_sorting(query, sort_by: str, sort_order: str, total_days_label, subscription_count_label):
+    sort_column_map = {
+        "title": Plan.title,
+        "total_days": total_days_label,
+        "subscription_count": subscription_count_label
+    }
+    
+    sort_column = sort_column_map.get(sort_by, Plan.title)
+    
+    if sort_order == "desc":
+        return query.order_by(desc(sort_column))
+    else:
+        return query.order_by(asc(sort_column))
+
+
+def Convert_to_plan_aggregates(rows):
+    return [
+        PlanWithAggregates(plan=plan, total_days=total_days, subscription_count=subscription_count)
+        for plan, total_days, subscription_count in rows
+    ]
+
+
+def get_published_plans_from_db(db: Session, 
+    skip: int = 0, 
+    limit: int = 20, 
+    search: Optional[str] = None, 
+    language: str = "EN",  
+    sort_by: str = "title",
+    sort_order: str = "asc"
+):
+    total_days_label, subscription_count_label = get_aggregate_counts()
+    query = get_published_plans_query(db, total_days_label, subscription_count_label, language)
+    query = apply_search_filter(query, search)
+    query = apply_sorting(query, sort_by, sort_order, total_days_label, subscription_count_label)
+    rows = query.offset(skip).limit(limit).all()
+    
+    return Convert_to_plan_aggregates(rows)
+
+
+def get_published_plans_count(db: Session, search: Optional[str] = None, language: str = "EN") -> int:
+    query = db.query(func.count(Plan.id)).filter(
+        Plan.deleted_at.is_(None),
+        Plan.status == PlanStatus.PUBLISHED,
+        Plan.language == language
+    )
+    if search:
+        query = query.filter(Plan.title.ilike(f"%{search}%"))
+    return query.scalar()
+
+
+def get_published_plan_by_id(db: Session, plan_id: UUID) -> Optional[Plan]:
+    return db.query(Plan).options(selectinload(Plan.author)).filter(
+            Plan.id == plan_id,
+            Plan.status == PlanStatus.PUBLISHED,
+            Plan.deleted_at.is_(None)
+        ).first()
+
+
+def get_plan_items_by_plan_id(db: Session, plan_id: UUID) -> list[PlanItem]:
+    return db.query(PlanItem).filter(PlanItem.plan_id == plan_id).order_by(PlanItem.day_number).all()
+
+
+def get_plan_item_by_day_number(db: Session, plan_id: UUID, day_number: int) -> Optional[PlanItem]:
+    return db.query(PlanItem).filter(
+            PlanItem.plan_id == plan_id,
+            PlanItem.day_number == day_number
+        ).first()
