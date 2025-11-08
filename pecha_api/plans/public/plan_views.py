@@ -4,8 +4,8 @@ from uuid import UUID
 from starlette import status
 
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
-from pecha_api.plans.plans_response_models import PlansResponse, PlanDTO, PlanDayDTO
-from pecha_api.plans.public.plan_response_models import PlanDaysResponse
+from pecha_api.plans.plans_response_models import PlansResponse, PlanDTO
+from pecha_api.plans.public.plan_response_models import PlanDaysResponse, PlanDayDTO
 from pecha_api.plans.public.plan_service import (
     get_published_plans, 
     get_published_plan_details, 
@@ -53,6 +53,6 @@ async def get_plan_days_list(authentication_credential: Annotated[HTTPAuthorizat
 
 
 @public_plans_router.get("/{plan_id}/days/{day_number}", status_code=status.HTTP_200_OK, response_model=PlanDayDTO)
-async def get_plan_day_content(plan_id: UUID, day_number: int):
+async def get_plan_day_content(authentication_credential: Annotated[HTTPAuthorizationCredentials, Depends(oauth2_scheme)],plan_id: UUID, day_number: int):
     """Get specific day's content with tasks"""
-    return await get_plan_day_details(plan_id=plan_id, day_number=day_number)
+    return await get_plan_day_details(token=authentication_credential.credentials, plan_id=plan_id, day_number=day_number)
