@@ -34,5 +34,16 @@ class EnrolledUserPlan(BaseModel):
     created_at: datetime
     is_completed: bool
 
+class UserPlansResponse(BaseModel):
+    id: UUID
+    title: str
+    description: str
+    language: str
+    difficulty_level: str
+    image_url: str
+    started_at: datetime
+    total_days: int
+    tags: List[str]
+
 class UserPlanProgressUpdate(BaseModel):
     status: str
