@@ -44,3 +44,18 @@ def delete_user_subtask_completion(db: Session, user_id: UUID, sub_task_ids: Lis
     except Exception as e:
         db.rollback()
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=ResponseError(error=BAD_REQUEST, message=str(e)).model_dump())
+def get_uncompleted_user_sub_task_ids(db: Session, user_id: UUID, sub_task_ids: List[UUID]) -> List[UUID]:
+    rows = (
+        db.query(PlanSubTask.id)
+        .filter(
+            PlanSubTask.id.in_(sub_task_ids),
+            ~db.query(UserSubTaskCompletion)
+             .filter(
+                 UserSubTaskCompletion.user_id == user_id,
+                 UserSubTaskCompletion.sub_task_id == PlanSubTask.id
+             )
+             .exists()
+        )
+        .all()
+    )
+    return [row[0] for row in rows]
