@@ -60,7 +60,10 @@ MOCK_TABLE_OF_CONTENT = TableOfContent(
 # Create a proper DetailTableOfContentResponse
 MOCK_TABLE_OF_CONTENT_RESPONSE = TableOfContentResponse(
     text_detail=MOCK_TEXT_DTO,
-    contents=[MOCK_TABLE_OF_CONTENT]
+    contents=[MOCK_TABLE_OF_CONTENT],
+    skip=0,
+    limit=10,
+    total=1
 )
 
 # Create a TextVersion instance for the response
