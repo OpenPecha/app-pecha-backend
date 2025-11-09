@@ -6,3 +6,7 @@ class CreateRecitationRequest(BaseModel):
     audio_url: str
     text_id: UUID
     content: dict
+
+class RecitationDTO(BaseModel):
+    id: UUID
+    title: str
