@@ -210,7 +210,7 @@ def complete_task_service(token: str, task_id: UUID) -> None:
             task_id=task.id
         )
         save_user_task_completion(db=db, user_task_completion=new_task_completion)
-        check_day_completion(db=db, user_id=current_user.id, task=task)
+        check_day_completion(db=db, user_id=current_user.id, task=task.plan_item_id)
 
 
 def complete_all_subtasks_completions(db:SessionLocal(), user_id: UUID, task_id: UUID) -> None:
@@ -221,13 +221,13 @@ def complete_all_subtasks_completions(db:SessionLocal(), user_id: UUID, task_id:
     new_subtask_to_create = [UserSubTaskCompletion(user_id=user_id, sub_task_id=sub_task_id) for sub_task_id in uncompleted_sub_task_ids]
     save_user_sub_task_completions_bulk(db=db, user_sub_task_completions=new_subtask_to_create)
 
-def check_day_completion(db:SessionLocal(), user_id: UUID, task: PlanTask) -> None:
+def check_day_completion(db:SessionLocal(), user_id: UUID, plan_item_id: UUID) -> None:
 
-    tasks = get_tasks_by_plan_item_id(db=db, plan_item_id=task.plan_item_id)
+    tasks = get_tasks_by_plan_item_id(db=db, plan_item_id=plan_item_id)
     task_ids = [task.id for task in tasks]
     uncompleted_task_ids = get_uncompleted_user_task_ids(db=db, user_id=user_id, task_ids=task_ids)
     
     if len(uncompleted_task_ids) == 0:
-        save_user_day_completion(db=db, user_day_completion=UserDayCompletion(user_id=user_id, day_id=task.plan_item_id))
+        save_user_day_completion(db=db, user_day_completion=UserDayCompletion(user_id=user_id, day_id=plan_item_id))
     else:
         return
