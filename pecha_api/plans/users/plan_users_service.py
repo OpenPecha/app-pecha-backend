@@ -1,12 +1,11 @@
 from typing import Optional
-from uuid import UUID, uuid4
+from uuid import UUID
 from datetime import datetime, timezone
 from fastapi import HTTPException
 from starlette import status
 
 from pecha_api.error_contants import ErrorConstants
 from pecha_api.plans.plans_enums import UserPlanStatus
-from pecha_api.plans.plans_response_models import PlansResponse
 from pecha_api.plans.shared.utils import load_plans_from_json, convert_plan_model_to_dto
 from pecha_api.plans.users.plan_users_models import UserPlanProgress, UserSubTaskCompletion
 from pecha_api.plans.users.plan_users_response_models import UserPlanEnrollRequest, UserPlansResponse, UserPlanDTO
@@ -16,7 +15,7 @@ from pecha_api.users.users_service import validate_and_extract_user_details
 from pecha_api.db.database import SessionLocal
 from pecha_api.plans.cms.cms_plans_repository import get_plan_by_id
 from pecha_api.plans.auth.plan_auth_models import ResponseError
-from pecha_api.plans.response_message import ALREADY_COMPLETED_SUB_TASK, BAD_REQUEST, PLAN_NOT_FOUND, ALREADY_ENROLLED_IN_PLAN, SUB_TASK_NOT_FOUND
+from pecha_api.plans.response_message import BAD_REQUEST, PLAN_NOT_FOUND, ALREADY_ENROLLED_IN_PLAN, SUB_TASK_NOT_FOUND
 from pecha_api.plans.users.plan_users_progress_repository import (
     get_plan_progress_by_user_id_and_plan_id, 
     save_plan_progress,
@@ -27,23 +26,6 @@ from pecha_api.config import get
 import logging
 
 logger = logging.getLogger(__name__)
-
-# Mock user progress data - in real implementation this would be from database
-MOCK_USER_PROGRESS = [
-    {
-        "id": "550e8400-e29b-41d4-a716-446655440001",
-        "user_id": "550e8400-e29b-41d4-a716-446655440000",
-        "plan_id": "1e0cc3752-382b-4c11-b39c-192ed62123bd",
-        "started_at": "2024-01-15T10:00:00Z",
-        "streak_count": 5,
-        "longest_streak": 10,
-        "status": "active",
-        "is_completed": False,
-        "completed_at": None,
-        "created_at": "2024-01-15T10:00:00Z"
-    }
-]
-
 
 async def get_user_enrolled_plans(token: str,status_filter: Optional[str] = None,skip: int = 0,limit: int = 20) -> UserPlansResponse:
     

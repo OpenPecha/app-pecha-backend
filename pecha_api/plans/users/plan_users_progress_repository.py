@@ -29,23 +29,11 @@ def get_plan_progress_by_user_id_and_plan_id(db: Session, user_id: UUID, plan_id
     return db.query(UserPlanProgress).filter(UserPlanProgress.user_id == user_id, UserPlanProgress.plan_id == plan_id).first()
 
 
-def get_user_enrolled_plans_with_details(
-    db: Session, 
-    user_id: UUID, 
-    status_filter: Optional[str] = None,
-    skip: int = 0,
-    limit: int = 20
-) -> Tuple[List[Tuple[UserPlanProgress, Plan, int]], int]:
-
-    days_subquery = db.query(
-        PlanItem.plan_id,
-        func.count(PlanItem.id).label('total_days')
-    ).group_by(PlanItem.plan_id).subquery()
+def get_user_enrolled_plans_with_details(user_id: UUID, status_filter: Optional[str] = None, skip: int = 0, limit: int = 20) -> Tuple[List[Tuple[UserPlanProgress, Plan, int]], int]:
     
-    query = db.query(
-        UserPlanProgress, 
-        Plan,
-        func.coalesce(days_subquery.c.total_days, 0).label('total_days')
+    days_subquery = db.query(PlanItem.plan_id,func.count(PlanItem.id).label('total_days')).group_by(PlanItem.plan_id).subquery()
+    
+    query = db.query(UserPlanProgress, Plan, func.coalesce(days_subquery.c.total_days, 0).label('total_days')
     ).join(
         Plan, UserPlanProgress.plan_id == Plan.id
     ).outerjoin(
