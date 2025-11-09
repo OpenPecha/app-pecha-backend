@@ -2,7 +2,7 @@ import pytest
 import uuid
 from unittest.mock import patch, AsyncMock
 
-from pecha_api.plans.recitation.plan_recitation_response_models import CreateRecitationRequest, RecitationDTO
+from pecha_api.plans.recitation.plan_recitation_response_models import CreateRecitationRequest, RecitationDTO, RecitationsResponse
 from pecha_api.plans.recitation.plan_recitation_view import create_recitation, get_list_of_recitations
 
 
@@ -91,25 +91,40 @@ async def test_get_list_of_recitations_success():
             content={"text": "Second content", "language": "bo"}
         )
     ]
+    
+    expected_response = RecitationsResponse(
+        recitations=expected_recitations,
+        skip=0,
+        limit=10,
+        total=2
+    )
 
     with patch(
         "pecha_api.plans.recitation.plan_recitation_view.get_list_of_recitations_service",
-        return_value=expected_recitations,
+        return_value=expected_response,
         new_callable=AsyncMock,
     ) as mock_get_list:
         resp = await get_list_of_recitations(
-            authentication_credential=creds
+            authentication_credential=creds,
+            skip=0,
+            limit=10
         )
 
         assert mock_get_list.call_count == 1
         assert mock_get_list.call_args.kwargs == {
-            "token": "valid_token"
+            "token": "valid_token",
+            "skip": 0,
+            "limit": 10
         }
 
-        assert resp == expected_recitations
-        assert len(resp) == 2
-        assert resp[0].title == "First Recitation"
-        assert resp[1].title == "Second Recitation"
+        assert resp == expected_response
+        assert isinstance(resp, RecitationsResponse)
+        assert len(resp.recitations) == 2
+        assert resp.recitations[0].title == "First Recitation"
+        assert resp.recitations[1].title == "Second Recitation"
+        assert resp.skip == 0
+        assert resp.limit == 10
+        assert resp.total == 2
 
 
 @pytest.mark.asyncio
@@ -117,16 +132,82 @@ async def test_get_list_of_recitations_empty_list():
     """Test retrieval when no recitations exist"""
     creds = _Creds(token="valid_token")
     
+    expected_response = RecitationsResponse(
+        recitations=[],
+        skip=0,
+        limit=10,
+        total=0
+    )
+    
     with patch(
         "pecha_api.plans.recitation.plan_recitation_view.get_list_of_recitations_service",
-        return_value=[],
+        return_value=expected_response,
         new_callable=AsyncMock,
     ) as mock_get_list:
         resp = await get_list_of_recitations(
-            authentication_credential=creds
+            authentication_credential=creds,
+            skip=0,
+            limit=10
         )
 
         assert mock_get_list.call_count == 1
-        assert mock_get_list.call_args.kwargs["token"] == "valid_token"
-        assert resp == []
-        assert len(resp) == 0
+        assert mock_get_list.call_args.kwargs == {
+            "token": "valid_token",
+            "skip": 0,
+            "limit": 10
+        }
+        assert resp == expected_response
+        assert isinstance(resp, RecitationsResponse)
+        assert resp.recitations == []
+        assert len(resp.recitations) == 0
+        assert resp.skip == 0
+        assert resp.limit == 10
+        assert resp.total == 0
+
+
+@pytest.mark.asyncio
+async def test_get_list_of_recitations_with_custom_pagination():
+    """Test retrieval with custom pagination parameters"""
+    creds = _Creds(token="valid_token")
+    
+    expected_recitations = [
+        RecitationDTO(
+            id=uuid.uuid4(),
+            title="Third Recitation",
+            audio_url="https://example.com/audio3.mp3",
+            text_id=uuid.uuid4(),
+            content={"text": "Third content", "language": "en"}
+        )
+    ]
+    
+    expected_response = RecitationsResponse(
+        recitations=expected_recitations,
+        skip=5,
+        limit=5,
+        total=15
+    )
+    
+    with patch(
+        "pecha_api.plans.recitation.plan_recitation_view.get_list_of_recitations_service",
+        return_value=expected_response,
+        new_callable=AsyncMock,
+    ) as mock_get_list:
+        resp = await get_list_of_recitations(
+            authentication_credential=creds,
+            skip=5,
+            limit=5
+        )
+
+        assert mock_get_list.call_count == 1
+        assert mock_get_list.call_args.kwargs == {
+            "token": "valid_token",
+            "skip": 5,
+            "limit": 5
+        }
+        assert resp == expected_response
+        assert isinstance(resp, RecitationsResponse)
+        assert len(resp.recitations) == 1
+        assert resp.recitations[0].title == "Third Recitation"
+        assert resp.skip == 5
+        assert resp.limit == 5
+        assert resp.total == 15
