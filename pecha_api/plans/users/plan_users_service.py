@@ -4,6 +4,7 @@ from datetime import datetime, timezone
 from fastapi import HTTPException
 from starlette import status
 from typing import List
+from typing import Set
 
 from pecha_api.error_contants import ErrorConstants
 from pecha_api.plans.plans_enums import UserPlanStatus
@@ -263,8 +264,18 @@ def get_user_plan_day_details_service(token: str, plan_id: UUID, day_number: int
     current_user = validate_and_extract_user_details(token=token)
     with SessionLocal() as db:
         plan_item = get_plan_day_with_tasks_and_subtasks(db=db, plan_id=plan_id, day_number=day_number)
-
+        completed_task_ids = []
+        completed_subtask_ids = []
+        task_ids = [task.id for task in plan_item.tasks]
+        if task_ids:
+            user_task_completions = get_user_task_completions_by_user_id_and_task_ids(db=db, user_id=current_user.id, task_ids=task_ids)
+            completed_task_ids = [completion.task_id for completion in user_task_completions]
         
+        sub_task_ids = [sub_task.id for task in plan_item.tasks for sub_task in task.sub_tasks]
+        if sub_task_ids:
+            user_subtask_completions = get_user_subtask_completions_by_user_id_and_sub_task_ids(db=db, user_id=current_user.id, sub_task_ids=sub_task_ids)
+            completed_subtask_ids = [completion.sub_task_id for completion in user_subtask_completions]
+
         user_day_details = UserPlanDayDetailsResponse(
             id=plan_item.id,
             day_number=plan_item.day_number,
@@ -275,8 +286,8 @@ def get_user_plan_day_details_service(token: str, plan_id: UUID, day_number: int
                     title=task.title,
                     estimated_time=task.estimated_time,
                     display_order=task.display_order,
-                    is_completed=is_task_completed(db=db, task_id=task.id, user_id=current_user.id),
-                    sub_tasks=_get_user_sub_tasks_dto(db=db, user_id=current_user.id, sub_tasks=task.sub_tasks)
+                    is_completed=(task.id in completed_task_ids),
+                    sub_tasks=_get_user_sub_tasks_dto_bulk(sub_tasks=task.sub_tasks, completed_subtask_ids=completed_subtask_ids)
                 ) for task in plan_item.tasks
             ]
         )
@@ -294,13 +305,13 @@ def is_sub_task_completed(db: SessionLocal(), user_id: UUID, sub_task_id: UUID) 
     user_subtask_completion = get_user_subtask_completion_by_user_id_and_sub_task_id(db=db, user_id=user_id, sub_task_id=sub_task_id)
     return user_subtask_completion is not None
 
-def _get_user_sub_tasks_dto(db: SessionLocal(), user_id: UUID, sub_tasks: List[PlanSubTask]) -> List[UserSubTaskDTO]:
+def _get_user_sub_tasks_dto_bulk(sub_tasks: List[PlanSubTask], completed_subtask_ids: Set[UUID]) -> List[UserSubTaskDTO]:
     return [
         UserSubTaskDTO(
             id=sub_task.id,
             content_type=sub_task.content_type,
             content=sub_task.content,
             display_order=sub_task.display_order,
-            is_completed=is_sub_task_completed(db=db, user_id=user_id, sub_task_id=sub_task.id)
+            is_completed=(sub_task.id in completed_subtask_ids)
         ) for sub_task in sub_tasks
     ]

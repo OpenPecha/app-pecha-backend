@@ -722,12 +722,12 @@ def test_get_user_plan_day_details_service_success():
         "pecha_api.plans.users.plan_users_service.is_day_completed",
         return_value=True,
     ) as mock_day_completed, patch(
-        "pecha_api.plans.users.plan_users_service.is_task_completed",
-        side_effect=[True, False],
-    ) as mock_task_completed, patch(
-        "pecha_api.plans.users.plan_users_service.is_sub_task_completed",
-        side_effect=[True, False],
-    ) as mock_sub_completed:
+        "pecha_api.plans.users.plan_users_service.get_user_task_completions_by_user_id_and_task_ids",
+        return_value=[SimpleNamespace(task_id=task1_id)],
+    ) as mock_task_completions, patch(
+        "pecha_api.plans.users.plan_users_service.get_user_subtask_completions_by_user_id_and_sub_task_ids",
+        return_value=[SimpleNamespace(sub_task_id=sub1_id)],
+    ) as mock_subtask_completions:
         result = get_user_plan_day_details_service(token="tok", plan_id=plan_id, day_number=3)
 
         # Top-level day details
@@ -740,9 +740,8 @@ def test_get_user_plan_day_details_service_success():
         assert result.tasks[0].id == task1_id
         assert result.tasks[0].title == "Task 1"
         assert result.tasks[0].display_order == 1
-        # is_completed on task should reflect helper
-        assert getattr(result.tasks[0], "is_completed", True) is True
-        assert getattr(result.tasks[1], "is_completed", False) is False
+        assert result.tasks[0].is_completed is True
+        assert result.tasks[1].is_completed is False
 
         # Sub-tasks mapping and completion flags
         assert len(result.tasks[0].sub_tasks) == 1
@@ -755,8 +754,14 @@ def test_get_user_plan_day_details_service_success():
 
         # Verify helper invocations
         mock_day_completed.assert_called_once_with(db=db_mock, user_id=user_id, day_id=day_id)
-        assert mock_task_completed.call_count == 2
-        assert mock_sub_completed.call_count == 2
+        mock_task_completions.assert_called_once()
+        assert mock_task_completions.call_args.kwargs["db"] is db_mock
+        assert mock_task_completions.call_args.kwargs["user_id"] == user_id
+        assert set(mock_task_completions.call_args.kwargs["task_ids"]) == {task1_id, task2_id}
+        mock_subtask_completions.assert_called_once()
+        assert mock_subtask_completions.call_args.kwargs["db"] is db_mock
+        assert mock_subtask_completions.call_args.kwargs["user_id"] == user_id
+        assert set(mock_subtask_completions.call_args.kwargs["sub_task_ids"]) == {sub1_id, sub2_id}
 
 
 def test_is_completion_helpers_boolean_gateways():

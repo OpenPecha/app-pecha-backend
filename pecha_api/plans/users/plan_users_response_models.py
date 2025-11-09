@@ -51,6 +51,7 @@ class UserTaskDTO(BaseModel):
     title: str
     estimated_time: Optional[int] = None
     display_order: int
+    is_completed: bool
     sub_tasks: List[UserSubTaskDTO] = []
 
 class UserPlanDayDetailsResponse(BaseModel):
