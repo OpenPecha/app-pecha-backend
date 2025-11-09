@@ -1,3 +1,4 @@
+from typing import List
 from pydantic import BaseModel
 from uuid import UUID
 
@@ -13,3 +14,9 @@ class RecitationDTO(BaseModel):
     audio_url: str
     text_id: UUID
     content: dict
+
+class RecitationsResponse(BaseModel):
+    recitations: List[RecitationDTO]
+    skip: int
+    limit: int
+    total: int

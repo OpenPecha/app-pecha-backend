@@ -18,5 +18,8 @@ def save_recitation(db: Session, recitation: Recitation) -> None:
         print(f"Integrity error: {e.orig}")
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=ResponseError(error=BAD_REQUEST, message=str(e.orig)).model_dump())
 
-def list_of_recitations(db: Session) -> List[Recitation]:
-    return db.query(Recitation).all()
+def list_of_recitations(db: Session, skip: int, limit: int) -> List[Recitation]:
+    return db.query(Recitation).offset(skip).limit(limit).all()
+
+def count_of_recitations(db: Session) -> int:
+    return db.query(Recitation).count()
