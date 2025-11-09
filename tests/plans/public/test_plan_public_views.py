@@ -1,11 +1,3 @@
-"""
-Test suite for public plan view endpoints.
-
-Tests the following endpoints:
-1. GET /api/v1/public/plans - List published plans with filtering and pagination
-2. GET /api/v1/public/plans/{plan_id} - Get published plan details
-"""
-
 import pytest
 from uuid import uuid4
 from unittest.mock import patch, AsyncMock
