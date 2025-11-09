@@ -4,4 +4,5 @@ from uuid import UUID
 class CreateRecitationRequest(BaseModel):
     title: str
     audio_url: str
+    text_id: UUID
     content: dict
