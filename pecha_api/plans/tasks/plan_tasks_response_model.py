@@ -28,6 +28,23 @@ class UpdatedTaskDayResponse(BaseModel):
 class UpdateTaskDayRequest(BaseModel):
     target_day_id: UUID
 
+class UpdateTaskTitleRequest(BaseModel):
+    title: str
+
+class UpdateTaskTitleResponse(BaseModel):
+    task_id: UUID
+    title: str
+
+class TaskOrderItem(BaseModel):
+    id: UUID
+    display_order: int
+
+class UpdateTaskOrderRequest(BaseModel):
+    tasks: List[TaskOrderItem]
+    
+class UpdatedTaskOrderResponse(BaseModel):
+    updated_tasks: List[TaskOrderItem]
+    
 class GetTaskRequest(BaseModel):
     task_id: UUID
 
@@ -37,3 +54,7 @@ class GetTaskResponse(BaseModel):
     display_order: int
     estimated_time: Optional[int] = None
     subtasks: List[SubTaskDTO]
+
+class ContentAndImageUrl(BaseModel):
+    content: str
+    image_url: Optional[str] = None

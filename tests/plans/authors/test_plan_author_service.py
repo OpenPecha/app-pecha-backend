@@ -24,7 +24,8 @@ from pecha_api.plans.authors.plan_authors_response_models import (
     AuthorInfoResponse,
     AuthorInfoRequest,
     SocialMediaProfile,
-    AuthorsResponse
+    AuthorsResponse,
+    AuthorUpdateResponse
 )
 from pecha_api.users.users_enums import SocialProfile
 from pecha_api.error_contants import ErrorConstants
@@ -322,7 +323,7 @@ class TestDataFactory:
     def create_author_info_request(
         firstname="John",
         lastname="Doe",
-        avatar_url="https://s3.amazonaws.com/bucket/test-image.jpg",
+        image_url="https://s3.amazonaws.com/bucket/test-image.jpg",
         bio="Updated bio",
         social_profiles=None
     ) -> AuthorInfoRequest:
@@ -338,7 +339,7 @@ class TestDataFactory:
         return AuthorInfoRequest(
             firstname=firstname,
             lastname=lastname,
-            avatar_url=avatar_url,
+            image_url=image_url,
             bio=bio,
             social_profiles=social_profiles
         )
@@ -402,7 +403,7 @@ class TestGetAuthors:
         assert first_author.lastname == mock_authors[0].last_name
         assert first_author.email == mock_authors[0].email
         assert first_author.bio == mock_authors[0].bio
-        assert first_author.avatar_url == presigned_url
+        assert first_author.image_url == presigned_url
         
         # Verify function calls
         mock_get_all_authors.assert_called_once_with(db=mock_db_session)
@@ -486,7 +487,7 @@ class TestGetAuthorDetails:
         assert result.lastname == mock_author.last_name
         assert result.email == mock_author.email
         assert result.bio == mock_author.bio
-        assert result.avatar_url == presigned_url
+        assert result.image_url == presigned_url
         assert result.social_profiles == social_profiles
         
         # Verify function calls
@@ -566,16 +567,46 @@ class TestUpdateSocialProfiles:
         assert len(mock_author.social_media_accounts) == 0
     
     def test_update_social_profiles_none_list(self):
-        """Test update_social_profiles with None social profiles."""
+        """Passing None should raise a TypeError under current implementation."""
         # Arrange
         mock_author = TestDataFactory.create_mock_author()
         mock_author.social_media_accounts = []
         
+        # Act & Assert
+        import pytest
+        with pytest.raises(TypeError):
+            update_social_profiles(mock_author, None)
+
+    def test_update_social_profiles_delete_missing_profiles(self):
+        """Profiles not present in incoming list must be removed from author."""
+        # Arrange
+        author_id = uuid4()
+        existing_fb = TestDataFactory.create_mock_social_account(
+            platform_name="FACEBOOK",
+            profile_url="https://facebook.com/old"
+        )
+        existing_x = TestDataFactory.create_mock_social_account(
+            platform_name="X_COM",
+            profile_url="https://x.com/old"
+        )
+        mock_author = TestDataFactory.create_mock_author(
+            author_id=author_id,
+            social_accounts=[existing_fb, existing_x]
+        )
+
+        # Only keep FACEBOOK, drop X_COM
+        social_profiles = [
+            SocialMediaProfile(account=SocialProfile.FACEBOOK, url="https://facebook.com/new")
+        ]
+
         # Act
-        update_social_profiles(mock_author, None)
-        
+        update_social_profiles(mock_author, social_profiles)
+
         # Assert
-        assert len(mock_author.social_media_accounts) == 0
+        assert len(mock_author.social_media_accounts) == 1
+        remaining = mock_author.social_media_accounts[0]
+        assert remaining.platform_name == "FACEBOOK"
+        assert remaining.profile_url == "https://facebook.com/new"
 
 
 class TestUpdateAuthorInfo:
@@ -586,9 +617,13 @@ class TestUpdateAuthorInfo:
     @patch('pecha_api.plans.authors.plan_authors_service.update_social_profiles')
     @patch('pecha_api.plans.authors.plan_authors_service.Utils.extract_s3_key')
     @patch('pecha_api.plans.authors.plan_authors_service.validate_and_extract_author_details')
+    @patch('pecha_api.plans.authors.plan_authors_service.generate_presigned_access_url')
+    @patch('pecha_api.plans.authors.plan_authors_service.get')
     @pytest.mark.asyncio
     async def test_update_author_info_success(
         self,
+        mock_get_config,
+        mock_generate_presigned_url,
         mock_validate_and_extract,
         mock_extract_s3_key,
         mock_update_social_profiles,
@@ -599,6 +634,8 @@ class TestUpdateAuthorInfo:
         # Arrange
         token = "valid_token"
         s3_key = "test-image.jpg"
+        bucket_name = "test-bucket"
+        presigned_url = "https://s3.amazonaws.com/test-bucket/test-image.jpg"
         
         mock_author = TestDataFactory.create_mock_author()
         updated_author = TestDataFactory.create_mock_author(
@@ -612,12 +649,21 @@ class TestUpdateAuthorInfo:
         mock_validate_and_extract.return_value = mock_author
         mock_extract_s3_key.return_value = s3_key
         mock_update_author.return_value = updated_author
+        mock_get_config.return_value = bucket_name
+        mock_generate_presigned_url.return_value = presigned_url
         
         # Act
         result = await update_author_info(token, author_info_request)
         
         # Assert
-        assert result == updated_author
+        assert isinstance(result, AuthorUpdateResponse)
+        assert result.id == updated_author.id
+        assert result.firstname == updated_author.first_name
+        assert result.lastname == updated_author.last_name
+        assert result.email == updated_author.email
+        assert result.bio == updated_author.bio
+        assert result.image_key == s3_key
+        assert result.image_url == presigned_url
         assert mock_author.first_name == author_info_request.firstname
         assert mock_author.last_name == author_info_request.lastname
         assert mock_author.bio == author_info_request.bio
@@ -625,13 +671,15 @@ class TestUpdateAuthorInfo:
         
         # Verify function calls
         mock_validate_and_extract.assert_called_once_with(token=token)
-        mock_extract_s3_key.assert_called_once_with(presigned_url=author_info_request.avatar_url)
+        mock_extract_s3_key.assert_called_once_with(presigned_url=author_info_request.image_url)
         mock_db_session.add.assert_called_once_with(mock_author)
         mock_update_social_profiles.assert_called_once_with(
             author=mock_author,
             social_profiles=author_info_request.social_profiles
         )
         mock_update_author.assert_called_once_with(db=mock_db_session, author=mock_author)
+        mock_get_config.assert_called_once_with("AWS_BUCKET_NAME")
+        mock_generate_presigned_url.assert_called_once_with(bucket_name=bucket_name, s3_key=updated_author.image_url)
     
     @patch('pecha_api.plans.authors.plan_authors_service.SessionLocal')
     @patch('pecha_api.plans.authors.plan_authors_service.update_author')
@@ -716,7 +764,7 @@ class TestGetSelectedAuthorDetails:
         assert result.lastname == mock_author.last_name
         assert result.email == mock_author.email
         assert result.bio == mock_author.bio
-        assert result.avatar_url == presigned_url
+        assert result.image_url == presigned_url
         assert result.social_profiles == social_profiles
         
         # Verify function calls

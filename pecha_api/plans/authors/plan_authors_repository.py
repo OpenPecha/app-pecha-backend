@@ -11,7 +11,7 @@ from pecha_api.plans.response_message import (
 )
 from typing import List
 from pecha_api.plans.auth.plan_auth_models import ResponseError
-from pecha_api.plans.authors.plan_authors_model import Author
+from pecha_api.plans.authors.plan_authors_model import Author, AuthorSocialMediaAccount
 
 
 def save_author(db: Session, author: Author):

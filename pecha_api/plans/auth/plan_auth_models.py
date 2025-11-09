@@ -60,6 +60,7 @@ class PasswordResetRequest(BaseModel):
     email: str
 
 class ResetPasswordRequest(BaseModel):
+    token: str
     password: str
 
 class EmailReVerificationResponse(BaseModel):

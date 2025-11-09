@@ -110,7 +110,7 @@ def test_validate_and_compress_image_file_too_large():
         image_utils = ImageUtils()
         image_utils.validate_and_compress_image(file=file, content_type="image/jpeg")
     assert exc_info.value.status_code == 413
-    assert exc_info.value.detail == "File size exceeds 5MB limit"
+    assert exc_info.value.detail == "File size exceeds 1MB limit"
 
 
 def test_validate_and_compress_image_processing_failure():

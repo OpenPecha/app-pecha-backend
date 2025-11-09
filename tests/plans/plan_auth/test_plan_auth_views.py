@@ -137,12 +137,10 @@ def test_request_reset_password_service_error():
 
 def test_reset_password_success():
     request_payload = {
+        "token": "valid_reset_token",
         "password": "newpassword123"
     }
     
-    token = "valid_reset_token"
-    
-    # Mock the updated author object that would be returned
     from pecha_api.plans.authors.plan_authors_model import Author
     updated_author = Author(
         first_name="John",
@@ -154,32 +152,34 @@ def test_reset_password_success():
     with patch("pecha_api.plans.auth.plan_auth_views.update_password", return_value=updated_author) as mock_update_password:
         response = client.post(
             "cms/auth/reset-password", 
-            json=request_payload,
-            headers={"Authorization": f"Bearer {token}"}
+            json=request_payload
         )
         
         assert response.status_code == status.HTTP_200_OK
-        mock_update_password.assert_called_once_with(token=token, password="newpassword123")
+        mock_update_password.assert_called_once_with(token="valid_reset_token", password="newpassword123")
 
 
-def test_reset_password_missing_authorization_403():
+def test_reset_password_missing_token_422():
     request_payload = {
         "password": "newpassword123"
     }
     
     response = client.post("cms/auth/reset-password", json=request_payload)
     
-    assert response.status_code == status.HTTP_403_FORBIDDEN
+    assert response.status_code == status.HTTP_422_UNPROCESSABLE_ENTITY
+    data = response.json()
+    assert "detail" in data
+    assert any(error["loc"] == ["body", "token"] for error in data["detail"])
 
 
 def test_reset_password_missing_password_422():
-    request_payload = {}  
-    token = "valid_reset_token"
+    request_payload = {
+        "token": "valid_reset_token"
+    }
     
     response = client.post(
         "cms/auth/reset-password", 
-        json=request_payload,
-        headers={"Authorization": f"Bearer {token}"}
+        json=request_payload
     )
     
     assert response.status_code == status.HTTP_422_UNPROCESSABLE_ENTITY
@@ -190,10 +190,9 @@ def test_reset_password_missing_password_422():
 
 def test_reset_password_invalid_token_400():
     request_payload = {
+        "token": "invalid_or_expired_token",
         "password": "newpassword123"
     }
-    
-    token = "invalid_or_expired_token"
     
     from fastapi import HTTPException
     
@@ -202,8 +201,7 @@ def test_reset_password_invalid_token_400():
         
         response = client.post(
             "cms/auth/reset-password", 
-            json=request_payload,
-            headers={"Authorization": f"Bearer {token}"}
+            json=request_payload
         )
         
         assert response.status_code == status.HTTP_400_BAD_REQUEST
@@ -213,10 +211,9 @@ def test_reset_password_invalid_token_400():
 
 def test_reset_password_registration_source_mismatch_400():
     request_payload = {
+        "token": "valid_token_oauth_user",
         "password": "newpassword123"
     }
-    
-    token = "valid_token_oauth_user"
     
     from fastapi import HTTPException
     
@@ -225,8 +222,7 @@ def test_reset_password_registration_source_mismatch_400():
         
         response = client.post(
             "cms/auth/reset-password", 
-            json=request_payload,
-            headers={"Authorization": f"Bearer {token}"}
+            json=request_payload
         )
         
         assert response.status_code == status.HTTP_400_BAD_REQUEST
@@ -236,10 +232,9 @@ def test_reset_password_registration_source_mismatch_400():
 
 def test_reset_password_weak_password_400():
     request_payload = {
+        "token": "valid_reset_token",
         "password": "weak"
     }
-    
-    token = "valid_reset_token"
     
     from fastapi import HTTPException
     
@@ -248,8 +243,7 @@ def test_reset_password_weak_password_400():
         
         response = client.post(
             "cms/auth/reset-password", 
-            json=request_payload,
-            headers={"Authorization": f"Bearer {token}"}
+            json=request_payload
         )
         
         assert response.status_code == status.HTTP_400_BAD_REQUEST

@@ -13,3 +13,5 @@ class SocialProfile(Enum):
     FACEBOOK = "facebook"
     YOUTUBE = "youtube"
     LINKEDIN = "linkedin"
+    INSTAGRAM = "instagram"
+    TIKTOK = "tiktok"

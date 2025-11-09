@@ -12,7 +12,7 @@ class UserPlanStatus(BaseModel):
     status: str  # not_started, active, paused, completed, abandoned
 
 
-class UserPlanProgress(BaseModel):
+class UserPlanProgressResponse(BaseModel):
     id: UUID
     user_id: UUID
     plan_id: UUID
@@ -25,6 +25,14 @@ class UserPlanProgress(BaseModel):
     completed_at: Optional[datetime] = None
     created_at: datetime
 
+class EnrolledUserPlan(BaseModel):
+    user_id: UUID
+    plan_id: UUID
+    streak_count: int
+    longest_streak: int
+    status: str
+    created_at: datetime
+    is_completed: bool
 
 class UserPlanProgressUpdate(BaseModel):
     status: str

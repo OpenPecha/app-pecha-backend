@@ -18,9 +18,10 @@ class SubTaskRequest(BaseModel):
 
 
 class SubTaskDTO(BaseModel):
-    id: UUID
+    id: Optional[UUID]
     content_type: ContentType
     content: str
+    image_url: Optional[str] = None
     display_order: int
 
 class SubTaskResponse(BaseModel):
@@ -33,3 +34,17 @@ class UpdateSubTaskRequest(BaseModel):
 
 class UpdateSubTaskResponse(BaseModel):
     sub_task_id: UUID
+
+class SubtaskOrderItem(BaseModel):
+    id: UUID
+    display_order: int    
+
+class SubTaskOrderRequest(BaseModel):
+    subtasks: List[SubtaskOrderItem]
+
+class UpdatedSubtaskOrderItem(BaseModel):
+    sub_task_id: UUID
+    display_order: int
+
+class SubTaskOrderResponse(BaseModel):
+    updated_subtasks: List[UpdatedSubtaskOrderItem]

@@ -30,9 +30,7 @@ DEFAULTS = dict(
 
     WEBUDDHIST_STUDIO_BASE_URL="https://studio.webuddhist.com",
     MONGO_DATABASE_NAME="pecha",
-    REFRESH_TOKEN_EXPIRE_DAYS=30,   
-    SENDGRID_API_KEY="",
-    SENDGRID_SENDER_EMAIL="",
+    REFRESH_TOKEN_EXPIRE_DAYS=30,
     VERSION="0.0.1",
     # Cache Configuration
     CACHE_HOST="localhost",
@@ -57,7 +55,11 @@ DEFAULTS = dict(
     ELASTICSEARCH_API=None,
     ELASTICSEARCH_CONTENT_INDEX = "pecha-texts",
     ELASTICSEARCH_SEGMENT_INDEX = "pecha-segments",
-    ELASTICSEARCH_SHEET_INDEX = "pecha-sheets"
+    ELASTICSEARCH_SHEET_INDEX = "pecha-sheets",
+
+    MAILTRAP_API_KEY = "",
+    SENDER_EMAIL="",
+    SENDER_NAME=""
 )
 
 

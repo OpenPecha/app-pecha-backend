@@ -5,7 +5,6 @@ from uuid import UUID
 from pecha_api.plans.plans_models import Plan
 
 
-# Request/Response Models
 class CreatePlanRequest(BaseModel):
     title: str
     description: str
@@ -18,6 +17,7 @@ class CreatePlanRequest(BaseModel):
 class UpdatePlanRequest(BaseModel):
     title: Optional[str] = None
     description: Optional[str] = None
+    language: Optional[str] = None
     difficulty_level: Optional[DifficultyLevel] = None
     total_days: Optional[int] = None
     image_url: Optional[str] = None
@@ -30,7 +30,8 @@ class AuthorDTO(BaseModel):
     id: UUID
     firstname: str
     lastname: str
-    image_url: str
+    image_url: Optional[str] = None 
+    image_key: Optional[str] = None  
 
 class PlanDTO(BaseModel):
     id: UUID
@@ -39,7 +40,7 @@ class PlanDTO(BaseModel):
     language: str
     difficulty_level: Optional[DifficultyLevel] = None
     image_url: Optional[str] = None
-    plan_image_url: Optional[str] = None
+    image_key: Optional[str] = None
     total_days: int
     tags: Optional[List[str]] = []
     status: PlanStatus
@@ -47,7 +48,6 @@ class PlanDTO(BaseModel):
     author: Optional[AuthorDTO] = None
 
 class SubTaskDTO(BaseModel):
-    """Subtask model for tasks without titles but with different content types"""
     id: UUID
     content_type: ContentType
     content: Optional[str] = None
@@ -55,7 +55,7 @@ class SubTaskDTO(BaseModel):
 
 class TaskDTO(BaseModel):
     id: UUID
-    title: Optional[str] = None  # Made optional to support subtasks
+    title: Optional[str] = None 
     estimated_time: Optional[int] = None
     display_order: Optional[int] = None
     subtasks: List[SubTaskDTO] = []
@@ -69,7 +69,7 @@ class PlanDayDTO(BaseModel):
 class PlanWithDays(BaseModel):
     id: UUID
     title: str
-    description: str
+    description: str            
     language: str
     image_url: Optional[str] = None
     plan_image_url: Optional[str] = None
@@ -94,5 +94,4 @@ class PlansRepositoryResponse(BaseModel):
     plan_info: List[PlanWithAggregates]
     total: int
 
-# Update forward references for nested models
 TaskDTO.model_rebuild()
