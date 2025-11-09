@@ -4,27 +4,13 @@ from pecha_api.plans.plans_enums import DifficultyLevel, PlanStatus,ContentType
 from uuid import UUID
 from pecha_api.plans.plans_models import Plan
 
+class PlanDayBasic(BaseModel):
+    id: str
+    day_number: int
 
-class CreatePlanRequest(BaseModel):
-    title: str
-    description: str
-    difficulty_level: DifficultyLevel
-    total_days: int
-    language: str
-    image_url: Optional[str] = None
-    tags: Optional[List[str]] = []
 
-class UpdatePlanRequest(BaseModel):
-    title: Optional[str] = None
-    description: Optional[str] = None
-    language: Optional[str] = None
-    difficulty_level: Optional[DifficultyLevel] = None
-    total_days: Optional[int] = None
-    image_url: Optional[str] = None
-    tags: Optional[List[str]] = None
-
-class PlanStatusUpdate(BaseModel):
-    status: PlanStatus
+class PlanDaysResponse(BaseModel):
+    days: List[PlanDayBasic]
 
 class AuthorDTO(BaseModel):
     id: UUID
@@ -33,18 +19,15 @@ class AuthorDTO(BaseModel):
     image_url: Optional[str] = None 
     image_key: Optional[str] = None  
 
-class PlanDTO(BaseModel):
+class PublicPlanDTO(BaseModel):
     id: UUID
     title: str
     description: str
     language: str
     difficulty_level: Optional[DifficultyLevel] = None
     image_url: Optional[str] = None
-    image_key: Optional[str] = None
     total_days: int
-    tags: Optional[List[str]] = []
-    status: PlanStatus
-    subscription_count: int
+    tags: Optional[List[str]] = [],
     author: Optional[AuthorDTO] = None
 
 class SubTaskDTO(BaseModel):
@@ -78,8 +61,8 @@ class PlanWithDays(BaseModel):
     tags: List[str]
     days: List[PlanDayDTO]
 
-class PlansResponse(BaseModel):
-    plans: List[PlanDTO]
+class PublicPlansResponse(BaseModel):
+    plans: List[PublicPlanDTO]
     skip: int
     limit: int
     total: int

@@ -23,7 +23,7 @@ from pecha_api.plans.plans_response_models import PlansResponse
 from pecha_api.plans.shared.utils import load_plans_from_json
 from pecha_api.uploads.S3_utils import generate_presigned_access_url
 from pecha_api.users.users_service import get_social_profile
-from pecha_api.plans.public.plan_service import convert_plan_model_to_dto
+from pecha_api.plans.shared.utils import convert_plan_model_to_dto
 from pecha_api.utils import Utils
 
 
