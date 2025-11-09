@@ -1,4 +1,5 @@
 import pytest
+import uuid
 from unittest.mock import patch, AsyncMock
 
 from pecha_api.plans.recitation.plan_recitation_response_models import CreateRecitationRequest
@@ -16,6 +17,7 @@ async def test_create_recitation_success():
     request = CreateRecitationRequest(
         title="Test Recitation",
         audio_url="https://example.com/audio.mp3",
+        text_id=uuid.uuid4(),
         content={"text": "Sample recitation content", "language": "en"}
     )
 
@@ -46,6 +48,7 @@ async def test_create_recitation_with_empty_content():
     request = CreateRecitationRequest(
         title="Empty Content Recitation",
         audio_url="https://example.com/empty.mp3",
+        text_id=uuid.uuid4(),
         content={}
     )
 
