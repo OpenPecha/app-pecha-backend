@@ -4,8 +4,7 @@ from uuid import UUID
 from starlette import status
 
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
-from pecha_api.plans.public.plan_response_models import PublicPlansResponse, PublicPlanDTO, 
-from pecha_api.plans.public.plan_models import PlanDaysResponse , PlanDayDTO
+from pecha_api.plans.public.plan_response_models import PublicPlansResponse, PublicPlanDTO,PlanDaysResponse , PlanDayDTO
 from pecha_api.plans.public.plan_service import (
     get_published_plans, 
     get_published_plan, 
