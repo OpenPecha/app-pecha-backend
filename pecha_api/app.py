@@ -28,6 +28,7 @@ from pecha_api.plans.items import plan_items_views
 from pecha_api.plans.authors import plan_authors_views as plan_authors_views
 from pecha_api.plans.recitation import plan_recitation_view
 from pecha_api.user_follows import user_follow_views
+from pecha_api.plans.users.recitation import plan_user_recitation_views as user_recitation_views
 
 import uvicorn
 
@@ -61,7 +62,7 @@ api.include_router(plan_tasks_views.plans_router)
 api.include_router(plan_sub_tasks_views.sub_tasks_router)
 api.include_router(plan_authors_views.author_router)
 api.include_router(user_follow_views.user_follow_router)
-
+api.include_router(user_recitation_views.user_recitation_router)
 api.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
