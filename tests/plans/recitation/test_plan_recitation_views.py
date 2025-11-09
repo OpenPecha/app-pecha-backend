@@ -2,8 +2,8 @@ import pytest
 import uuid
 from unittest.mock import patch, AsyncMock
 
-from pecha_api.plans.recitation.plan_recitation_response_models import CreateRecitationRequest
-from pecha_api.plans.recitation.plan_recitation_view import create_recitation
+from pecha_api.plans.recitation.plan_recitation_response_models import CreateRecitationRequest, RecitationDTO
+from pecha_api.plans.recitation.plan_recitation_view import create_recitation, get_list_of_recitations
 
 
 class _Creds:
@@ -68,3 +68,65 @@ async def test_create_recitation_with_empty_content():
         assert mock_create.call_args.kwargs["token"] == "valid_token"
         assert mock_create.call_args.kwargs["create_recitation_request"].content == {}
         assert resp is None
+
+
+@pytest.mark.asyncio
+async def test_get_list_of_recitations_success():
+    """Test successful retrieval of recitations list"""
+    creds = _Creds(token="valid_token")
+    
+    expected_recitations = [
+        RecitationDTO(
+            id=uuid.uuid4(),
+            title="First Recitation",
+            audio_url="https://example.com/audio1.mp3",
+            text_id=uuid.uuid4(),
+            content={"text": "First content", "language": "en"}
+        ),
+        RecitationDTO(
+            id=uuid.uuid4(),
+            title="Second Recitation", 
+            audio_url="https://example.com/audio2.mp3",
+            text_id=uuid.uuid4(),
+            content={"text": "Second content", "language": "bo"}
+        )
+    ]
+
+    with patch(
+        "pecha_api.plans.recitation.plan_recitation_view.get_list_of_recitations_service",
+        return_value=expected_recitations,
+        new_callable=AsyncMock,
+    ) as mock_get_list:
+        resp = await get_list_of_recitations(
+            authentication_credential=creds
+        )
+
+        assert mock_get_list.call_count == 1
+        assert mock_get_list.call_args.kwargs == {
+            "token": "valid_token"
+        }
+
+        assert resp == expected_recitations
+        assert len(resp) == 2
+        assert resp[0].title == "First Recitation"
+        assert resp[1].title == "Second Recitation"
+
+
+@pytest.mark.asyncio
+async def test_get_list_of_recitations_empty_list():
+    """Test retrieval when no recitations exist"""
+    creds = _Creds(token="valid_token")
+    
+    with patch(
+        "pecha_api.plans.recitation.plan_recitation_view.get_list_of_recitations_service",
+        return_value=[],
+        new_callable=AsyncMock,
+    ) as mock_get_list:
+        resp = await get_list_of_recitations(
+            authentication_credential=creds
+        )
+
+        assert mock_get_list.call_count == 1
+        assert mock_get_list.call_args.kwargs["token"] == "valid_token"
+        assert resp == []
+        assert len(resp) == 0
