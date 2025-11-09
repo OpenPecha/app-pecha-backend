@@ -35,3 +35,4 @@ class ErrorConstants:
     INVALID_UPDATE_REQUEST = "Invalid update request"
     TASK_NOT_FOUND = "Task not found"
     SUB_TASK_NOT_FOUND = "Sub task not found"
+    RECITATION_NOT_FOUND = "Recitation not found"

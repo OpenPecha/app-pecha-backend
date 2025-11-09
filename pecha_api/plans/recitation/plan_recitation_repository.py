@@ -1,8 +1,10 @@
 from typing import List
+from uuid import UUID
 from sqlalchemy.orm import Session
 from pecha_api.plans.auth.plan_auth_models import ResponseError
 from pecha_api.plans.recitation.plan_recitation_models import Recitation
 from sqlalchemy.exc import IntegrityError
+from pecha_api.error_contants import ErrorConstants
 from fastapi import HTTPException
 from starlette import status
 
@@ -23,3 +25,9 @@ def list_of_recitations(db: Session, skip: int, limit: int) -> List[Recitation]:
 
 def count_of_recitations(db: Session) -> int:
     return db.query(Recitation).count()
+
+def check_recitation_exists(db: Session, recitation_id: UUID) -> Recitation:
+    recitation = db.query(Recitation).filter(Recitation.id == recitation_id).first()
+    if recitation is None:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=ResponseError(error=BAD_REQUEST, message=ErrorConstants.RECITATION_NOT_FOUND).model_dump())
+    return recitation
