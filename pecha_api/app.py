@@ -41,6 +41,7 @@ api = FastAPI(
 api.include_router(auth_views.auth_router)
 api.include_router(sheets_views.sheets_router)
 api.include_router(collections_views.collections_router)
+api.include_router(plan_recitation_view.recitation_router)
 api.include_router(terms_views.terms_router)
 api.include_router(texts_views.text_router)
 api.include_router(groups_views.group_router)
@@ -59,7 +60,6 @@ api.include_router(plan_items_views.items_router)
 api.include_router(plan_tasks_views.plans_router)
 api.include_router(plan_sub_tasks_views.sub_tasks_router)
 api.include_router(plan_authors_views.author_router)
-api.include_router(plan_recitation_view.recitation_router)
 api.include_router(user_follow_views.user_follow_router)
 
 api.add_middleware(

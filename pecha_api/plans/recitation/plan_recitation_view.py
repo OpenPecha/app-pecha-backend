@@ -8,11 +8,11 @@ from pecha_api.plans.recitation.plan_recitation_services import create_recitatio
 
 oauth2_scheme=HTTPBearer()
 recitation_router=APIRouter(
-    prefix="/plans",
+    prefix="/plans/recitation",
     tags=["Recitation"],
 )
 
-@recitation_router.post("/recitation",status_code=status.HTTP_204_NO_CONTENT)
+@recitation_router.post("",status_code=status.HTTP_204_NO_CONTENT)
 async def create_recitation(authentication_credential: Annotated[HTTPAuthorizationCredentials, Depends(oauth2_scheme)],
                             create_recitation_request: CreateRecitationRequest):
     return await create_recitation_service(
@@ -20,8 +20,8 @@ async def create_recitation(authentication_credential: Annotated[HTTPAuthorizati
         create_recitation_request=create_recitation_request
     )
 
-@recitation_router.get("/recitation",status_code=status.HTTP_200_OK,response_model=List[RecitationDTO])
-async def get_list_of_recitations_view(authentication_credential: Annotated[HTTPAuthorizationCredentials, Depends(oauth2_scheme)]):
+@recitation_router.get("",status_code=status.HTTP_200_OK,response_model=List[RecitationDTO])
+async def get_list_of_recitations(authentication_credential: Annotated[HTTPAuthorizationCredentials, Depends(oauth2_scheme)]):
     return await get_list_of_recitations_service(
         token=authentication_credential.credentials
     )

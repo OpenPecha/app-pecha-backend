@@ -10,3 +10,6 @@ class CreateRecitationRequest(BaseModel):
 class RecitationDTO(BaseModel):
     id: UUID
     title: str
+    audio_url: str
+    text_id: UUID
+    content: dict

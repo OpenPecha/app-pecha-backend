@@ -4,7 +4,7 @@ from pecha_api.plans.recitation.plan_recitation_response_models import CreateRec
 from pecha_api.plans.authors.plan_authors_service import validate_and_extract_author_details
 from pecha_api.users.users_service import validate_and_extract_user_details
 from pecha_api.db.database import SessionLocal
-from pecha_api.plans.recitation.plan_recitation_repository import get_list_of_recitations, save_recitation
+from pecha_api.plans.recitation.plan_recitation_repository import list_of_recitations, save_recitation
 from pecha_api.texts.texts_utils import TextUtils
 
 async def create_recitation_service(token: str, create_recitation_request: CreateRecitationRequest) -> None:
@@ -24,5 +24,5 @@ async def get_list_of_recitations_service(token: str) -> List[RecitationDTO]:
     """get list of recitations"""
     validate_and_extract_user_details(token=token)
     with SessionLocal() as db:
-        recitations = get_list_of_recitations(db=db)
-        return [RecitationDTO(id=recitation.id, title=recitation.title) for recitation in recitations]
+        recitations = list_of_recitations(db=db)
+        return [RecitationDTO(id=recitation.id, title=recitation.title, audio_url=recitation.audio_url, text_id=recitation.text_id, content=recitation.content) for recitation in recitations]
