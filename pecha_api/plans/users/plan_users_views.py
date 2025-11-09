@@ -30,12 +30,7 @@ async def get_user_plans(
     skip: int = Query(0, ge=0),
     limit: int = Query(20, ge=1, le=50)
 ):
-    return await get_user_enrolled_plans(
-        token=authentication_credential.credentials,
-        status_filter=status_filter,
-        skip=skip,
-        limit=limit
-    )
+    return await get_user_enrolled_plans(token=authentication_credential.credentials,status_filter=status_filter,skip=skip,limit=limit)
 
 
 @user_progress_router.post("/plans", status_code=status.HTTP_204_NO_CONTENT)

@@ -9,7 +9,7 @@ from pecha_api.plans.plans_enums import UserPlanStatus
 from pecha_api.plans.plans_response_models import PlansResponse
 from pecha_api.plans.shared.utils import load_plans_from_json, convert_plan_model_to_dto
 from pecha_api.plans.users.plan_users_models import UserPlanProgress, UserSubTaskCompletion
-from pecha_api.plans.users.plan_users_response_models import UserPlanEnrollRequest
+from pecha_api.plans.users.plan_users_response_models import UserPlanEnrollRequest, UserPlansResponse, UserPlanDTO
 from pecha_api.plans.users.plan_users_subtasks_repository import save_user_sub_task_completions
 from pecha_api.plans.tasks.sub_tasks.plan_sub_tasks_repository import get_sub_task_by_subtask_id
 from pecha_api.users.users_service import validate_and_extract_user_details
@@ -17,7 +17,16 @@ from pecha_api.db.database import SessionLocal
 from pecha_api.plans.cms.cms_plans_repository import get_plan_by_id
 from pecha_api.plans.auth.plan_auth_models import ResponseError
 from pecha_api.plans.response_message import ALREADY_COMPLETED_SUB_TASK, BAD_REQUEST, PLAN_NOT_FOUND, ALREADY_ENROLLED_IN_PLAN, SUB_TASK_NOT_FOUND
-from pecha_api.plans.users.plan_users_progress_repository import get_plan_progress_by_user_id_and_plan_id, save_plan_progress
+from pecha_api.plans.users.plan_users_progress_repository import (
+    get_plan_progress_by_user_id_and_plan_id, 
+    save_plan_progress,
+    get_user_enrolled_plans_with_details
+)
+from pecha_api.uploads.S3_utils import generate_presigned_access_url
+from pecha_api.config import get
+import logging
+
+logger = logging.getLogger(__name__)
 
 # Mock user progress data - in real implementation this would be from database
 MOCK_USER_PROGRESS = [
@@ -36,51 +45,47 @@ MOCK_USER_PROGRESS = [
 ]
 
 
-async def get_user_enrolled_plans(
-    token: str,
-    status_filter: Optional[str] = None,
-    skip: int = 0,
-    limit: int = 20
-) -> PlansResponse:
-    """Get user's enrolled plans with optional status filtering"""
+async def get_user_enrolled_plans(token: str,status_filter: Optional[str] = None,skip: int = 0,limit: int = 20) -> UserPlansResponse:
+    
     current_user = validate_and_extract_user_details(token=token)
-    # Load plans from JSON file
-    plan_listing = load_plans_from_json()
     
-    # Filter user's progress records
-    user_progress_records = [
-        p for p in MOCK_USER_PROGRESS 
-        if p["user_id"] == str(current_user.id)
-    ]
-    
-    # Apply status filter if provided
-    if status_filter:
-        user_progress_records = [
-            p for p in user_progress_records 
-            if p["status"] == status_filter
-        ]
-    
-    # Get plan details for enrolled plans
-    enrolled_plans = []
-    for progress in user_progress_records:
-        plan_model = next(
-            (p for p in plan_listing.plans if p.id == progress["plan_id"]),
-            None
+    with SessionLocal() as db:
+        results, total = get_user_enrolled_plans_with_details(db=db,user_id=current_user.id,status_filter=status_filter,skip=skip,limit=limit)
+        
+        enrolled_plans = []
+        bucket_name = get("AWS_BUCKET_NAME")
+        
+        for progress, plan, total_days in results:
+            image_url = ""
+            if plan.image_url:
+                try:
+                    image_url = generate_presigned_access_url(
+                        bucket_name=bucket_name,
+                        s3_key=plan.image_url
+                    )
+                except Exception as e:
+                    logger.error(f"Failed to generate presigned URL for plan {plan.id}: {e}", exc_info=True)
+                    image_url = ""
+            
+            user_plan = UserPlanDTO(
+                id=plan.id,
+                title=plan.title,
+                description=plan.description or "",
+                language=plan.language.value if hasattr(plan.language, 'value') else str(plan.language),
+                difficulty_level=plan.difficulty_level.value if hasattr(plan.difficulty_level, 'value') else str(plan.difficulty_level),
+                image_url=image_url,
+                started_at=progress.started_at,
+                total_days=total_days,
+                tags=plan.tags if plan.tags else []
+            )
+            enrolled_plans.append(user_plan)
+        
+        return UserPlansResponse(
+            plans=enrolled_plans,
+            skip=skip,
+            limit=limit,
+            total=total
         )
-        if plan_model:
-            plan_dto = convert_plan_model_to_dto(plan_model)
-            enrolled_plans.append(plan_dto)
-    
-    # Apply pagination
-    total = len(enrolled_plans)
-    paginated_plans = enrolled_plans[skip:skip + limit]
-    
-    return PlansResponse(
-        plans=paginated_plans,
-        skip=skip,
-        limit=limit,
-        total=total
-    )
 
 
 def enroll_user_in_plan(token: str, enroll_request: UserPlanEnrollRequest) -> None:
