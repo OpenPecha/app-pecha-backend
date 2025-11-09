@@ -102,6 +102,15 @@ class TableOfContent(BaseModel):
 class TableOfContentResponse(BaseModel):
     text_detail: TextDTO
     contents: List[TableOfContent]
+    skip: int
+    limit: int
+    total: int
+
+class SectionWithPagination(BaseModel):
+    sections: List[Section]
+    skip: int
+    limit: int
+    total: int
 
 
 class TextDetailsRequest(BaseModel):
