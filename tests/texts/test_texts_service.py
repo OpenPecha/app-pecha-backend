@@ -751,7 +751,8 @@ async def test_update_text_details_success():
     )
     with patch("pecha_api.texts.texts_service.TextUtils.validate_text_exists", new_callable=AsyncMock, return_value=True), \
         patch("pecha_api.texts.texts_service.TextUtils.get_text_detail_by_id", new_callable=AsyncMock) as mock_get_text_detail_by_id, \
-        patch("pecha_api.texts.texts_service.update_text_details_by_id", new_callable=AsyncMock, return_value=mock_text_details):
+        patch("pecha_api.texts.texts_service.update_text_details_by_id", new_callable=AsyncMock, return_value=mock_text_details), \
+        patch("pecha_api.texts.texts_service.update_text_details_cache", new_callable=AsyncMock, return_value=None):
         mock_get_text_detail_by_id.return_value = mock_text_details
         
         response = await update_text_details(text_id="text_id_1", update_text_request=UpdateTextRequest(title="updated_title", is_published=True))
@@ -1311,7 +1312,9 @@ async def test_get_table_of_content_by_sheet_id_success():
             ]
         )
     ]
-    with patch("pecha_api.texts.texts_service.TextUtils.validate_text_exists", new_callable=AsyncMock, return_value=True), \
+    with patch("pecha_api.texts.texts_service.get_table_of_content_by_sheet_id_cache", new_callable=AsyncMock, return_value=None), \
+        patch("pecha_api.texts.texts_service.set_table_of_content_by_sheet_id_cache", new_callable=AsyncMock, return_value=None), \
+        patch("pecha_api.texts.texts_service.TextUtils.validate_text_exists", new_callable=AsyncMock, return_value=True), \
         patch("pecha_api.texts.texts_service.get_contents_by_id", new_callable=AsyncMock, return_value=mock_table_of_contents):
     
         response = await get_table_of_content_by_sheet_id(sheet_id=sheet_id)
@@ -1324,7 +1327,8 @@ async def test_get_table_of_content_by_sheet_id_success():
 async def test_get_table_of_content_by_sheet_id_invalid_sheet_id():
     sheet_id = "invalid_sheet_id"
 
-    with patch("pecha_api.texts.texts_service.TextUtils.validate_text_exists", new_callable=AsyncMock, return_value=False):
+    with patch("pecha_api.texts.texts_service.get_table_of_content_by_sheet_id_cache", new_callable=AsyncMock, return_value=None), \
+        patch("pecha_api.texts.texts_service.TextUtils.validate_text_exists", new_callable=AsyncMock, return_value=False):
         with pytest.raises(HTTPException) as exc_info:
             await get_table_of_content_by_sheet_id(sheet_id=sheet_id)
 

@@ -19,6 +19,7 @@ from .texts_response_models import (
     TableOfContent,
     DetailTableOfContentResponse,
     TableOfContentResponse,
+    SectionWithPagination,
     TextDTO,
     TextVersionResponse,
     TextVersion,
@@ -167,14 +168,17 @@ async def get_table_of_contents_by_text_id(text_id: str, language: str = None, s
     if root_text is None:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=ErrorConstants.TEXT_NOT_FOUND_MESSAGE)
     table_of_contents: List[TableOfContent] = await get_contents_by_id(text_id=root_text.id)
-
+    paginated_sections = _get_paginated_sections(sections=table_of_contents[0].sections, skip=skip, limit=limit)
     response = TableOfContentResponse(
         text_detail=root_text,
+        skip=skip,
+        limit=limit,
+        total=paginated_sections.total,
         contents=[
             TableOfContent(
                 id=str(content.id),
                 text_id=content.text_id,
-                sections=_get_paginated_sections(sections=content.sections, skip=skip, limit=limit)
+                sections=paginated_sections.sections
             )
             for content in table_of_contents
         ]
@@ -182,7 +186,7 @@ async def get_table_of_contents_by_text_id(text_id: str, language: str = None, s
     
     return response
 
-def _get_paginated_sections(sections: List[Section], skip: int, limit: int) -> List[Section]:
+def _get_paginated_sections(sections: List[Section], skip: int, limit: int) -> SectionWithPagination:
     filtered_sections = [] 
     skip_index = skip
     limit_index = skip + limit
@@ -202,7 +206,13 @@ def _get_paginated_sections(sections: List[Section], skip: int, limit: int) -> L
             )
             filtered_sections.append(new_section)
 
-    return filtered_sections[skip_index:limit_index]
+    total = len(filtered_sections)
+    return SectionWithPagination(
+        sections=filtered_sections[skip_index:limit_index],
+        skip=skip,
+        limit=limit,
+        total=total
+    )
 
 async def remove_table_of_content_by_text_id(text_id: str):
     is_valid_text = await TextUtils.validate_text_exists(text_id=text_id)
