@@ -414,7 +414,7 @@ def test_complete_task_service_success():
         mock_check_day_completion.assert_called_once()
         assert mock_check_day_completion.call_args.kwargs["db"] is db_mock
         assert mock_check_day_completion.call_args.kwargs["user_id"] == user_id
-        assert mock_check_day_completion.call_args.kwargs["task"] == day_id
+        assert mock_check_day_completion.call_args.kwargs["day_id"] == day_id
 
 
 def test_complete_task_service_task_not_found_raises_404():
@@ -522,7 +522,7 @@ def test_check_day_completion_marks_day_complete_when_all_done():
     ), patch(
         "pecha_api.plans.users.plan_users_service.save_user_day_completion",
     ) as mock_save:
-        check_day_completion(db=db_mock, user_id=user_id, plan_item_id=day_id)
+        check_day_completion(db=db_mock, user_id=user_id, day_id=day_id)
 
         assert mock_save.call_count == 1
         udc = mock_save.call_args.kwargs["user_day_completion"]
@@ -549,7 +549,7 @@ def test_check_day_completion_does_nothing_when_remaining_tasks():
     ), patch(
         "pecha_api.plans.users.plan_users_service.save_user_day_completion",
     ) as mock_save:
-        check_day_completion(db=db_mock, user_id=user_id, plan_item_id=day_id)
+        check_day_completion(db=db_mock, user_id=user_id, day_id=day_id)
 
         mock_save.assert_not_called()
 
