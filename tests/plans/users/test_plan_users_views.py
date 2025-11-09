@@ -1,6 +1,6 @@
 import uuid
 import pytest
-from unittest.mock import patch
+from unittest.mock import patch, AsyncMock
 from datetime import datetime
 
 from fastapi.testclient import TestClient
@@ -120,7 +120,7 @@ def test_complete_sub_task_unauthenticated(unauthenticated_client):
 def test_get_user_plans_success_default_pagination(authenticated_client):
     response_payload = {"plans": [], "skip": 0, "limit": 20, "total": 0}
 
-    with patch("pecha_api.plans.users.plan_users_views.get_user_enrolled_plans", return_value=response_payload) as mock_get:
+    with patch("pecha_api.plans.users.plan_users_views.get_user_enrolled_plans", new_callable=AsyncMock, return_value=response_payload) as mock_get:
         response = authenticated_client.get(
             "/users/me/plans", headers={"Authorization": f"Bearer {VALID_TOKEN}"}
         )
@@ -137,7 +137,7 @@ def test_get_user_plans_success_default_pagination(authenticated_client):
 def test_get_user_plans_with_filters_and_pagination(authenticated_client):
     response_payload = {"plans": [], "skip": 10, "limit": 5, "total": 0}
 
-    with patch("pecha_api.plans.users.plan_users_views.get_user_enrolled_plans", return_value=response_payload) as mock_get:
+    with patch("pecha_api.plans.users.plan_users_views.get_user_enrolled_plans", new_callable=AsyncMock, return_value=response_payload) as mock_get:
         response = authenticated_client.get(
             "/users/me/plans?status_filter=active&skip=10&limit=5",
             headers={"Authorization": f"Bearer {VALID_TOKEN}"},
@@ -168,7 +168,7 @@ def test_get_user_plan_progress_details_success(authenticated_client):
         "completed_at": None,
     }
 
-    with patch("pecha_api.plans.users.plan_users_views.get_user_plan_progress", return_value=payload) as mock_get:
+    with patch("pecha_api.plans.users.plan_users_views.get_user_plan_progress", new_callable=AsyncMock, return_value=payload) as mock_get:
         response = authenticated_client.get(
             f"/users/me/plans/{plan_id}", headers={"Authorization": f"Bearer {VALID_TOKEN}"}
         )
