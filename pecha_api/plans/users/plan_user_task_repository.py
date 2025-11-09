@@ -2,6 +2,7 @@ from uuid import UUID
 from sqlalchemy.orm import Session
 from typing import List
 from .plan_users_models import UserTaskCompletion
+from pecha_api.plans.tasks.plan_tasks_models import PlanTask
 from sqlalchemy.exc import IntegrityError
 from fastapi import HTTPException
 from starlette import status
@@ -23,3 +24,21 @@ def save_user_task_completion(db: Session, user_task_completion: UserTaskComplet
 
 def get_user_task_completions_by_user_id_and_task_ids(db: Session, user_id: UUID, task_ids: List[UUID]) -> List[UserTaskCompletion]:
     return db.query(UserTaskCompletion).filter(UserTaskCompletion.user_id == user_id, UserTaskCompletion.task_id.in_(task_ids)).all()
+    
+
+
+def get_uncompleted_user_task_ids(db: Session, user_id: UUID, task_ids: List[UUID]) -> List[UUID]:
+    rows = (
+        db.query(PlanTask.id)
+        .filter(
+            PlanTask.id.in_(task_ids),
+            ~db.query(UserTaskCompletion)
+             .filter(
+                 UserTaskCompletion.user_id == user_id,
+                 UserTaskCompletion.task_id == PlanTask.id
+             )
+             .exists()
+        )
+        .all()
+    )
+    return [row[0] for row in rows]
