@@ -28,11 +28,21 @@ import logging
 logger = logging.getLogger(__name__)
 
 async def get_user_enrolled_plans(token: str,status_filter: Optional[str] = None,skip: int = 0,limit: int = 20) -> UserPlansResponse:
-    
+
     current_user = validate_and_extract_user_details(token=token)
     
+    normalized_status = status_filter.upper() if status_filter else None
+    
     with SessionLocal() as db:
-        results, total = get_user_enrolled_plans_with_details(db=db,user_id=current_user.id,status_filter=status_filter,skip=skip,limit=limit)
+        results, total = get_user_enrolled_plans_with_details(
+            db=db,
+            user_id=current_user.id,
+            status=normalized_status,
+            skip=skip,
+            limit=limit,
+            order_by_field=UserPlanProgress.started_at,
+            order_desc=True
+        )
         
         enrolled_plans = []
         bucket_name = get("AWS_BUCKET_NAME")

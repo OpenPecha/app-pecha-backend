@@ -29,11 +29,21 @@ def get_plan_progress_by_user_id_and_plan_id(db: Session, user_id: UUID, plan_id
     return db.query(UserPlanProgress).filter(UserPlanProgress.user_id == user_id, UserPlanProgress.plan_id == plan_id).first()
 
 
-def get_user_enrolled_plans_with_details(user_id: UUID, status_filter: Optional[str] = None, skip: int = 0, limit: int = 20) -> Tuple[List[Tuple[UserPlanProgress, Plan, int]], int]:
+def get_user_enrolled_plans_with_details(db: Session,user_id: UUID, status: Optional[str] = None,skip: int = 0, limit: int = 20,order_by_field = None,order_desc: bool = True
+) -> Tuple[List[Tuple[UserPlanProgress, Plan, int]], int]:
+
+    if order_by_field is None:
+        order_by_field = UserPlanProgress.started_at
     
-    days_subquery = db.query(PlanItem.plan_id,func.count(PlanItem.id).label('total_days')).group_by(PlanItem.plan_id).subquery()
+    days_subquery = db.query(
+        PlanItem.plan_id,
+        func.count(PlanItem.id).label('total_days')
+    ).group_by(PlanItem.plan_id).subquery()
     
-    query = db.query(UserPlanProgress, Plan, func.coalesce(days_subquery.c.total_days, 0).label('total_days')
+    query = db.query(
+        UserPlanProgress, 
+        Plan, 
+        func.coalesce(days_subquery.c.total_days, 0).label('total_days')
     ).join(
         Plan, UserPlanProgress.plan_id == Plan.id
     ).outerjoin(
@@ -42,11 +52,16 @@ def get_user_enrolled_plans_with_details(user_id: UUID, status_filter: Optional[
         UserPlanProgress.user_id == user_id
     )
     
-    if status_filter:
-        query = query.filter(UserPlanProgress.status == status_filter.upper())
+    if status:
+        query = query.filter(UserPlanProgress.status == status)
     
     total = query.count()
     
-    results = query.order_by(UserPlanProgress.started_at.desc()).offset(skip).limit(limit).all()
+    if order_desc:
+        query = query.order_by(order_by_field.desc())
+    else:
+        query = query.order_by(order_by_field)
+    
+    results = query.offset(skip).limit(limit).all()
     
     return results, total
