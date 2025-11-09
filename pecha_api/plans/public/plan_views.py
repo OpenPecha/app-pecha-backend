@@ -4,14 +4,15 @@ from uuid import UUID
 from starlette import status
 
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
-from pecha_api.plans.plans_response_models import PlansResponse, PlanDTO
-from pecha_api.plans.public.plan_response_models import PlanDaysResponse, PlanDayDTO
+from pecha_api.plans.public.plan_response_models import PublicPlansResponse, PublicPlanDTO, 
+from pecha_api.plans.public.plan_models import PlanDaysResponse , PlanDayDTO
 from pecha_api.plans.public.plan_service import (
     get_published_plans, 
-    get_published_plan_details, 
+    get_published_plan, 
     get_plan_days,
     get_plan_day_details
 )
+
 
 oauth2_scheme = HTTPBearer()
 # Create router for public plan endpoints
@@ -21,29 +22,21 @@ public_plans_router = APIRouter(
 )
 
 
-@public_plans_router.get("", status_code=status.HTTP_200_OK, response_model=PlansResponse)
+@public_plans_router.get("", status_code=status.HTTP_200_OK, response_model=PublicPlansResponse)
 async def get_plans(
     search: Optional[str] = Query(None, description="Search by plan title"),
-    language: Optional[str] = Query(None, description="Filter by language code (e.g., 'bo', 'en', 'zh')"),
+    language: str = Query("en", description="Filter by language code (e.g., 'bo', 'en', 'zh'). Defaults to 'en'."),
     sort_by: str = Query("title", enum=["title", "total_days", "subscription_count"]),
     sort_order: str = Query("asc", enum=["asc", "desc"]),
     skip: int = Query(0, ge=0),
     limit: int = Query(20, ge=1, le=50)
 ):
-    """Get published plans for public consumption (no authentication required)"""
-    return await get_published_plans(
-        search=search,
-        language=language,
-        sort_by=sort_by,
-        sort_order=sort_order,
-        skip=skip,
-        limit=limit
-    )
+    return await get_published_plans(search=search, language=language, sort_by=sort_by, sort_order=sort_order, skip=skip, limit=limit)
 
-@public_plans_router.get("/{plan_id}", status_code=status.HTTP_200_OK, response_model=PlanDTO)
+
+@public_plans_router.get("/{plan_id}", status_code=status.HTTP_200_OK, response_model=PublicPlanDTO)
 async def get_plan_details(plan_id: UUID):
-    """Get published plan details for public consumption (no authentication required)"""
-    return await get_published_plan_details(plan_id=plan_id)
+    return await get_published_plan(plan_id=plan_id)
 
 
 @public_plans_router.get("/{plan_id}/days", status_code=status.HTTP_200_OK, response_model=PlanDaysResponse)
