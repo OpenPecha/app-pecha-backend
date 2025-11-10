@@ -118,22 +118,22 @@ def test_complete_sub_task_unauthenticated(unauthenticated_client):
 
 
 def test_get_user_plans_success(authenticated_client):
-    from pecha_api.plans.users.plan_users_response_models import UserPlansResponse, UserPlanDTO
-    from datetime import datetime, timezone
+    from pecha_api.plans.plans_response_models import PlansResponse, PlanDTO
     
     plan_id = uuid.uuid4()
-    mock_response = UserPlansResponse(
+    mock_response = PlansResponse(
         plans=[
-            UserPlanDTO(
+            PlanDTO(
                 id=plan_id,
                 title="Test Plan",
                 description="Test Description",
                 language="EN",
                 difficulty_level="BEGINNER",
                 image_url="https://s3.amazonaws.com/presigned-url",
-                started_at=datetime.now(timezone.utc),
                 total_days=30,
-                tags=["meditation", "mindfulness"]
+                tags=["meditation", "mindfulness"],
+                status="PUBLISHED",
+                subscription_count=0,
             )
         ],
         skip=0,
@@ -141,7 +141,7 @@ def test_get_user_plans_success(authenticated_client):
         total=1
     )
     
-    with patch("pecha_api.plans.users.plan_users_views.get_user_enrolled_plans", return_value=mock_response) as mock_get_plans:
+    with patch("pecha_api.plans.users.plan_users_views.get_user_enrolled_plans", new_callable=AsyncMock, return_value=mock_response) as mock_get_plans:
         response = authenticated_client.get(
             "/users/me/plans",
             headers={"Authorization": f"Bearer {VALID_TOKEN}"}
@@ -179,16 +179,16 @@ def test_get_user_plans_success(authenticated_client):
 
 def test_get_user_plans_with_status_filter(authenticated_client):
     """Test retrieval of user plans with status filter"""
-    from pecha_api.plans.users.plan_users_response_models import UserPlansResponse
+    from pecha_api.plans.plans_response_models import PlansResponse
     
-    mock_response = UserPlansResponse(
+    mock_response = PlansResponse(
         plans=[],
         skip=0,
         limit=20,
-        total=0
+        total=0,
     )
     
-    with patch("pecha_api.plans.users.plan_users_views.get_user_enrolled_plans", return_value=mock_response) as mock_get_plans:
+    with patch("pecha_api.plans.users.plan_users_views.get_user_enrolled_plans", new_callable=AsyncMock, return_value=mock_response) as mock_get_plans:
         response = authenticated_client.get(
             "/users/me/plans?status_filter=active",
             headers={"Authorization": f"Bearer {VALID_TOKEN}"}
@@ -203,32 +203,33 @@ def test_get_user_plans_with_status_filter(authenticated_client):
 
 def test_get_user_plans_with_pagination(authenticated_client):
     """Test retrieval of user plans with custom pagination"""
-    from pecha_api.plans.users.plan_users_response_models import UserPlansResponse, UserPlanDTO
+    from pecha_api.plans.plans_response_models import PlansResponse, PlanDTO
     from datetime import datetime, timezone
     
     mock_plans = [
-        UserPlanDTO(
+        PlanDTO(
             id=uuid.uuid4(),
             title=f"Plan {i}",
             description=f"Description {i}",
             language="EN",
             difficulty_level="BEGINNER",
             image_url="",
-            started_at=datetime.now(timezone.utc),
             total_days=30,
-            tags=[]
+            tags=[],
+            status="PUBLISHED",
+            subscription_count=0,
         )
         for i in range(10)
     ]
     
-    mock_response = UserPlansResponse(
+    mock_response = PlansResponse(
         plans=mock_plans,
         skip=10,
         limit=10,
         total=50
     )
     
-    with patch("pecha_api.plans.users.plan_users_views.get_user_enrolled_plans", return_value=mock_response) as mock_get_plans:
+    with patch("pecha_api.plans.users.plan_users_views.get_user_enrolled_plans", new_callable=AsyncMock, return_value=mock_response) as mock_get_plans:
         response = authenticated_client.get(
             "/users/me/plans?skip=10&limit=10",
             headers={"Authorization": f"Bearer {VALID_TOKEN}"}
@@ -249,16 +250,16 @@ def test_get_user_plans_with_pagination(authenticated_client):
 
 def test_get_user_plans_with_all_filters(authenticated_client):
     """Test retrieval of user plans with all query parameters"""
-    from pecha_api.plans.users.plan_users_response_models import UserPlansResponse
+    from pecha_api.plans.plans_response_models import PlansResponse
     
-    mock_response = UserPlansResponse(
+    mock_response = PlansResponse(
         plans=[],
         skip=5,
         limit=15,
         total=0
     )
     
-    with patch("pecha_api.plans.users.plan_users_views.get_user_enrolled_plans", return_value=mock_response) as mock_get_plans:
+    with patch("pecha_api.plans.users.plan_users_views.get_user_enrolled_plans", new_callable=AsyncMock, return_value=mock_response) as mock_get_plans:
         response = authenticated_client.get(
             "/users/me/plans?status_filter=completed&skip=5&limit=15",
             headers={"Authorization": f"Bearer {VALID_TOKEN}"}
@@ -275,16 +276,16 @@ def test_get_user_plans_with_all_filters(authenticated_client):
 
 def test_get_user_plans_empty_result(authenticated_client):
     """Test retrieval when user has no enrolled plans"""
-    from pecha_api.plans.users.plan_users_response_models import UserPlansResponse
+    from pecha_api.plans.plans_response_models import PlansResponse
     
-    mock_response = UserPlansResponse(
+    mock_response = PlansResponse(
         plans=[],
         skip=0,
         limit=20,
         total=0
     )
     
-    with patch("pecha_api.plans.users.plan_users_views.get_user_enrolled_plans", return_value=mock_response) as mock_get_plans:
+    with patch("pecha_api.plans.users.plan_users_views.get_user_enrolled_plans", new_callable=AsyncMock, return_value=mock_response) as mock_get_plans:
         response = authenticated_client.get(
             "/users/me/plans",
             headers={"Authorization": f"Bearer {VALID_TOKEN}"}
@@ -301,7 +302,7 @@ def test_get_user_plans_empty_result(authenticated_client):
 
 def test_get_user_plans_invalid_token(authenticated_client):
     """Test retrieval with invalid authentication token"""
-    with patch("pecha_api.plans.users.plan_users_views.get_user_enrolled_plans") as mock_get_plans:
+    with patch("pecha_api.plans.users.plan_users_views.get_user_enrolled_plans", new_callable=AsyncMock) as mock_get_plans:
         mock_get_plans.side_effect = HTTPException(
             status_code=401,
             detail={"error": "Unauthorized", "message": "Invalid token"}
@@ -355,7 +356,7 @@ def test_get_user_plans_unauthenticated(unauthenticated_client):
 
 def test_get_user_plans_database_error(authenticated_client):
     """Test retrieval when database error occurs"""
-    with patch("pecha_api.plans.users.plan_users_views.get_user_enrolled_plans") as mock_get_plans:
+    with patch("pecha_api.plans.users.plan_users_views.get_user_enrolled_plans", new_callable=AsyncMock) as mock_get_plans:
         mock_get_plans.side_effect = HTTPException(
             status_code=500,
             detail={"error": "Internal Server Error", "message": "Database connection failed"}
@@ -372,53 +373,56 @@ def test_get_user_plans_database_error(authenticated_client):
 
 def test_get_user_plans_multiple_plans(authenticated_client):
     """Test retrieval of multiple enrolled plans"""
-    from pecha_api.plans.users.plan_users_response_models import UserPlansResponse, UserPlanDTO
+    from pecha_api.plans.plans_response_models import PlansResponse, PlanDTO
     from datetime import datetime, timezone
     
     mock_plans = [
-        UserPlanDTO(
+        PlanDTO(
             id=uuid.uuid4(),
             title="Meditation Plan",
             description="Daily meditation practice",
             language="EN",
             difficulty_level="BEGINNER",
             image_url="https://s3.amazonaws.com/plan1.jpg",
-            started_at=datetime.now(timezone.utc),
             total_days=21,
-            tags=["meditation", "mindfulness"]
+            tags=["meditation", "mindfulness"],
+            status="PUBLISHED",
+            subscription_count=0,
         ),
-        UserPlanDTO(
+        PlanDTO(
             id=uuid.uuid4(),
             title="Advanced Dharma",
             description="Advanced Buddhist teachings",
             language="BO",
             difficulty_level="ADVANCED",
             image_url="https://s3.amazonaws.com/plan2.jpg",
-            started_at=datetime.now(timezone.utc),
             total_days=90,
-            tags=["dharma", "philosophy"]
+            tags=["dharma", "philosophy"],
+            status="PUBLISHED",
+            subscription_count=0,
         ),
-        UserPlanDTO(
+        PlanDTO(
             id=uuid.uuid4(),
             title="Beginner's Guide",
             description="Introduction to Buddhism",
             language="EN",
             difficulty_level="BEGINNER",
             image_url="",
-            started_at=datetime.now(timezone.utc),
             total_days=7,
-            tags=["basics"]
+            tags=["basics"],
+            status="PUBLISHED",
+            subscription_count=0,
         )
     ]
     
-    mock_response = UserPlansResponse(
+    mock_response = PlansResponse(
         plans=mock_plans,
         skip=0,
         limit=20,
         total=3
     )
     
-    with patch("pecha_api.plans.users.plan_users_views.get_user_enrolled_plans", return_value=mock_response) as mock_get_plans:
+    with patch("pecha_api.plans.users.plan_users_views.get_user_enrolled_plans", new_callable=AsyncMock, return_value=mock_response) as mock_get_plans:
         response = authenticated_client.get(
             "/users/me/plans",
             headers={"Authorization": f"Bearer {VALID_TOKEN}"}
