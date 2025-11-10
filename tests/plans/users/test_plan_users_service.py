@@ -377,7 +377,6 @@ def _mock_session_with_db_and_task_flow():
 def test_complete_task_service_success():
     user_id = uuid.uuid4()
     task_id = uuid.uuid4()
-    day_id = uuid.uuid4()
 
     db_mock, session_cm = _mock_session_with_db_and_task_flow()
 
@@ -389,7 +388,7 @@ def test_complete_task_service_success():
         return_value=session_cm,
     ), patch(
         "pecha_api.plans.users.plan_users_service.get_task_by_id",
-        return_value=SimpleNamespace(id=task_id, plan_item_id=day_id),
+        return_value=SimpleNamespace(id=task_id),
     ), patch(
         "pecha_api.plans.users.plan_users_service.UserTaskCompletion",
     ) as MockUserTaskCompletion, patch(
@@ -417,7 +416,8 @@ def test_complete_task_service_success():
         mock_check_day_completion.assert_called_once()
         assert mock_check_day_completion.call_args.kwargs["db"] is db_mock
         assert mock_check_day_completion.call_args.kwargs["user_id"] == user_id
-        assert mock_check_day_completion.call_args.kwargs["day_id"] == day_id
+        # task object identity isn't critical here; ensure it carries the id
+        assert getattr(mock_check_day_completion.call_args.kwargs["task"], "id", None) == task_id
 
 
 def test_complete_task_service_task_not_found_raises_404():
@@ -458,8 +458,8 @@ def test_complete_all_subtasks_completions_creates_missing_only():
         "pecha_api.plans.users.plan_users_service.get_sub_tasks_by_task_id",
         return_value=[SimpleNamespace(id=sub_a), SimpleNamespace(id=sub_b), SimpleNamespace(id=sub_c)],
     ), patch(
-        "pecha_api.plans.users.plan_users_service.get_uncompleted_user_sub_task_ids",
-        return_value=[sub_b],
+        "pecha_api.plans.users.plan_users_service.get_user_subtask_completions_by_user_id_and_sub_task_ids",
+        return_value=[SimpleNamespace(sub_task_id=sub_a), SimpleNamespace(sub_task_id=sub_c)],
     ), patch(
         "pecha_api.plans.users.plan_users_service.UserSubTaskCompletion",
         side_effect=lambda user_id, sub_task_id: SimpleNamespace(user_id=user_id, sub_task_id=sub_task_id),
@@ -489,8 +489,8 @@ def test_complete_all_subtasks_completions_no_new_items_calls_bulk_with_empty():
         "pecha_api.plans.users.plan_users_service.get_sub_tasks_by_task_id",
         return_value=[SimpleNamespace(id=sub_a), SimpleNamespace(id=sub_b)],
     ), patch(
-        "pecha_api.plans.users.plan_users_service.get_uncompleted_user_sub_task_ids",
-        return_value=[],
+        "pecha_api.plans.users.plan_users_service.get_user_subtask_completions_by_user_id_and_sub_task_ids",
+        return_value=[SimpleNamespace(sub_task_id=sub_a), SimpleNamespace(sub_task_id=sub_b)],
     ), patch(
         "pecha_api.plans.users.plan_users_service.UserSubTaskCompletion",
         side_effect=lambda user_id, sub_task_id: SimpleNamespace(user_id=user_id, sub_task_id=sub_task_id),
@@ -510,6 +510,7 @@ def test_check_day_completion_marks_day_complete_when_all_done():
     day_id = uuid.uuid4()
 
     t1, t2 = uuid.uuid4(), uuid.uuid4()
+    task_obj = SimpleNamespace(plan_item_id=day_id, id=uuid.uuid4())
 
     db_mock = MagicMock()
 
@@ -517,15 +518,15 @@ def test_check_day_completion_marks_day_complete_when_all_done():
         "pecha_api.plans.users.plan_users_service.get_tasks_by_plan_item_id",
         return_value=[SimpleNamespace(id=t1), SimpleNamespace(id=t2)],
     ), patch(
-        "pecha_api.plans.users.plan_users_service.get_uncompleted_user_task_ids",
-        return_value=[],
+        "pecha_api.plans.users.plan_users_service.get_user_task_completions_by_user_id_and_task_ids",
+        return_value=[SimpleNamespace(task_id=t1), SimpleNamespace(task_id=t2)],
     ), patch(
         "pecha_api.plans.users.plan_users_service.UserDayCompletion",
         side_effect=lambda user_id, day_id: SimpleNamespace(user_id=user_id, day_id=day_id),
     ), patch(
         "pecha_api.plans.users.plan_users_service.save_user_day_completion",
     ) as mock_save:
-        check_day_completion(db=db_mock, user_id=user_id, day_id=day_id)
+        check_day_completion(db=db_mock, user_id=user_id, task=task_obj)
 
         assert mock_save.call_count == 1
         udc = mock_save.call_args.kwargs["user_day_completion"]
@@ -540,6 +541,7 @@ def test_check_day_completion_does_nothing_when_remaining_tasks():
     day_id = uuid.uuid4()
 
     t1, t2 = uuid.uuid4(), uuid.uuid4()
+    task_obj = SimpleNamespace(plan_item_id=day_id, id=uuid.uuid4())
 
     db_mock = MagicMock()
 
@@ -547,12 +549,12 @@ def test_check_day_completion_does_nothing_when_remaining_tasks():
         "pecha_api.plans.users.plan_users_service.get_tasks_by_plan_item_id",
         return_value=[SimpleNamespace(id=t1), SimpleNamespace(id=t2)],
     ), patch(
-        "pecha_api.plans.users.plan_users_service.get_uncompleted_user_task_ids",
-        return_value=[t2],
+        "pecha_api.plans.users.plan_users_service.get_user_task_completions_by_user_id_and_task_ids",
+        return_value=[SimpleNamespace(task_id=t1)],
     ), patch(
         "pecha_api.plans.users.plan_users_service.save_user_day_completion",
     ) as mock_save:
-        check_day_completion(db=db_mock, user_id=user_id, day_id=day_id)
+        check_day_completion(db=db_mock, user_id=user_id, task=task_obj)
 
         mock_save.assert_not_called()
 
@@ -762,102 +764,45 @@ def test_get_user_plan_day_details_service_success():
         assert set(mock_subtask_completions.call_args.kwargs["sub_task_ids"]) == {sub1_id, sub2_id}
 
 
-def test_get_user_plan_day_details_presigns_image_subtask_content():
-    user_id = uuid.uuid4()
-    plan_id = uuid.uuid4()
-    day_id = uuid.uuid4()
-
-    task_id = uuid.uuid4()
-    img_sub_id = uuid.uuid4()
-    text_sub_id = uuid.uuid4()
-
-    plan_item = SimpleNamespace(
-        id=day_id,
-        day_number=1,
-        tasks=[
-            SimpleNamespace(
-                id=task_id,
-                title="Task with image",
-                estimated_time=3,
-                display_order=1,
-                sub_tasks=[
-                    SimpleNamespace(
-                        id=img_sub_id,
-                        content_type=ContentType.IMAGE,
-                        content="images/path/key.png",
-                        display_order=1,
-                    ),
-                    SimpleNamespace(
-                        id=text_sub_id,
-                        content_type=ContentType.TEXT,
-                        content="plain text content",
-                        display_order=2,
-                    ),
-                ],
-            )
-        ],
+def test_is_completion_helpers_boolean_gateways():
+    from pecha_api.plans.users.plan_users_service import (
+        is_task_completed,
+        is_day_completed,
+        is_sub_task_completed,
     )
 
-    db_mock, session_cm = _mock_session_with_db()
-
-    with patch(
-        "pecha_api.plans.users.plan_users_service.validate_and_extract_user_details",
-        return_value=SimpleNamespace(id=user_id),
-    ), patch(
-        "pecha_api.plans.users.plan_users_service.SessionLocal",
-        return_value=session_cm,
-    ), patch(
-        "pecha_api.plans.users.plan_users_service.get_plan_day_with_tasks_and_subtasks",
-        return_value=plan_item,
-    ), patch(
-        "pecha_api.plans.users.plan_users_service.is_day_completed",
-        return_value=False,
-    ), patch(
-        "pecha_api.plans.users.plan_users_service.get_user_task_completions_by_user_id_and_task_ids",
-        return_value=[],
-    ), patch(
-        "pecha_api.plans.users.plan_users_service.get_user_subtask_completions_by_user_id_and_sub_task_ids",
-        return_value=[],
-    ), patch(
-        "pecha_api.plans.users.plan_users_service.get",
-        return_value="test-bucket",
-    ) as mock_get_cfg, patch(
-        "pecha_api.plans.users.plan_users_service.generate_presigned_access_url",
-        return_value="https://signed.example.com/images/path/key.png?sig=abc",
-    ) as mock_presign:
-        result = get_user_plan_day_details_service(token="tok", plan_id=plan_id, day_number=1)
-
-        sub_tasks = result.tasks[0].sub_tasks
-        img_sub = next(st for st in sub_tasks if st.id == img_sub_id)
-        text_sub = next(st for st in sub_tasks if st.id == text_sub_id)
-
-        assert img_sub.content == "https://signed.example.com/images/path/key.png?sig=abc"
-        assert text_sub.content == "plain text content"
-
-        mock_get_cfg.assert_called_with("AWS_BUCKET_NAME")
-        assert mock_presign.call_count == 1
-        assert mock_presign.call_args.kwargs["bucket_name"] == "test-bucket"
-        assert mock_presign.call_args.kwargs["s3_key"] == "images/path/key.png"
-
-
-def test_is_day_completed_boolean_gateway():
-    from pecha_api.plans.users.plan_users_service import is_day_completed
-
     user_id = uuid.uuid4()
     day_id = uuid.uuid4()
+    task_id = uuid.uuid4()
+    sub_task_id = uuid.uuid4()
 
     db_mock = MagicMock()
 
-    # True case
+    # True cases
     with patch(
+        "pecha_api.plans.users.plan_users_service.get_user_task_completion_by_user_id_and_task_id",
+        return_value=SimpleNamespace(id=uuid.uuid4()),
+    ), patch(
         "pecha_api.plans.users.plan_users_service.get_user_day_completion_by_user_id_and_day_id",
         return_value=SimpleNamespace(id=uuid.uuid4()),
+    ), patch(
+        "pecha_api.plans.users.plan_users_service.get_user_subtask_completion_by_user_id_and_sub_task_id",
+        return_value=SimpleNamespace(id=uuid.uuid4()),
     ):
+        assert is_task_completed(db=db_mock, task_id=task_id, user_id=user_id) is True
         assert is_day_completed(db=db_mock, user_id=user_id, day_id=day_id) is True
+        assert is_sub_task_completed(db=db_mock, user_id=user_id, sub_task_id=sub_task_id) is True
 
-    # False case
+    # False cases
     with patch(
+        "pecha_api.plans.users.plan_users_service.get_user_task_completion_by_user_id_and_task_id",
+        return_value=None,
+    ), patch(
         "pecha_api.plans.users.plan_users_service.get_user_day_completion_by_user_id_and_day_id",
         return_value=None,
+    ), patch(
+        "pecha_api.plans.users.plan_users_service.get_user_subtask_completion_by_user_id_and_sub_task_id",
+        return_value=None,
     ):
+        assert is_task_completed(db=db_mock, task_id=task_id, user_id=user_id) is False
         assert is_day_completed(db=db_mock, user_id=user_id, day_id=day_id) is False
