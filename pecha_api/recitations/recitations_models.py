@@ -10,7 +10,7 @@ class Recitation(Base):
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid4)
     title = Column(String(255), nullable=False)
     audio_url = Column(String(255), nullable=False)
-    text_id=Column(UUID(as_uuid=True), nullable=False)
+    text_id=Column(UUID(as_uuid=True), nullable=True)
     content = Column(JSON, nullable=True)
 
     __table_args__ = (
