@@ -12,6 +12,7 @@ from pecha_api.plans.users.plan_users_service import (
     complete_task_service,
     get_user_enrolled_plans,
     get_user_plan_progress,
+    delete_task_service,
 )
 from pecha_api.plans.response_message import (
     BAD_REQUEST,
@@ -552,6 +553,80 @@ def test_check_day_completion_does_nothing_when_remaining_tasks():
         check_day_completion(db=db_mock, user_id=user_id, day_id=day_id)
 
         mock_save.assert_not_called()
+
+
+def test_delete_task_service_success():
+    user_id = uuid.uuid4()
+    task_id = uuid.uuid4()
+    day_id = uuid.uuid4()
+
+    db_mock, session_cm = _mock_session_with_db()
+
+    sub_a, sub_b = uuid.uuid4(), uuid.uuid4()
+
+    with patch(
+        "pecha_api.plans.users.plan_users_service.validate_and_extract_user_details",
+        return_value=SimpleNamespace(id=user_id),
+    ), patch(
+        "pecha_api.plans.users.plan_users_service.SessionLocal",
+        return_value=session_cm,
+    ), patch(
+        "pecha_api.plans.users.plan_users_service.get_task_by_id",
+        return_value=SimpleNamespace(id=task_id, plan_item_id=day_id),
+    ), patch(
+        "pecha_api.plans.users.plan_users_service.delete_user_task_completion",
+    ) as mock_delete_task, patch(
+        "pecha_api.plans.users.plan_users_service.delete_user_day_completion",
+    ) as mock_delete_day, patch(
+        "pecha_api.plans.users.plan_users_service.get_sub_tasks_by_task_id",
+        return_value=[SimpleNamespace(id=sub_a), SimpleNamespace(id=sub_b)],
+    ) as mock_get_subtasks, patch(
+        "pecha_api.plans.users.plan_users_service.delete_user_subtask_completion",
+    ) as mock_delete_subtasks:
+        # execute
+        result = delete_task_service(token="tok", task_id=task_id)
+
+        # assertions
+        assert result is None
+        mock_delete_task.assert_called_once()
+        assert mock_delete_task.call_args.kwargs["db"] is db_mock
+        assert mock_delete_task.call_args.kwargs["user_id"] == user_id
+        assert mock_delete_task.call_args.kwargs["task_id"] == task_id
+
+        mock_delete_day.assert_called_once()
+        assert mock_delete_day.call_args.kwargs["db"] is db_mock
+        assert mock_delete_day.call_args.kwargs["user_id"] == user_id
+        assert mock_delete_day.call_args.kwargs["day_id"] == day_id
+
+        mock_get_subtasks.assert_called_once_with(db=db_mock, task_id=task_id)
+        mock_delete_subtasks.assert_called_once()
+        assert mock_delete_subtasks.call_args.kwargs["db"] is db_mock
+        assert mock_delete_subtasks.call_args.kwargs["user_id"] == user_id
+        assert set(mock_delete_subtasks.call_args.kwargs["sub_task_ids"]) == {sub_a, sub_b}
+
+
+def test_delete_task_service_task_not_found_raises_404():
+    user_id = uuid.uuid4()
+    task_id = uuid.uuid4()
+
+    _, session_cm = _mock_session_with_db()
+
+    with patch(
+        "pecha_api.plans.users.plan_users_service.validate_and_extract_user_details",
+        return_value=SimpleNamespace(id=user_id),
+    ), patch(
+        "pecha_api.plans.users.plan_users_service.SessionLocal",
+        return_value=session_cm,
+    ), patch(
+        "pecha_api.plans.users.plan_users_service.get_task_by_id",
+        return_value=None,
+    ):
+        with pytest.raises(HTTPException) as exc_info:
+            delete_task_service(token="tok", task_id=task_id)
+
+        assert exc_info.value.status_code == 404
+        assert exc_info.value.detail["error"] == BAD_REQUEST
+        assert exc_info.value.detail["message"] == TASK_NOT_FOUND
 
 
 @pytest.mark.asyncio

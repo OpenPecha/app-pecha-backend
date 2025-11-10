@@ -15,3 +15,11 @@ def save_user_day_completion(db: Session, user_day_completion: UserDayCompletion
     except IntegrityError as e:
         db.rollback()
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=ResponseError(error=BAD_REQUEST, message=str(e.orig)).model_dump())
+
+def delete_user_day_completion(db: Session, user_id: UUID, day_id: UUID) -> None:
+    try:
+        db.query(UserDayCompletion).filter(UserDayCompletion.user_id == user_id, UserDayCompletion.day_id == day_id).delete()
+        db.commit()
+    except Exception as e:
+        db.rollback()
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=ResponseError(error=BAD_REQUEST, message=str(e)).model_dump())
