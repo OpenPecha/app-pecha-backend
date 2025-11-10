@@ -40,6 +40,19 @@ async def get_published_plans(
                 
                 plan_image_url = generate_presigned_access_url(bucket_name=get("AWS_BUCKET_NAME"), s3_key=plan.image_url)
                 
+                author_dto = None
+                if plan.author:
+                    author_avatar_url = generate_presigned_access_url(
+                        bucket_name=get("AWS_BUCKET_NAME"), 
+                        s3_key=plan.author.image_url
+                    )
+                    author_dto = AuthorDTO(
+                        id=plan.author.id, 
+                        firstname=plan.author.first_name, 
+                        lastname=plan.author.last_name, 
+                        image_url=author_avatar_url, 
+                    )
+                
                 plan_dto = PublicPlanDTO(
                     id=plan.id,
                     title=plan.title,
@@ -48,7 +61,8 @@ async def get_published_plans(
                     difficulty_level=plan.difficulty_level,
                     image_url=plan_image_url,
                     total_days=plan_aggregate.total_days,
-                    tags=plan.tags if plan.tags else []
+                    tags=plan.tags if plan.tags else [],
+                    author=author_dto
                 )
                 plan_dtos.append(plan_dto)
             

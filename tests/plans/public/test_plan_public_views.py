@@ -25,8 +25,7 @@ def sample_author_dto():
         id=uuid4(),
         firstname="John",
         lastname="Doe",
-        image_url="https://bucket.s3.amazonaws.com/presigned-url",
-        image_key="images/author_avatars/author-id/avatar.jpg"
+        image_url="https://bucket.s3.amazonaws.com/presigned-url"
     )
 
 
@@ -79,7 +78,13 @@ async def test_get_plans_success(sample_plans_response):
         assert plan["title"] == "Introduction to Meditation"
         assert plan["language"] == "en"
         assert plan["total_days"] == 30
+        
         assert "author" in plan
+        assert plan["author"] is not None
+        assert "id" in plan["author"]
+        assert plan["author"]["firstname"] == "John"
+        assert plan["author"]["lastname"] == "Doe"
+        assert "image_url" in plan["author"]
         
         mock_service.assert_called_once_with(
             search=None,
@@ -277,7 +282,6 @@ async def test_get_plan_details_success(sample_plan_dto):
         
         assert "image_url" in data
         assert data["author"]["image_url"] is not None
-        assert data["author"]["image_key"] is not None
         
         mock_service.assert_called_once_with(plan_id=plan_id)
 
@@ -315,11 +319,8 @@ async def test_get_plan_details_without_author(sample_plan_dto):
         language="en",
         difficulty_level=DifficultyLevel.BEGINNER,
         image_url=None,
-        image_key=None,
         total_days=10,
         tags=[],
-        status=PlanStatus.PUBLISHED,
-        subscription_count=0,
         author=None
     )
     

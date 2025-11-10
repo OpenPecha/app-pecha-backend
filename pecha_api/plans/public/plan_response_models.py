@@ -16,8 +16,7 @@ class AuthorDTO(BaseModel):
     id: UUID
     firstname: str
     lastname: str
-    image_url: Optional[str] = None 
-    image_key: Optional[str] = None  
+    image_url: Optional[str] = None  
 
 class PublicPlanDTO(BaseModel):
     id: UUID
