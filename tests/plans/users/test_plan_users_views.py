@@ -1,6 +1,7 @@
 import uuid
 import pytest
-from unittest.mock import patch
+from unittest.mock import patch, AsyncMock
+from datetime import datetime
 
 from fastapi.testclient import TestClient
 from fastapi.security import HTTPAuthorizationCredentials
@@ -115,4 +116,127 @@ def test_complete_sub_task_unauthenticated(unauthenticated_client):
 
     assert response.status_code == status.HTTP_403_FORBIDDEN
 
+
+def test_get_user_plans_success_default_pagination(authenticated_client):
+    response_payload = {"plans": [], "skip": 0, "limit": 20, "total": 0}
+
+    with patch("pecha_api.plans.users.plan_users_views.get_user_enrolled_plans", new_callable=AsyncMock, return_value=response_payload) as mock_get:
+        response = authenticated_client.get(
+            "/users/me/plans", headers={"Authorization": f"Bearer {VALID_TOKEN}"}
+        )
+
+        assert response.status_code == status.HTTP_200_OK
+        assert response.json() == response_payload
+        assert mock_get.call_count == 1
+        assert mock_get.call_args.kwargs.get("token") == VALID_TOKEN
+        assert mock_get.call_args.kwargs.get("status_filter") is None
+        assert mock_get.call_args.kwargs.get("skip") == 0
+        assert mock_get.call_args.kwargs.get("limit") == 20
+
+
+def test_get_user_plans_with_filters_and_pagination(authenticated_client):
+    response_payload = {"plans": [], "skip": 10, "limit": 5, "total": 0}
+
+    with patch("pecha_api.plans.users.plan_users_views.get_user_enrolled_plans", new_callable=AsyncMock, return_value=response_payload) as mock_get:
+        response = authenticated_client.get(
+            "/users/me/plans?status_filter=active&skip=10&limit=5",
+            headers={"Authorization": f"Bearer {VALID_TOKEN}"},
+        )
+
+        assert response.status_code == status.HTTP_200_OK
+        assert response.json() == response_payload
+        assert mock_get.call_count == 1
+        assert mock_get.call_args.kwargs.get("token") == VALID_TOKEN
+        assert mock_get.call_args.kwargs.get("status_filter") == "active"
+        assert mock_get.call_args.kwargs.get("skip") == 10
+        assert mock_get.call_args.kwargs.get("limit") == 5
+
+
+def test_get_user_plan_progress_details_success(authenticated_client):
+    plan_id = uuid.uuid4()
+    payload = {
+        "id": uuid.uuid4(),
+        "user_id": uuid.uuid4(),
+        "plan_id": plan_id,
+        "plan": {"id": str(plan_id), "title": "Sample"},
+        "started_at": datetime.utcnow(),
+        "streak_count": 3,
+        "longest_streak": 5,
+        "status": "active",
+        "is_completed": False,
+        "created_at": datetime.utcnow(),
+        "completed_at": None,
+    }
+
+    with patch("pecha_api.plans.users.plan_users_views.get_user_plan_progress", new_callable=AsyncMock, return_value=payload) as mock_get:
+        response = authenticated_client.get(
+            f"/users/me/plans/{plan_id}", headers={"Authorization": f"Bearer {VALID_TOKEN}"}
+        )
+
+        assert response.status_code == status.HTTP_200_OK
+        body = response.json()
+        assert body["id"] == str(payload["id"])  # datetime fields auto-serialized
+        assert body["plan_id"] == str(plan_id)
+        assert mock_get.call_count == 1
+        assert mock_get.call_args.kwargs.get("token") == VALID_TOKEN
+        assert mock_get.call_args.kwargs.get("plan_id") == plan_id
+
+
+def test_complete_task_success(authenticated_client):
+    task_id = uuid.uuid4()
+
+    with patch("pecha_api.plans.users.plan_users_views.complete_task_service", return_value=None) as mock_complete:
+        response = authenticated_client.post(
+            f"/users/me/tasks/{task_id}/completion",
+            headers={"Authorization": f"Bearer {VALID_TOKEN}"},
+        )
+
+        assert response.status_code == status.HTTP_204_NO_CONTENT
+        assert response.text == ""
+        assert mock_complete.call_count == 1
+        assert mock_complete.call_args.kwargs.get("token") == VALID_TOKEN
+        assert mock_complete.call_args.kwargs.get("task_id") == task_id
+
+
+# New tests for delete task endpoint
+def test_delete_task_success(authenticated_client):
+    task_id = uuid.uuid4()
+
+    with patch("pecha_api.plans.users.plan_users_views.delete_task_service", return_value=None) as mock_delete:
+        response = authenticated_client.delete(
+            f"/users/me/task/{task_id}",
+            headers={"Authorization": f"Bearer {VALID_TOKEN}"},
+        )
+
+        assert response.status_code == status.HTTP_204_NO_CONTENT
+        assert response.text == ""
+        assert mock_delete.call_count == 1
+        assert mock_delete.call_args.kwargs.get("token") == VALID_TOKEN
+        assert mock_delete.call_args.kwargs.get("task_id") == task_id
+
+
+def test_delete_task_service_error_propagates(authenticated_client):
+    task_id = uuid.uuid4()
+
+    with patch("pecha_api.plans.users.plan_users_views.delete_task_service") as mock_delete:
+        mock_delete.side_effect = HTTPException(
+            status_code=404,
+            detail={"error": "Bad request", "message": "Task not found"},
+        )
+
+        response = authenticated_client.delete(
+            f"/users/me/task/{task_id}",
+            headers={"Authorization": f"Bearer {VALID_TOKEN}"},
+        )
+
+        assert response.status_code == status.HTTP_404_NOT_FOUND
+        assert response.json()["detail"] == {"error": "Bad request", "message": "Task not found"}
+
+
+def test_delete_task_unauthenticated(unauthenticated_client):
+    task_id = uuid.uuid4()
+
+    response = unauthenticated_client.delete(f"/users/me/task/{task_id}")
+
+    assert response.status_code == status.HTTP_403_FORBIDDEN
 
