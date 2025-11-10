@@ -201,6 +201,177 @@ def test_complete_sub_task_service_sub_task_not_found_raises_404():
 
 
 @pytest.mark.asyncio
+async def test_get_user_enrolled_plans_success():
+    from pecha_api.plans.users.plan_users_service import get_user_enrolled_plans
+    from pecha_api.plans.plans_enums import LanguageCode, DifficultyLevel
+    from datetime import datetime, timezone
+    
+    user_id = uuid.uuid4()
+    plan_id = uuid.uuid4()
+    
+    mock_user = SimpleNamespace(id=user_id)
+    
+    mock_progress = SimpleNamespace(
+        user_id=user_id,
+        plan_id=plan_id,
+        started_at=datetime.now(timezone.utc),
+        streak_count=5,
+        longest_streak=10,
+        status="ACTIVE",
+        is_completed=False
+    )
+    
+    mock_plan = SimpleNamespace(
+        id=plan_id,
+        title="Test Plan",
+        description="Test Description",
+        language=LanguageCode.EN,
+        difficulty_level=DifficultyLevel.BEGINNER,
+        image_url="images/plan_images/test.jpg",
+        tags=["meditation", "mindfulness"]
+    )
+    
+    db_mock, session_cm = _mock_session_with_db()
+    
+    with patch(
+        "pecha_api.plans.users.plan_users_service.validate_and_extract_user_details",
+        return_value=mock_user,
+    ) as mock_validate, patch(
+        "pecha_api.plans.users.plan_users_service.SessionLocal",
+        return_value=session_cm,
+    ), patch(
+        "pecha_api.plans.users.plan_users_service.get_user_enrolled_plans_with_details",
+        return_value=([(mock_progress, mock_plan, 30)], 1),
+    ) as mock_get_plans, patch(
+        "pecha_api.plans.users.plan_users_service.get",
+        return_value="test-bucket",
+    ), patch(
+        "pecha_api.plans.users.plan_users_service.generate_presigned_access_url",
+        return_value="https://s3.amazonaws.com/presigned-url",
+    ) as mock_presigned:
+        result = await get_user_enrolled_plans(
+            token="token123",
+            status_filter=None,
+            skip=0,
+            limit=20
+        )
+        
+        mock_validate.assert_called_once_with(token="token123")
+        mock_get_plans.assert_called_once()
+        call_kwargs = mock_get_plans.call_args.kwargs
+        assert call_kwargs["db"] is db_mock
+        assert call_kwargs["user_id"] == user_id
+        assert call_kwargs["status"] is None
+        assert call_kwargs["skip"] == 0
+        assert call_kwargs["limit"] == 20
+        
+        assert result.skip == 0
+        assert result.limit == 20
+        assert result.total == 1
+        assert len(result.plans) == 1
+        
+        plan_dto = result.plans[0]
+        assert plan_dto.id == plan_id
+        assert plan_dto.title == "Test Plan"
+        assert plan_dto.description == "Test Description"
+        assert plan_dto.language == "EN"
+        assert plan_dto.difficulty_level == "BEGINNER"
+        assert plan_dto.image_url == "https://s3.amazonaws.com/presigned-url"
+        assert plan_dto.total_days == 30
+        assert plan_dto.tags == ["meditation", "mindfulness"]
+        
+        mock_presigned.assert_called_once_with(
+            bucket_name="test-bucket",
+            s3_key="images/plan_images/test.jpg"
+        )
+
+
+@pytest.mark.asyncio
+async def test_get_user_enrolled_plans_with_status_filter():
+    from pecha_api.plans.users.plan_users_service import get_user_enrolled_plans
+    
+    user_id = uuid.uuid4()
+    mock_user = SimpleNamespace(id=user_id)
+    
+    db_mock, session_cm = _mock_session_with_db()
+    
+    with patch(
+        "pecha_api.plans.users.plan_users_service.validate_and_extract_user_details",
+        return_value=mock_user,
+    ), patch(
+        "pecha_api.plans.users.plan_users_service.SessionLocal",
+        return_value=session_cm,
+    ), patch(
+        "pecha_api.plans.users.plan_users_service.get_user_enrolled_plans_with_details",
+        return_value=([], 0),
+    ) as mock_get_plans, patch(
+        "pecha_api.plans.users.plan_users_service.get",
+        return_value="test-bucket",
+    ):
+        result = await get_user_enrolled_plans(
+            token="token123",
+            status_filter="active",
+            skip=0,
+            limit=20
+        )
+        
+        mock_get_plans.assert_called_once()
+        call_kwargs = mock_get_plans.call_args.kwargs
+        assert call_kwargs["status"] == "ACTIVE"
+
+
+@pytest.mark.asyncio
+async def test_get_user_enrolled_plans_with_pagination():
+    from pecha_api.plans.users.plan_users_service import get_user_enrolled_plans
+    
+    user_id = uuid.uuid4()
+    mock_user = SimpleNamespace(id=user_id)
+    
+    db_mock, session_cm = _mock_session_with_db()
+    
+    with patch(
+        "pecha_api.plans.users.plan_users_service.validate_and_extract_user_details",
+        return_value=mock_user,
+    ), patch(
+        "pecha_api.plans.users.plan_users_service.SessionLocal",
+        return_value=session_cm,
+    ), patch(
+        "pecha_api.plans.users.plan_users_service.get_user_enrolled_plans_with_details",
+        return_value=([], 50),
+    ) as mock_get_plans, patch(
+        "pecha_api.plans.users.plan_users_service.get",
+        return_value="test-bucket",
+    ):
+        result = await get_user_enrolled_plans(
+            token="token123",
+            status_filter=None,
+            skip=10,
+            limit=10
+        )
+        
+        mock_get_plans.assert_called_once()
+        call_kwargs = mock_get_plans.call_args.kwargs
+        assert call_kwargs["skip"] == 10
+        assert call_kwargs["limit"] == 10
+        
+        assert result.skip == 10
+        assert result.limit == 10
+        assert result.total == 50
+
+
+@pytest.mark.asyncio
+async def test_get_user_enrolled_plans_empty_result():
+    from pecha_api.plans.users.plan_users_service import get_user_enrolled_plans
+    
+    user_id = uuid.uuid4()
+    mock_user = SimpleNamespace(id=user_id)
+    
+    db_mock, session_cm = _mock_session_with_db()
+    
+    with patch(
+        "pecha_api.plans.users.plan_users_service.validate_and_extract_user_details",
+        return_value=mock_user,
+
 async def test_get_user_enrolled_plans_success_with_filter_and_pagination():
     user_id = uuid.uuid4()
     plan_id_1 = uuid.uuid4()
@@ -386,6 +557,61 @@ def test_complete_task_service_success():
         "pecha_api.plans.users.plan_users_service.SessionLocal",
         return_value=session_cm,
     ), patch(
+        "pecha_api.plans.users.plan_users_service.get_user_enrolled_plans_with_details",
+        return_value=([], 0),
+    ), patch(
+        "pecha_api.plans.users.plan_users_service.get",
+        return_value="test-bucket",
+    ):
+        result = await get_user_enrolled_plans(
+            token="token123",
+            status_filter=None,
+            skip=0,
+            limit=20
+        )
+        
+        assert result.plans == []
+        assert result.skip == 0
+        assert result.limit == 20
+        assert result.total == 0
+
+
+@pytest.mark.asyncio
+async def test_get_user_enrolled_plans_without_image():
+    from pecha_api.plans.users.plan_users_service import get_user_enrolled_plans
+    from pecha_api.plans.plans_enums import LanguageCode, DifficultyLevel
+    from datetime import datetime, timezone
+    
+    user_id = uuid.uuid4()
+    plan_id = uuid.uuid4()
+    
+    mock_user = SimpleNamespace(id=user_id)
+    
+    mock_progress = SimpleNamespace(
+        user_id=user_id,
+        plan_id=plan_id,
+        started_at=datetime.now(timezone.utc),
+        streak_count=0,
+        longest_streak=0,
+        status="NOT_STARTED",
+        is_completed=False
+    )
+    
+    mock_plan = SimpleNamespace(
+        id=plan_id,
+        title="Plan Without Image",
+        description="Description",
+        language=LanguageCode.BO,
+        difficulty_level=DifficultyLevel.INTERMEDIATE,
+        image_url=None,
+        tags=[]
+    )
+    
+    db_mock, session_cm = _mock_session_with_db()
+    
+    with patch(
+        "pecha_api.plans.users.plan_users_service.validate_and_extract_user_details",
+        return_value=mock_user,
         "pecha_api.plans.users.plan_users_service.get_task_by_id",
         return_value=SimpleNamespace(id=task_id, plan_item_id=day_id),
     ), patch(
@@ -431,6 +657,167 @@ def test_complete_task_service_task_not_found_raises_404():
         "pecha_api.plans.users.plan_users_service.SessionLocal",
         return_value=session_cm,
     ), patch(
+        "pecha_api.plans.users.plan_users_service.get_user_enrolled_plans_with_details",
+        return_value=([(mock_progress, mock_plan, 7)], 1),
+    ), patch(
+        "pecha_api.plans.users.plan_users_service.get",
+        return_value="test-bucket",
+    ), patch(
+        "pecha_api.plans.users.plan_users_service.generate_presigned_access_url",
+    ) as mock_presigned:
+        result = await get_user_enrolled_plans(
+            token="token123",
+            status_filter=None,
+            skip=0,
+            limit=20
+        )
+        
+        assert len(result.plans) == 1
+        plan_dto = result.plans[0]
+        assert plan_dto.image_url == ""
+        
+        mock_presigned.assert_not_called()
+
+
+@pytest.mark.asyncio
+async def test_get_user_enrolled_plans_presigned_url_error():
+    from pecha_api.plans.users.plan_users_service import get_user_enrolled_plans
+    from pecha_api.plans.plans_enums import LanguageCode, DifficultyLevel
+    from datetime import datetime, timezone
+    
+    user_id = uuid.uuid4()
+    plan_id = uuid.uuid4()
+    
+    mock_user = SimpleNamespace(id=user_id)
+    
+    mock_progress = SimpleNamespace(
+        user_id=user_id,
+        plan_id=plan_id,
+        started_at=datetime.now(timezone.utc),
+        streak_count=0,
+        longest_streak=0,
+        status="ACTIVE",
+        is_completed=False
+    )
+    
+    mock_plan = SimpleNamespace(
+        id=plan_id,
+        title="Test Plan",
+        description="Test Description",
+        language=LanguageCode.EN,
+        difficulty_level=DifficultyLevel.BEGINNER,
+        image_url="images/plan_images/test.jpg",
+        tags=[]
+    )
+    
+    db_mock, session_cm = _mock_session_with_db()
+    
+    with patch(
+        "pecha_api.plans.users.plan_users_service.validate_and_extract_user_details",
+        return_value=mock_user,
+    ), patch(
+        "pecha_api.plans.users.plan_users_service.SessionLocal",
+        return_value=session_cm,
+    ), patch(
+        "pecha_api.plans.users.plan_users_service.get_user_enrolled_plans_with_details",
+        return_value=([(mock_progress, mock_plan, 30)], 1),
+    ), patch(
+        "pecha_api.plans.users.plan_users_service.get",
+        return_value="test-bucket",
+    ), patch(
+        "pecha_api.plans.users.plan_users_service.generate_presigned_access_url",
+        side_effect=Exception("S3 error"),
+    ):
+        result = await get_user_enrolled_plans(
+            token="token123",
+            status_filter=None,
+            skip=0,
+            limit=20
+        )
+        
+        assert len(result.plans) == 1
+        plan_dto = result.plans[0]
+        assert plan_dto.image_url == ""
+
+
+@pytest.mark.asyncio
+async def test_get_user_enrolled_plans_multiple_plans():
+    from pecha_api.plans.users.plan_users_service import get_user_enrolled_plans
+    from pecha_api.plans.plans_enums import LanguageCode, DifficultyLevel
+    from datetime import datetime, timezone
+    
+    user_id = uuid.uuid4()
+    plan_id_1 = uuid.uuid4()
+    plan_id_2 = uuid.uuid4()
+    plan_id_3 = uuid.uuid4()
+    
+    mock_user = SimpleNamespace(id=user_id)
+    
+    mock_progress_1 = SimpleNamespace(
+        user_id=user_id,
+        plan_id=plan_id_1,
+        started_at=datetime.now(timezone.utc),
+        streak_count=5,
+        longest_streak=10,
+        status="ACTIVE",
+        is_completed=False
+    )
+    
+    mock_plan_1 = SimpleNamespace(
+        id=plan_id_1,
+        title="Meditation Plan",
+        description="Daily meditation",
+        language=LanguageCode.EN,
+        difficulty_level=DifficultyLevel.BEGINNER,
+        image_url="images/plan1.jpg",
+        tags=["meditation"]
+    )
+    
+    mock_progress_2 = SimpleNamespace(
+        user_id=user_id,
+        plan_id=plan_id_2,
+        started_at=datetime.now(timezone.utc),
+        streak_count=15,
+        longest_streak=20,
+        status="ACTIVE",
+        is_completed=False
+    )
+    
+    mock_plan_2 = SimpleNamespace(
+        id=plan_id_2,
+        title="Advanced Dharma",
+        description="Advanced teachings",
+        language=LanguageCode.BO,
+        difficulty_level=DifficultyLevel.ADVANCED,
+        image_url="images/plan2.jpg",
+        tags=["dharma", "philosophy"]
+    )
+    
+    mock_progress_3 = SimpleNamespace(
+        user_id=user_id,
+        plan_id=plan_id_3,
+        started_at=datetime.now(timezone.utc),
+        streak_count=0,
+        longest_streak=0,
+        status="COMPLETED",
+        is_completed=True
+    )
+    
+    mock_plan_3 = SimpleNamespace(
+        id=plan_id_3,
+        title="Beginner's Guide",
+        description="Introduction",
+        language=LanguageCode.EN,
+        difficulty_level=DifficultyLevel.BEGINNER,
+        image_url=None,
+        tags=["basics"]
+    )
+    
+    db_mock, session_cm = _mock_session_with_db()
+    
+    with patch(
+        "pecha_api.plans.users.plan_users_service.validate_and_extract_user_details",
+        return_value=mock_user,
         "pecha_api.plans.users.plan_users_service.get_task_by_id",
         return_value=None,
     ):
@@ -571,6 +958,63 @@ def test_delete_task_service_success():
         "pecha_api.plans.users.plan_users_service.SessionLocal",
         return_value=session_cm,
     ), patch(
+        "pecha_api.plans.users.plan_users_service.get_user_enrolled_plans_with_details",
+        return_value=(
+            [
+                (mock_progress_1, mock_plan_1, 21),
+                (mock_progress_2, mock_plan_2, 90),
+                (mock_progress_3, mock_plan_3, 7)
+            ],
+            3
+        ),
+    ), patch(
+        "pecha_api.plans.users.plan_users_service.get",
+        return_value="test-bucket",
+    ), patch(
+        "pecha_api.plans.users.plan_users_service.generate_presigned_access_url",
+        return_value="https://s3.amazonaws.com/presigned-url",
+    ):
+        result = await get_user_enrolled_plans(
+            token="token123",
+            status_filter=None,
+            skip=0,
+            limit=20
+        )
+        
+        assert len(result.plans) == 3
+        assert result.total == 3
+        
+        assert result.plans[0].title == "Meditation Plan"
+        assert result.plans[0].language == "EN"
+        assert result.plans[0].total_days == 21
+        
+        assert result.plans[1].title == "Advanced Dharma"
+        assert result.plans[1].language == "BO"
+        assert result.plans[1].difficulty_level == "ADVANCED"
+        assert result.plans[1].total_days == 90
+        
+        assert result.plans[2].title == "Beginner's Guide"
+        assert result.plans[2].image_url == ""
+        assert result.plans[2].total_days == 7
+
+
+@pytest.mark.asyncio
+async def test_get_user_enrolled_plans_invalid_token():
+    from pecha_api.plans.users.plan_users_service import get_user_enrolled_plans
+    
+    with patch(
+        "pecha_api.plans.users.plan_users_service.validate_and_extract_user_details",
+        side_effect=HTTPException(status_code=401, detail={"error": "Unauthorized", "message": "Invalid token"}),
+    ):
+        with pytest.raises(HTTPException) as exc_info:
+            await get_user_enrolled_plans(
+                token="invalid_token",
+                status_filter=None,
+                skip=0,
+                limit=20
+            )
+        
+        assert exc_info.value.status_code == 401
         "pecha_api.plans.users.plan_users_service.get_task_by_id",
         return_value=SimpleNamespace(id=task_id, plan_item_id=day_id),
     ), patch(
