@@ -14,7 +14,7 @@ async def create_recitations_service(token: str, create_recitations_request: Cre
             title=create_recitations_request.title,
             audio_url=create_recitations_request.audio_url,
             text_id=create_recitations_request.text_id,
-            content=create_recitations_request.content
+            content=create_recitations_request.content.model_dump(mode='json')
         )
         save_recitations(db=db, recitation=new_recitation)
         

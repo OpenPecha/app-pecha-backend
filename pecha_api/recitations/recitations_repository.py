@@ -14,5 +14,4 @@ def save_recitations(db: Session, recitation: Recitation) -> None:
         db.refresh(recitation)
     except IntegrityError as e:
         db.rollback()
-        print(f"Integrity error: {e.orig}")
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=ResponseError(error=BAD_REQUEST, message=str(e.orig)).model_dump())

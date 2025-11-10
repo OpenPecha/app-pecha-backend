@@ -4,12 +4,12 @@ from uuid import UUID
 
 class TextSegments(BaseModel):
     text: str
-    segment_id: str
+    segment_id: UUID
     start_time: str
     end_time: str
 
 class RecitationContent(BaseModel):
-    content: List[TextSegments]
+    texts: List[TextSegments]
 
 class CreateRecitationsRequest(BaseModel):
     title: str
