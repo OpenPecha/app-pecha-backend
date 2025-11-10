@@ -3,15 +3,15 @@ import uuid
 from types import SimpleNamespace
 from unittest.mock import patch, MagicMock, AsyncMock
 
-from pecha_api.plans.recitation.plan_recitation_response_models import CreateRecitationRequest
-from pecha_api.plans.recitation.plan_recitation_services import create_recitation_service
+from pecha_api.recitations.recitations_response_models import CreateRecitationsRequest
+from pecha_api.recitations.recitations_services import create_recitations_service
 
 
 @pytest.mark.asyncio
 async def test_create_recitation_service_success():
     """Test successful recitation creation with all operations"""
     text_id = uuid.uuid4()
-    request = CreateRecitationRequest(
+    request = CreateRecitationsRequest(
         title="Test Recitation",
         audio_url="https://example.com/audio.mp3",
         text_id=text_id,
@@ -47,7 +47,7 @@ async def test_create_recitation_service_success():
 
         MockRecitation.return_value = constructed_recitation
 
-        resp = await create_recitation_service(
+        resp = await create_recitations_service(
             token="token123",
             create_recitation_request=request,
         )
@@ -81,7 +81,7 @@ async def test_create_recitation_service_success():
 async def test_create_recitation_service_with_empty_content():
     """Test recitation creation with empty content dictionary"""
     text_id = uuid.uuid4()
-    request = CreateRecitationRequest(
+    request = CreateRecitationsRequest(
         title="Empty Content Recitation",
         audio_url="https://example.com/empty.mp3",
         text_id=text_id,
@@ -117,7 +117,7 @@ async def test_create_recitation_service_with_empty_content():
 
         MockRecitation.return_value = constructed_recitation
 
-        resp = await create_recitation_service(
+        resp = await create_recitations_service(
             token="valid_token",
             create_recitation_request=request,
         )
