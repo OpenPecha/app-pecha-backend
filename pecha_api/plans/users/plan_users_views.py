@@ -6,12 +6,14 @@ from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from typing import Annotated
 
 from pecha_api.plans.plans_response_models import PlansResponse
-from pecha_api.plans.users.plan_users_service import complete_sub_task_service
 from pecha_api.plans.users.plan_users_response_models import UserPlanEnrollRequest, UserPlanProgressResponse
 from pecha_api.plans.users.plan_users_service import (
     get_user_enrolled_plans,
     enroll_user_in_plan,
-    get_user_plan_progress
+    get_user_plan_progress,
+    complete_task_service,
+    complete_sub_task_service,
+    delete_task_service
 )
 
 
@@ -70,4 +72,25 @@ def complete_sub_task(
     complete_sub_task_service(
         token=authentication_credential.credentials,
         id=sub_task_id
+    )
+
+@user_progress_router.post("/tasks/{task_id}/completion", status_code=status.HTTP_204_NO_CONTENT)
+def complete_task(
+    task_id: UUID,
+    authentication_credential: Annotated[HTTPAuthorizationCredentials, Depends(oauth2_scheme)]
+):
+    return complete_task_service(
+        token=authentication_credential.credentials,
+        task_id=task_id
+    )
+
+
+@user_progress_router.delete("/task/{task_id}", status_code=status.HTTP_204_NO_CONTENT)
+def delete_task(
+    task_id: UUID,
+    authentication_credential: Annotated[HTTPAuthorizationCredentials, Depends(oauth2_scheme)]
+):
+    return delete_task_service(
+        token=authentication_credential.credentials,
+        task_id=task_id
     )

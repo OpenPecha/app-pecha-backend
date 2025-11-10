@@ -4,6 +4,13 @@ from pecha_api.plans.plans_enums import DifficultyLevel, PlanStatus,ContentType
 from uuid import UUID
 from pecha_api.plans.plans_models import Plan
 
+class PlanDayBasic(BaseModel):
+    id: str
+    day_number: int
+
+
+class PlanDaysResponse(BaseModel):
+    days: List[PlanDayBasic]
 
 class AuthorDTO(BaseModel):
     id: UUID
