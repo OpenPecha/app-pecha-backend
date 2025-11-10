@@ -48,6 +48,10 @@ async def test_create_recitations_service_success():
         "pecha_api.recitations.recitations_services.validate_and_extract_author_details",
         return_value=mock_author,
     ) as mock_validate, patch(
+        "pecha_api.recitations.recitations_services.TextUtils.validate_text_exists",
+        return_value=True,
+        new_callable=AsyncMock,
+    ) as mock_text_validate, patch(
         "pecha_api.recitations.recitations_services.SessionLocal",
         return_value=session_cm,
     ) as mock_session, patch(
@@ -72,6 +76,10 @@ async def test_create_recitations_service_success():
         # Validate authentication
         assert mock_validate.call_count == 1
         assert mock_validate.call_args.kwargs == {"token": token}
+        
+        # Validate text exists
+        assert mock_text_validate.call_count == 1
+        assert mock_text_validate.call_args.args == (str(request.text_id),)
         
         assert mock_session.call_count == 1
         

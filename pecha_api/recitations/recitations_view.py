@@ -8,7 +8,7 @@ from pecha_api.recitations.recitations_services import create_recitations_servic
 
 oauth2_scheme=HTTPBearer()
 recitation_router=APIRouter(
-    prefix="/recitations",
+    prefix="/cms/recitations",
     tags=["Recitations"],
 )
 

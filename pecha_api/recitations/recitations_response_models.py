@@ -1,4 +1,4 @@
-from typing import List
+from typing import List, Optional
 from pydantic import BaseModel
 from uuid import UUID
 
@@ -14,5 +14,5 @@ class RecitationContent(BaseModel):
 class CreateRecitationsRequest(BaseModel):
     title: str
     audio_url: str
-    text_id: UUID
+    text_id: Optional[UUID] = None
     content: RecitationContent
