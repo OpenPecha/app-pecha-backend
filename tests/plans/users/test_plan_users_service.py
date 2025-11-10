@@ -762,6 +762,84 @@ def test_get_user_plan_day_details_service_success():
         assert set(mock_subtask_completions.call_args.kwargs["sub_task_ids"]) == {sub1_id, sub2_id}
 
 
+def test_get_user_plan_day_details_presigns_image_subtask_content():
+    user_id = uuid.uuid4()
+    plan_id = uuid.uuid4()
+    day_id = uuid.uuid4()
+
+    task_id = uuid.uuid4()
+    img_sub_id = uuid.uuid4()
+    text_sub_id = uuid.uuid4()
+
+    plan_item = SimpleNamespace(
+        id=day_id,
+        day_number=1,
+        tasks=[
+            SimpleNamespace(
+                id=task_id,
+                title="Task with image",
+                estimated_time=3,
+                display_order=1,
+                sub_tasks=[
+                    SimpleNamespace(
+                        id=img_sub_id,
+                        content_type=ContentType.IMAGE,
+                        content="images/path/key.png",
+                        display_order=1,
+                    ),
+                    SimpleNamespace(
+                        id=text_sub_id,
+                        content_type=ContentType.TEXT,
+                        content="plain text content",
+                        display_order=2,
+                    ),
+                ],
+            )
+        ],
+    )
+
+    db_mock, session_cm = _mock_session_with_db()
+
+    with patch(
+        "pecha_api.plans.users.plan_users_service.validate_and_extract_user_details",
+        return_value=SimpleNamespace(id=user_id),
+    ), patch(
+        "pecha_api.plans.users.plan_users_service.SessionLocal",
+        return_value=session_cm,
+    ), patch(
+        "pecha_api.plans.users.plan_users_service.get_plan_day_with_tasks_and_subtasks",
+        return_value=plan_item,
+    ), patch(
+        "pecha_api.plans.users.plan_users_service.is_day_completed",
+        return_value=False,
+    ), patch(
+        "pecha_api.plans.users.plan_users_service.get_user_task_completions_by_user_id_and_task_ids",
+        return_value=[],
+    ), patch(
+        "pecha_api.plans.users.plan_users_service.get_user_subtask_completions_by_user_id_and_sub_task_ids",
+        return_value=[],
+    ), patch(
+        "pecha_api.plans.users.plan_users_service.get",
+        return_value="test-bucket",
+    ) as mock_get_cfg, patch(
+        "pecha_api.plans.users.plan_users_service.generate_presigned_access_url",
+        return_value="https://signed.example.com/images/path/key.png?sig=abc",
+    ) as mock_presign:
+        result = get_user_plan_day_details_service(token="tok", plan_id=plan_id, day_number=1)
+
+        sub_tasks = result.tasks[0].sub_tasks
+        img_sub = next(st for st in sub_tasks if st.id == img_sub_id)
+        text_sub = next(st for st in sub_tasks if st.id == text_sub_id)
+
+        assert img_sub.content == "https://signed.example.com/images/path/key.png?sig=abc"
+        assert text_sub.content == "plain text content"
+
+        mock_get_cfg.assert_called_with("AWS_BUCKET_NAME")
+        assert mock_presign.call_count == 1
+        assert mock_presign.call_args.kwargs["bucket_name"] == "test-bucket"
+        assert mock_presign.call_args.kwargs["s3_key"] == "images/path/key.png"
+
+
 def test_is_day_completed_boolean_gateway():
     from pecha_api.plans.users.plan_users_service import is_day_completed
 

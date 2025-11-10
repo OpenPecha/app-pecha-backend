@@ -5,6 +5,7 @@ from fastapi import HTTPException
 from starlette import status
 from typing import List
 from typing import Set
+from pecha_api.config import get
 
 from pecha_api.error_contants import ErrorConstants
 from pecha_api.plans.plans_enums import UserPlanStatus
@@ -24,6 +25,9 @@ from pecha_api.plans.users.plan_users_subtasks_repository import (
     save_user_sub_task_completions_bulk, 
     get_uncompleted_user_sub_task_ids
 )
+
+from pecha_api.uploads.S3_utils import generate_presigned_access_url
+from pecha_api.plans.plans_enums import ContentType
 
 from pecha_api.plans.tasks.sub_tasks.plan_sub_tasks_repository import get_sub_task_by_subtask_id, get_sub_tasks_by_task_id
 from pecha_api.users.users_service import validate_and_extract_user_details
@@ -308,8 +312,14 @@ def _get_user_sub_tasks_dto_bulk(sub_tasks: List[PlanSubTask], completed_subtask
         UserSubTaskDTO(
             id=sub_task.id,
             content_type=sub_task.content_type,
-            content=sub_task.content,
+            content=_get_presigned_url(content=sub_task.content) if sub_task.content_type == ContentType.IMAGE else sub_task.content,
             display_order=sub_task.display_order,
             is_completed=(sub_task.id in completed_subtask_ids)
         ) for sub_task in sub_tasks
     ]
+
+def _get_presigned_url(content: str) -> str:
+    return generate_presigned_access_url(
+        bucket_name=get("AWS_BUCKET_NAME"),
+        s3_key=content
+    )
