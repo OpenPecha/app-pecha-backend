@@ -34,5 +34,24 @@ class EnrolledUserPlan(BaseModel):
     created_at: datetime
     is_completed: bool
 
+class UserPlanDTO(BaseModel):
+    id: UUID
+    title: str
+    description: str
+    language: str
+    difficulty_level: str
+    image_url: str
+    started_at: datetime
+    total_days: int
+    tags: List[str]
+
+
+class UserPlansResponse(BaseModel):
+    plans: List[UserPlanDTO]
+    skip: int
+    limit: int
+    total: int
+
+
 class UserPlanProgressUpdate(BaseModel):
     status: str
