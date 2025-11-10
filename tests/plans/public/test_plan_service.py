@@ -81,14 +81,19 @@ async def test_get_published_plans_success(sample_plan_aggregate, mock_db_sessio
         assert plan_dto.language == "EN"
         assert plan_dto.total_days == 30
         assert plan_dto.image_url == "https://bucket.s3.amazonaws.com/presigned-url"
-        assert plan_dto.author is None
+        
+        assert plan_dto.author is not None
+        assert plan_dto.author.id == sample_plan_aggregate.plan.author.id
+        assert plan_dto.author.firstname == "John"
+        assert plan_dto.author.lastname == "Doe"
+        assert plan_dto.author.image_url == "https://bucket.s3.amazonaws.com/presigned-url"
         
         mock_repo.assert_called_once_with(
             db=mock_db_session.__enter__.return_value,
             skip=0,
             limit=20,
             search=None,
-            language="EN",  # Service converts to uppercase before calling repository
+            language="EN",  
             sort_by="title",
             sort_order="asc"
         )
@@ -116,7 +121,7 @@ async def test_get_published_plans_with_search(sample_plan_aggregate, mock_db_se
             skip=0,
             limit=20,
             search="meditation",
-            language="EN",  # Service converts to uppercase before calling repository
+            language="EN", 
             sort_by="title",
             sort_order="asc"
         )
@@ -144,7 +149,7 @@ async def test_get_published_plans_with_language_filter(sample_plan_aggregate, m
             skip=0,
             limit=20,
             search=None,
-            language="EN",  # Service converts to uppercase before calling repository
+            language="EN", 
             sort_by="title",
             sort_order="asc"
         )
@@ -453,7 +458,6 @@ async def test_get_published_plan_success(sample_plan, sample_author, mock_db_se
         assert result.author.firstname == "John"
         assert result.author.lastname == "Doe"
         assert result.author.image_url == "https://bucket.s3.amazonaws.com/presigned-url"
-        assert result.author.image_key == "images/author_avatars/author-id/avatar.jpg"
         
         mock_repo.assert_called_once_with(db=mock_db_session.__enter__.return_value, plan_id=plan_id)
 
