@@ -293,17 +293,9 @@ def get_user_plan_day_details_service(token: str, plan_id: UUID, day_number: int
         )
         return user_day_details
 
-def is_task_completed(db: SessionLocal(), task_id: UUID, user_id: UUID) -> bool:
-    user_task_completion = get_user_task_completion_by_user_id_and_task_id(db=db, user_id=user_id, task_id=task_id)
-    return user_task_completion is not None
-
 def is_day_completed(db: SessionLocal(), user_id: UUID, day_id: UUID) -> bool:
     user_day_completion = get_user_day_completion_by_user_id_and_day_id(db=db, user_id=user_id, day_id=day_id)
     return user_day_completion is not None
-
-def is_sub_task_completed(db: SessionLocal(), user_id: UUID, sub_task_id: UUID) -> bool:
-    user_subtask_completion = get_user_subtask_completion_by_user_id_and_sub_task_id(db=db, user_id=user_id, sub_task_id=sub_task_id)
-    return user_subtask_completion is not None
 
 def _get_user_sub_tasks_dto_bulk(sub_tasks: List[PlanSubTask], completed_subtask_ids: Set[UUID]) -> List[UserSubTaskDTO]:
     return [

@@ -764,46 +764,24 @@ def test_get_user_plan_day_details_service_success():
         assert set(mock_subtask_completions.call_args.kwargs["sub_task_ids"]) == {sub1_id, sub2_id}
 
 
-def test_is_completion_helpers_boolean_gateways():
-    from pecha_api.plans.users.plan_users_service import (
-        is_task_completed,
-        is_day_completed,
-        is_sub_task_completed,
-    )
+def test_is_day_completed_boolean_gateway():
+    from pecha_api.plans.users.plan_users_service import is_day_completed
 
     user_id = uuid.uuid4()
     day_id = uuid.uuid4()
-    task_id = uuid.uuid4()
-    sub_task_id = uuid.uuid4()
 
     db_mock = MagicMock()
 
-    # True cases
+    # True case
     with patch(
-        "pecha_api.plans.users.plan_users_service.get_user_task_completion_by_user_id_and_task_id",
-        return_value=SimpleNamespace(id=uuid.uuid4()),
-    ), patch(
         "pecha_api.plans.users.plan_users_service.get_user_day_completion_by_user_id_and_day_id",
         return_value=SimpleNamespace(id=uuid.uuid4()),
-    ), patch(
-        "pecha_api.plans.users.plan_users_service.get_user_subtask_completion_by_user_id_and_sub_task_id",
-        return_value=SimpleNamespace(id=uuid.uuid4()),
     ):
-        assert is_task_completed(db=db_mock, task_id=task_id, user_id=user_id) is True
         assert is_day_completed(db=db_mock, user_id=user_id, day_id=day_id) is True
-        assert is_sub_task_completed(db=db_mock, user_id=user_id, sub_task_id=sub_task_id) is True
 
-    # False cases
+    # False case
     with patch(
-        "pecha_api.plans.users.plan_users_service.get_user_task_completion_by_user_id_and_task_id",
-        return_value=None,
-    ), patch(
         "pecha_api.plans.users.plan_users_service.get_user_day_completion_by_user_id_and_day_id",
         return_value=None,
-    ), patch(
-        "pecha_api.plans.users.plan_users_service.get_user_subtask_completion_by_user_id_and_sub_task_id",
-        return_value=None,
     ):
-        assert is_task_completed(db=db_mock, task_id=task_id, user_id=user_id) is False
         assert is_day_completed(db=db_mock, user_id=user_id, day_id=day_id) is False
-        assert is_sub_task_completed(db=db_mock, user_id=user_id, sub_task_id=sub_task_id) is False
