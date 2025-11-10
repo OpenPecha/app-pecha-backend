@@ -8,6 +8,8 @@ from typing import List
 from typing import Set
 from pecha_api.config import get
 
+from pecha_api.plans.tasks.sub_tasks.plan_sub_tasks_models import PlanSubTask
+
 from pecha_api.error_contants import ErrorConstants
 from pecha_api.plans.plans_enums import UserPlanStatus
 from pecha_api.plans.shared.utils import load_plans_from_json, convert_plan_model_to_dto
@@ -22,6 +24,8 @@ from pecha_api.plans.users.plan_users_response_models import (
 )
 
 
+from pecha_api.plans.tasks.plan_tasks_repository import get_task_by_id, get_tasks_by_plan_item_id
+from pecha_api.plans.users.plan_user_task_repository import delete_user_task_completion, save_user_task_completion, get_user_task_completions_by_user_id_and_task_ids, get_uncompleted_user_task_ids
 from pecha_api.plans.users.plan_users_subtasks_repository import (
     save_user_sub_task_completions, 
     get_user_subtask_completions_by_user_id_and_sub_task_ids, 

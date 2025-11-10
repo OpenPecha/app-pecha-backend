@@ -118,22 +118,22 @@ def test_complete_sub_task_unauthenticated(unauthenticated_client):
 
 
 def test_get_user_plans_success(authenticated_client):
-    from pecha_api.plans.plans_response_models import PlansResponse, PlanDTO
+    from pecha_api.plans.users.plan_users_response_models import UserPlansResponse, UserPlanDTO
+    from datetime import datetime, timezone
     
     plan_id = uuid.uuid4()
-    mock_response = PlansResponse(
+    mock_response = UserPlansResponse(
         plans=[
-            PlanDTO(
+            UserPlanDTO(
                 id=plan_id,
                 title="Test Plan",
                 description="Test Description",
                 language="EN",
                 difficulty_level="BEGINNER",
                 image_url="https://s3.amazonaws.com/presigned-url",
+                started_at=datetime.now(timezone.utc),
                 total_days=30,
                 tags=["meditation", "mindfulness"],
-                status="PUBLISHED",
-                subscription_count=0,
             )
         ],
         skip=0,
@@ -179,9 +179,9 @@ def test_get_user_plans_success(authenticated_client):
 
 def test_get_user_plans_with_status_filter(authenticated_client):
     """Test retrieval of user plans with status filter"""
-    from pecha_api.plans.plans_response_models import PlansResponse
+    from pecha_api.plans.users.plan_users_response_models import UserPlansResponse
     
-    mock_response = PlansResponse(
+    mock_response = UserPlansResponse(
         plans=[],
         skip=0,
         limit=20,
@@ -203,26 +203,25 @@ def test_get_user_plans_with_status_filter(authenticated_client):
 
 def test_get_user_plans_with_pagination(authenticated_client):
     """Test retrieval of user plans with custom pagination"""
-    from pecha_api.plans.plans_response_models import PlansResponse, PlanDTO
+    from pecha_api.plans.users.plan_users_response_models import UserPlansResponse, UserPlanDTO
     from datetime import datetime, timezone
     
     mock_plans = [
-        PlanDTO(
+        UserPlanDTO(
             id=uuid.uuid4(),
             title=f"Plan {i}",
             description=f"Description {i}",
             language="EN",
             difficulty_level="BEGINNER",
             image_url="",
+            started_at=datetime.now(timezone.utc),
             total_days=30,
             tags=[],
-            status="PUBLISHED",
-            subscription_count=0,
         )
         for i in range(10)
     ]
     
-    mock_response = PlansResponse(
+    mock_response = UserPlansResponse(
         plans=mock_plans,
         skip=10,
         limit=10,
@@ -250,9 +249,9 @@ def test_get_user_plans_with_pagination(authenticated_client):
 
 def test_get_user_plans_with_all_filters(authenticated_client):
     """Test retrieval of user plans with all query parameters"""
-    from pecha_api.plans.plans_response_models import PlansResponse
+    from pecha_api.plans.users.plan_users_response_models import UserPlansResponse
     
-    mock_response = PlansResponse(
+    mock_response = UserPlansResponse(
         plans=[],
         skip=5,
         limit=15,
@@ -276,9 +275,9 @@ def test_get_user_plans_with_all_filters(authenticated_client):
 
 def test_get_user_plans_empty_result(authenticated_client):
     """Test retrieval when user has no enrolled plans"""
-    from pecha_api.plans.plans_response_models import PlansResponse
+    from pecha_api.plans.users.plan_users_response_models import UserPlansResponse
     
-    mock_response = PlansResponse(
+    mock_response = UserPlansResponse(
         plans=[],
         skip=0,
         limit=20,
@@ -373,49 +372,46 @@ def test_get_user_plans_database_error(authenticated_client):
 
 def test_get_user_plans_multiple_plans(authenticated_client):
     """Test retrieval of multiple enrolled plans"""
-    from pecha_api.plans.plans_response_models import PlansResponse, PlanDTO
+    from pecha_api.plans.users.plan_users_response_models import UserPlansResponse, UserPlanDTO
     from datetime import datetime, timezone
     
     mock_plans = [
-        PlanDTO(
+        UserPlanDTO(
             id=uuid.uuid4(),
             title="Meditation Plan",
             description="Daily meditation practice",
             language="EN",
             difficulty_level="BEGINNER",
             image_url="https://s3.amazonaws.com/plan1.jpg",
+            started_at=datetime.now(timezone.utc),
             total_days=21,
             tags=["meditation", "mindfulness"],
-            status="PUBLISHED",
-            subscription_count=0,
         ),
-        PlanDTO(
+        UserPlanDTO(
             id=uuid.uuid4(),
             title="Advanced Dharma",
             description="Advanced Buddhist teachings",
             language="BO",
             difficulty_level="ADVANCED",
             image_url="https://s3.amazonaws.com/plan2.jpg",
+            started_at=datetime.now(timezone.utc),
             total_days=90,
             tags=["dharma", "philosophy"],
-            status="PUBLISHED",
-            subscription_count=0,
         ),
-        PlanDTO(
+        UserPlanDTO(
             id=uuid.uuid4(),
             title="Beginner's Guide",
             description="Introduction to Buddhism",
             language="EN",
             difficulty_level="BEGINNER",
             image_url="",
+            started_at=datetime.now(timezone.utc),
             total_days=7,
             tags=["basics"],
-            status="PUBLISHED",
-            subscription_count=0,
         )
     ]
     
-    mock_response = PlansResponse(
+    mock_response = UserPlansResponse(
         plans=mock_plans,
         skip=0,
         limit=20,
