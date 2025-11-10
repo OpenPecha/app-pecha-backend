@@ -5,7 +5,7 @@ from starlette import status
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from typing import Annotated
 
-from pecha_api.plans.users.plan_users_response_models import UserPlansResponse
+from pecha_api.plans.plans_response_models import PlansResponse
 from pecha_api.plans.users.plan_users_service import complete_sub_task_service
 from pecha_api.plans.users.plan_users_response_models import UserPlanEnrollRequest, UserPlanProgressResponse
 from pecha_api.plans.users.plan_users_service import (
@@ -17,20 +17,27 @@ from pecha_api.plans.users.plan_users_service import (
 
 oauth2_scheme = HTTPBearer()
 
+# Create router for user progress endpoints
 user_progress_router = APIRouter(
     prefix="/users/me",
     tags=["User Progress"]
 )
 
 
-@user_progress_router.get("/plans", status_code=status.HTTP_200_OK, response_model=UserPlansResponse)
+@user_progress_router.get("/plans", status_code=status.HTTP_200_OK, response_model=PlansResponse)
 async def get_user_plans(
     authentication_credential: Annotated[HTTPAuthorizationCredentials, Depends(oauth2_scheme)],
     status_filter: Optional[str] = Query(None, description="Filter by plan status"),
     skip: int = Query(0, ge=0),
     limit: int = Query(20, ge=1, le=50)
 ):
-    return await get_user_enrolled_plans(token=authentication_credential.credentials,status_filter=status_filter,skip=skip,limit=limit)
+    """Get user's enrolled plans"""
+    return await get_user_enrolled_plans(
+        token=authentication_credential.credentials,
+        status_filter=status_filter,
+        skip=skip,
+        limit=limit
+    )
 
 
 @user_progress_router.post("/plans", status_code=status.HTTP_204_NO_CONTENT)
