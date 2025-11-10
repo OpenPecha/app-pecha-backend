@@ -1,8 +1,8 @@
 
 MOCK_DATA = {
-    "GREETING" : "TASHI DELEK"
+    1: "hello tashi delek"
 }
 
 
 def get_featured_day_service():
-    return MOCK_DATA
+    return MOCK_DATA[1]
