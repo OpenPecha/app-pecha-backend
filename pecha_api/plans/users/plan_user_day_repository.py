@@ -23,3 +23,6 @@ def delete_user_day_completion(db: Session, user_id: UUID, day_id: UUID) -> None
     except Exception as e:
         db.rollback()
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=ResponseError(error=BAD_REQUEST, message=str(e)).model_dump())
+
+def get_user_day_completion_by_user_id_and_day_id(db: Session, user_id: UUID, day_id: UUID) -> UserDayCompletion:
+    return db.query(UserDayCompletion).filter(UserDayCompletion.user_id == user_id, UserDayCompletion.day_id == day_id).first()
