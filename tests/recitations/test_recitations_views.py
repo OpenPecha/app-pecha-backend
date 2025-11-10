@@ -1,8 +1,8 @@
-import pytest
 import uuid
+import pytest
 from unittest.mock import patch, AsyncMock
-
-from pecha_api.recitations.recitations_response_models import CreateRecitationsRequest
+from fastapi import HTTPException
+from pecha_api.recitations.recitations_response_models import CreateRecitationsRequest, RecitationContent, TextSegments
 from pecha_api.recitations.recitations_view import create_recitations
 
 
@@ -12,59 +12,90 @@ class _Creds:
 
 
 @pytest.mark.asyncio
-async def test_create_recitation_success():
-    """Test successful recitation creation"""
+async def test_create_recitations_success():
+    """Test successful recitation creation with valid authentication and data."""
+    text_id = uuid.uuid4()
+    segment_id = uuid.uuid4()
+    
+    text_segments = [
+        TextSegments(
+            text="Sample text content",
+            segment_id=segment_id,
+            start_time="00:00:00",
+            end_time="00:00:10"
+        )
+    ]
+    
+    recitation_content = RecitationContent(texts=text_segments)
+    
     request = CreateRecitationsRequest(
         title="Test Recitation",
         audio_url="https://example.com/audio.mp3",
-        text_id=uuid.uuid4(),
-        content={"text": "Sample recitation content", "language": "en"}
+        text_id=text_id,
+        content=recitation_content
     )
-
-    creds = _Creds(token="token123")
-
-    with patch(
-        "pecha_api.plans.recitation.plan_recitation_view.create_recitation_service",
-        return_value=None,
-        new_callable=AsyncMock,
-    ) as mock_create:
-        resp = await create_recitations(
-            authentication_credential=creds,
-            create_recitation_request=request,
-        )
-
-        assert mock_create.call_count == 1
-        assert mock_create.call_args.kwargs == {
-            "token": "token123",
-            "create_recitations_request": request,
-        }
-
-        assert resp is None
-
-
-@pytest.mark.asyncio
-async def test_create_recitation_with_empty_content():
-    """Test recitation creation with empty content dictionary"""
-    request = CreateRecitationsRequest(
-        title="Empty Content Recitation",
-        audio_url="https://example.com/empty.mp3",
-        text_id=uuid.uuid4(),
-        content={}
-    )
-
-    creds = _Creds(token="valid_token")
-
+    
+    creds = _Creds(token="valid_token_123")
+    
     with patch(
         "pecha_api.recitations.recitations_view.create_recitations_service",
         return_value=None,
         new_callable=AsyncMock,
     ) as mock_create:
-        resp = await create_recitations(
+        result = await create_recitations(
             authentication_credential=creds,
             create_recitations_request=request,
         )
-
+        
         assert mock_create.call_count == 1
-        assert mock_create.call_args.kwargs["token"] == "valid_token"
-        assert mock_create.call_args.kwargs["create_recitations_request"].content == {}
-        assert resp is None
+        assert mock_create.call_args.kwargs == {
+            "token": "valid_token_123",
+            "create_recitations_request": request,
+        }
+        
+        assert result is None
+
+@pytest.mark.asyncio
+async def test_create_recitations_text_not_found():
+    """Test recitation creation fails when text doesn't exist."""
+    text_id = uuid.uuid4()
+    segment_id = uuid.uuid4()
+    
+    text_segments = [
+        TextSegments(
+            text="Sample text content",
+            segment_id=segment_id,
+            start_time="00:00:00",
+            end_time="00:00:10"
+        )
+    ]
+    
+    recitation_content = RecitationContent(texts=text_segments)
+    
+    request = CreateRecitationsRequest(
+        title="Test Recitation",
+        audio_url="https://example.com/audio.mp3",
+        text_id=text_id,
+        content=recitation_content
+    )
+    
+    creds = _Creds(token="valid_token_123")
+    
+    with patch(
+        "pecha_api.recitations.recitations_view.create_recitations_service",
+        new_callable=AsyncMock,
+        side_effect=HTTPException(
+            status_code=404,
+            detail={"error": "NOT_FOUND", "message": "Text not found"}
+        ),
+    ) as mock_create:
+        with pytest.raises(HTTPException) as exc_info:
+            await create_recitations(
+                authentication_credential=creds,
+                create_recitations_request=request,
+            )
+        
+        assert exc_info.value.status_code == 404
+        assert "not found" in exc_info.value.detail["message"].lower()
+        
+        assert mock_create.call_count == 1
