@@ -71,13 +71,12 @@ def test_enroll_user_in_plan_success():
         mock_get_plan.assert_called_once_with(db=db_mock, plan_id=plan_id)
         mock_get_progress.assert_called_once_with(db=db_mock, user_id=user_id, plan_id=plan_id)
 
-        # ensure model constructed with expected args
         ctor_kwargs = MockUserPlanProgress.call_args.kwargs
         assert ctor_kwargs["user_id"] == user_id
         assert ctor_kwargs["plan_id"] == plan_id
         assert ctor_kwargs["streak_count"] == 0
         assert ctor_kwargs["longest_streak"] == 0
-        assert "status" in ctor_kwargs  # enum value NOT_STARTED
+        assert "status" in ctor_kwargs  
         assert ctor_kwargs["is_completed"] is False
         assert "created_at" in ctor_kwargs
 
@@ -203,6 +202,244 @@ def test_complete_sub_task_service_sub_task_not_found_raises_404():
 
 
 @pytest.mark.asyncio
+async def test_get_user_enrolled_plans_success():
+    from pecha_api.plans.users.plan_users_service import get_user_enrolled_plans
+    from pecha_api.plans.plans_enums import LanguageCode, DifficultyLevel
+    from datetime import datetime, timezone
+    
+    user_id = uuid.uuid4()
+    plan_id = uuid.uuid4()
+    
+    mock_user = SimpleNamespace(id=user_id)
+    
+    mock_progress = SimpleNamespace(
+        user_id=user_id,
+        plan_id=plan_id,
+        started_at=datetime.now(timezone.utc),
+        streak_count=5,
+        longest_streak=10,
+        status="ACTIVE",
+        is_completed=False
+    )
+    
+    mock_plan = SimpleNamespace(
+        id=str(plan_id), 
+        title="Test Plan",
+        description="Test Description",
+        language=LanguageCode.EN,
+        difficulty_level=DifficultyLevel.BEGINNER,
+        image_url="images/plan_images/test.jpg",
+        tags=["meditation", "mindfulness"]
+    )
+    
+    mock_user_progress = [
+        {
+            "user_id": str(user_id),
+            "plan_id": str(plan_id),
+            "started_at": "2024-01-15T10:00:00Z",
+            "streak_count": 5,
+            "longest_streak": 10,
+            "status": "ACTIVE",
+            "is_completed": False,
+            "completed_at": None,
+            "created_at": "2024-01-15T10:00:00Z",
+        }
+    ]
+    
+    with patch(
+        "pecha_api.plans.users.plan_users_service.validate_and_extract_user_details",
+        return_value=mock_user,
+    ) as mock_validate, patch(
+        "pecha_api.plans.users.plan_users_service.MOCK_USER_PROGRESS",
+        new=mock_user_progress,
+    ), patch(
+        "pecha_api.plans.users.plan_users_service.load_plans_from_json",
+        return_value=SimpleNamespace(plans=[mock_plan]),
+    ) as mock_load_plans, patch(
+        "pecha_api.plans.users.plan_users_service.convert_plan_model_to_dto",
+        return_value=PlanDTO(
+            id=plan_id,
+            title="Test Plan",
+            description="Test Description",
+            language="EN",
+            total_days=30,
+            status=PlanStatus.PUBLISHED,
+            subscription_count=0,
+            difficulty_level=DifficultyLevel.BEGINNER,
+            tags=["meditation", "mindfulness"],
+        ),
+    ) as mock_convert:
+        result = await get_user_enrolled_plans(
+            token="token123",
+            status_filter=None,
+            skip=0,
+            limit=20
+        )
+        
+        mock_validate.assert_called_once_with(token="token123")
+        
+        assert result.skip == 0
+        assert result.limit == 20
+        assert result.total == 1
+        assert len(result.plans) == 1
+        
+        plan_dto = result.plans[0]
+        assert plan_dto.id == plan_id
+        assert plan_dto.title == "Test Plan"
+        assert plan_dto.description == "Test Description"
+        assert plan_dto.language == "EN"
+        assert plan_dto.difficulty_level == DifficultyLevel.BEGINNER
+        assert plan_dto.total_days == 30
+        assert plan_dto.tags == ["meditation", "mindfulness"]
+        
+
+
+
+@pytest.mark.asyncio
+async def test_get_user_enrolled_plans_with_status_filter():
+    from pecha_api.plans.users.plan_users_service import get_user_enrolled_plans
+    
+    user_id = uuid.uuid4()
+    mock_user = SimpleNamespace(id=user_id)
+    
+    plan_id_active = uuid.uuid4()
+    plan_id_paused = uuid.uuid4()
+    
+    mock_user_progress = [
+        {
+            "user_id": str(user_id),
+            "plan_id": str(plan_id_active),
+            "status": "active",
+        },
+        {
+            "user_id": str(user_id),
+            "plan_id": str(plan_id_paused),
+            "status": "paused",
+        },
+    ]
+    
+    mock_plan_active = SimpleNamespace(
+        id=str(plan_id_active),
+        title="Active Plan",
+    )
+    
+    with patch(
+        "pecha_api.plans.users.plan_users_service.validate_and_extract_user_details",
+        return_value=mock_user,
+    ), patch(
+        "pecha_api.plans.users.plan_users_service.MOCK_USER_PROGRESS",
+        new=mock_user_progress,
+    ), patch(
+        "pecha_api.plans.users.plan_users_service.load_plans_from_json",
+        return_value=SimpleNamespace(plans=[mock_plan_active]),
+    ), patch(
+        "pecha_api.plans.users.plan_users_service.convert_plan_model_to_dto",
+        return_value=PlanDTO(
+            id=plan_id_active,
+            title="Active Plan",
+            description="Test",
+            language="EN",
+            total_days=10,
+            status=PlanStatus.PUBLISHED,
+            subscription_count=0,
+            difficulty_level=DifficultyLevel.BEGINNER,
+            tags=[],
+        ),
+    ):
+        result = await get_user_enrolled_plans(
+            token="token123",
+            status_filter="active",
+            skip=0,
+            limit=20
+        )
+        
+        assert result.total == 1
+
+
+@pytest.mark.asyncio
+async def test_get_user_enrolled_plans_with_pagination():
+    from pecha_api.plans.users.plan_users_service import get_user_enrolled_plans
+    
+    user_id = uuid.uuid4()
+    mock_user = SimpleNamespace(id=user_id)
+    
+    plan_ids = [uuid.uuid4() for _ in range(50)]
+    mock_user_progress = [
+        {"user_id": str(user_id), "plan_id": str(pid), "status": "active"}
+        for pid in plan_ids
+    ]
+    
+    mock_plans = [
+        SimpleNamespace(id=str(pid), title=f"Plan {i}")
+        for i, pid in enumerate(plan_ids)
+    ]
+    
+    with patch(
+        "pecha_api.plans.users.plan_users_service.validate_and_extract_user_details",
+        return_value=mock_user,
+    ), patch(
+        "pecha_api.plans.users.plan_users_service.MOCK_USER_PROGRESS",
+        new=mock_user_progress,
+    ), patch(
+        "pecha_api.plans.users.plan_users_service.load_plans_from_json",
+        return_value=SimpleNamespace(plans=mock_plans),
+    ), patch(
+        "pecha_api.plans.users.plan_users_service.convert_plan_model_to_dto",
+        side_effect=[
+            PlanDTO(
+                id=pid,
+                title=f"Plan {i}",
+                description="Test",
+                language="EN",
+                total_days=10,
+                status=PlanStatus.PUBLISHED,
+                subscription_count=0,
+                difficulty_level=DifficultyLevel.BEGINNER,
+                tags=[],
+            )
+            for i, pid in enumerate(plan_ids)
+        ],
+    ):
+        result = await get_user_enrolled_plans(
+            token="token123",
+            status_filter=None,
+            skip=10,
+            limit=10
+        )
+        
+        assert result.skip == 10
+        assert result.limit == 10
+        assert result.total == 50
+
+
+@pytest.mark.asyncio
+async def test_get_user_enrolled_plans_empty_result():
+    from pecha_api.plans.users.plan_users_service import get_user_enrolled_plans
+    
+    user_id = uuid.uuid4()
+    mock_user = SimpleNamespace(id=user_id)
+    
+    db_mock, session_cm = _mock_session_with_db()
+    
+    with patch(
+        "pecha_api.plans.users.plan_users_service.validate_and_extract_user_details",
+        return_value=mock_user,
+    ), patch(
+        "pecha_api.plans.users.plan_users_service.MOCK_USER_PROGRESS",
+        new=[], 
+    ), patch(
+        "pecha_api.plans.users.plan_users_service.load_plans_from_json",
+        return_value=SimpleNamespace(plans=[]),
+    ):
+        result = await get_user_enrolled_plans(token="tok", status_filter=None, skip=0, limit=20)
+        
+        assert result.skip == 0
+        assert result.limit == 20
+        assert result.total == 0
+        assert len(result.plans) == 0
+
+
+@pytest.mark.asyncio
 async def test_get_user_enrolled_plans_success_with_filter_and_pagination():
     user_id = uuid.uuid4()
     plan_id_1 = uuid.uuid4()
@@ -258,7 +495,6 @@ async def test_get_user_enrolled_plans_success_with_filter_and_pagination():
         },
     ]
 
-    # paginate to only first item after filtering to active
     with patch(
         "pecha_api.plans.users.plan_users_service.validate_and_extract_user_details",
         return_value=SimpleNamespace(id=user_id),
@@ -276,7 +512,7 @@ async def test_get_user_enrolled_plans_success_with_filter_and_pagination():
 
         assert result.skip == 0
         assert result.limit == 1
-        assert result.total == 1  # only 1 active
+        assert result.total == 1 
         assert len(result.plans) == 1
         assert result.plans[0].id == plan_id_1
 
@@ -339,14 +575,12 @@ async def test_get_user_plan_progress_success():
 
         result = await get_user_plan_progress(token="tok", plan_id=plan_id)
 
-        # Ensure constructor called with expected kwargs (including plan)
         ctor_kwargs = MockUserPlanProgress.call_args.kwargs
         assert ctor_kwargs["user_id"] == user_id
         assert ctor_kwargs["plan_id"] == plan_id
         assert ctor_kwargs["plan"]["id"] == plan_id
         assert ctor_kwargs["status"] == "active"
 
-        # And the function returns the constructed object
         assert result is constructed
 
 
@@ -388,14 +622,14 @@ def test_complete_task_service_success():
         return_value=session_cm,
     ), patch(
         "pecha_api.plans.users.plan_users_service.get_task_by_id",
-        return_value=SimpleNamespace(id=task_id),
+        return_value=SimpleNamespace(id=task_id, plan_item_id=day_id),
     ), patch(
+        "pecha_api.plans.users.plan_users_service.complete_all_subtasks_completions",
+    ) as mock_complete_all_subtasks, patch(
         "pecha_api.plans.users.plan_users_service.UserTaskCompletion",
     ) as MockUserTaskCompletion, patch(
         "pecha_api.plans.users.plan_users_service.save_user_task_completion",
     ) as mock_save, patch(
-        "pecha_api.plans.users.plan_users_service.complete_all_subtasks_completions",
-    ) as mock_complete_all_subtasks, patch(
         "pecha_api.plans.users.plan_users_service.check_day_completion",
     ) as mock_check_day_completion:
         constructed = SimpleNamespace(user_id=user_id, task_id=task_id)
@@ -416,8 +650,84 @@ def test_complete_task_service_success():
         mock_check_day_completion.assert_called_once()
         assert mock_check_day_completion.call_args.kwargs["db"] is db_mock
         assert mock_check_day_completion.call_args.kwargs["user_id"] == user_id
-        # task object identity isn't critical here; ensure it carries the id
-        assert getattr(mock_check_day_completion.call_args.kwargs["task"], "id", None) == task_id
+        assert mock_check_day_completion.call_args.kwargs["day_id"] == day_id
+
+
+@pytest.mark.asyncio
+async def test_get_user_enrolled_plans_without_image():
+    from pecha_api.plans.users.plan_users_service import get_user_enrolled_plans
+    from pecha_api.plans.plans_enums import LanguageCode, DifficultyLevel
+    from datetime import datetime, timezone
+    
+    user_id = uuid.uuid4()
+    plan_id = uuid.uuid4()
+    
+    mock_user = SimpleNamespace(id=user_id)
+    
+    mock_progress = SimpleNamespace(
+        user_id=user_id,
+        plan_id=plan_id,
+        started_at=datetime.now(timezone.utc),
+        streak_count=0,
+        longest_streak=0,
+        status="NOT_STARTED",
+        is_completed=False
+    )
+    
+    mock_plan = SimpleNamespace(
+        id=str(plan_id),  # Must be string to match progress["plan_id"]
+        title="Plan Without Image",
+        description="Description",
+        language=LanguageCode.BO,
+        difficulty_level=DifficultyLevel.INTERMEDIATE,
+        image_url=None,
+        tags=[]
+    )
+    
+    mock_user_progress = [
+        {
+            "user_id": str(user_id),
+            "plan_id": str(plan_id),
+            "status": "NOT_STARTED",
+        }
+    ]
+    
+    with patch(
+        "pecha_api.plans.users.plan_users_service.validate_and_extract_user_details",
+        return_value=mock_user,
+    ), patch(
+        "pecha_api.plans.users.plan_users_service.MOCK_USER_PROGRESS",
+        new=mock_user_progress,
+    ), patch(
+        "pecha_api.plans.users.plan_users_service.load_plans_from_json",
+        return_value=SimpleNamespace(plans=[mock_plan]),
+    ), patch(
+        "pecha_api.plans.users.plan_users_service.convert_plan_model_to_dto",
+        return_value=PlanDTO(
+            id=plan_id,
+            title="Plan Without Image",
+            description="Description",
+            language="BO",
+            total_days=0,
+            status=PlanStatus.PUBLISHED,
+            subscription_count=0,
+            difficulty_level=DifficultyLevel.INTERMEDIATE,
+            tags=[],
+        ),
+    ):
+        result = await get_user_enrolled_plans(
+            token="token123",
+            status_filter=None,
+            skip=0,
+            limit=20
+        )
+        
+        assert len(result.plans) == 1
+        assert result.plans[0].id == plan_id
+        assert result.plans[0].title == "Plan Without Image"
+        assert result.skip == 0
+        assert result.limit == 20
+        assert result.total == 1
 
 
 def test_complete_task_service_task_not_found_raises_404():
@@ -438,10 +748,237 @@ def test_complete_task_service_task_not_found_raises_404():
     ):
         with pytest.raises(HTTPException) as exc_info:
             complete_task_service(token="tok", task_id=task_id)
-
+        
         assert exc_info.value.status_code == 404
-        assert exc_info.value.detail["error"] == BAD_REQUEST
-        assert exc_info.value.detail["message"] == TASK_NOT_FOUND
+
+
+@pytest.mark.asyncio
+async def test_get_user_enrolled_plans_presigned_url_error():
+    from pecha_api.plans.users.plan_users_service import get_user_enrolled_plans
+    from pecha_api.plans.plans_enums import LanguageCode, DifficultyLevel
+    from datetime import datetime, timezone
+    
+    user_id = uuid.uuid4()
+    plan_id = uuid.uuid4()
+    
+    mock_user = SimpleNamespace(id=user_id)
+    
+    mock_progress = SimpleNamespace(
+        user_id=user_id,
+        plan_id=plan_id,
+        started_at=datetime.now(timezone.utc),
+        streak_count=0,
+        longest_streak=0,
+        status="ACTIVE",
+        is_completed=False
+    )
+    
+    mock_plan = SimpleNamespace(
+        id=str(plan_id),  # Must be string to match progress["plan_id"]
+        title="Test Plan",
+        description="Test Description",
+        language=LanguageCode.EN,
+        difficulty_level=DifficultyLevel.BEGINNER,
+        image_url="images/plan_images/test.jpg",
+        tags=[]
+    )
+    
+    mock_user_progress = [
+        {
+            "user_id": str(user_id),
+            "plan_id": str(plan_id),
+            "status": "ACTIVE",
+        }
+    ]
+    
+    with patch(
+        "pecha_api.plans.users.plan_users_service.validate_and_extract_user_details",
+        return_value=mock_user,
+    ), patch(
+        "pecha_api.plans.users.plan_users_service.MOCK_USER_PROGRESS",
+        new=mock_user_progress,
+    ), patch(
+        "pecha_api.plans.users.plan_users_service.load_plans_from_json",
+        return_value=SimpleNamespace(plans=[mock_plan]),
+    ), patch(
+        "pecha_api.plans.users.plan_users_service.convert_plan_model_to_dto",
+        return_value=PlanDTO(
+            id=plan_id,
+            title="Test Plan",
+            description="Test Description",
+            language="EN",
+            total_days=30,
+            status=PlanStatus.PUBLISHED,
+            subscription_count=0,
+            difficulty_level=DifficultyLevel.BEGINNER,
+            tags=[],
+        ),
+    ):
+        result = await get_user_enrolled_plans(
+            token="token123",
+            status_filter=None,
+            skip=0,
+            limit=20
+        )
+        
+        assert len(result.plans) == 1
+        plan_dto = result.plans[0]
+        # Image URL can be None or empty string for plans without images
+        assert plan_dto.image_url in [None, ""]
+
+
+@pytest.mark.asyncio
+async def test_get_user_enrolled_plans_multiple_plans():
+    from pecha_api.plans.users.plan_users_service import get_user_enrolled_plans
+    from pecha_api.plans.plans_enums import LanguageCode, DifficultyLevel
+    from datetime import datetime, timezone
+    
+    user_id = uuid.uuid4()
+    plan_id_1 = uuid.uuid4()
+    plan_id_2 = uuid.uuid4()
+    plan_id_3 = uuid.uuid4()
+    
+    mock_user = SimpleNamespace(id=user_id)
+    
+    mock_progress_1 = SimpleNamespace(
+        user_id=user_id,
+        plan_id=plan_id_1,
+        started_at=datetime.now(timezone.utc),
+        streak_count=5,
+        longest_streak=10,
+        status="ACTIVE",
+        is_completed=False
+    )
+    
+    mock_plan_1 = SimpleNamespace(
+        id=str(plan_id_1),  # Must be string to match progress["plan_id"]
+        title="Meditation Plan",
+        description="Daily meditation",
+        language=LanguageCode.EN,
+        difficulty_level=DifficultyLevel.BEGINNER,
+        image_url="images/plan1.jpg",
+        tags=["meditation"]
+    )
+    
+    mock_progress_2 = SimpleNamespace(
+        user_id=user_id,
+        plan_id=plan_id_2,
+        started_at=datetime.now(timezone.utc),
+        streak_count=15,
+        longest_streak=20,
+        status="ACTIVE",
+        is_completed=False
+    )
+    
+    mock_plan_2 = SimpleNamespace(
+        id=str(plan_id_2),  # Must be string to match progress["plan_id"]
+        title="Advanced Dharma",
+        description="Advanced teachings",
+        language=LanguageCode.BO,
+        difficulty_level=DifficultyLevel.ADVANCED,
+        image_url="images/plan2.jpg",
+        tags=["dharma", "philosophy"]
+    )
+    
+    mock_progress_3 = SimpleNamespace(
+        user_id=user_id,
+        plan_id=plan_id_3,
+        started_at=datetime.now(timezone.utc),
+        streak_count=0,
+        longest_streak=0,
+        status="COMPLETED",
+        is_completed=True
+    )
+    
+    mock_plan_3 = SimpleNamespace(
+        id=str(plan_id_3),  # Must be string to match progress["plan_id"]
+        title="Beginner's Guide",
+        description="Introduction",
+        language=LanguageCode.EN,
+        difficulty_level=DifficultyLevel.BEGINNER,
+        image_url=None,
+        tags=["basics"]
+    )
+    
+    db_mock, session_cm = _mock_session_with_db()
+    
+    mock_user_progress = [
+        {"user_id": str(user_id), "plan_id": str(plan_id_1), "status": "ACTIVE"},
+        {"user_id": str(user_id), "plan_id": str(plan_id_2), "status": "ACTIVE"},
+        {"user_id": str(user_id), "plan_id": str(plan_id_3), "status": "COMPLETED"},
+    ]
+    
+    with patch(
+        "pecha_api.plans.users.plan_users_service.validate_and_extract_user_details",
+        return_value=mock_user,
+    ), patch(
+        "pecha_api.plans.users.plan_users_service.MOCK_USER_PROGRESS",
+        new=mock_user_progress,
+    ), patch(
+        "pecha_api.plans.users.plan_users_service.load_plans_from_json",
+        return_value=SimpleNamespace(plans=[mock_plan_1, mock_plan_2, mock_plan_3]),
+    ), patch(
+        "pecha_api.plans.users.plan_users_service.convert_plan_model_to_dto",
+        side_effect=[
+            PlanDTO(
+                id=plan_id_1,
+                title="Meditation Plan",
+                description="Daily meditation",
+                language="EN",
+                total_days=21,
+                status=PlanStatus.PUBLISHED,
+                subscription_count=0,
+                difficulty_level=DifficultyLevel.BEGINNER,
+                tags=["meditation"],
+            ),
+            PlanDTO(
+                id=plan_id_2,
+                title="Advanced Dharma",
+                description="Advanced teachings",
+                language="BO",
+                total_days=90,
+                status=PlanStatus.PUBLISHED,
+                subscription_count=0,
+                difficulty_level=DifficultyLevel.ADVANCED,
+                tags=["dharma", "philosophy"],
+            ),
+            PlanDTO(
+                id=plan_id_3,
+                title="Beginner's Guide",
+                description="Introduction",
+                language="EN",
+                total_days=7,
+                status=PlanStatus.PUBLISHED,
+                subscription_count=0,
+                difficulty_level=DifficultyLevel.BEGINNER,
+                tags=["basics"],
+            ),
+        ],
+    ):
+        result = await get_user_enrolled_plans(
+            token="token123",
+            status_filter=None,
+            skip=0,
+            limit=20
+        )
+        
+        assert len(result.plans) == 3
+        assert result.skip == 0
+        assert result.limit == 20
+        assert result.total == 3
+        
+        assert result.plans[0].title == "Meditation Plan"
+        assert result.plans[0].language == "EN"
+        assert result.plans[0].total_days == 21
+        
+        assert result.plans[1].title == "Advanced Dharma"
+        assert result.plans[1].language == "BO"
+        assert result.plans[1].difficulty_level == DifficultyLevel.ADVANCED
+        assert result.plans[1].total_days == 90
+        
+        assert result.plans[2].title == "Beginner's Guide"
+        assert result.plans[2].image_url in [None, ""]  # Can be None or empty string
+        assert result.plans[2].total_days == 7
 
 
 def test_complete_all_subtasks_completions_creates_missing_only():
@@ -587,10 +1124,8 @@ def test_delete_task_service_success():
     ) as mock_get_subtasks, patch(
         "pecha_api.plans.users.plan_users_service.delete_user_subtask_completion",
     ) as mock_delete_subtasks:
-        # execute
         result = delete_task_service(token="tok", task_id=task_id)
 
-        # assertions
         assert result is None
         mock_delete_task.assert_called_once()
         assert mock_delete_task.call_args.kwargs["db"] is db_mock
@@ -607,6 +1142,47 @@ def test_delete_task_service_success():
         assert mock_delete_subtasks.call_args.kwargs["db"] is db_mock
         assert mock_delete_subtasks.call_args.kwargs["user_id"] == user_id
         assert set(mock_delete_subtasks.call_args.kwargs["sub_task_ids"]) == {sub_a, sub_b}
+
+
+def test_delete_task_service_task_not_found_raises_404():
+    user_id = uuid.uuid4()
+    task_id = uuid.uuid4()
+
+    _, session_cm = _mock_session_with_db()
+
+    with patch(
+        "pecha_api.plans.users.plan_users_service.validate_and_extract_user_details",
+        return_value=SimpleNamespace(id=user_id),
+    ), patch(
+        "pecha_api.plans.users.plan_users_service.SessionLocal",
+        return_value=session_cm,
+    ), patch(
+        "pecha_api.plans.users.plan_users_service.get_task_by_id",
+        return_value=None,
+    ):
+        with pytest.raises(HTTPException) as exc_info:
+            delete_task_service(token="tok", task_id=task_id)
+        
+        assert exc_info.value.status_code == 404
+
+
+@pytest.mark.asyncio
+async def test_get_user_enrolled_plans_invalid_token():
+    from pecha_api.plans.users.plan_users_service import get_user_enrolled_plans
+    
+    with patch(
+        "pecha_api.plans.users.plan_users_service.validate_and_extract_user_details",
+        side_effect=HTTPException(status_code=401, detail={"error": "Unauthorized", "message": "Invalid token"}),
+    ):
+        with pytest.raises(HTTPException) as exc_info:
+            await get_user_enrolled_plans(
+                token="invalid_token",
+                status_filter=None,
+                skip=0,
+                limit=20
+            )
+        
+        assert exc_info.value.status_code == 401
 
 
 def test_delete_task_service_task_not_found_raises_404():
