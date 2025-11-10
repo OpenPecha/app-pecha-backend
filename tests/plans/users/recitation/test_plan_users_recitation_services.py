@@ -3,8 +3,11 @@ import uuid
 from types import SimpleNamespace
 from unittest.mock import patch, MagicMock
 
+from fastapi import HTTPException
+from starlette import status
+
 from pecha_api.plans.users.recitation.plan_user_recitation_response_models import CreateUserRecitationRequest
-from pecha_api.plans.users.recitation.plan_user_recitation_services import create_user_recitation_service
+from pecha_api.plans.users.recitation.plan_user_recitation_services import create_user_recitation_service, delete_user_recitation_service
 
 
 @pytest.mark.asyncio
@@ -173,3 +176,95 @@ async def test_create_user_recitation_service_creates_correct_user_recitation():
         creation_kwargs = MockUserRecitation.call_args.kwargs
         assert creation_kwargs["user_id"] == user_id
         assert creation_kwargs["recitation_id"] == recitation_id
+
+@pytest.mark.asyncio
+async def test_delete_user_recitation_service_success():
+    """Test successful user recitation deletion"""
+    recitation_id = uuid.uuid4()
+    user_id = uuid.uuid4()
+
+    mock_user = SimpleNamespace(
+        id=user_id,
+        email="user@example.com"
+    )
+
+    mock_user_recitation = SimpleNamespace(
+        id=uuid.uuid4(),
+        user_id=user_id,
+        recitation_id=recitation_id
+    )
+
+    db_mock = MagicMock()
+    session_cm = MagicMock()
+    session_cm.__enter__.return_value = db_mock
+
+    with patch(
+        "pecha_api.plans.users.recitation.plan_user_recitation_services.validate_and_extract_user_details",
+        return_value=mock_user,
+    ) as mock_validate_user, patch(
+        "pecha_api.plans.users.recitation.plan_user_recitation_services.SessionLocal",
+        return_value=session_cm,
+    ) as mock_session, patch(
+        "pecha_api.plans.users.recitation.plan_user_recitation_services.get_user_recitation_by_id",
+        return_value=mock_user_recitation,
+    ) as mock_get_user_recitation, patch(
+        "pecha_api.plans.users.recitation.plan_user_recitation_services.delete_user_recitation_repository",
+        return_value=None,
+    ) as mock_delete:
+        resp = delete_user_recitation_service(
+            token="token123",
+            recitation_id=recitation_id
+        )
+
+        assert mock_validate_user.call_count == 1
+        assert mock_validate_user.call_args.kwargs == {"token": "token123"}
+
+        assert mock_session.call_count == 1
+
+        assert mock_get_user_recitation.call_count == 1
+        get_args = mock_get_user_recitation.call_args.kwargs
+        assert get_args["db"] is db_mock
+        assert get_args["user_id"] == user_id
+        assert get_args["recitation_id"] == recitation_id
+
+        assert mock_delete.call_count == 1
+        delete_args = mock_delete.call_args.kwargs
+        assert delete_args["db"] is db_mock
+        assert delete_args["user_recitation"] is mock_user_recitation
+
+        assert resp is None
+
+
+@pytest.mark.asyncio
+async def test_delete_user_recitation_service_recitation_not_found():
+    """Test delete user recitation when user recitation doesn't exist"""
+    recitation_id = uuid.uuid4()
+    user_id = uuid.uuid4()
+
+    mock_user = SimpleNamespace(
+        id=user_id,
+        email="user@example.com"
+    )
+
+    db_mock = MagicMock()
+    session_cm = MagicMock()
+    session_cm.__enter__.return_value = db_mock
+
+    with patch(
+        "pecha_api.plans.users.recitation.plan_user_recitation_services.validate_and_extract_user_details",
+        return_value=mock_user,
+    ), patch(
+        "pecha_api.plans.users.recitation.plan_user_recitation_services.SessionLocal",
+        return_value=session_cm,
+    ), patch(
+        "pecha_api.plans.users.recitation.plan_user_recitation_services.get_user_recitation_by_id",
+        return_value=None,  # Simulating recitation not found
+    ) as mock_get_user_recitation:
+        with pytest.raises(HTTPException) as exc_info:
+            delete_user_recitation_service(
+                token="token123",
+                recitation_id=recitation_id
+            )
+
+        assert exc_info.value.status_code == status.HTTP_404_NOT_FOUND
+        assert mock_get_user_recitation.call_count == 1
