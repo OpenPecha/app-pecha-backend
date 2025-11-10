@@ -1,13 +1,13 @@
 from sqlalchemy.orm import Session
 from pecha_api.plans.auth.plan_auth_models import ResponseError
-from pecha_api.plans.recitation.plan_recitation_models import Recitation
+from pecha_api.recitations.recitations_models import Recitation
 from sqlalchemy.exc import IntegrityError
 from fastapi import HTTPException
 from starlette import status
 
 from pecha_api.plans.response_message import BAD_REQUEST
 
-def save_recitation(db: Session, recitation: Recitation) -> None:
+def save_recitations(db: Session, recitation: Recitation) -> None:
     try:
         db.add(recitation)
         db.commit()
