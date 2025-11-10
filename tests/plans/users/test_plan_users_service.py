@@ -141,6 +141,7 @@ def test_enroll_user_in_plan_already_enrolled_raises_409():
 def test_complete_sub_task_service_success():
     user_id = uuid.uuid4()
     sub_task_id = uuid.uuid4()
+    task_id = uuid.uuid4()
 
     db_mock, session_cm = _mock_session_with_db()
 
@@ -152,12 +153,17 @@ def test_complete_sub_task_service_success():
         return_value=session_cm,
     ), patch(
         "pecha_api.plans.users.plan_users_service.get_sub_task_by_subtask_id",
-        return_value=SimpleNamespace(id=sub_task_id),
+        return_value=SimpleNamespace(id=sub_task_id, task_id=task_id),
     ) as mock_get_sub_task, patch(
         "pecha_api.plans.users.plan_users_service.UserSubTaskCompletion",
     ) as MockUserSubTaskCompletion, patch(
         "pecha_api.plans.users.plan_users_service.save_user_sub_task_completions",
-    ) as mock_save:
+    ) as mock_save, patch(
+        "pecha_api.plans.users.plan_users_service._check_all_subtasks_completed",
+        return_value=False,
+    ) as mock_check_all, patch(
+        "pecha_api.plans.users.plan_users_service.save_user_task_completion",
+    ) as mock_save_task_completion:
         constructed = SimpleNamespace(user_id=user_id, sub_task_id=sub_task_id)
         MockUserSubTaskCompletion.return_value = constructed
 
@@ -175,6 +181,10 @@ def test_complete_sub_task_service_success():
         mock_save.assert_called_once()
         assert mock_save.call_args.kwargs["db"] is db_mock
         assert mock_save.call_args.kwargs["user_sub_task_completions"] is constructed
+        mock_check_all.assert_called_once()
+        assert mock_check_all.call_args.kwargs["user_id"] == user_id
+        assert mock_check_all.call_args.kwargs["task_id"] == task_id
+        mock_save_task_completion.assert_not_called()
 
 
 def test_complete_sub_task_service_sub_task_not_found_raises_404():
@@ -199,6 +209,57 @@ def test_complete_sub_task_service_sub_task_not_found_raises_404():
         assert exc_info.value.status_code == 404
         assert exc_info.value.detail["error"] == BAD_REQUEST
         assert exc_info.value.detail["message"] == SUB_TASK_NOT_FOUND
+
+
+def test_complete_sub_task_service_marks_task_completion_when_all_subtasks_done():
+    user_id = uuid.uuid4()
+    sub_task_id = uuid.uuid4()
+    task_id = uuid.uuid4()
+
+    db_mock, session_cm = _mock_session_with_db()
+
+    with patch(
+        "pecha_api.plans.users.plan_users_service.validate_and_extract_user_details",
+        return_value=SimpleNamespace(id=user_id),
+    ), patch(
+        "pecha_api.plans.users.plan_users_service.SessionLocal",
+        return_value=session_cm,
+    ), patch(
+        "pecha_api.plans.users.plan_users_service.get_sub_task_by_subtask_id",
+        return_value=SimpleNamespace(id=sub_task_id, task_id=task_id),
+    ), patch(
+        "pecha_api.plans.users.plan_users_service.UserSubTaskCompletion",
+    ) as MockUserSubTaskCompletion, patch(
+        "pecha_api.plans.users.plan_users_service.save_user_sub_task_completions",
+    ) as mock_save_subtask, patch(
+        "pecha_api.plans.users.plan_users_service._check_all_subtasks_completed",
+        return_value=True,
+    ) as mock_check_all, patch(
+        "pecha_api.plans.users.plan_users_service.UserTaskCompletion",
+    ) as MockUserTaskCompletion, patch(
+        "pecha_api.plans.users.plan_users_service.save_user_task_completion",
+    ) as mock_save_task:
+        constructed_sub = SimpleNamespace(user_id=user_id, sub_task_id=sub_task_id)
+        MockUserSubTaskCompletion.return_value = constructed_sub
+
+        constructed_task = SimpleNamespace(user_id=user_id, task_id=task_id)
+        MockUserTaskCompletion.return_value = constructed_task
+
+        result = complete_sub_task_service(token="token123", id=sub_task_id)
+
+        assert result is None
+        mock_save_subtask.assert_called_once()
+        assert mock_save_subtask.call_args.kwargs["db"] is db_mock
+        assert mock_save_subtask.call_args.kwargs["user_sub_task_completions"] is constructed_sub
+
+        mock_check_all.assert_called_once()
+        assert mock_check_all.call_args.kwargs["user_id"] == user_id
+        assert mock_check_all.call_args.kwargs["task_id"] == task_id
+
+        # When all subtasks are completed, task completion should be saved
+        mock_save_task.assert_called_once()
+        assert mock_save_task.call_args.kwargs["db"] is db_mock
+        assert mock_save_task.call_args.kwargs["user_task_completion"] is constructed_task
 
 
 @pytest.mark.asyncio
