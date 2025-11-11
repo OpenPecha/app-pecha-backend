@@ -1,6 +1,6 @@
 from sqlalchemy.orm import Session, selectinload
 from sqlalchemy import func, desc, asc
-from typing import Optional
+from typing import Optional, Tuple, List
 from uuid import UUID
 from pecha_api.plans.plans_models import Plan
 from pecha_api.plans.items.plan_items_models import PlanItem
@@ -111,3 +111,13 @@ def get_plan_item_by_day_number(db: Session, plan_id: UUID, day_number: int) -> 
             PlanItem.plan_id == plan_id,
             PlanItem.day_number == day_number
         ).first()
+
+def get_published_plans_by_author_id(db: Session, author_id: UUID, skip: int, limit: int) -> Tuple[List[Plan], int]:
+    plans_query = db.query(Plan).filter(
+        Plan.author_id == author_id,
+        Plan.status == PlanStatus.PUBLISHED,
+        Plan.deleted_at.is_(None)
+    )
+    total = plans_query.count()
+    plans = plans_query.offset(skip).limit(limit).all()
+    return [plans, total]

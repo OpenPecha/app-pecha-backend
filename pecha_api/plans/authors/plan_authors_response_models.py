@@ -40,3 +40,16 @@ class AuthorsResponse(BaseModel):
     skip: int
     limit: int
     total: int
+
+class AuthorPlanDTO(BaseModel):
+    id: UUID
+    title: str
+    description: str
+    language: str
+    image_url: Optional[str] = None
+
+class AuthorPlansResponse(BaseModel):
+    plans: List[AuthorPlanDTO]
+    skip: int
+    limit: int
+    total: int
