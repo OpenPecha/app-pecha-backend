@@ -122,22 +122,30 @@ async def get_selected_author_details(author_id: UUID) -> AuthorInfoResponse:
 
 async def get_plans_by_author(author_id: UUID,skip: int, limit: int) -> AuthorPlansResponse:
     await _get_author_details_by_id(author_id=author_id)
-    with SessionLocal() as db_session:  
+    with SessionLocal() as db_session:
         published_plans, total = get_published_plans_by_author_id(db=db_session, author_id=author_id, skip=skip, limit=limit)
-        print("published_plans: ", published_plans)
-        author_plan_dtos = [AuthorPlanDTO(
-            id=plan.id,
-            title=plan.title,
-            description=plan.description,
-            language=plan.language,
-            image_url=generate_presigned_access_url(bucket_name=get("AWS_BUCKET_NAME"), s3_key=plan.image_url)
-        ) for plan in published_plans]
+
+        author_plan_dtos = [
+            AuthorPlanDTO(
+                id=aggregate.plan.id,
+                title=aggregate.plan.title,
+                description=aggregate.plan.description,
+                language=aggregate.plan.language,
+                total_days=aggregate.total_days,
+                subscription_count=aggregate.subscription_count,
+                image_url=generate_presigned_access_url(
+                    bucket_name=get("AWS_BUCKET_NAME"),
+                    s3_key=aggregate.plan.image_url
+                ) if aggregate.plan.image_url else None,
+            )
+            for aggregate in published_plans
+        ]
 
         return AuthorPlansResponse(
             plans=author_plan_dtos,
             skip=skip,
             limit=limit,
-            total=total
+            total=total,
         )
 
 async def _get_author_details_by_id(author_id: UUID) -> Author:
