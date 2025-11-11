@@ -74,7 +74,7 @@ def complete_sub_task(
         id=sub_task_id
     )
 
-@user_progress_router.post("/tasks/{task_id}/completion", status_code=status.HTTP_204_NO_CONTENT)
+@user_progress_router.post("/tasks/{task_id}/complete", status_code=status.HTTP_204_NO_CONTENT)
 def complete_task(
     task_id: UUID,
     authentication_credential: Annotated[HTTPAuthorizationCredentials, Depends(oauth2_scheme)]
