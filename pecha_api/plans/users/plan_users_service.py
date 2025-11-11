@@ -202,7 +202,7 @@ async def get_user_plan_progress(token: str, plan_id: UUID) -> UserPlanProgress:
     )
 
 def complete_sub_task_service(token: str, id: UUID) -> None:
-    """Complete a sub task"""
+
     current_user = validate_and_extract_user_details(token=token)
     with SessionLocal() as db:
         existing_sub_task = get_sub_task_by_subtask_id(db=db, id=id)
@@ -215,8 +215,21 @@ def complete_sub_task_service(token: str, id: UUID) -> None:
             user_id=current_user.id,
             sub_task_id=existing_sub_task.id,
         )
-
         save_user_sub_task_completions(db=db, user_sub_task_completions=new_sub_task_completion)
+        is_all_subtasks_completed = _check_all_subtasks_completed(user_id=current_user.id, task_id=existing_sub_task.task_id)
+        if is_all_subtasks_completed:
+            new_task_completion = UserTaskCompletion(
+                user_id=current_user.id,
+                task_id=existing_sub_task.task_id
+            )   
+            save_user_task_completion(db=db, user_task_completion=new_task_completion)
+
+def _check_all_subtasks_completed(user_id: UUID, task_id: UUID) -> bool:
+    with SessionLocal() as db:
+        sub_tasks = get_sub_tasks_by_task_id(db=db, task_id=task_id)
+        sub_task_ids = [sub_task.id for sub_task in sub_tasks]
+        uncompleted_sub_task_ids = get_uncompleted_user_sub_task_ids(db=db, user_id=user_id, sub_task_ids=sub_task_ids)
+        return len(uncompleted_sub_task_ids) == 0
 
 def complete_task_service(token: str, task_id: UUID) -> None:
 
