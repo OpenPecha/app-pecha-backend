@@ -7,36 +7,45 @@ from fastapi.security import HTTPAuthorizationCredentials
 from fastapi import HTTPException
 from starlette import status
 
-from pecha_api.app import api
 from pecha_api.plans.items.plan_items_response_models import ItemDTO
+from fastapi import FastAPI
 
 
 VALID_TOKEN = "valid_token"
 
 
 @pytest.fixture
-def authenticated_client():
+def items_app():
+    """Create a minimal FastAPI app including only the items router."""
+    from pecha_api.plans.items import plan_items_views
+    app = FastAPI()
+    app.include_router(plan_items_views.items_router)
+    return app
+
+
+@pytest.fixture
+def authenticated_client(items_app):
     from pecha_api.plans.items import plan_items_views
 
-    original_dependency_overrides = api.dependency_overrides.copy()
+    original_dependency_overrides = items_app.dependency_overrides.copy()
 
     def get_token_override():
         return HTTPAuthorizationCredentials(scheme="Bearer", credentials=VALID_TOKEN)
 
-    api.dependency_overrides[plan_items_views.oauth2_scheme] = get_token_override
-    client = TestClient(api)
+    items_app.dependency_overrides[plan_items_views.oauth2_scheme] = get_token_override
+    client = TestClient(items_app)
 
     yield client
 
-    api.dependency_overrides = original_dependency_overrides
+    items_app.dependency_overrides = original_dependency_overrides
 
 
 @pytest.fixture
-def unauthenticated_client():
-    original_dependency_overrides = api.dependency_overrides.copy()
-    client = TestClient(api)
+def unauthenticated_client(items_app):
+    original_dependency_overrides = items_app.dependency_overrides.copy()
+    client = TestClient(items_app)
     yield client
-    api.dependency_overrides = original_dependency_overrides
+    items_app.dependency_overrides = original_dependency_overrides
 
 
 def test_create_day_success(authenticated_client):

@@ -13,6 +13,12 @@ from typing import List
 # Stub heavy repository module before importing the service to avoid ORM initialization during import
 _stub_repo_module = types.ModuleType("pecha_api.plans.public.plan_repository")
 setattr(_stub_repo_module, "get_published_plans_by_author_id", MagicMock())
+# Ensure other imports from this module in unrelated tests still work
+setattr(_stub_repo_module, "get_published_plans_from_db", MagicMock())
+setattr(_stub_repo_module, "get_published_plans_count", MagicMock())
+setattr(_stub_repo_module, "get_published_plan_by_id", MagicMock())
+setattr(_stub_repo_module, "get_plan_items_by_plan_id", MagicMock())
+setattr(_stub_repo_module, "get_plan_item_by_day_number", MagicMock())
 sys.modules["pecha_api.plans.public.plan_repository"] = _stub_repo_module
 
 from pecha_api.plans.authors.plan_authors_service import (
@@ -807,7 +813,11 @@ class TestGetPlansByAuthor:
         plan_obj.description = "Desc"
         plan_obj.language = "en"
         plan_obj.image_url = "p1.jpg"
-        mock_get_published_plans.return_value = ([plan_obj], 1)
+        aggregate = MagicMock()
+        aggregate.plan = plan_obj
+        aggregate.total_days = 10
+        aggregate.subscription_count = 3
+        mock_get_published_plans.return_value = ([aggregate], 1)
         mock_get_config.return_value = bucket_name
         mock_generate_presigned_url.return_value = presigned_url
         
@@ -825,6 +835,8 @@ class TestGetPlansByAuthor:
             title="Plan 1",
             description="Desc",
             language="en",
+            total_days=10,
+            subscription_count=3,
             image_url=presigned_url,
         )
         mock_get_published_plans.assert_called_once()
@@ -857,13 +869,23 @@ class TestGetPlansByAuthor:
         plan_a.description = "DA"
         plan_a.language = "en"
         plan_a.image_url = "a.jpg"
+        aggregate_a = MagicMock()
+        aggregate_a.plan = plan_a
+        aggregate_a.total_days = 7
+        aggregate_a.subscription_count = 2
+
         plan_b = MagicMock()
         plan_b.id = uuid4()
         plan_b.title = "B"
         plan_b.description = "DB"
         plan_b.language = "en"
         plan_b.image_url = "b.jpg"
-        mock_get_published_plans.return_value = ([plan_a, plan_b], 5)
+        aggregate_b = MagicMock()
+        aggregate_b.plan = plan_b
+        aggregate_b.total_days = 8
+        aggregate_b.subscription_count = 4
+
+        mock_get_published_plans.return_value = ([aggregate_a, aggregate_b], 5)
         mock_get_config.return_value = "bucket"
         mock_generate_presigned_url.side_effect = ["url-a", "url-b"]
         
@@ -877,10 +899,22 @@ class TestGetPlansByAuthor:
         assert result.total == 5
         assert len(result.plans) == 2
         assert result.plans[0] == AuthorPlanDTO(
-            id=plan_a.id, title="A", description="DA", language="en", image_url="url-a"
+            id=plan_a.id,
+            title="A",
+            description="DA",
+            language="en",
+            total_days=7,
+            subscription_count=2,
+            image_url="url-a"
         )
         assert result.plans[1] == AuthorPlanDTO(
-            id=plan_b.id, title="B", description="DB", language="en", image_url="url-b"
+            id=plan_b.id,
+            title="B",
+            description="DB",
+            language="en",
+            total_days=8,
+            subscription_count=4,
+            image_url="url-b"
         )
 
 

@@ -138,6 +138,8 @@ async def test_get_plans_for_selected_author_success():
                 title="P",
                 description="D",
                 language="en",
+                total_days=5,
+                subscription_count=12,
                 image_url=None,
             )
         ],
