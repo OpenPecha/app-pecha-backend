@@ -1,5 +1,7 @@
 import pytest
 from unittest.mock import MagicMock, patch
+import sys
+import types
 from fastapi import HTTPException
 from jose import JWTError
 from jose.exceptions import JWTClaimsError
@@ -7,6 +9,11 @@ from jwt import ExpiredSignatureError
 from starlette import status
 from uuid import uuid4
 from typing import List
+
+# Stub heavy repository module before importing the service to avoid ORM initialization during import
+_stub_repo_module = types.ModuleType("pecha_api.plans.public.plan_repository")
+setattr(_stub_repo_module, "get_published_plans_by_author_id", MagicMock())
+sys.modules["pecha_api.plans.public.plan_repository"] = _stub_repo_module
 
 from pecha_api.plans.authors.plan_authors_service import (
     validate_and_extract_author_details,
@@ -19,13 +26,14 @@ from pecha_api.plans.authors.plan_authors_service import (
     _get_author_details_by_id,
     _get_author_social_profile
 )
-from pecha_api.plans.authors.plan_authors_model import Author, AuthorSocialMediaAccount
 from pecha_api.plans.authors.plan_authors_response_models import (
     AuthorInfoResponse,
     AuthorInfoRequest,
     SocialMediaProfile,
     AuthorsResponse,
-    AuthorUpdateResponse
+    AuthorUpdateResponse,
+    AuthorPlansResponse,
+    AuthorPlanDTO,
 )
 from pecha_api.users.users_enums import SocialProfile
 from pecha_api.error_contants import ErrorConstants
@@ -48,7 +56,7 @@ class TestValidateAndExtractAuthorDetails:
         # Arrange
         token = "valid_token"
         expected_payload = {"email": "test@example.com"}
-        expected_author = MagicMock(spec=Author)
+        expected_author = MagicMock()
         mock_db_session = MagicMock()
         mock_session_local.return_value.__enter__.return_value = mock_db_session
         mock_validate_token.return_value = expected_payload
@@ -265,7 +273,7 @@ class TestValidateAndExtractAuthorDetails:
         # Arrange
         token = "valid_token"
         expected_payload = {"email": "test@example.com"}
-        expected_author = MagicMock(spec=Author)
+        expected_author = MagicMock()
         mock_db_session = MagicMock()
         mock_session_context = MagicMock()
         mock_session_context.__enter__.return_value = mock_db_session
@@ -298,7 +306,7 @@ class TestDataFactory:
         social_accounts=None
     ) -> MagicMock:
         """Create a mock Author object with specified attributes."""
-        mock_author = MagicMock(spec=Author)
+        mock_author = MagicMock()
         mock_author.id = author_id or uuid4()
         mock_author.first_name = first_name
         mock_author.last_name = last_name
@@ -314,7 +322,7 @@ class TestDataFactory:
         profile_url="https://facebook.com/johndoe"
     ) -> MagicMock:
         """Create a mock AuthorSocialMediaAccount object."""
-        mock_account = MagicMock(spec=AuthorSocialMediaAccount)
+        mock_account = MagicMock()
         mock_account.platform_name = platform_name
         mock_account.profile_url = profile_url
         return mock_account
@@ -573,7 +581,6 @@ class TestUpdateSocialProfiles:
         mock_author.social_media_accounts = []
         
         # Act & Assert
-        import pytest
         with pytest.raises(TypeError):
             update_social_profiles(mock_author, None)
 
@@ -775,120 +782,105 @@ class TestGetSelectedAuthorDetails:
 class TestGetPlansByAuthor:
     """Test cases for get_plans_by_author function."""
     
-    @patch('pecha_api.plans.authors.plan_authors_service.convert_plan_model_to_dto')
-    @patch('pecha_api.plans.authors.plan_authors_service.load_plans_from_json')
     @patch('pecha_api.plans.authors.plan_authors_service._get_author_details_by_id')
-    @patch('pecha_api.plans.authors.plan_authors_service.PlansResponse')
+    @patch('pecha_api.plans.authors.plan_authors_service.get_published_plans_by_author_id')
+    @patch('pecha_api.plans.authors.plan_authors_service.generate_presigned_access_url')
+    @patch('pecha_api.plans.authors.plan_authors_service.get')
     @pytest.mark.asyncio
     async def test_get_plans_by_author_success(
         self,
-        mock_plans_response,
+        mock_get_config,
+        mock_generate_presigned_url,
+        mock_get_published_plans,
         mock_get_author_by_id,
-        mock_load_plans,
-        mock_convert_plan
     ):
         """Test successful retrieval of plans by author."""
         # Arrange
         author_id = uuid4()
-        author_id_str = str(author_id)
-        
-        mock_author = TestDataFactory.create_mock_author(author_id=author_id)
-        
-        # Mock plan objects
-        mock_plan1 = MagicMock()
-        mock_plan1.status = "PUBLISHED"
-        mock_plan1.author.id = author_id_str
-        
-        mock_plan2 = MagicMock()
-        mock_plan2.status = "DRAFT"
-        mock_plan2.author.id = author_id_str
-        
-        mock_plan3 = MagicMock()
-        mock_plan3.status = "PUBLISHED"
-        mock_plan3.author.id = str(uuid4())  # Different author
-        
-        mock_plans_listing = MagicMock()
-        mock_plans_listing.plans = [mock_plan1, mock_plan2, mock_plan3]
-        
-        mock_plan_dto = MagicMock()
-        mock_response = MagicMock()
-        
-        mock_get_author_by_id.return_value = mock_author
-        mock_load_plans.return_value = mock_plans_listing
-        mock_convert_plan.return_value = mock_plan_dto
-        mock_plans_response.return_value = mock_response
+        bucket_name = "test-bucket"
+        presigned_url = "https://s3.amazonaws.com/test-bucket/p1.jpg"
+
+        mock_get_author_by_id.return_value = TestDataFactory.create_mock_author(author_id=author_id)
+        plan_obj = MagicMock()
+        plan_obj.id = uuid4()
+        plan_obj.title = "Plan 1"
+        plan_obj.description = "Desc"
+        plan_obj.language = "en"
+        plan_obj.image_url = "p1.jpg"
+        mock_get_published_plans.return_value = ([plan_obj], 1)
+        mock_get_config.return_value = bucket_name
+        mock_generate_presigned_url.return_value = presigned_url
         
         # Act
         result = await get_plans_by_author(author_id, skip=0, limit=20)
         
         # Assert
-        assert result == mock_response
-        
-        # Verify function calls
-        mock_get_author_by_id.assert_called_once_with(author_id=author_id)
-        mock_load_plans.assert_called_once()
-        mock_convert_plan.assert_called_once_with(mock_plan1)
-        mock_plans_response.assert_called_once_with(
-            plans=[mock_plan_dto],
-            skip=0,
-            limit=20,
-            total=1
+        assert isinstance(result, AuthorPlansResponse)
+        assert result.skip == 0
+        assert result.limit == 20
+        assert result.total == 1
+        assert len(result.plans) == 1
+        assert result.plans[0] == AuthorPlanDTO(
+            id=plan_obj.id,
+            title="Plan 1",
+            description="Desc",
+            language="en",
+            image_url=presigned_url,
         )
+        mock_get_published_plans.assert_called_once()
+        kwargs = mock_get_published_plans.call_args.kwargs
+        assert kwargs["author_id"] == author_id
+        assert kwargs["skip"] == 0
+        assert kwargs["limit"] == 20
     
-    @patch('pecha_api.plans.authors.plan_authors_service.convert_plan_model_to_dto')
-    @patch('pecha_api.plans.authors.plan_authors_service.load_plans_from_json')
     @patch('pecha_api.plans.authors.plan_authors_service._get_author_details_by_id')
-    @patch('pecha_api.plans.authors.plan_authors_service.PlansResponse')
+    @patch('pecha_api.plans.authors.plan_authors_service.get_published_plans_by_author_id')
+    @patch('pecha_api.plans.authors.plan_authors_service.generate_presigned_access_url')
+    @patch('pecha_api.plans.authors.plan_authors_service.get')
     @pytest.mark.asyncio
     async def test_get_plans_by_author_pagination(
         self,
-        mock_plans_response,
+        mock_get_config,
+        mock_generate_presigned_url,
+        mock_get_published_plans,
         mock_get_author_by_id,
-        mock_load_plans,
-        mock_convert_plan
     ):
         """Test pagination in get_plans_by_author."""
         # Arrange
         author_id = uuid4()
-        author_id_str = str(author_id)
-        
-        mock_author = TestDataFactory.create_mock_author(author_id=author_id)
-        
-        # Create multiple published plans for the same author
-        mock_plans = []
-        for i in range(5):
-            mock_plan = MagicMock()
-            mock_plan.status = "PUBLISHED"
-            mock_plan.author.id = author_id_str
-            mock_plans.append(mock_plan)
-        
-        mock_plans_listing = MagicMock()
-        mock_plans_listing.plans = mock_plans
-        
-        mock_plan_dto = MagicMock()
-        mock_response = MagicMock()
-        
-        mock_get_author_by_id.return_value = mock_author
-        mock_load_plans.return_value = mock_plans_listing
-        mock_convert_plan.return_value = mock_plan_dto
-        mock_plans_response.return_value = mock_response
+        mock_get_author_by_id.return_value = TestDataFactory.create_mock_author(author_id=author_id)
+
+        # Repository returns paginated slice and total
+        plan_a = MagicMock()
+        plan_a.id = uuid4()
+        plan_a.title = "A"
+        plan_a.description = "DA"
+        plan_a.language = "en"
+        plan_a.image_url = "a.jpg"
+        plan_b = MagicMock()
+        plan_b.id = uuid4()
+        plan_b.title = "B"
+        plan_b.description = "DB"
+        plan_b.language = "en"
+        plan_b.image_url = "b.jpg"
+        mock_get_published_plans.return_value = ([plan_a, plan_b], 5)
+        mock_get_config.return_value = "bucket"
+        mock_generate_presigned_url.side_effect = ["url-a", "url-b"]
         
         # Act
         result = await get_plans_by_author(author_id, skip=2, limit=2)
         
         # Assert
-        assert result == mock_response
-        
-        # Verify function calls
-        mock_get_author_by_id.assert_called_once_with(author_id=author_id)
-        mock_load_plans.assert_called_once()
-        # Verify convert_plan was called for the paginated plans (5 total plans)
-        assert mock_convert_plan.call_count == 5
-        mock_plans_response.assert_called_once_with(
-            plans=[mock_plan_dto, mock_plan_dto],  # 2 plans after pagination
-            skip=2,
-            limit=2,
-            total=5
+        assert isinstance(result, AuthorPlansResponse)
+        assert result.skip == 2
+        assert result.limit == 2
+        assert result.total == 5
+        assert len(result.plans) == 2
+        assert result.plans[0] == AuthorPlanDTO(
+            id=plan_a.id, title="A", description="DA", language="en", image_url="url-a"
+        )
+        assert result.plans[1] == AuthorPlanDTO(
+            id=plan_b.id, title="B", description="DB", language="en", image_url="url-b"
         )
 
 
