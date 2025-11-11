@@ -503,7 +503,7 @@ def test_complete_task_success(authenticated_client):
 
     with patch("pecha_api.plans.users.plan_users_views.complete_task_service", return_value=None) as mock_complete:
         response = authenticated_client.post(
-            f"/users/me/tasks/{task_id}/completion",
+            f"/users/me/tasks/{task_id}/complete",
             headers={"Authorization": f"Bearer {VALID_TOKEN}"},
         )
 
