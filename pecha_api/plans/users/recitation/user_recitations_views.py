@@ -28,3 +28,4 @@ async def create_user_recitation(authentication_credential: Annotated[HTTPAuthor
 @user_recitation_router.get("/recitations", status_code=status.HTTP_200_OK, response_model=UserRecitationsResponse)
 async def get_user_recitations(authentication_credential: Annotated[HTTPAuthorizationCredentials, Depends(oauth2_scheme)]):
     return await get_user_recitations_service(token=authentication_credential.credentials)
+

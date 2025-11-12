@@ -76,9 +76,6 @@ class Text(Document):
             return None
         return await cls.find_one(cls.id == text_uuid)
     
-    @classmethod
-    async def get_list_of_recitations(cls,type: TextType) -> List["Text"]:
-        return await cls.find(cls.type == type).to_list()
     
     @classmethod
     async def get_texts_by_ids(cls, text_ids: List[str]) -> List["Text"]:
@@ -126,6 +123,17 @@ class Text(Document):
         )
         return texts
     
+    @classmethod
+    async def get_all_texts_by_collection_id(cls, collection_id: str) -> List["Text"]:
+        query = {
+            "categories": collection_id,
+        }
+        texts = (
+            await cls.find(query)
+            .to_list()
+        )
+        return texts
+
     @classmethod
     async def get_texts_by_group_id(cls, group_id: str, skip: int, limit: int) -> List["Text"]:
         query = {

@@ -36,7 +36,7 @@ class TestDataFactory:
         return CreateUserRecitationRequest(
             text_id=text_id or uuid4()
         )
-
+      
     @staticmethod
     def create_mock_user_recitation(user_id=None, text_id=None) -> MagicMock:
         mock_recitation = MagicMock(spec=UserRecitations)

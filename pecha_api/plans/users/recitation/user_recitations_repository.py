@@ -19,3 +19,4 @@ def save_user_recitation(db: Session, user_recitations: UserRecitations) -> None
 
 def get_user_recitations_by_user_id(db: Session, user_id: UUID) -> List[UserRecitations]:
     return db.query(UserRecitations).filter(UserRecitations.user_id == user_id).all()
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=ResponseError(error=BAD_REQUEST, message=str(e.orig)).model_dump())
