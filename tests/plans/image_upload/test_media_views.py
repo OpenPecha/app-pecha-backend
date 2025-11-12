@@ -2,11 +2,11 @@ import io
 import pytest
 from unittest.mock import patch, MagicMock
 from fastapi.testclient import TestClient
+from fastapi import FastAPI
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from fastapi import UploadFile, HTTPException
 from starlette import status
 
-from pecha_api.app import api
 from pecha_api.plans.media.media_response_models import PlanUploadResponse
 from pecha_api.plans.response_message import (
     IMAGE_UPLOAD_SUCCESS,
@@ -97,32 +97,41 @@ def mock_upload_service(mock_success_response):
 
 
 @pytest.fixture
-def authenticated_client():
-    """Test client with authentication override"""
-    from pecha_api.plans.media.media_views import oauth2_scheme
-    
-    original_dependency = api.dependency_overrides.copy()
-    
-    def get_token_override():
-        return HTTPAuthorizationCredentials(scheme="Bearer", credentials=VALID_TOKEN)
-    
-    api.dependency_overrides[oauth2_scheme] = get_token_override
-    test_client = TestClient(api)
-    
-    yield test_client
-    
-    api.dependency_overrides = original_dependency
+def media_app():
+    """Create a minimal FastAPI app including only the media router."""
+    from pecha_api.plans.media import media_views
+    app = FastAPI()
+    app.include_router(media_views.media_router)
+    return app
 
 
 @pytest.fixture
-def unauthenticated_client():
-    """Test client without authentication"""
-    original_dependency = api.dependency_overrides.copy()
-    test_client = TestClient(api)
-    
+def authenticated_client(media_app):
+    """Test client with authentication override"""
+    from pecha_api.plans.media.media_views import oauth2_scheme
+
+    original_dependency = media_app.dependency_overrides.copy()
+
+    def get_token_override():
+        return HTTPAuthorizationCredentials(scheme="Bearer", credentials=VALID_TOKEN)
+
+    media_app.dependency_overrides[oauth2_scheme] = get_token_override
+    test_client = TestClient(media_app)
+
     yield test_client
-    
-    api.dependency_overrides = original_dependency
+
+    media_app.dependency_overrides = original_dependency
+
+
+@pytest.fixture
+def unauthenticated_client(media_app):
+    """Test client without authentication"""
+    original_dependency = media_app.dependency_overrides.copy()
+    test_client = TestClient(media_app)
+
+    yield test_client
+
+    media_app.dependency_overrides = original_dependency
 
 
 # Test Classes for Better Organization
