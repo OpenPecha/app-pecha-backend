@@ -27,6 +27,10 @@ class Collection(Document):
     @classmethod
     async def get_by_id(cls, parent_id: PydanticObjectId) -> "Collection":
         return await cls.find({"parent_id": parent_id})
+    
+    @classmethod
+    async def get_by_slug(cls, slug: str) -> "Collection":
+        return await cls.find_one({"slug": slug})
 
     @classmethod
     async def get_children_by_id(cls, parent_id: PydanticObjectId,skip: int, limit: int) -> List["Collection"]:

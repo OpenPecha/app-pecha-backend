@@ -1,8 +1,16 @@
-from pecha_api.texts.texts_models import Text
-from pecha_api.texts.texts_enums import TextType
+from pecha_api.collections.collections_repository import get_collection_id_by_slug, get_collections_by_parent
 from pecha_api.recitations.recitations_response_models import RecitationDTO, RecitationsResponse
+from pecha_api.texts.texts_service import get_root_text_by_collection_id
 
 async def get_list_of_recitations_service(language: str) -> RecitationsResponse:
-    recitations = await Text.get_list_of_recitations(type=TextType.RECITATION, language=language)
-    recitations_dto = [RecitationDTO(title=recitation.title, text_id=recitation.id) for recitation in recitations]
+    collection_id = await get_collection_id_by_slug(slug="Liturgy")
+    collections = await get_collections_by_parent(parent_id=collection_id,skip=0,limit=20)
+    list_of_collections = [str(collection.id) for collection in collections]
+    list_of_texts = []
+    for collection_id in list_of_collections:
+        text_id, text_title = await get_root_text_by_collection_id(collection_id=collection_id, language=language)
+        if text_id is not None and text_title is not None:
+            list_of_texts.append((text_id, text_title))
+
+    recitations_dto = [RecitationDTO(title=text_title, text_id=text_id) for text_id, text_title in list_of_texts]
     return RecitationsResponse(recitations=recitations_dto)

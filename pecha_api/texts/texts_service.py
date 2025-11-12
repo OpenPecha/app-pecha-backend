@@ -392,6 +392,13 @@ async def _validate_text_detail_request(text_id: str, text_details_request: Text
 
     await TextUtils.validate_text_exists(text_id=text_id)
 
+async def get_root_text_by_collection_id(collection_id: str, language: str) -> Optional[tuple[str, str]]:
+    texts = await get_texts_by_collection(collection_id=collection_id, language=language, skip=0, limit=10)
+    filtered_text_on_root_and_version = TextUtils.filter_text_on_root_and_version(texts=texts, language=language)
+    root_text = filtered_text_on_root_and_version["root_text"]
+    if root_text is not None:
+        return root_text.id, root_text.title
+    return None, None
 
 async def _get_texts_by_collection_id(collection_id: str, language: str, skip: int, limit: int) -> List[TextDTO]:
     texts = await get_texts_by_collection(collection_id=collection_id, language=language, skip=skip, limit=limit)

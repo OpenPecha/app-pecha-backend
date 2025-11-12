@@ -83,3 +83,9 @@ async def delete_collection(collection_id: str):
     if parent_id is not None:
         await update_collection_child_status(collection_id=str(parent_id))
     return existing_collection
+
+async def get_collection_id_by_slug(slug: str) -> Optional[str]:
+    collection = await Collection.get_by_slug(slug=slug)
+    if collection:
+        return str(collection.id)
+    return None
