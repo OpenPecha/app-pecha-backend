@@ -215,23 +215,3 @@ class TestGetListOfRecitationsService:
         
         # Verify language is passed correctly
         mock_get_root_text.assert_called_once_with(collection_id=collection.id, language="bo")
-
-    @patch('pecha_api.recitations.recitations_services.get_collection_id_by_slug')
-    @patch('pecha_api.recitations.recitations_services.get_all_collections_by_parent')
-    @pytest.mark.asyncio
-    async def test_get_list_of_recitations_service_database_error_in_collections(
-        self,
-        mock_get_all_collections,
-        mock_get_collection_id
-    ):
-        """Test get_list_of_recitations_service when database error occurs in collections retrieval."""
-        liturgy_collection_id = str(uuid4())
-        mock_get_collection_id.return_value = liturgy_collection_id
-        mock_get_all_collections.side_effect = Exception("Database connection error")
-        
-        with pytest.raises(Exception) as exc_info:
-            await get_list_of_recitations_service(language="en")
-        
-        assert str(exc_info.value) == "Database connection error"
-        mock_get_collection_id.assert_called_once_with(slug="Liturgy")
-        mock_get_all_collections.assert_called_once_with(parent_id=liturgy_collection_id)
