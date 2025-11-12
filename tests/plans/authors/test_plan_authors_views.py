@@ -8,6 +8,8 @@ from pecha_api.plans.authors.plan_authors_response_models import (
     AuthorsResponse,
     AuthorInfoRequest,
     AuthorUpdateResponse,
+    AuthorPlansResponse,
+    AuthorPlanDTO,
 )
 from pecha_api.plans.plans_response_models import PlansResponse, PlanDTO
 from pecha_api.plans.plans_enums import PlanStatus
@@ -129,20 +131,22 @@ async def test_get_selected_author_information_success():
 @pytest.mark.asyncio
 async def test_get_plans_for_selected_author_success():
     author_id = uuid.uuid4()
-    expected = PlansResponse(plans=[
-        PlanDTO(
-            id=uuid.uuid4(),
-            title="P",
-            description="D",
-            language="en",
-            image_url=None,
-            plan_image_url=None,
-            total_days=1,
-            tags=[],
-            status=PlanStatus.PUBLISHED,
-            subscription_count=0,
-        )
-    ], skip=0, limit=20, total=1)
+    expected = AuthorPlansResponse(
+        plans=[
+            AuthorPlanDTO(
+                id=uuid.uuid4(),
+                title="P",
+                description="D",
+                language="en",
+                total_days=5,
+                subscription_count=12,
+                image_url=None,
+            )
+        ],
+        skip=0,
+        limit=10,
+        total=1,
+    )
 
     get_plans_endpoint = _get_route_endpoint(path_suffix="/{author_id}/plans", method="GET")
 
@@ -153,8 +157,8 @@ async def test_get_plans_for_selected_author_success():
     ) as mock_service:
         resp = await get_plans_endpoint(author_id=author_id)
 
-        # View currently forwards only author_id
-        mock_service.assert_awaited_once_with(author_id=author_id)
+        # View forwards author_id with pagination defaults skip=0, limit=10
+        mock_service.assert_awaited_once_with(author_id=author_id, skip=0, limit=10)
         assert resp == expected
 
 
