@@ -18,7 +18,7 @@ user_recitation_router = APIRouter(
     tags=["User Recitations"]
 )
 
-@user_recitation_router.post("/recitations",status_code=status.HTTP_204_NO_CONTENT)
+@user_recitation_router.post("/recitations",status_code=status.HTTP_200_OK)
 async def create_user_recitation(authentication_credential: Annotated[HTTPAuthorizationCredentials, Depends(oauth2_scheme)],  create_user_recitation_request: CreateUserRecitationRequest):
     return await create_user_recitation_service(
         token=authentication_credential.credentials,
