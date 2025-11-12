@@ -15,7 +15,8 @@ from pecha_api.texts.texts_service import (
     delete_text_by_text_id,
     get_sheet,
     get_table_of_content_by_sheet_id,
-    _validate_text_detail_request
+    _validate_text_detail_request,
+    get_root_text_by_collection_id
 )
 from pecha_api.terms.terms_response_models import TermsModel
 from pecha_api.texts.texts_response_models import (
@@ -1634,4 +1635,64 @@ async def test_get_versions_by_group_id_cache_data_is_not_none():
         assert response.versions[0].id == "text_id_1"
 
 
-
+@pytest.mark.asyncio
+async def test_get_root_text_by_collection_id_success_with_root_text():
+    """Test get_root_text_by_collection_id when root text is found"""
+    collection_id = "collection_id_1"
+    language = "bo"
+    
+    mock_texts = [
+        TextDTO(
+            id="text_id_1",
+            title="བྱང་ཆུབ་སེམས་དཔའི་སྤྱོད་པ་ལ་འཇུག་པ།",
+            language="bo",
+            group_id="group_id_1",
+            type="version",
+            is_published=True,
+            created_date="2025-03-20 09:26:16.571522",
+            updated_date="2025-03-20 09:26:16.571532",
+            published_date="2025-03-20 09:26:16.571536",
+            published_by="pecha",
+            categories=[],
+            views=0
+        ),
+        TextDTO(
+            id="text_id_2",
+            title="The Way of the Bodhisattva",
+            language="en",
+            group_id="group_id_1",
+            type="version",
+            is_published=True,
+            created_date="2025-03-20 09:28:28.076920",
+            updated_date="2025-03-20 09:28:28.076934",
+            published_date="2025-03-20 09:28:28.076938",
+            published_by="pecha",
+            categories=[],
+            views=0
+        )
+    ]
+    
+    # Mock the filtered result with root text found
+    mock_filtered_result = {
+        "root_text": mock_texts[0],  # First text matches the language
+        "versions": [mock_texts[1]]
+    }
+    
+    with patch("pecha_api.texts.texts_service.get_all_texts_by_collection", new_callable=AsyncMock) as mock_get_all_texts, \
+         patch("pecha_api.texts.texts_service.TextUtils.filter_text_on_root_and_version") as mock_filter:
+        
+        mock_get_all_texts.return_value = mock_texts
+        mock_filter.return_value = mock_filtered_result
+        
+        result = await get_root_text_by_collection_id(collection_id=collection_id, language=language)
+        
+        # Verify the function calls
+        mock_get_all_texts.assert_called_once_with(collection_id=collection_id)
+        mock_filter.assert_called_once_with(texts=mock_texts, language=language)
+        
+        # Verify the result
+        assert result is not None
+        assert isinstance(result, tuple)
+        assert len(result) == 2
+        assert result[0] == "text_id_1"
+        assert result[1] == "བྱང་ཆུབ་སེམས་དཔའི་སྤྱོད་པ་ལ་འཇུག་པ།"
