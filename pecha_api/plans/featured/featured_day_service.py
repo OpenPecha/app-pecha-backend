@@ -7,6 +7,7 @@ from ...config import get
 from ..plans_enums import ContentType
 import logging
 from datetime import datetime
+from ..response_message import NO_FEATURED_PLANS_WITH_DAYS_FOUND
 
 logger = logging.getLogger(__name__)
 
@@ -42,7 +43,7 @@ def get_featured_day_service(language: str) -> PlanDayDTO:
         featured_days = get_all_featured_plan_days(db, language=language.upper())
         
         if not featured_days:
-            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND,detail="No featured plans with days found")
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND,detail=NO_FEATURED_PLANS_WITH_DAYS_FOUND)
         
         index = datetime.now().date().toordinal() % len(featured_days)
         selected_day_item = featured_days[index]
