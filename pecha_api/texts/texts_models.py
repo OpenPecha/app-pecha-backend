@@ -124,6 +124,17 @@ class Text(Document):
         return texts
     
     @classmethod
+    async def get_all_texts_by_collection_id(cls, collection_id: str) -> List["Text"]:
+        query = {
+            "categories": collection_id,
+        }
+        texts = (
+            await cls.find(query)
+            .to_list()
+        )
+        return texts
+
+    @classmethod
     async def get_texts_by_group_id(cls, group_id: str, skip: int, limit: int) -> List["Text"]:
         query = {
             "group_id": group_id

@@ -3,6 +3,7 @@ from starlette import status
 
 from pecha_api.error_contants import ErrorConstants
 from .texts_repository import (
+    get_all_texts_by_collection,
     get_texts_by_collection,
     get_texts_by_group_id,
     create_text,
@@ -393,7 +394,7 @@ async def _validate_text_detail_request(text_id: str, text_details_request: Text
     await TextUtils.validate_text_exists(text_id=text_id)
 
 async def get_root_text_by_collection_id(collection_id: str, language: str) -> Optional[tuple[str, str]]:
-    texts = await get_texts_by_collection(collection_id=collection_id, language=language, skip=0, limit=10)
+    texts = await get_all_texts_by_collection(collection_id=collection_id)
     filtered_text_on_root_and_version = TextUtils.filter_text_on_root_and_version(texts=texts, language=language)
     root_text = filtered_text_on_root_and_version["root_text"]
     if root_text is not None:
