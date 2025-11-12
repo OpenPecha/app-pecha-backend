@@ -1,9 +1,15 @@
 from pecha_api.collections.collections_repository import get_all_collections_by_parent, get_collection_id_by_slug
 from pecha_api.recitations.recitations_response_models import RecitationDTO, RecitationsResponse
 from pecha_api.texts.texts_service import get_root_text_by_collection_id
+from fastapi import HTTPException
+from starlette import status
+from pecha_api.error_contants import ErrorConstants
+
 
 async def get_list_of_recitations_service(language: str) -> RecitationsResponse:
     collection_id = await get_collection_id_by_slug(slug="Liturgy")
+    if collection_id is None:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=ErrorConstants.COLLECTION_NOT_FOUND)
     collections = await get_all_collections_by_parent(parent_id=collection_id)
     list_of_collections = [str(collection.id) for collection in collections]
     list_of_texts = []
