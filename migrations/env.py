@@ -15,8 +15,7 @@ from pecha_api.plans.favorites.favorites_models import Favorite
 from pecha_api.plans.users.plan_users_models import UserPlanProgress
 from pecha_api.plans.users.plan_users_models import UserTaskCompletion
 from pecha_api.users.users_models import Users, SocialMediaAccount, PasswordReset
-from pecha_api.recitations.recitations_models import Recitation
-from pecha_api.plans.users.recitation.plan_user_recitation_model import UserRecitation
+from pecha_api.plans.users.recitation.user_recitations_models import UserRecitations
 
 # this is the Alembic Config object, which provides
 # access to the values within the .ini file in use.
