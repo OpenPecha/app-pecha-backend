@@ -1,9 +1,9 @@
-import random
 from fastapi import HTTPException, status
 from ...db.database import SessionLocal
 from .featured_day_repository import get_all_featured_plan_days
 from .featured_day_response_model import PlanDayDTO, TaskDTO, SubTaskDTO
 import logging
+from datetime import datetime
 
 logger = logging.getLogger(__name__)
 
@@ -18,10 +18,12 @@ def get_featured_day_service() -> PlanDayDTO:
                 detail="No featured plans with days found"
             )
         
-        random_day_item = random.choice(featured_days)
-        
+        today = datetime.now().date()
+        index = today.toordinal() % len(featured_days)
+        selected_day_item = featured_days[index]
+                
         tasks = []
-        for task in sorted(random_day_item.tasks, key=lambda t: t.display_order):
+        for task in sorted(selected_day_item.tasks, key=lambda t: t.display_order):
             subtasks = [
                 SubTaskDTO(
                     id=subtask.id,
@@ -43,7 +45,7 @@ def get_featured_day_service() -> PlanDayDTO:
             )
         
         return PlanDayDTO(
-            id=random_day_item.id,
-            day_number=random_day_item.day_number,
+            id=selected_day_item.id,
+            day_number=selected_day_item.day_number,
             tasks=tasks
         )
