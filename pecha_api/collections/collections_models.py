@@ -35,7 +35,11 @@ class Collection(Document):
     @classmethod
     async def get_children_by_id(cls, parent_id: PydanticObjectId,skip: int, limit: int) -> List["Collection"]:
         return await cls.find({"parent_id": parent_id}).skip(skip).limit(limit).to_list()
-
+    
+    @classmethod
+    async def get_all_children_by_id(cls, parent_id: PydanticObjectId) -> List["Collection"]:
+        return await cls.find({"parent_id": parent_id}).to_list()
+    
     @classmethod
     async def count_children(cls, parent_id: PydanticObjectId) -> int:
         """

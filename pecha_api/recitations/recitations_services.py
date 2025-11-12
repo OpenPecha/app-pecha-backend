@@ -1,10 +1,10 @@
-from pecha_api.collections.collections_repository import get_collection_id_by_slug, get_collections_by_parent
+from pecha_api.collections.collections_repository import get_all_collections_by_parent, get_collection_id_by_slug
 from pecha_api.recitations.recitations_response_models import RecitationDTO, RecitationsResponse
 from pecha_api.texts.texts_service import get_root_text_by_collection_id
 
 async def get_list_of_recitations_service(language: str) -> RecitationsResponse:
     collection_id = await get_collection_id_by_slug(slug="Liturgy")
-    collections = await get_collections_by_parent(parent_id=collection_id,skip=0,limit=20)
+    collections = await get_all_collections_by_parent(parent_id=collection_id)
     list_of_collections = [str(collection.id) for collection in collections]
     list_of_texts = []
     for collection_id in list_of_collections:
