@@ -1,23 +1,8 @@
-from pecha_api.recitations.recitations_models import Recitation
-from pecha_api.recitations.recitations_response_models import CreateRecitationsRequest
-from pecha_api.plans.authors.plan_authors_service import validate_and_extract_author_details
-from pecha_api.db.database import SessionLocal
-from pecha_api.recitations.recitations_repository import save_recitations
-from pecha_api.texts.texts_utils import TextUtils
+from pecha_api.texts.texts_models import Text
+from pecha_api.texts.texts_enums import TextType
+from pecha_api.recitations.recitations_response_models import RecitationDTO, RecitationsResponse
 
-async def create_recitations_service(token: str, create_recitations_request: CreateRecitationsRequest) -> None:
-    """create a new recitation"""
-    validate_and_extract_author_details(token=token)
-    if create_recitations_request.text_id:
-        await TextUtils.validate_text_exists(str(create_recitations_request.text_id))
-    with SessionLocal() as db:
-        new_recitation = Recitation(
-            title=create_recitations_request.title,
-            audio_url=create_recitations_request.audio_url,
-            text_id=create_recitations_request.text_id,
-            content=create_recitations_request.content.model_dump(mode='json')
-        )
-        save_recitations(db=db, recitation=new_recitation)
-        
-
-    
+async def get_list_of_recitations_service() -> RecitationsResponse:
+    recitations = await Text.get_list_of_recitations(type=TextType.RECITATION)
+    recitations_dto = [RecitationDTO(title=recitation.title, text_id=recitation.id) for recitation in recitations]
+    return RecitationsResponse(recitations=recitations_dto)
