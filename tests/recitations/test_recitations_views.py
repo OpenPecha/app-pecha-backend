@@ -21,9 +21,9 @@ async def test_get_list_of_recitations_success():
         return_value=expected,
         new_callable=AsyncMock,
     ) as mock_service:
-        resp = await get_list_of_recitations()
+        resp = await get_list_of_recitations(language="en")
 
-        mock_service.assert_awaited_once()
+        mock_service.assert_awaited_once_with(language="en")
         assert resp == expected
         assert len(resp.recitations) == 2
         assert resp.recitations[0].title == "First Recitation"
@@ -45,9 +45,9 @@ async def test_get_list_of_recitations_single_recitation():
         return_value=expected,
         new_callable=AsyncMock,
     ) as mock_service:
-        resp = await get_list_of_recitations()
+        resp = await get_list_of_recitations(language="bo")
 
-        mock_service.assert_awaited_once()
+        mock_service.assert_awaited_once_with(language="bo")
         assert resp == expected
         assert len(resp.recitations) == 1
         assert resp.recitations[0].title == "Single Recitation"
