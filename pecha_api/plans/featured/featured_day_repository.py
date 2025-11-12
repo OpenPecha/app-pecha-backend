@@ -7,7 +7,7 @@ from ..tasks.plan_tasks_models import PlanTask
 from ..tasks.sub_tasks.plan_sub_tasks_models import PlanSubTask
 from ..plans_enums import PlanStatus
 
-def get_all_featured_plan_days(db: Session) -> List[PlanItem]:
+def get_all_featured_plan_days(db: Session, language: str = "EN") -> List[PlanItem]:
    
     query = (
         db.query(PlanItem)
@@ -19,7 +19,8 @@ def get_all_featured_plan_days(db: Session) -> List[PlanItem]:
         .filter(
             and_(
                 Plan.featured == True,
-                Plan.status == PlanStatus.PUBLISHED
+                Plan.status == PlanStatus.PUBLISHED,
+                Plan.language == language
             )
         )
         .all()
