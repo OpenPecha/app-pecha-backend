@@ -3,6 +3,7 @@ from uuid import uuid4
 from unittest.mock import patch, MagicMock, Mock
 from fastapi import HTTPException
 from starlette import status
+from datetime import date
 
 from pecha_api.plans.featured.featured_day_service import get_featured_day_service
 from pecha_api.plans.featured.featured_day_response_model import PlanDayDTO, TaskDTO, SubTaskDTO
@@ -49,9 +50,14 @@ def sample_plan_item(sample_task):
 
 @pytest.mark.asyncio
 async def test_get_featured_day_service_success(sample_plan_item, mock_db_session):
+    mock_date = MagicMock()
+    mock_date.toordinal.return_value = 738892 
+    
     with patch("pecha_api.plans.featured.featured_day_service.SessionLocal", return_value=mock_db_session), \
          patch("pecha_api.plans.featured.featured_day_service.get_all_featured_plan_days", return_value=[sample_plan_item]) as mock_repo, \
-         patch("pecha_api.plans.featured.featured_day_service.random.choice", return_value=sample_plan_item) as mock_random:
+         patch("pecha_api.plans.featured.featured_day_service.datetime") as mock_datetime:
+        
+        mock_datetime.now.return_value.date.return_value = mock_date
         
         result = get_featured_day_service()
         
@@ -76,7 +82,7 @@ async def test_get_featured_day_service_success(sample_plan_item, mock_db_sessio
         assert subtask.display_order == 1
         
         mock_repo.assert_called_once_with(mock_db_session.__enter__.return_value)
-        mock_random.assert_called_once_with([sample_plan_item])
+        mock_datetime.now.assert_called_once()
 
 
 @pytest.mark.asyncio
@@ -116,9 +122,14 @@ async def test_get_featured_day_service_multiple_tasks():
     mock_db_session.__enter__ = Mock(return_value=mock_db_session)
     mock_db_session.__exit__ = Mock(return_value=None)
     
+    mock_date = MagicMock()
+    mock_date.toordinal.return_value = 738892
+    
     with patch("pecha_api.plans.featured.featured_day_service.SessionLocal", return_value=mock_db_session), \
          patch("pecha_api.plans.featured.featured_day_service.get_all_featured_plan_days", return_value=[plan_item]), \
-         patch("pecha_api.plans.featured.featured_day_service.random.choice", return_value=plan_item):
+         patch("pecha_api.plans.featured.featured_day_service.datetime") as mock_datetime:
+        
+        mock_datetime.now.return_value.date.return_value = mock_date
         
         result = get_featured_day_service()
         
@@ -155,9 +166,14 @@ async def test_get_featured_day_service_empty_tasks(mock_db_session):
     plan_item.day_number = 1
     plan_item.tasks = []
     
+    mock_date = MagicMock()
+    mock_date.toordinal.return_value = 738892
+    
     with patch("pecha_api.plans.featured.featured_day_service.SessionLocal", return_value=mock_db_session), \
          patch("pecha_api.plans.featured.featured_day_service.get_all_featured_plan_days", return_value=[plan_item]), \
-         patch("pecha_api.plans.featured.featured_day_service.random.choice", return_value=plan_item):
+         patch("pecha_api.plans.featured.featured_day_service.datetime") as mock_datetime:
+        
+        mock_datetime.now.return_value.date.return_value = mock_date
         
         result = get_featured_day_service()
         
@@ -197,9 +213,14 @@ async def test_get_featured_day_service_task_sorting():
     mock_db_session.__enter__ = Mock(return_value=mock_db_session)
     mock_db_session.__exit__ = Mock(return_value=None)
     
+    mock_date = MagicMock()
+    mock_date.toordinal.return_value = 738892
+    
     with patch("pecha_api.plans.featured.featured_day_service.SessionLocal", return_value=mock_db_session), \
          patch("pecha_api.plans.featured.featured_day_service.get_all_featured_plan_days", return_value=[plan_item]), \
-         patch("pecha_api.plans.featured.featured_day_service.random.choice", return_value=plan_item):
+         patch("pecha_api.plans.featured.featured_day_service.datetime") as mock_datetime:
+        
+        mock_datetime.now.return_value.date.return_value = mock_date
         
         result = get_featured_day_service()
         
@@ -248,9 +269,14 @@ async def test_get_featured_day_service_subtask_sorting():
     mock_db_session.__enter__ = Mock(return_value=mock_db_session)
     mock_db_session.__exit__ = Mock(return_value=None)
     
+    mock_date = MagicMock()
+    mock_date.toordinal.return_value = 738892
+    
     with patch("pecha_api.plans.featured.featured_day_service.SessionLocal", return_value=mock_db_session), \
          patch("pecha_api.plans.featured.featured_day_service.get_all_featured_plan_days", return_value=[plan_item]), \
-         patch("pecha_api.plans.featured.featured_day_service.random.choice", return_value=plan_item):
+         patch("pecha_api.plans.featured.featured_day_service.datetime") as mock_datetime:
+        
+        mock_datetime.now.return_value.date.return_value = mock_date
         
         result = get_featured_day_service()
         
@@ -264,7 +290,8 @@ async def test_get_featured_day_service_subtask_sorting():
 
 
 @pytest.mark.asyncio
-async def test_get_featured_day_service_random_selection_from_multiple():
+async def test_get_featured_day_service_date_based_selection_from_multiple():
+
     plan_item1 = MagicMock()
     plan_item1.id = uuid4()
     plan_item1.day_number = 1
@@ -287,15 +314,17 @@ async def test_get_featured_day_service_random_selection_from_multiple():
     mock_db_session.__exit__ = Mock(return_value=None)
     
     with patch("pecha_api.plans.featured.featured_day_service.SessionLocal", return_value=mock_db_session), \
-         patch("pecha_api.plans.featured.featured_day_service.get_all_featured_plan_days", return_value=featured_days) as mock_repo, \
-         patch("pecha_api.plans.featured.featured_day_service.random.choice", return_value=plan_item2) as mock_random:
+         patch("pecha_api.plans.featured.featured_day_service.get_all_featured_plan_days", return_value=featured_days):
         
-        result = get_featured_day_service()
+        result1 = get_featured_day_service()
+        result2 = get_featured_day_service()
         
-        assert result.id == plan_item2.id
-        assert result.day_number == 2
+        assert result1.id == result2.id
+        assert result1.day_number == result2.day_number
         
-        mock_random.assert_called_once_with(featured_days)
+        assert result1.day_number in [1, 2, 3]
+        
+        assert isinstance(result1, PlanDayDTO)
 
 
 @pytest.mark.asyncio
@@ -340,9 +369,14 @@ async def test_get_featured_day_service_with_all_content_types():
     mock_db_session.__enter__ = Mock(return_value=mock_db_session)
     mock_db_session.__exit__ = Mock(return_value=None)
     
+    mock_date = MagicMock()
+    mock_date.toordinal.return_value = 738892
+    
     with patch("pecha_api.plans.featured.featured_day_service.SessionLocal", return_value=mock_db_session), \
          patch("pecha_api.plans.featured.featured_day_service.get_all_featured_plan_days", return_value=[plan_item]), \
-         patch("pecha_api.plans.featured.featured_day_service.random.choice", return_value=plan_item):
+         patch("pecha_api.plans.featured.featured_day_service.datetime") as mock_datetime:
+        
+        mock_datetime.now.return_value.date.return_value = mock_date
         
         result = get_featured_day_service()
         
@@ -378,9 +412,14 @@ async def test_get_featured_day_service_with_optional_fields_none():
     mock_db_session.__enter__ = Mock(return_value=mock_db_session)
     mock_db_session.__exit__ = Mock(return_value=None)
     
+    mock_date = MagicMock()
+    mock_date.toordinal.return_value = 738892
+    
     with patch("pecha_api.plans.featured.featured_day_service.SessionLocal", return_value=mock_db_session), \
          patch("pecha_api.plans.featured.featured_day_service.get_all_featured_plan_days", return_value=[plan_item]), \
-         patch("pecha_api.plans.featured.featured_day_service.random.choice", return_value=plan_item):
+         patch("pecha_api.plans.featured.featured_day_service.datetime") as mock_datetime:
+        
+        mock_datetime.now.return_value.date.return_value = mock_date
         
         result = get_featured_day_service()
         
@@ -410,9 +449,14 @@ async def test_get_featured_day_service_large_day_number(mock_db_session):
     plan_item.day_number = 365
     plan_item.tasks = []
     
+    mock_date = MagicMock()
+    mock_date.toordinal.return_value = 738892
+    
     with patch("pecha_api.plans.featured.featured_day_service.SessionLocal", return_value=mock_db_session), \
          patch("pecha_api.plans.featured.featured_day_service.get_all_featured_plan_days", return_value=[plan_item]), \
-         patch("pecha_api.plans.featured.featured_day_service.random.choice", return_value=plan_item):
+         patch("pecha_api.plans.featured.featured_day_service.datetime") as mock_datetime:
+        
+        mock_datetime.now.return_value.date.return_value = mock_date
         
         result = get_featured_day_service()
         
@@ -446,9 +490,14 @@ async def test_get_featured_day_service_many_subtasks():
     mock_db_session.__enter__ = Mock(return_value=mock_db_session)
     mock_db_session.__exit__ = Mock(return_value=None)
     
+    mock_date = MagicMock()
+    mock_date.toordinal.return_value = 738892
+    
     with patch("pecha_api.plans.featured.featured_day_service.SessionLocal", return_value=mock_db_session), \
          patch("pecha_api.plans.featured.featured_day_service.get_all_featured_plan_days", return_value=[plan_item]), \
-         patch("pecha_api.plans.featured.featured_day_service.random.choice", return_value=plan_item):
+         patch("pecha_api.plans.featured.featured_day_service.datetime") as mock_datetime:
+        
+        mock_datetime.now.return_value.date.return_value = mock_date
         
         result = get_featured_day_service()
         
