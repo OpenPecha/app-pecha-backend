@@ -1,5 +1,7 @@
 from pydantic import BaseModel
 from typing import List, Optional
+
+from sqlalchemy.orm import strategies
 from .segments_models import Mapping
 
 from .segments_enum import SegmentType

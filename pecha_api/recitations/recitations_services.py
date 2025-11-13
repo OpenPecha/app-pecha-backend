@@ -1,7 +1,7 @@
 
 from pecha_api.texts.texts_models import Text
 from pecha_api.texts.texts_enums import TextType
-from typing import List, Dict
+from typing import List, Dict, Union
 from fastapi import HTTPException
 from starlette import status
 from uuid import UUID
@@ -87,42 +87,38 @@ async def _segments_mapping_by_toc(table_of_contents: List[TableOfContent], reci
             text = await get_text_details_by_text_id(text_id=table_of_content.text_id)
             
             segment_details = await get_segment_by_id(segment_id=segment.segment_id)
-            mapped_segments = await get_related_mapped_segments(parent_segment_id=segment_details.id)
+            mapped_segments = await get_related_mapped_segments(parent_segment_id=segment.segment_id)
             # filter the segments by type and language
             translations = await SegmentUtils.filter_segment_mapping_by_type_or_text_id(segments=mapped_segments, type="version")
             transliterations = await SegmentUtils.filter_segment_mapping_by_type_or_text_id(segments=mapped_segments, type="transliteration")
             adaptations = await SegmentUtils.filter_segment_mapping_by_type_or_text_id(segments=mapped_segments, type="adaptation")
+            
+            
+            # get other related segments to this text segment
+            recitation_segment["recitation"] = _filter_by_language(items=translations, languages=recitation_details_request.recitation)
+            recitation_segment["translations"] = _filter_by_language(items=translations, languages=recitation_details_request.translations)
+            recitation_segment["transliterations"] = _filter_by_language(items=transliterations, languages=recitation_details_request.transliterations)
+            recitation_segment["adaptations"] = _filter_by_language(items=adaptations, languages=recitation_details_request.adaptations)
 
-            # filter the segments by language
-            if text.language in recitation_details_request.recitation:
-                recitation_segment["recitation"] = {text.language: Segment(
-                        id=segment.segment_id,
-                        content=segment_details.content,
-                        segment_number=segment.segment_number
-                    )}
+            #get text toc segment
+            recitation_segment["translations"][text.language] = Segment(
+                id=segment.segment_id,
+                content=segment_details.content
+            )
 
-            recitation_segment["translations"] = _filter_translation_by_language(translations=translations, languages=recitation_details_request.translations)
-            recitation_segment["transliterations"] = _filter_transliteration_by_language(transliterations=transliterations, languages=recitation_details_request.transliterations)
-            recitation_segment["adaptations"] = _filter_adaptation_by_language(adaptations=adaptations, languages=recitation_details_request.adaptations)
             recitation_segment = RecitationSegment(**recitation_segment)
             segments.append(recitation_segment)
     return segments
 
-
-def _filter_translation_by_language(translations: List[SegmentTranslation], languages: List[str]) -> Dict[str, Segment]:
-    return {translation.language: Segment(
-        id=translation.segment_id,
-        content=translation.content
-    ) for translation in translations if translation.language in languages}
-
-def _filter_transliteration_by_language(transliterations: List[SegmentTransliteration], languages: List[str]) -> Dict[str, Segment]:
-    return {transliteration.language: Segment(
-        id=transliteration.segment_id,
-        content=transliteration.content
-    ) for transliteration in transliterations if transliteration.language in languages}
-
-def _filter_adaptation_by_language(adaptations: List[SegmentAdaptation], languages: List[str]) -> Dict[str, Segment]:
-    return {adaptation.language: Segment(
-        id=adaptation.segment_id,
-        content=adaptation.content
-    ) for adaptation in adaptations if adaptation.language in languages}
+def _filter_by_language(
+    items: List[Union[SegmentTranslation, SegmentTransliteration, SegmentAdaptation]],
+    languages: List[str]
+) -> Dict[str, Segment]:
+    return {
+        item.language: Segment(
+            id=item.segment_id,
+            content=item.content
+        )
+        for item in items
+        if item.language in languages
+    }

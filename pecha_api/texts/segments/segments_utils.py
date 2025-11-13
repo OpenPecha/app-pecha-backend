@@ -26,6 +26,8 @@ from ..texts_response_models import (
 from .segments_response_models import (
     SegmentCommentry,
     SegmentTranslation,
+    SegmentTransliteration,
+    SegmentAdaptation,
     SegmentRootMapping,
     SegmentRootMappingResponse
 )
@@ -93,12 +95,13 @@ class SegmentUtils:
     @staticmethod
     async def filter_segment_mapping_by_type_or_text_id(
         segments: List[SegmentDTO], type: str, text_id: Optional[str] = None
-    ) -> List[Union[SegmentCommentry, SegmentTranslation]]:
+    ) -> List[Union[SegmentCommentry, SegmentTranslation, SegmentTransliteration, SegmentAdaptation]]:
         """
         Filter segment mappings by type and optionally by text_id.
         """
         text_ids = [segment.text_id for segment in segments]
         text_details_dict = await TextUtils.get_text_details_by_ids(text_ids=text_ids)
+        
         grouped_segments = SegmentUtils._group_segment_content_by_text_id(segments=segments)
         filtered_segments = []
         appended_commentary_text_ids = []
@@ -114,6 +117,32 @@ class SegmentUtils:
 
                 filtered_segments.append(
                     SegmentTranslation(
+                        segment_id=str(segment.id),
+                        text_id=segment.text_id,
+                        title=text_detail.title,
+                        source=text_detail.published_by,
+                        language=text_detail.language,
+                        content=segment.content
+                    )
+                )
+            elif text_detail.type == "transliteration" and type == "transliteration":
+                if text_id is not None and text_id != segment.text_id:
+                    continue
+                filtered_segments.append(
+                    SegmentTransliteration(
+                        segment_id=str(segment.id),
+                        text_id=segment.text_id,
+                        title=text_detail.title,
+                        source=text_detail.published_by,
+                        language=text_detail.language,
+                        content=segment.content
+                    )
+                )
+            elif text_detail.type == "adaptation" and type == "adaptation":
+                if text_id is not None and text_id != segment.text_id:
+                    continue
+                filtered_segments.append(
+                    SegmentAdaptation(
                         segment_id=str(segment.id),
                         text_id=segment.text_id,
                         title=text_detail.title,

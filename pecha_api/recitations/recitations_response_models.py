@@ -19,7 +19,6 @@ class RecitationDetailsRequest(BaseModel):
 class Segment(BaseModel):
     id: UUID
     content: str
-    segment_number: int
 
 class RecitationSegment(BaseModel):
     recitation: Dict[str, Segment] = Field(default_factory=dict)

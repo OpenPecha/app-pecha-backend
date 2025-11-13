@@ -2,6 +2,7 @@ from uuid import UUID
 from typing import List, Dict, Union, Optional
 from fastapi import HTTPException
 from starlette import status
+from .texts_enums import TextType
 
 from pecha_api.error_contants import ErrorConstants
 from .texts_repository import (
@@ -207,7 +208,7 @@ class TextUtils:
         }
         versions = []
         for text in texts:
-            if text.language == language and filtered_text["root_text"] is None:
+            if text.language == language and text.type == "version" and filtered_text["root_text"] is None:
                 filtered_text["root_text"] = text
             else:
                 versions.append(text)
