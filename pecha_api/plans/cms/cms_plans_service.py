@@ -124,6 +124,7 @@ async def get_filtered_plans(token: str, search: Optional[str], sort_by: str, so
                 total_days=int(plan_info.total_days or 0),
                 tags=selected_plan.tags or [],
                 status=PlanStatus(selected_plan.status.value),
+                featured=selected_plan.featured,
                 subscription_count=int(plan_info.subscription_count or 0),
                 author=AuthorDTO(
                     id=selected_plan.author_id,
@@ -387,4 +388,12 @@ def _check_published_plan_day_availability(plan_id: UUID, plan_status: PlanStatu
         if plan_status == PlanStatus.PUBLISHED and len(get_plan_items_by_plan_id(db=db, plan_id=plan_id)) == 0:
             raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=ResponseError(error=BAD_REQUEST, message=PLAN_MUST_HAVE_AT_LEAST_ONE_DAY_WITH_CONTENT_TO_BE_PUBLISHED).model_dump())
         return
-        
+
+def update_plan_featured_service(token:str, plan_id: UUID):
+    current_author = validate_and_extract_author_details(token=token)
+    with SessionLocal() as db:
+        plan = _check_author_plan_availability(plan_id=plan_id, author_id=current_author.id)
+        plan.featured = not plan.featured
+        print("***"*100)
+        print(f"Plan featured updated: {plan.featured}")
+        plan = update_plan(db=db, plan=plan)

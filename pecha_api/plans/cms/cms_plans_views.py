@@ -8,7 +8,7 @@ from typing import Annotated
 from pecha_api.plans.plans_response_models import PlansResponse, PlanDTO, CreatePlanRequest, PlanWithDays, UpdatePlanRequest, \
     PlanStatusUpdate, PlanDayDTO
 from pecha_api.plans.cms.cms_plans_service import get_filtered_plans, create_new_plan, get_details_plan, update_plan_details, \
-    delete_selected_plan, update_selected_plan_status, get_plan_day_details
+    delete_selected_plan, update_plan_featured_service, update_selected_plan_status, get_plan_day_details
 from pecha_api.plans.plans_enums import SortBy, SortOrder
 
 oauth2_scheme = HTTPBearer()
@@ -97,3 +97,10 @@ async def get_plan_day_content(authentication_credential: Annotated[HTTPAuthoriz
     )
 
 
+@cms_plans_router.patch("/{plan_id}/featured", status_code=status.HTTP_204_NO_CONTENT)
+def update_plan_featured(authentication_credential: Annotated[HTTPAuthorizationCredentials, Depends(oauth2_scheme)],
+                              plan_id: UUID):
+    return update_plan_featured_service(
+        token=authentication_credential.credentials,
+        plan_id=plan_id,
+    )
