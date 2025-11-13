@@ -6,7 +6,7 @@ from pecha_api.recitations.recitations_response_models import RecitationsRespons
 from pecha_api.recitations.recitations_services import get_list_of_recitations_service
 
 recitation_router=APIRouter(
-    prefix="/cms/recitations",
+    prefix="/recitations",
     tags=["Recitations"],
 )
 
