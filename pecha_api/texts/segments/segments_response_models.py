@@ -46,6 +46,22 @@ class SegmentTranslation(BaseModel):
     language: str
     content: str
 
+class SegmentTransliteration(BaseModel):
+    segment_id: str
+    text_id: str
+    title: str
+    source: str
+    language: str
+    content: str
+
+class SegmentAdaptation(BaseModel):
+    segment_id: str
+    text_id: str
+    title: str
+    source: str
+    language: str
+    content: str
+
 class SegmentTranslationsResponse(BaseModel):
     parent_segment: ParentSegment
     translations: List[SegmentTranslation]
