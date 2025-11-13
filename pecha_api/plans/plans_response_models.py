@@ -44,6 +44,7 @@ class PlanDTO(BaseModel):
     total_days: int
     tags: Optional[List[str]] = []
     status: PlanStatus
+    featured: Optional[bool] = False
     subscription_count: int
     author: Optional[AuthorDTO] = None
 
