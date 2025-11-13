@@ -14,7 +14,7 @@ from pecha_api.recitations.recitations_response_models import(
     RecitationDetailsResponse
 )
 recitation_router=APIRouter(
-    prefix="/cms/recitations",
+    prefix="/recitations",
     tags=["Recitations"],
 )
 
