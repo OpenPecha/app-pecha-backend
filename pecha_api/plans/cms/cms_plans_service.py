@@ -394,6 +394,4 @@ def update_plan_featured_service(token:str, plan_id: UUID):
     with SessionLocal() as db:
         plan = _check_author_plan_availability(plan_id=plan_id, author_id=current_author.id)
         plan.featured = not plan.featured
-        print("***"*100)
-        print(f"Plan featured updated: {plan.featured}")
         plan = update_plan(db=db, plan=plan)
