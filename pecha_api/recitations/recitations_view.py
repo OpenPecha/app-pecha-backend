@@ -1,4 +1,5 @@
-from fastapi import APIRouter
+from typing import Optional
+from fastapi import APIRouter, Query
 from starlette import status
 
 
@@ -18,8 +19,12 @@ recitation_router=APIRouter(
 )
 
 @recitation_router.get("",status_code=status.HTTP_200_OK,response_model=RecitationsResponse)
+
 async def get_list_of_recitations():
     return await get_list_of_recitations_service()
+
+async def get_list_of_recitations(language: str = Query()):
+    return await get_list_of_recitations_service(language=language)
 
 
 @recitation_router.post("/{text_id}",status_code=status.HTTP_200_OK,response_model=RecitationDetailsResponse)
