@@ -102,7 +102,7 @@ class TableOfContent(BaseModel):
 class TableOfContentResponse(BaseModel):
     text_detail: TextDTO
     contents: List[TableOfContent]
-
+    total: int
 
 class TextDetailsRequest(BaseModel):
     content_id: Optional[str] = None

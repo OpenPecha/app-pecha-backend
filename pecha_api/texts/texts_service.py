@@ -168,7 +168,7 @@ async def get_table_of_contents_by_text_id(text_id: str, language: str = None, s
     if root_text is None:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=ErrorConstants.TEXT_NOT_FOUND_MESSAGE)
     table_of_contents: List[TableOfContent] = await get_contents_by_id(text_id=root_text.id)
-
+    total_sections = total_content(table_of_contents=table_of_contents)
     response = TableOfContentResponse(
         text_detail=root_text,
         contents=[
@@ -178,10 +178,17 @@ async def get_table_of_contents_by_text_id(text_id: str, language: str = None, s
                 sections=_get_paginated_sections(sections=content.sections, skip=skip, limit=limit)
             )
             for content in table_of_contents
-        ]
+        ],
+        total=total_sections
     )
     
     return response
+
+def total_content(table_of_contents: List[TableOfContent]) -> int:
+    total_sections = 0
+    for content in table_of_contents:
+        total_sections += len(content.sections)
+    return total_sections
 
 def _get_paginated_sections(sections: List[Section], skip: int, limit: int) -> List[Section]:
     filtered_sections = [] 
@@ -202,7 +209,6 @@ def _get_paginated_sections(sections: List[Section], skip: int, limit: int) -> L
                 published_date=section.published_date
             )
             filtered_sections.append(new_section)
-
     return filtered_sections[skip_index:limit_index]
 
 async def remove_table_of_content_by_text_id(text_id: str):
