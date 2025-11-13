@@ -641,7 +641,8 @@ async def test_get_table_of_contents_by_text_id_cache_with_dict_response():
             "id": "table_of_content_id",
             "text_id": "text_id_1",
             "sections": []
-        }]
+        }],
+        "total": 1
     }
     
     with patch("pecha_api.texts.texts_cache_service.get_cache_data", new_callable=AsyncMock, return_value=mock_cache_dict):
