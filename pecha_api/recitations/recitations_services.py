@@ -95,10 +95,13 @@ async def _segments_mapping_by_toc(table_of_contents: List[TableOfContent], reci
             
             
             # get other related segments to this text segment
-            recitation_segment["recitation"] = _filter_by_language(items=translations, languages=recitation_details_request.recitation)
-            recitation_segment["translations"] = _filter_by_language(items=translations, languages=recitation_details_request.translations)
-            recitation_segment["transliterations"] = _filter_by_language(items=transliterations, languages=recitation_details_request.transliterations)
-            recitation_segment["adaptations"] = _filter_by_language(items=adaptations, languages=recitation_details_request.adaptations)
+            for key, items, langs in [
+                ("recitation", translations, recitation_details_request.recitation),
+                ("translations", translations, recitation_details_request.translations),
+                ("transliterations", transliterations, recitation_details_request.transliterations),
+                ("adaptations", adaptations, recitation_details_request.adaptations),
+            ]:
+                recitation_segment[key] = _filter_by_type_and_language(items=items, languages=langs)
 
             #get text toc segment
             recitation_segment["translations"][text.language] = Segment(
@@ -110,7 +113,7 @@ async def _segments_mapping_by_toc(table_of_contents: List[TableOfContent], reci
             segments.append(recitation_segment)
     return segments
 
-def _filter_by_language(
+def _filter_by_type_and_language(
     items: List[Union[SegmentTranslation, SegmentTransliteration, SegmentAdaptation]],
     languages: List[str]
 ) -> Dict[str, Segment]:
