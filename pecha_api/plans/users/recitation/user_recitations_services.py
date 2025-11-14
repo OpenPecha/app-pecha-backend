@@ -43,8 +43,8 @@ async def get_user_recitations_service(token: str) -> UserRecitationsResponse:
         return UserRecitationsResponse(recitations=recitations_dto)
 
 
-async def delete_user_recitation_service(token: str, recitation_id: UUID) -> None:
+async def delete_user_recitation_service(token: str, text_id: UUID) -> None:
     current_user = validate_and_extract_user_details(token=token)
 
     with SessionLocal() as db:
-        delete_user_recitation(db=db, user_id=current_user.id, recitation_id=recitation_id)
+        delete_user_recitation(db=db, user_id=current_user.id, text_id=text_id)

@@ -20,12 +20,12 @@ def save_user_recitation(db: Session, user_recitations: UserRecitations) -> None
 def get_user_recitations_by_user_id(db: Session, user_id: UUID) -> List[UserRecitations]:
     return db.query(UserRecitations).filter(UserRecitations.user_id == user_id).all()
 
-def delete_user_recitation(db: Session, user_id: UUID, recitation_id: UUID) -> None:
+def delete_user_recitation(db: Session, user_id: UUID, text_id: UUID) -> None:
 
     try:
         recitation = db.query(UserRecitations).filter(
             UserRecitations.user_id == user_id,
-            UserRecitations.id == recitation_id
+            UserRecitations.text_id == text_id
         ).first()
         
         if not recitation:
@@ -33,7 +33,7 @@ def delete_user_recitation(db: Session, user_id: UUID, recitation_id: UUID) -> N
                 status_code=status.HTTP_404_NOT_FOUND,
                 detail=ResponseError(
                     error="NOT_FOUND",
-                    message=f"Recitation with ID {recitation_id} not found for this user"
+                    message=f"Recitation with ID {text_id} not found for this user"
                 ).model_dump()
             )
         

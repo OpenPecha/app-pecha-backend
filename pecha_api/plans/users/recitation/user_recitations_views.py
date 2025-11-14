@@ -32,12 +32,12 @@ async def get_user_recitations(authentication_credential: Annotated[HTTPAuthoriz
     return await get_user_recitations_service(token=authentication_credential.credentials)
 
 
-@user_recitation_router.delete("/recitations/{recitation_id}", status_code=status.HTTP_204_NO_CONTENT)
+@user_recitation_router.delete("/recitations/{text_id}", status_code=status.HTTP_204_NO_CONTENT)
 async def delete_user_recitation(
-    recitation_id: UUID,
+    text_id: UUID,
     authentication_credential: Annotated[HTTPAuthorizationCredentials, Depends(oauth2_scheme)]
     ):
     return await delete_user_recitation_service(
         token=authentication_credential.credentials,
-        recitation_id=recitation_id
+        text_id=text_id
         )    
