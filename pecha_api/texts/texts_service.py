@@ -328,7 +328,10 @@ async def create_new_text(
             published_date=new_text.published_date,
             published_by=new_text.published_by,
             categories=new_text.categories,
-            views=new_text.views
+            views=new_text.views,
+            source_link=new_text.source_link,
+            ranking=new_text.ranking,
+            license=new_text.license
         )
     else:
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail=ErrorConstants.TOKEN_ERROR_MESSAGE)
