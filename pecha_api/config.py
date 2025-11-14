@@ -3,7 +3,7 @@ import os
 DEFAULTS = dict(
     SITE_LANGUAGE="en",
     SITE_NAME="Pecha",
-    ACCESS_TOKEN_EXPIRE_MINUTES=30,
+    ACCESS_TOKEN_EXPIRE_MINUTES=3000,
     APP_NAME="Pecha Backend",
     AWS_ACCESS_KEY="",
     AWS_SECRET_KEY="",
