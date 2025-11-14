@@ -155,6 +155,7 @@ class TextUtils:
             raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=ErrorConstants.TEXT_NOT_FOUND_MESSAGE)
         return TextDTO(
             id=str(text.id),
+            pecha_text_id=str(text.pecha_text_id),
             title=text.title,
             language=text.language,
             group_id=text.group_id,
@@ -165,7 +166,10 @@ class TextUtils:
             published_date=text.published_date,
             published_by=text.published_by,
             categories=text.categories,
-            views=text.views
+            views=text.views,
+            source_link=text.source_link,
+            ranking=text.ranking,
+            license=text.license
         )
         
 

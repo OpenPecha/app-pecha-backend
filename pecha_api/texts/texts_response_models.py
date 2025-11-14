@@ -27,7 +27,7 @@ class UpdateTextRequest(BaseModel):
 
 class TextDTO(BaseModel):
     id: str
-    pecha_text_id:str
+    pecha_text_id:Optional[str] = None
     title: str
     language: Optional[str] = None
     group_id: str
@@ -41,9 +41,9 @@ class TextDTO(BaseModel):
     categories: Optional[List[str]] = None
     views: Optional[int] = 0
     likes: Optional[List[str]] = []
-    source_link:str
-    ranking:int
-    license:str
+    source_link:Optional[str] = None
+    ranking:Optional[int] = None
+    license:Optional[str] = None
     
 class TextDTOResponse(BaseModel):
     texts: List[TextDTO]
