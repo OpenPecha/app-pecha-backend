@@ -272,3 +272,34 @@ async def test_delete_collection_with_children():
         
         assert response.status_code == status.HTTP_400_BAD_REQUEST
 
+
+
+# Tests for GET /collections/{pecha_collection_id} endpoint
+
+@pytest.mark.asyncio
+async def test_read_collection_by_pecha_collection_id_success():
+    # Test successful retrieval by pecha_collection_id
+    with patch("pecha_api.collections.collections_views.get_collection_by_pecha_collection_id_service",
+               new_callable=AsyncMock, return_value=MOCK_COLLECTION):
+        
+        response = client.get(f"/collections/{COLLECTION_ID}")
+        
+        assert response.status_code == status.HTTP_200_OK
+        data = response.json()
+        assert data["id"] == COLLECTION_ID
+        assert data["title"] == "Test Collection"
+        assert data["slug"] == "test-collection"
+
+
+@pytest.mark.asyncio
+async def test_read_collection_by_pecha_collection_id_not_found():
+    # Test 404 when collection not found
+    with patch("pecha_api.collections.collections_views.get_collection_by_pecha_collection_id_service",
+               new_callable=AsyncMock, side_effect=HTTPException(
+                   status_code=status.HTTP_404_NOT_FOUND,
+                   detail="Collection not found"
+               )):
+        
+        response = client.get(f"/collections/{COLLECTION_ID}")
+        
+        assert response.status_code == status.HTTP_404_NOT_FOUND
