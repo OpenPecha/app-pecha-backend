@@ -79,6 +79,7 @@ async def get_segment_details_by_id(segment_id: str, text_details: bool = False)
     
     response = SegmentDTO(
         id=str(segment.id),
+        pecha_segment_id=str(segment.pecha_segment_id),
         text_id=segment.text_id,
         content=segment.content,
         mapping=mapping_responses,
@@ -95,6 +96,7 @@ async def create_new_segment(create_segment_request: CreateSegmentRequest, token
         segments =  [
             SegmentDTO(
                 id=str(segment.id),
+                pecha_segment_id=str(segment.pecha_segment_id),
                 text_id=segment.text_id,
                 content=segment.content,
                 mapping= [MappingResponse(**mapping.model_dump()) for mapping in segment.mapping],
