@@ -317,6 +317,7 @@ async def create_new_text(
         new_text = await create_text(create_text_request=create_text_request)
         return TextDTO(
             id=str(new_text.id),
+            text_id=str(new_text.text_id),
             title=new_text.title,
             language=new_text.language,
             group_id=new_text.group_id,

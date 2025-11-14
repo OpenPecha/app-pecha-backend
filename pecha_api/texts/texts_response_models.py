@@ -24,6 +24,7 @@ class UpdateTextRequest(BaseModel):
 
 class TextDTO(BaseModel):
     id: str
+    text_id:str
     title: str
     language: Optional[str] = None
     group_id: str
