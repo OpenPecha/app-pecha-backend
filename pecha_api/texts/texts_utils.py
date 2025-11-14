@@ -54,6 +54,7 @@ class TextUtils:
         text_detail = await get_texts_by_id(text_id=text_id)
         response = TextDTO(
             id=str(text_detail.id),
+            pecha_text_id=str(text_detail.pecha_text_id),
             title=text_detail.title,
             language=text_detail.language,
             group_id=text_detail.group_id,
@@ -64,7 +65,10 @@ class TextUtils:
             published_date=text_detail.published_date,
             published_by=text_detail.published_by,
             categories=text_detail.categories,
-            views=text_detail.views
+            views=text_detail.views,
+            source_link=text_detail.source_link,
+            ranking=text_detail.ranking,
+            license=text_detail.license
         )
         await set_text_details_by_id_cache(text_id=text_id, cache_type=CacheType.TEXT_DETAIL, data=response)
         return response

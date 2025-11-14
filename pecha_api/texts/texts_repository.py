@@ -36,6 +36,7 @@ async def get_texts_by_ids(text_ids: List[str]) -> Dict[str, TextDTO]:
     return {
         str(text.id): TextDTO(
             id=str(text.id),
+            pecha_text_id=str(text.pecha_text_id),
             title=text.title,
             language=text.language,
             type=text.type,
@@ -46,7 +47,10 @@ async def get_texts_by_ids(text_ids: List[str]) -> Dict[str, TextDTO]:
             published_date=text.published_date,
             published_by=text.published_by,
             categories=text.categories,
-            views=text.views
+            views=text.views,
+            source_link=text.source_link,
+            ranking=text.ranking,
+            license=text.license
         )
         for text in list_of_texts_detail
     }
@@ -97,6 +101,7 @@ async def get_texts_by_group_id(group_id: str, skip: int, limit: int) -> List[Te
     return [
         TextDTO(
             id=str(text.id),
+            pecha_text_id=str(text.pecha_text_id),
             title=text.title,
             language=text.language,
             group_id=text.group_id,
@@ -107,7 +112,10 @@ async def get_texts_by_group_id(group_id: str, skip: int, limit: int) -> List[Te
             published_date=text.published_date,
             published_by=text.published_by,
             categories=text.categories,
-            views=text.views
+            views=text.views,
+            source_link=text.source_link,
+            ranking=text.ranking,
+            license=text.license
         )
         for text in texts
     ]

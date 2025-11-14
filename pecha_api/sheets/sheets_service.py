@@ -598,11 +598,15 @@ async def _create_sheet_text_(title: str, token: str, group_id: str) -> str:
     if title is None or title == "":
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=ErrorConstants.SHEET_TITLE_REQUIRED_MESSAGE)
     create_text_request = CreateTextRequest(
+        pecha_text_id=f"sheet_{title.replace(' ', '_').lower()}",
         title=title,
         group_id=group_id,
         language=None,
         published_by=user_details.email,
-        type=TextType.SHEET
+        type=TextType.SHEET,
+        source_link="",
+        ranking=0,
+        license="CC0"
     )
     new_text: TextDTO = await create_new_text(create_text_request=create_text_request, token=token)
     return new_text.id

@@ -1535,6 +1535,7 @@ async def test_create_sheet_text():
     mock_user = Users(email="test@example.com")
     mock_text = TextDTO(
         id="new_text_id",
+        pecha_text_id="test_pecha_id",
         title=title,
         group_id=group_id,
         type=TextType.SHEET,
@@ -1545,7 +1546,10 @@ async def test_create_sheet_text():
         published_date="2021-01-01",
         published_by="test@example.com",
         categories=[],
-        views=0
+        views=0,
+        source_link="https://test-source.com",
+        ranking=1,
+        license="CC0"
     )
     
     with patch("pecha_api.sheets.sheets_service.validate_and_extract_user_details", return_value=mock_user), \
