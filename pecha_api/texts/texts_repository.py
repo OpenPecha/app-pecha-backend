@@ -125,7 +125,10 @@ async def create_text(create_text_request: CreateTextRequest) -> Text:
         published_by=create_text_request.published_by,
         type=create_text_request.type,
         categories=create_text_request.categories,
-        views=create_text_request.views
+        views=create_text_request.views,
+        source_link=create_text_request.source_link,
+        ranking=create_text_request.ranking,
+        license=create_text_request.license
     )
     saved_text = await new_text.insert()
     return saved_text

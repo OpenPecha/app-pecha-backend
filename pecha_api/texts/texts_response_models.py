@@ -17,6 +17,9 @@ class CreateTextRequest(BaseModel):
     type: TextType
     categories: Optional[List[str]] = None
     views: Optional[int] = 0
+    source_link:str
+    ranking:int
+    license:str
 
 class UpdateTextRequest(BaseModel):
     title: str
@@ -38,7 +41,10 @@ class TextDTO(BaseModel):
     categories: Optional[List[str]] = None
     views: Optional[int] = 0
     likes: Optional[List[str]] = []
-
+    source_link:str
+    ranking:int
+    license:str
+    
 class TextDTOResponse(BaseModel):
     texts: List[TextDTO]
     skip: int
