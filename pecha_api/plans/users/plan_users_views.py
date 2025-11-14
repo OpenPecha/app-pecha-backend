@@ -16,6 +16,7 @@ from pecha_api.plans.users.plan_users_response_models import (
 from pecha_api.plans.users.plan_users_service import (
     get_user_enrolled_plans,
     enroll_user_in_plan,
+    unenroll_user_from_plan,
     get_user_plan_progress,
     complete_task_service,
     complete_sub_task_service,
@@ -52,6 +53,15 @@ def enroll_in_plan(
         enroll_request=enroll_request
     )
 
+@user_progress_router.delete("/plans/{plan_id}", status_code=status.HTTP_204_NO_CONTENT)
+def unenroll_from_plan(
+    plan_id: UUID,
+    authentication_credential: Annotated[HTTPAuthorizationCredentials, Depends(oauth2_scheme)]
+):
+    unenroll_user_from_plan(
+        token=authentication_credential.credentials,
+        plan_id=plan_id
+    )
 
 @user_progress_router.get("/plans/{plan_id}", status_code=status.HTTP_200_OK, response_model=UserPlanProgressResponse)
 async def get_user_plan_progress_details(
