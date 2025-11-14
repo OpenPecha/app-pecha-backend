@@ -6,9 +6,9 @@ from beanie import PydanticObjectId
 from pecha_api.error_contants import ErrorConstants
 from pecha_api.utils import Utils
 from ..config import get
-from ..collections.collections_response_models import CollectionModel, CollectionsResponse, Pagination, CreateCollectionRequest, UpdateCollectionRequest
+from ..collections.collections_response_models import CollectionModel, CollectionsResponse, Pagination, CreateCollectionRequest, UpdateCollectionRequest, CollectionByPechaCollectionIdModel
 from .collections_repository import get_child_count, get_collections_by_parent, create_collection, update_collection_titles, delete_collection, \
-    get_collection_by_id
+    get_collection_by_id, get_collection_by_pecha_collection_id
 from .collections_cache_service import (
     get_collections_cache,
     set_collections_cache,
@@ -158,3 +158,14 @@ async def delete_existing_collection(collection_id: str, token: str):
         return collection_id
     
     raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail=ErrorConstants.ADMIN_ERROR_MESSAGE)
+
+
+async def get_collection_by_pecha_collection_id_service(pecha_collection_id: str) -> CollectionByPechaCollectionIdModel:
+    selected_collection = await get_collection_by_pecha_collection_id(pecha_collection_id=pecha_collection_id)
+    if selected_collection:
+        return CollectionByPechaCollectionIdModel(
+            id=str(selected_collection.id),
+            pecha_collection_id=str(selected_collection.pecha_collection_id),
+            has_child=selected_collection.has_sub_child,
+            slug=selected_collection.slug
+        )

@@ -23,6 +23,12 @@ class CollectionModel(BaseModel):
     slug: str
     has_child: bool
 
+class CollectionByPechaCollectionIdModel(BaseModel):
+    id: str
+    pecha_collection_id: Optional[str] = None
+    slug: str
+    has_child: bool
+
 class Pagination(BaseModel):
     total: int
     skip: int

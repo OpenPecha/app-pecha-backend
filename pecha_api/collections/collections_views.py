@@ -6,7 +6,7 @@ from starlette import status
 from typing import Annotated, Optional
 
 from ..collections.collections_response_models import CreateCollectionRequest, UpdateCollectionRequest
-from ..collections.collections_service import get_all_collections, create_new_collection, update_existing_collection, delete_existing_collection
+from ..collections.collections_service import get_all_collections, create_new_collection, update_existing_collection, delete_existing_collection, get_collection_by_pecha_collection_id_service
 
 oauth2_scheme = HTTPBearer()
 collections_router = APIRouter(
@@ -29,6 +29,10 @@ async def read_collection(
         limit=limit
     )
 
+
+@collections_router.get("/{pecha_collection_id}", status_code=status.HTTP_200_OK)
+async def read_collection_by_pecha_collection_id(pecha_collection_id: str):
+    return await get_collection_by_pecha_collection_id_service(pecha_collection_id=pecha_collection_id)
 
 @collections_router.post("", status_code=status.HTTP_201_CREATED)
 async def create_collection(language: str | None, create_collection_request: CreateCollectionRequest,
