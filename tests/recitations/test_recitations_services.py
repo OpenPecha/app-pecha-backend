@@ -301,9 +301,8 @@ class TestGetRecitationDetailsService:
         # Recitation should include "bo" from filtered items
         assert "bo" in seg.recitation
         assert seg.recitation["bo"].content == "Recitation BO"
-        # Translations should contain "en" coming from base segment override
-        assert "en" in seg.translations
-        assert seg.translations["en"].content == "Base content EN"
+        # Translations should be empty when no mapped version matches requested languages
+        assert seg.translations == {}
         # Others empty
         assert seg.transliterations == {}
         assert seg.adaptations == {}
