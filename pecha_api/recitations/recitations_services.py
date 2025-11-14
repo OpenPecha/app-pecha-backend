@@ -82,9 +82,9 @@ async def _segments_mapping_by_toc(table_of_contents: List[TableOfContent], reci
     for table_of_content in table_of_contents:
         # recitation has only one section
         section = table_of_content.sections[0]
+        text = await get_text_details_by_text_id(text_id=table_of_content.text_id)
         for segment in section.segments:
             recitation_segment = {}
-            text = await get_text_details_by_text_id(text_id=table_of_content.text_id)
             
             segment_details = await get_segment_by_id(segment_id=segment.segment_id)
             mapped_segments = await get_related_mapped_segments(parent_segment_id=segment.segment_id)
@@ -103,11 +103,11 @@ async def _segments_mapping_by_toc(table_of_contents: List[TableOfContent], reci
             ]:
                 recitation_segment[key] = _filter_by_type_and_language(items=items, languages=langs)
 
-            #get text toc segment
-            recitation_segment["translations"][text.language] = Segment(
-                id=segment.segment_id,
-                content=segment_details.content
-            )
+            # #get text toc segment
+            # recitation_segment["translations"][text.language] = Segment(
+            #     id=segment.segment_id,
+            #     content=segment_details.content
+            # )
 
             recitation_segment = RecitationSegment(**recitation_segment)
             segments.append(recitation_segment)
