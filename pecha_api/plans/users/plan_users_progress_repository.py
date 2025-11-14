@@ -29,6 +29,28 @@ def get_plan_progress_by_user_id_and_plan_id(db: Session, user_id: UUID, plan_id
     return db.query(UserPlanProgress).filter(UserPlanProgress.user_id == user_id, UserPlanProgress.plan_id == plan_id).first()
 
 
+def delete_user_plan_progress(db: Session, user_id: UUID, plan_id: UUID) -> None:
+
+    plan_progress = db.query(UserPlanProgress).filter(
+        UserPlanProgress.user_id == user_id,
+        UserPlanProgress.plan_id == plan_id
+    ).first()
+    
+    if not plan_progress:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND,detail=ResponseError(error="NOT_FOUND",
+        message=f"User is not enrolled in plan with ID {plan_id}").model_dump())
+    
+    try:
+        db.delete(plan_progress)
+        db.commit()
+    except IntegrityError as e:
+        db.rollback()
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,detail=ResponseError(error=BAD_REQUEST,
+            message=f"Database integrity error: {e.orig}").model_dump()
+        )
+
+
 def get_user_enrolled_plans_with_details(db: Session,user_id: UUID, status: Optional[str] = None,skip: int = 0, limit: int = 20,order_by_field = None,order_desc: bool = True
 ) -> Tuple[List[Tuple[UserPlanProgress, Plan, int]], int]:
 
