@@ -54,6 +54,7 @@ class TextUtils:
         text_detail = await get_texts_by_id(text_id=text_id)
         response = TextDTO(
             id=str(text_detail.id),
+            pecha_text_id=str(text_detail.pecha_text_id),
             title=text_detail.title,
             language=text_detail.language,
             group_id=text_detail.group_id,
@@ -64,7 +65,10 @@ class TextUtils:
             published_date=text_detail.published_date,
             published_by=text_detail.published_by,
             categories=text_detail.categories,
-            views=text_detail.views
+            views=text_detail.views,
+            source_link=text_detail.source_link,
+            ranking=text_detail.ranking,
+            license=text_detail.license
         )
         await set_text_details_by_id_cache(text_id=text_id, cache_type=CacheType.TEXT_DETAIL, data=response)
         return response
@@ -155,6 +159,7 @@ class TextUtils:
             raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=ErrorConstants.TEXT_NOT_FOUND_MESSAGE)
         return TextDTO(
             id=str(text.id),
+            pecha_text_id=str(text.pecha_text_id),
             title=text.title,
             language=text.language,
             group_id=text.group_id,
@@ -165,7 +170,10 @@ class TextUtils:
             published_date=text.published_date,
             published_by=text.published_by,
             categories=text.categories,
-            views=text.views
+            views=text.views,
+            source_link=text.source_link,
+            ranking=text.ranking,
+            license=text.license
         )
         
 
