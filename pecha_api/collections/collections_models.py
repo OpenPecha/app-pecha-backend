@@ -8,7 +8,7 @@ class Collection(Document):
     slug: str
     titles: Dict[str, str]  # Dictionary with language_id as key and title as value
     descriptions: Dict[str,str] = Field(default=dict)
-    parent_id: Optional[PydanticObjectId] = None
+    parent_id: Optional[str] = None
     has_sub_child: bool = False
 
     class Settings:
