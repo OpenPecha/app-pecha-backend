@@ -119,13 +119,17 @@ async def test_get_collection_cache_hit():
         has_child=False
     )
     
-    with patch("pecha_api.collections.collections_service.get_collection_detail_cache", new_callable=AsyncMock) as mock_cache_get:
+    with patch("pecha_api.collections.collections_service.get_collection_detail_cache", new_callable=AsyncMock) as mock_cache_get, \
+         patch("pecha_api.collections.collections_service.get_collection_by_id", new_callable=AsyncMock) as mock_db_get, \
+         patch("pecha_api.collections.collections_service.set_collection_detail_cache", new_callable=AsyncMock) as mock_cache_set:
         mock_cache_get.return_value = cached_collection
         
         response = await get_collection(collection_id="cached_id", language="en")
         
         assert response == cached_collection
         mock_cache_get.assert_called_once()
+        mock_db_get.assert_not_called()
+        mock_cache_set.assert_not_called()
 
 
 @pytest.mark.asyncio
@@ -189,13 +193,21 @@ async def test_get_all_collections_cache_hit():
         ]
     )
     
-    with patch("pecha_api.collections.collections_service.get_collections_cache", new_callable=AsyncMock) as mock_cache_get:
+    with patch("pecha_api.collections.collections_service.get_collections_cache", new_callable=AsyncMock) as mock_cache_get, \
+         patch("pecha_api.collections.collections_service.get_child_count", new_callable=AsyncMock) as mock_get_child_count, \
+         patch("pecha_api.collections.collections_service.get_collection", new_callable=AsyncMock) as mock_get_collection, \
+         patch("pecha_api.collections.collections_service.get_collections_by_parent", new_callable=AsyncMock) as mock_get_collections_by_parent, \
+         patch("pecha_api.collections.collections_service.set_collections_cache", new_callable=AsyncMock) as mock_set_cache:
         mock_cache_get.return_value = cached_response
         
         response = await get_all_collections(language="en", parent_id=None, skip=0, limit=10)
         
         assert response == cached_response
         mock_cache_get.assert_called_once()
+        mock_get_child_count.assert_not_called()
+        mock_get_collection.assert_not_called()
+        mock_get_collections_by_parent.assert_not_called()
+        mock_set_cache.assert_not_called()
 
 
 @pytest.mark.asyncio 
