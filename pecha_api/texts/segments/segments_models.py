@@ -12,6 +12,7 @@ class Mapping(BaseModel):
 
 class Segment(Document):
     id: uuid.UUID = Field(default_factory=uuid.uuid4)
+    pecha_segment_id: Optional[str] = None
     text_id: str
     content: str
     mapping: Optional[List[Mapping]] = None
