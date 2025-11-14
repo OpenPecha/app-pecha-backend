@@ -78,8 +78,6 @@ async def create_new_collection(create_collection_request: CreateCollectionReque
     is_admin = verify_admin_access(token=token)
     if is_admin:
         new_collection = await create_collection(create_collection_request=create_collection_request)
-        print(new_collection)
-        print("*"*100)
         if language is None:
             language = get("DEFAULT_LANGUAGE")
         return CollectionModel(
