@@ -1,3 +1,4 @@
+from codecs import strict_errors
 from typing import Dict, List, Optional
 
 from beanie import Document, PydanticObjectId
@@ -25,7 +26,7 @@ class Collection(Document):
         indexes = [("slug", 1)]
 
     @classmethod
-    async def get_by_id(cls, parent_id: PydanticObjectId) -> "Collection":
+    async def get_by_id(cls, parent_id: str) -> "Collection":
         return await cls.find({"parent_id": parent_id})
     
     @classmethod
@@ -33,15 +34,15 @@ class Collection(Document):
         return await cls.find_one({"slug": slug})
 
     @classmethod
-    async def get_children_by_id(cls, parent_id: PydanticObjectId,skip: int, limit: int) -> List["Collection"]:
+    async def get_children_by_id(cls, parent_id: str,skip: int, limit: int) -> List["Collection"]:
         return await cls.find({"parent_id": parent_id}).skip(skip).limit(limit).to_list()
     
     @classmethod
-    async def get_all_children_by_id(cls, parent_id: PydanticObjectId) -> List["Collection"]:
+    async def get_all_children_by_id(cls, parent_id: str) -> List["Collection"]:
         return await cls.find({"parent_id": parent_id}).to_list()
     
     @classmethod
-    async def count_children(cls, parent_id: PydanticObjectId) -> int:
+    async def count_children(cls, parent_id: strict_errors) -> int:
         """
         Count total number of children for a given parent
         """
