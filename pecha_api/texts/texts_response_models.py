@@ -8,7 +8,7 @@ from pydantic import BaseModel
 from .texts_enums import TextType, PaginationDirection
 
 class CreateTextRequest(BaseModel):
-    text_id:str
+    pecha_text_id:str
     title: str
     language: Optional[str] = None
     isPublished: bool = False
@@ -27,7 +27,7 @@ class UpdateTextRequest(BaseModel):
 
 class TextDTO(BaseModel):
     id: str
-    text_id:str
+    pecha_text_id:str
     title: str
     language: Optional[str] = None
     group_id: str

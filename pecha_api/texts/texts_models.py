@@ -52,7 +52,7 @@ class TableOfContent(Document):
 
 class Text(Document):
     id: uuid.UUID = Field(default_factory=uuid.uuid4)
-    text_id: str
+    pecha_text_id: str
     title: str
     language: Optional[str] = None
     group_id: str

@@ -114,7 +114,7 @@ async def get_texts_by_group_id(group_id: str, skip: int, limit: int) -> List[Te
 
 async def create_text(create_text_request: CreateTextRequest) -> Text:
     new_text = Text(
-        text_id=create_text_request.text_id,
+        pecha_text_id=create_text_request.text_id,
         title=create_text_request.title,
         language=create_text_request.language,
         group_id=create_text_request.group_id,
