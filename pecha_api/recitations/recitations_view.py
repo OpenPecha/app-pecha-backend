@@ -21,7 +21,7 @@ recitation_router=APIRouter(
 @recitation_router.get("",status_code=status.HTTP_200_OK,response_model=RecitationsResponse)
 async def get_list_of_recitations(language: str = Query()):
     return await get_list_of_recitations_service(language=language)
-
+    
 @recitation_router.post("/{text_id}",status_code=status.HTTP_200_OK,response_model=RecitationDetailsResponse)
 async def get_recitation_details(text_id: str, recitation_details_request: RecitationDetailsRequest):
     return await get_recitation_details_service(text_id=text_id, recitation_details_request=recitation_details_request)
