@@ -90,7 +90,7 @@ async def _segments_mapping_by_toc(table_of_contents: List[TableOfContent], reci
             mapped_segments = await get_related_mapped_segments(parent_segment_id=segment.segment_id)
             # filter the segments by type and language
             translations = await SegmentUtils.filter_segment_mapping_by_type_or_text_id(segments=mapped_segments, type="version")
-            transliterations = await SegmentUtils.filter_segment_mapping_by_type_or_text_id(segments=mapped_segments, type="transliteration")
+            transliterations = await SegmentUtils.filter_segment_mapping_by_type_or_text_id(segments=mapped_segments, type="version")
             adaptations = await SegmentUtils.filter_segment_mapping_by_type_or_text_id(segments=mapped_segments, type="adaptation")
             
             
@@ -101,7 +101,7 @@ async def _segments_mapping_by_toc(table_of_contents: List[TableOfContent], reci
                 ("transliterations", transliterations, recitation_details_request.transliterations),
                 ("adaptations", adaptations, recitation_details_request.adaptations),
             ]:
-                recitation_segment[key] = _filter_by_type_and_language(items=items, languages=langs)
+                recitation_segment[key] = _filter_by_type_and_language(key=key,items=items, languages=langs)
 
             # #get text toc segment
             # recitation_segment["translations"][text.language] = Segment(
@@ -114,13 +114,14 @@ async def _segments_mapping_by_toc(table_of_contents: List[TableOfContent], reci
     return segments
 
 def _filter_by_type_and_language(
+    key:str,
     items: List[Union[SegmentTranslation, SegmentTransliteration, SegmentAdaptation]],
     languages: List[str]
 ) -> Dict[str, Segment]:
     return {
         item.language: Segment(
             id=item.segment_id,
-            content=item.content
+            content=SegmentUtils.apply_bophono(segmentContent=item.content) if key == "transliterations" and item.language == "bo" else item.content
         )
         for item in items
         if item.language in languages
