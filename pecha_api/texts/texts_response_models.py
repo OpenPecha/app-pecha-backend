@@ -8,6 +8,7 @@ from pydantic import BaseModel
 from .texts_enums import TextType, PaginationDirection
 
 class CreateTextRequest(BaseModel):
+    text_id:str
     title: str
     language: Optional[str] = None
     isPublished: bool = False
