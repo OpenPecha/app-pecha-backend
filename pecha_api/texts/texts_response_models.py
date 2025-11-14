@@ -8,7 +8,7 @@ from pydantic import BaseModel
 from .texts_enums import TextType, PaginationDirection
 
 class CreateTextRequest(BaseModel):
-    pecha_text_id:str
+    pecha_text_id:Optional[str] = None
     title: str
     language: Optional[str] = None
     isPublished: bool = False
@@ -17,9 +17,9 @@ class CreateTextRequest(BaseModel):
     type: TextType
     categories: Optional[List[str]] = None
     views: Optional[int] = 0
-    source_link:str
-    ranking:int
-    license:str
+    source_link:Optional[str] = None
+    ranking:Optional[int] = None
+    license:Optional[str] = None
 
 class UpdateTextRequest(BaseModel):
     title: str
