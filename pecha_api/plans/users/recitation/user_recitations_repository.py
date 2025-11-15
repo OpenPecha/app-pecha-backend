@@ -33,7 +33,7 @@ def update_recitation_order_in_bulk(db: Session, user_id: UUID, recitation_updat
     try:
         for update in recitation_updates:
             recitation = db.query(UserRecitations).filter(
-                UserRecitations.id == update["id"],
+                UserRecitations.text_id == update["text_id"],
                 UserRecitations.user_id == user_id
             ).first()           
             if recitation:

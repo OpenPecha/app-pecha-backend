@@ -63,7 +63,7 @@ async def update_recitation_order_service(token: str, update_order_request: Upda
     
     with SessionLocal() as db:
         recitation_updates = [
-            {"id": item.id, "display_order": item.display_order}
+            {"text_id": item.text_id, "display_order": item.display_order}
             for item in update_order_request.recitations
         ]
         update_recitation_order_in_bulk(db=db, user_id=current_user.id, recitation_updates=recitation_updates)

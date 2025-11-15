@@ -14,7 +14,7 @@ class UserRecitationsResponse(BaseModel):
     recitations: List[UserRecitationDTO]
 
 class RecitationOrderItem(BaseModel):
-    id: UUID
+    text_id: UUID
     display_order: int
 
 class UpdateRecitationOrderRequest(BaseModel):
