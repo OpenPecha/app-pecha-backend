@@ -1,4 +1,5 @@
 
+from pecha_api.recitations.recitations_enum import RecitationSegmentType
 from pecha_api.texts.texts_models import Text
 from pecha_api.texts.texts_enums import TextType
 from typing import List, Dict, Union
@@ -89,9 +90,9 @@ async def _segments_mapping_by_toc(table_of_contents: List[TableOfContent], reci
             segment_details = await get_segment_by_id(segment_id=segment.segment_id)
             mapped_segments = await get_related_mapped_segments(parent_segment_id=segment.segment_id)
             # filter the segments by type and language
-            translations = await SegmentUtils.filter_segment_mapping_by_type_or_text_id(segments=mapped_segments, type="version")
-            transliterations = await SegmentUtils.filter_segment_mapping_by_type_or_text_id(segments=mapped_segments, type="version")
-            adaptations = await SegmentUtils.filter_segment_mapping_by_type_or_text_id(segments=mapped_segments, type="adaptation")
+            translations = await SegmentUtils.filter_segment_mapping_by_type_or_text_id(segments=mapped_segments, type= RecitationSegmentType.VERSION)
+            transliterations = await SegmentUtils.filter_segment_mapping_by_type_or_text_id(segments=mapped_segments, type=RecitationSegmentType.VERSION)
+            adaptations = await SegmentUtils.filter_segment_mapping_by_type_or_text_id(segments=mapped_segments, type=RecitationSegmentType.ADAPTATION)
             
             
             # get other related segments to this text segment
