@@ -203,24 +203,24 @@ class TextUtils:
     @staticmethod
     def filter_text_on_root_and_version(texts: List[TextDTO], language: str) -> Dict[str, Union[TextDTO, List[TextDTO]]]:
         filtered_text = {
-            TextType.ROOT_TEXT: None,
-            TextTypes.VERSIONS: []
+            TextType.ROOT_TEXT.value: None,
+            TextTypes.VERSIONS.value: []
         }
         versions = []
         for text in texts:
             text_type_value = text.type if isinstance(text.type, str) else text.type.value
-            if text.language == language and text_type_value == TextType.VERSION and filtered_text[TextType.ROOT_TEXT] is None:
-                filtered_text[TextType.ROOT_TEXT] = text
+            if text.language == language and text_type_value == TextType.VERSION.value and filtered_text[TextType.ROOT_TEXT.value] is None:
+                filtered_text[TextType.ROOT_TEXT.value] = text
             else:
                 versions.append(text)
-        filtered_text[TextTypes.VERSIONS] = versions
+        filtered_text[TextTypes.VERSIONS.value] = versions
         return filtered_text
     
     @staticmethod
     async def filter_text_base_on_group_id_type(texts: List[TextDTO], language: str) -> Dict[str, Union[TextDTO, List[TextDTO]]]:
         filtere_text = {
-            TextType.ROOT_TEXT: None,
-            TextType.COMMENTARY: []
+            TextType.ROOT_TEXT.value: None,
+            TextType.COMMENTARY.value: []
         }
         if texts:
             group_ids = [text.group_id for text in texts]
@@ -228,11 +228,11 @@ class TextUtils:
 
             commentary = []
             for text in texts:
-                if (group_ids_type_dict.get(text.group_id).type == "text") and (text.language == language) and filtere_text[TextType.ROOT_TEXT] is None:
-                    filtere_text[TextType.ROOT_TEXT] = text
-                elif (group_ids_type_dict.get(text.group_id).type == TextType.COMMENTARY and text.language == language):
+                if (group_ids_type_dict.get(text.group_id).type == "text") and (text.language == language) and filtere_text[TextType.ROOT_TEXT.value] is None:
+                    filtere_text[TextType.ROOT_TEXT.value] = text
+                elif (group_ids_type_dict.get(text.group_id).type == TextType.COMMENTARY.value and text.language == language):
                     commentary.append(text)
-            filtere_text[TextType.COMMENTARY] = commentary
+            filtere_text[TextType.COMMENTARY.value] = commentary
         return filtere_text
     
 

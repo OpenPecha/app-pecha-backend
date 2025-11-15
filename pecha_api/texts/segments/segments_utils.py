@@ -85,15 +85,15 @@ class SegmentUtils:
         """
         Count the number of commentary and version segments in the provided list.
         """
-        count = {TextType.COMMENTARY: 0, TextType.VERSION: 0}
+        count = {TextType.COMMENTARY.value: 0, TextType.VERSION.value: 0}
         text_ids = [segment.text_id for segment in segments]
         text_details_dict = await TextUtils.get_text_details_by_ids(text_ids=text_ids)
         for segment in segments:
             text_detail = text_details_dict.get(segment.text_id)
-            if text_detail and text_detail.type == TextType.COMMENTARY:
-                count[TextType.COMMENTARY] += 1
-            elif text_detail and text_detail.type == TextType.VERSION:
-                count[TextType.VERSION] += 1
+            if text_detail and text_detail.type == TextType.COMMENTARY.value:
+                count[TextType.COMMENTARY.value] += 1
+            elif text_detail and text_detail.type == TextType.VERSION.value:
+                count[TextType.VERSION.value] += 1
         return count
 
     @staticmethod
@@ -115,7 +115,7 @@ class SegmentUtils:
             if not text_detail:
                 continue
 
-            if text_detail.type == TextType.VERSION and type == TextType.VERSION:
+            if text_detail.type == TextType.VERSION.value and type == TextType.VERSION.value:
                 if text_id is not None and text_id != segment.text_id:
                     continue
 
@@ -129,7 +129,7 @@ class SegmentUtils:
                         content=segment.content
                     )
                 )
-            elif text_detail.type == TextType.TRANSLITERATION and type == TextType.TRANSLITERATION:
+            elif text_detail.type == TextType.TRANSLITERATION.value and type == TextType.TRANSLITERATION.value:
                 if text_id is not None and text_id != segment.text_id:
                     continue
                 filtered_segments.append(
@@ -142,7 +142,7 @@ class SegmentUtils:
                         content=segment.content
                     )
                 )
-            elif text_detail.type == TextType.ADAPTATION and type == TextType.ADAPTATION:
+            elif text_detail.type == TextType.ADAPTATION.value and type == TextType.ADAPTATION.value:
                 if text_id is not None and text_id != segment.text_id:
                     continue
                 filtered_segments.append(
@@ -155,7 +155,7 @@ class SegmentUtils:
                         content=segment.content
                     )
                 )
-            elif text_detail.type == TextType.COMMENTARY and type == TextType.COMMENTARY:
+            elif text_detail.type == TextType.COMMENTARY.value and type == TextType.COMMENTARY.value:
                 if text_id is not None and text_id != segment.text_id:
                     continue
                 if segment.text_id in appended_commentary_text_ids:
@@ -231,7 +231,7 @@ class SegmentUtils:
                     segments = await get_related_mapped_segments(parent_segment_id=segment.segment_id)
                     filtered_translation_by_version_id = await SegmentUtils.filter_segment_mapping_by_type_or_text_id(
                         segments=segments,
-                        type=TextType.VERSION,
+                        type=TextType.VERSION.value,
                         text_id=version_id #pass the version_id so that only the mapping with a particular text_id is selected
                     )
                     if filtered_translation_by_version_id:

@@ -58,7 +58,7 @@ async def get_recitation_details_service(text_id: str, recitation_details_reques
     texts: List[TextDTO] = await get_texts_by_group_id(group_id=group_id, skip=0, limit=10)
     
     filtered_text_on_root_and_version = TextUtils.filter_text_on_root_and_version(texts=texts, language=recitation_details_request.language)
-    root_text: TextDTO = filtered_text_on_root_and_version[TextType.ROOT_TEXT]
+    root_text: TextDTO = filtered_text_on_root_and_version[TextType.ROOT_TEXT.value]
     if root_text is None:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=ErrorConstants.TEXT_NOT_FOUND_MESSAGE)
     table_of_contents: List[TableOfContent] = await get_contents_by_id(text_id=root_text.id)
@@ -88,17 +88,17 @@ async def _segments_mapping_by_toc(table_of_contents: List[TableOfContent], reci
             segment_details = await get_segment_by_id(segment_id=segment.segment_id)
             mapped_segments = await get_related_mapped_segments(parent_segment_id=segment.segment_id)
             # filter the segments by type and language
-            translations = await SegmentUtils.filter_segment_mapping_by_type_or_text_id(segments=mapped_segments, type= TextType.VERSION)
-            transliterations = await SegmentUtils.filter_segment_mapping_by_type_or_text_id(segments=mapped_segments, type=TextType.VERSION)
-            adaptations = await SegmentUtils.filter_segment_mapping_by_type_or_text_id(segments=mapped_segments, type=TextType.ADAPTATION)
+            translations = await SegmentUtils.filter_segment_mapping_by_type_or_text_id(segments=mapped_segments, type= TextType.VERSION.value)
+            transliterations = await SegmentUtils.filter_segment_mapping_by_type_or_text_id(segments=mapped_segments, type=TextType.VERSION.value)
+            adaptations = await SegmentUtils.filter_segment_mapping_by_type_or_text_id(segments=mapped_segments, type=TextType.ADAPTATION.value)
             
             
             # get other related segments to this text segment
             for key, items, langs in [
-                (RecitationListTextType.RECITATIONS, translations, recitation_details_request.recitation),
-                (RecitationListTextType.TRANSLATIONS, translations, recitation_details_request.translations),
-                (RecitationListTextType.TRANSLITERATIONS, transliterations, recitation_details_request.transliterations),
-                (RecitationListTextType.ADAPTATIONS, adaptations, recitation_details_request.adaptations),
+                (RecitationListTextType.RECITATIONS.value, translations, recitation_details_request.recitation),
+                (RecitationListTextType.TRANSLATIONS.value, translations, recitation_details_request.translations),
+                (RecitationListTextType.TRANSLITERATIONS.value, transliterations, recitation_details_request.transliterations),
+                (RecitationListTextType.ADAPTATIONS.value, adaptations, recitation_details_request.adaptations),
             ]:
                 recitation_segment[key] = _filter_by_type_and_language(key=key,items=items, languages=langs)
 
@@ -120,7 +120,7 @@ def _filter_by_type_and_language(
     return {
         item.language: Segment(
             id=item.segment_id,
-            content=SegmentUtils.apply_bophono(segmentContent=item.content) if key == RecitationListTextType.TRANSLITERATIONS and item.language == LanguageCode.BO else item.content
+            content=SegmentUtils.apply_bophono(segmentContent=item.content) if key == RecitationListTextType.TRANSLITERATIONS.value and item.language == LanguageCode.BO.value else item.content
         )
         for item in items
         if item.language in languages
