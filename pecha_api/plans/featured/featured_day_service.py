@@ -7,7 +7,9 @@ from ...config import get
 from ..plans_enums import ContentType
 import logging
 from datetime import datetime
+
 from ..response_message import NO_FEATURED_PLANS_WITH_DAYS_FOUND
+
 
 logger = logging.getLogger(__name__)
 

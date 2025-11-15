@@ -1,9 +1,17 @@
 import uuid
 import pytest
 from unittest.mock import patch, AsyncMock
+from uuid import UUID, uuid4
 
-from pecha_api.recitations.recitations_view import get_list_of_recitations
-from pecha_api.recitations.recitations_response_models import RecitationDTO, RecitationsResponse
+from pecha_api.recitations.recitations_view import get_list_of_recitations, get_recitation_details
+from pecha_api.recitations.recitations_response_models import (
+    RecitationDTO,
+    RecitationsResponse,
+    RecitationDetailsRequest,
+    RecitationDetailsResponse,
+    Segment,
+    RecitationSegment,
+)
 
 
 @pytest.mark.asyncio
