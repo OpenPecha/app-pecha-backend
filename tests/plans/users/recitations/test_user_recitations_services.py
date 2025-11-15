@@ -6,12 +6,15 @@ from starlette import status
 
 from pecha_api.plans.users.recitation.user_recitations_services import (
     create_user_recitation_service,
-    get_user_recitations_service
+    get_user_recitations_service,
+    update_recitation_order_service
 )
 from pecha_api.plans.users.recitation.user_recitations_response_models import (
     CreateUserRecitationRequest,
     UserRecitationsResponse,
-    UserRecitationDTO
+    UserRecitationDTO,
+    UpdateRecitationOrderRequest,
+    RecitationOrderItem
 )
 from pecha_api.plans.users.recitation.user_recitations_models import UserRecitations
 from pecha_api.users.users_models import Users
@@ -409,3 +412,328 @@ class TestGetUserRecitationsService:
         mock_validate_user.assert_called_once_with(token=token)
         mock_get_recitations.assert_called_once_with(db=mock_db, user_id=user_id)
         mock_get_texts.assert_awaited_once_with(text_ids=[str(text_id)])
+
+
+class TestUpdateRecitationOrderService:
+    """Test cases for update_recitation_order_service function."""
+
+    @patch('pecha_api.plans.users.recitation.user_recitations_services.update_recitation_order_in_bulk')
+    @patch('pecha_api.plans.users.recitation.user_recitations_services.SessionLocal')
+    @patch('pecha_api.plans.users.recitation.user_recitations_services.validate_and_extract_user_details')
+    @pytest.mark.asyncio
+    async def test_update_recitation_order_service_success(
+        self,
+        mock_validate_user,
+        mock_session_local,
+        mock_update_bulk
+    ):
+        """Test successful update of recitation order."""
+        token = "valid_token"
+        user_id = uuid4()
+        recitation_ids = [uuid4() for _ in range(3)]
+        
+        mock_user = TestDataFactory.create_mock_user(user_id=user_id)
+        mock_validate_user.return_value = mock_user
+        
+        mock_db = MagicMock()
+        mock_session_local.return_value.__enter__.return_value = mock_db
+        
+        recitations = [
+            RecitationOrderItem(id=recitation_ids[0], display_order=1),
+            RecitationOrderItem(id=recitation_ids[1], display_order=2),
+            RecitationOrderItem(id=recitation_ids[2], display_order=3)
+        ]
+        update_order_request = UpdateRecitationOrderRequest(recitations=recitations)
+        
+        mock_update_bulk.return_value = None
+        
+        result = await update_recitation_order_service(
+            token=token,
+            update_order_request=update_order_request
+        )
+        
+        assert result is None
+        
+        mock_validate_user.assert_called_once_with(token=token)
+        
+        expected_updates = [
+            {"id": recitation_ids[0], "display_order": 1},
+            {"id": recitation_ids[1], "display_order": 2},
+            {"id": recitation_ids[2], "display_order": 3}
+        ]
+        mock_update_bulk.assert_called_once_with(
+            db=mock_db,
+            user_id=user_id,
+            recitation_updates=expected_updates
+        )
+
+    @patch('pecha_api.plans.users.recitation.user_recitations_services.update_recitation_order_in_bulk')
+    @patch('pecha_api.plans.users.recitation.user_recitations_services.SessionLocal')
+    @patch('pecha_api.plans.users.recitation.user_recitations_services.validate_and_extract_user_details')
+    @pytest.mark.asyncio
+    async def test_update_recitation_order_service_move_up(
+        self,
+        mock_validate_user,
+        mock_session_local,
+        mock_update_bulk
+    ):
+        """Test moving a recitation up in the order (from position 5 to position 2)."""
+        token = "valid_token"
+        user_id = uuid4()
+        recitation_ids = [uuid4() for _ in range(5)]
+        
+        mock_user = TestDataFactory.create_mock_user(user_id=user_id)
+        mock_validate_user.return_value = mock_user
+        
+        mock_db = MagicMock()
+        mock_session_local.return_value.__enter__.return_value = mock_db
+        
+        recitations = [
+            RecitationOrderItem(id=recitation_ids[0], display_order=1),
+            RecitationOrderItem(id=recitation_ids[4], display_order=2),
+            RecitationOrderItem(id=recitation_ids[1], display_order=3),
+            RecitationOrderItem(id=recitation_ids[2], display_order=4),
+            RecitationOrderItem(id=recitation_ids[3], display_order=5)
+        ]
+        update_order_request = UpdateRecitationOrderRequest(recitations=recitations)
+        
+        mock_update_bulk.return_value = None
+        
+        result = await update_recitation_order_service(
+            token=token,
+            update_order_request=update_order_request
+        )
+        
+        assert result is None
+        
+        mock_validate_user.assert_called_once_with(token=token)
+        
+        expected_updates = [
+            {"id": recitation_ids[0], "display_order": 1},
+            {"id": recitation_ids[4], "display_order": 2},
+            {"id": recitation_ids[1], "display_order": 3},
+            {"id": recitation_ids[2], "display_order": 4},
+            {"id": recitation_ids[3], "display_order": 5}
+        ]
+        mock_update_bulk.assert_called_once_with(
+            db=mock_db,
+            user_id=user_id,
+            recitation_updates=expected_updates
+        )
+
+    @patch('pecha_api.plans.users.recitation.user_recitations_services.update_recitation_order_in_bulk')
+    @patch('pecha_api.plans.users.recitation.user_recitations_services.SessionLocal')
+    @patch('pecha_api.plans.users.recitation.user_recitations_services.validate_and_extract_user_details')
+    @pytest.mark.asyncio
+    async def test_update_recitation_order_service_move_down(
+        self,
+        mock_validate_user,
+        mock_session_local,
+        mock_update_bulk
+    ):
+        """Test moving a recitation down in the order (from position 2 to position 5)."""
+        token = "valid_token"
+        user_id = uuid4()
+        recitation_ids = [uuid4() for _ in range(5)]
+        
+        mock_user = TestDataFactory.create_mock_user(user_id=user_id)
+        mock_validate_user.return_value = mock_user
+        
+        mock_db = MagicMock()
+        mock_session_local.return_value.__enter__.return_value = mock_db
+        
+        recitations = [
+            RecitationOrderItem(id=recitation_ids[0], display_order=1),
+            RecitationOrderItem(id=recitation_ids[2], display_order=2),
+            RecitationOrderItem(id=recitation_ids[3], display_order=3),
+            RecitationOrderItem(id=recitation_ids[4], display_order=4),
+            RecitationOrderItem(id=recitation_ids[1], display_order=5)
+        ]
+        update_order_request = UpdateRecitationOrderRequest(recitations=recitations)
+        
+        mock_update_bulk.return_value = None
+        
+        result = await update_recitation_order_service(
+            token=token,
+            update_order_request=update_order_request
+        )
+        
+        assert result is None
+        
+        mock_validate_user.assert_called_once_with(token=token)
+        
+        expected_updates = [
+            {"id": recitation_ids[0], "display_order": 1},
+            {"id": recitation_ids[2], "display_order": 2},
+            {"id": recitation_ids[3], "display_order": 3},
+            {"id": recitation_ids[4], "display_order": 4},
+            {"id": recitation_ids[1], "display_order": 5}
+        ]
+        mock_update_bulk.assert_called_once_with(
+            db=mock_db,
+            user_id=user_id,
+            recitation_updates=expected_updates
+        )
+
+    @patch('pecha_api.plans.users.recitation.user_recitations_services.update_recitation_order_in_bulk')
+    @patch('pecha_api.plans.users.recitation.user_recitations_services.SessionLocal')
+    @patch('pecha_api.plans.users.recitation.user_recitations_services.validate_and_extract_user_details')
+    @pytest.mark.asyncio
+    async def test_update_recitation_order_service_to_first_position(
+        self,
+        mock_validate_user,
+        mock_session_local,
+        mock_update_bulk
+    ):
+        """Test moving a recitation to the first position."""
+        token = "valid_token"
+        user_id = uuid4()
+        recitation_ids = [uuid4() for _ in range(3)]
+        
+        mock_user = TestDataFactory.create_mock_user(user_id=user_id)
+        mock_validate_user.return_value = mock_user
+        
+        mock_db = MagicMock()
+        mock_session_local.return_value.__enter__.return_value = mock_db
+        
+        recitations = [
+            RecitationOrderItem(id=recitation_ids[2], display_order=1), 
+            RecitationOrderItem(id=recitation_ids[0], display_order=2),
+            RecitationOrderItem(id=recitation_ids[1], display_order=3)
+        ]
+        update_order_request = UpdateRecitationOrderRequest(recitations=recitations)
+        
+        mock_update_bulk.return_value = None
+        
+        result = await update_recitation_order_service(
+            token=token,
+            update_order_request=update_order_request
+        )
+        
+        assert result is None
+        
+        mock_validate_user.assert_called_once_with(token=token)
+        
+        expected_updates = [
+            {"id": recitation_ids[2], "display_order": 1},
+            {"id": recitation_ids[0], "display_order": 2},
+            {"id": recitation_ids[1], "display_order": 3}
+        ]
+        mock_update_bulk.assert_called_once_with(
+            db=mock_db,
+            user_id=user_id,
+            recitation_updates=expected_updates
+        )
+
+    @patch('pecha_api.plans.users.recitation.user_recitations_services.SessionLocal')
+    @patch('pecha_api.plans.users.recitation.user_recitations_services.validate_and_extract_user_details')
+    @pytest.mark.asyncio
+    async def test_update_recitation_order_service_invalid_token(
+        self,
+        mock_validate_user,
+        mock_session_local
+    ):
+        """Test update_recitation_order_service with invalid authentication token."""
+        token = "invalid_token"
+        
+        mock_validate_user.side_effect = HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Invalid authentication credentials"
+        )
+        
+        recitations = [
+            RecitationOrderItem(id=uuid4(), display_order=1),
+            RecitationOrderItem(id=uuid4(), display_order=2)
+        ]
+        update_order_request = UpdateRecitationOrderRequest(recitations=recitations)
+        
+        with pytest.raises(HTTPException) as exc_info:
+            await update_recitation_order_service(
+                token=token,
+                update_order_request=update_order_request
+            )
+        
+        assert exc_info.value.status_code == status.HTTP_401_UNAUTHORIZED
+        assert exc_info.value.detail == "Invalid authentication credentials"
+        
+        mock_validate_user.assert_called_once_with(token=token)
+
+    @patch('pecha_api.plans.users.recitation.user_recitations_services.update_recitation_order_in_bulk')
+    @patch('pecha_api.plans.users.recitation.user_recitations_services.SessionLocal')
+    @patch('pecha_api.plans.users.recitation.user_recitations_services.validate_and_extract_user_details')
+    @pytest.mark.asyncio
+    async def test_update_recitation_order_service_database_error(
+        self,
+        mock_validate_user,
+        mock_session_local,
+        mock_update_bulk
+    ):
+        """Test update_recitation_order_service when database error occurs."""
+        token = "valid_token"
+        user_id = uuid4()
+        
+        mock_user = TestDataFactory.create_mock_user(user_id=user_id)
+        mock_validate_user.return_value = mock_user
+        
+        mock_db = MagicMock()
+        mock_session_local.return_value.__enter__.return_value = mock_db
+        
+        recitations = [
+            RecitationOrderItem(id=uuid4(), display_order=1),
+            RecitationOrderItem(id=uuid4(), display_order=2)
+        ]
+        update_order_request = UpdateRecitationOrderRequest(recitations=recitations)
+        
+        mock_update_bulk.side_effect = HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Database integrity error"
+        )
+        
+        with pytest.raises(HTTPException) as exc_info:
+            await update_recitation_order_service(
+                token=token,
+                update_order_request=update_order_request
+            )
+        
+        assert exc_info.value.status_code == status.HTTP_400_BAD_REQUEST
+        assert exc_info.value.detail == "Database integrity error"
+        
+        mock_validate_user.assert_called_once_with(token=token)
+
+    @patch('pecha_api.plans.users.recitation.user_recitations_services.update_recitation_order_in_bulk')
+    @patch('pecha_api.plans.users.recitation.user_recitations_services.SessionLocal')
+    @patch('pecha_api.plans.users.recitation.user_recitations_services.validate_and_extract_user_details')
+    @pytest.mark.asyncio
+    async def test_update_recitation_order_service_empty_list(
+        self,
+        mock_validate_user,
+        mock_session_local,
+        mock_update_bulk
+    ):
+        """Test update_recitation_order_service with empty recitations list."""
+        token = "valid_token"
+        user_id = uuid4()
+        
+        mock_user = TestDataFactory.create_mock_user(user_id=user_id)
+        mock_validate_user.return_value = mock_user
+        
+        mock_db = MagicMock()
+        mock_session_local.return_value.__enter__.return_value = mock_db
+        
+        update_order_request = UpdateRecitationOrderRequest(recitations=[])
+        
+        mock_update_bulk.return_value = None
+        
+        result = await update_recitation_order_service(
+            token=token,
+            update_order_request=update_order_request
+        )
+        
+        assert result is None
+        
+        mock_validate_user.assert_called_once_with(token=token)
+        mock_update_bulk.assert_called_once_with(
+            db=mock_db,
+            user_id=user_id,
+            recitation_updates=[]
+        )
