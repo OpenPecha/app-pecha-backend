@@ -240,13 +240,13 @@ class TestGetRecitationDetailsService:
 
     @patch('pecha_api.recitations.recitations_services.TextUtils.validate_text_exists')
     @patch('pecha_api.recitations.recitations_services.get_text_details_by_text_id')
-    @patch('pecha_api.recitations.recitations_services.get_texts_by_group_id')
+    @patch('pecha_api.recitations.recitations_services.get_all_texts_by_group_id')
     @patch('pecha_api.recitations.recitations_services.TextUtils.filter_text_on_root_and_version')
     @pytest.mark.asyncio
     async def test_get_recitation_details_service_root_text_not_found(
         self,
         mock_filter_texts_root_version,
-        mock_get_texts_by_group_id,
+        mock_get_all_texts_by_group_id,
         mock_get_text_details_by_text_id,
         mock_validate_text_exists,
     ):
@@ -254,7 +254,7 @@ class TestGetRecitationDetailsService:
         main_text_id = str(uuid4())
         main_text = MagicMock(id=main_text_id, title="Main Title", group_id="group-1")
         mock_get_text_details_by_text_id.return_value = main_text
-        mock_get_texts_by_group_id.return_value = [MagicMock()]
+        mock_get_all_texts_by_group_id.return_value = [MagicMock()]
         mock_filter_texts_root_version.return_value = {"root_text": None}
 
         req = RecitationDetailsRequest(language="en", recitation=["en"], translations=[], transliterations=[], adaptations=[])
