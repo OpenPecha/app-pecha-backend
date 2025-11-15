@@ -7,12 +7,25 @@ from starlette import status
 from pecha_api.recitations.recitations_services import (
     get_list_of_recitations_service,
     get_recitation_details_service,
+    _segments_mapping_by_toc,
+    _filter_by_type_and_language,
 )
 from pecha_api.recitations.recitations_response_models import (
     RecitationDTO,
     RecitationsResponse,
     RecitationDetailsRequest,
+    RecitationSegment,
+    Segment,
 )
+from pecha_api.texts.texts_response_models import TableOfContent, Section, TextSegment, TextDTO
+from pecha_api.texts.segments.segments_response_models import (
+    SegmentDTO,
+    SegmentTranslation,
+    SegmentTransliteration,
+    SegmentAdaptation,
+)
+from pecha_api.recitations.recitations_enum import RecitationListTextType, LanguageCode
+from pecha_api.texts.texts_enums import TextType
 from pecha_api.error_contants import ErrorConstants
 
 
@@ -262,3 +275,253 @@ class TestGetRecitationDetailsService:
             await get_recitation_details_service(text_id=main_text_id, recitation_details_request=req)
         assert exc_info.value.status_code == status.HTTP_404_NOT_FOUND
         assert exc_info.value.detail == ErrorConstants.TEXT_NOT_FOUND_MESSAGE
+
+
+class TestSegmentsMappingByToc:
+    """Test cases for _segments_mapping_by_toc function."""
+
+    @staticmethod
+    def create_mock_table_of_content(text_id: str = None, segment_ids: list = None) -> TableOfContent:
+        """Create a mock TableOfContent object."""
+        text_id = text_id or str(uuid4())
+        segment_ids = segment_ids or [str(uuid4())]
+        
+        segments = [
+            TextSegment(segment_id=segment_id, segment_number=i+1)
+            for i, segment_id in enumerate(segment_ids)
+        ]
+        
+        section = Section(
+            id=str(uuid4()),
+            title="Test Section",
+            section_number=1,
+            segments=segments
+        )
+        
+        return TableOfContent(
+            id=str(uuid4()),
+            text_id=text_id,
+            sections=[section]
+        )
+
+    @staticmethod
+    def create_mock_segment_dto(segment_id: str = None, content: str = "Test content") -> SegmentDTO:
+        """Create a mock SegmentDTO object."""
+        return SegmentDTO(
+            id=segment_id or str(uuid4()),
+            text_id=str(uuid4()),
+            content=content,
+            type="root"
+        )
+
+    @staticmethod
+    def create_mock_text_dto(text_id: str = None, language: str = "en") -> TextDTO:
+        """Create a mock TextDTO object."""
+        return TextDTO(
+            id=text_id or str(uuid4()),
+            title="Test Text",
+            language=language,
+            group_id=str(uuid4()),
+            type="root",
+            is_published=True,
+            created_date="2023-01-01",
+            updated_date="2023-01-01",
+            published_date="2023-01-01",
+            published_by=str(uuid4())
+        )
+
+    @staticmethod
+    def create_mock_segment_translation(segment_id: str, language: str = "en", content: str = "Translation content") -> SegmentTranslation:
+        """Create a mock SegmentTranslation object."""
+        return SegmentTranslation(
+            segment_id=segment_id,
+            text_id=str(uuid4()),
+            title="Translation Title",
+            source="test_source",
+            language=language,
+            content=content
+        )
+
+    @staticmethod
+    def create_mock_segment_transliteration(segment_id: str, language: str = "bo", content: str = "Transliteration content") -> SegmentTransliteration:
+        """Create a mock SegmentTransliteration object."""
+        return SegmentTransliteration(
+            segment_id=segment_id,
+            text_id=str(uuid4()),
+            title="Transliteration Title",
+            source="test_source",
+            language=language,
+            content=content
+        )
+
+    @staticmethod
+    def create_mock_segment_adaptation(segment_id: str, language: str = "en", content: str = "Adaptation content") -> SegmentAdaptation:
+        """Create a mock SegmentAdaptation object."""
+        return SegmentAdaptation(
+            segment_id=segment_id,
+            text_id=str(uuid4()),
+            title="Adaptation Title",
+            source="test_source",
+            language=language,
+            content=content
+        )
+
+    @patch('pecha_api.recitations.recitations_services.get_text_details_by_text_id')
+    @patch('pecha_api.recitations.recitations_services.get_segment_by_id')
+    @patch('pecha_api.recitations.recitations_services.get_related_mapped_segments')
+    @patch('pecha_api.recitations.recitations_services.SegmentUtils.filter_segment_mapping_by_type_or_text_id')
+    @pytest.mark.asyncio
+    async def test_segments_mapping_by_toc_empty_table_of_contents(
+        self,
+        mock_filter_segments,
+        mock_get_related_segments,
+        mock_get_segment,
+        mock_get_text_details
+    ):
+        """Test mapping with empty table of contents."""
+        request = RecitationDetailsRequest(
+            language="en",
+            recitation=["en"],
+            translations=[],
+            transliterations=[],
+            adaptations=[]
+        )
+
+        # Execute
+        result = await _segments_mapping_by_toc([], request)
+
+        # Verify
+        assert len(result) == 0
+        assert result == []
+        
+        # Verify no mock calls were made
+        mock_get_text_details.assert_not_called()
+        mock_get_segment.assert_not_called()
+        mock_get_related_segments.assert_not_called()
+        mock_filter_segments.assert_not_called()
+
+class TestFilterByTypeAndLanguage:
+    """Test cases for _filter_by_type_and_language function."""
+
+    def test_filter_by_type_and_language_translations(self):
+        """Test filtering translations by language."""
+        segment_id = str(uuid4())
+        items = [
+            SegmentTranslation(
+                segment_id=segment_id,
+                text_id=str(uuid4()),
+                title="English Translation",
+                source="test",
+                language="en",
+                content="English content"
+            ),
+            SegmentTranslation(
+                segment_id=segment_id,
+                text_id=str(uuid4()),
+                title="Tibetan Translation",
+                source="test",
+                language="bo",
+                content="Tibetan content"
+            )
+        ]
+        languages = ["en"]
+        
+        result = _filter_by_type_and_language(
+            key=RecitationListTextType.TRANSLATIONS.value,
+            items=items,
+            languages=languages
+        )
+        
+        assert len(result) == 1
+        assert "en" in result
+        assert "bo" not in result
+        assert result["en"].content == "English content"
+
+    @patch('pecha_api.recitations.recitations_services.SegmentUtils.apply_bophono')
+    def test_filter_by_type_and_language_tibetan_transliteration(self, mock_apply_bophono):
+        """Test filtering with bophono application for Tibetan transliterations."""
+        mock_apply_bophono.return_value = "Bophono applied content"
+        
+        segment_id = str(uuid4())
+        items = [
+            SegmentTransliteration(
+                segment_id=segment_id,
+                text_id=str(uuid4()),
+                title="Tibetan Transliteration",
+                source="test",
+                language="bo",
+                content="Original Tibetan content"
+            )
+        ]
+        languages = ["bo"]
+        
+        result = _filter_by_type_and_language(
+            key=RecitationListTextType.TRANSLITERATIONS.value,
+            items=items,
+            languages=languages
+        )
+        
+        assert len(result) == 1
+        assert "bo" in result
+        assert result["bo"].content == "Bophono applied content"
+        mock_apply_bophono.assert_called_once_with(segmentContent="Original Tibetan content")
+
+    def test_filter_by_type_and_language_non_tibetan_transliteration(self):
+        """Test filtering transliterations for non-Tibetan languages (no bophono)."""
+        segment_id = str(uuid4())
+        items = [
+            SegmentTransliteration(
+                segment_id=segment_id,
+                text_id=str(uuid4()),
+                title="English Transliteration",
+                source="test",
+                language="en",
+                content="English transliteration content"
+            )
+        ]
+        languages = ["en"]
+        
+        result = _filter_by_type_and_language(
+            key=RecitationListTextType.TRANSLITERATIONS.value,
+            items=items,
+            languages=languages
+        )
+        
+        assert len(result) == 1
+        assert "en" in result
+        assert result["en"].content == "English transliteration content"
+
+    def test_filter_by_type_and_language_empty_items(self):
+        """Test filtering with empty items list."""
+        result = _filter_by_type_and_language(
+            key=RecitationListTextType.TRANSLATIONS.value,
+            items=[],
+            languages=["en"]
+        )
+        
+        assert len(result) == 0
+        assert result == {}
+
+    def test_filter_by_type_and_language_no_matching_languages(self):
+        """Test filtering when no items match requested languages."""
+        segment_id = str(uuid4())
+        items = [
+            SegmentTranslation(
+                segment_id=segment_id,
+                text_id=str(uuid4()),
+                title="French Translation",
+                source="test",
+                language="fr",
+                content="French content"
+            )
+        ]
+        languages = ["en", "bo"]  # Request different languages
+        
+        result = _filter_by_type_and_language(
+            key=RecitationListTextType.TRANSLATIONS.value,
+            items=items,
+            languages=languages
+        )
+        
+        assert len(result) == 0
+        assert result == {}
