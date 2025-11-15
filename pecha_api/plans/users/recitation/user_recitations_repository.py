@@ -36,7 +36,8 @@ def update_recitation_order_in_bulk(db: Session, user_id: UUID, recitation_updat
                 UserRecitations.id == update["id"],
                 UserRecitations.user_id == user_id
             ).first()           
-            recitation.display_order = update["display_order"]      
+            if recitation:
+                recitation.display_order = update["display_order"]      
         db.commit()
     except IntegrityError as e:
         db.rollback()

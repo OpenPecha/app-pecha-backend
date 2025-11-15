@@ -12,7 +12,7 @@ from pecha_api.plans.users.recitation.user_recitations_response_models import (
 from pecha_api.plans.users.recitation.user_recitations_services import (
     create_user_recitation_service,
     get_user_recitations_service,
-    update_recitation_order_service
+    update_recitation_order_service,
     delete_user_recitation_service
 )
 
@@ -39,7 +39,7 @@ async def get_user_recitations(
     return await get_user_recitations_service(token=authentication_credential.credentials)
 
 
-@user_recitation_router.put("/recitations/order", status_code=status.HTTP_204_NO_CONTENT)
+@user_recitation_router.put("/recitations/order", status_code=status.HTTP_200_OK)
 async def update_recitation_order(
     authentication_credential: Annotated[HTTPAuthorizationCredentials, Depends(oauth2_scheme)],
     update_order_request: UpdateRecitationOrderRequest
