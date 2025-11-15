@@ -48,6 +48,7 @@ async def get_all_collections(language: str, parent_id: Optional[PydanticObjectI
     collection_list = [
         CollectionModel(
             id=str(collection.id),
+            pecha_collection_id=str(collection.pecha_collection_id),
             title=Utils.get_value_from_dict(values=collection.titles, language=language),
             description=Utils.get_value_from_dict(values=collection.descriptions, language=language),
             has_child=collection.has_sub_child,
@@ -81,6 +82,7 @@ async def create_new_collection(create_collection_request: CreateCollectionReque
             language = get("DEFAULT_LANGUAGE")
         return CollectionModel(
             id=str(new_collection.id),
+            pecha_collection_id=str(new_collection.pecha_collection_id),
             title=Utils.get_value_from_dict(values=new_collection.titles, language=language),
             description=Utils.get_value_from_dict(values=new_collection.descriptions, language=language),
             has_child=new_collection.has_sub_child,
@@ -110,6 +112,7 @@ async def get_collection(collection_id: str,language: str) -> Optional[Collectio
     if selected_collection:
         collection_model = CollectionModel(
             id=collection_id,
+            pecha_collection_id=str(selected_collection.pecha_collection_id),
             title=Utils.get_value_from_dict(values=selected_collection.titles, language=language),
             description=Utils.get_value_from_dict(values=selected_collection.descriptions, language=language),
             has_child=selected_collection.has_sub_child,
@@ -137,6 +140,7 @@ async def update_existing_collection(collection_id: str, update_collection_reque
             language = get("DEFAULT_LANGUAGE")
         return CollectionModel(
             id=collection_id,
+            pecha_collection_id=str(updated_collection.pecha_collection_id),
             title=Utils.get_value_from_dict(values=updated_collection.titles, language=language),
             description=Utils.get_value_from_dict(values=updated_collection.descriptions, language=language),
             has_child=updated_collection.has_sub_child,

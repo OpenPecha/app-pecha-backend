@@ -64,7 +64,8 @@ from pecha_api.plans.users.plan_users_subtasks_repository import (
 from pecha_api.plans.users.plan_users_progress_repository import (
     get_plan_progress_by_user_id_and_plan_id, 
     save_plan_progress,
-    get_user_enrolled_plans_with_details
+    get_user_enrolled_plans_with_details,
+    delete_user_plan_progress
 )
 from pecha_api.uploads.S3_utils import generate_presigned_access_url
 from pecha_api.config import get
@@ -153,6 +154,12 @@ def enroll_user_in_plan(token: str, enroll_request: UserPlanEnrollRequest) -> No
         )
         save_plan_progress(db=db, plan_progress=new_progress)
     
+
+def unenroll_user_from_plan(token: str, plan_id: UUID) -> None:
+
+    current_user = validate_and_extract_user_details(token=token)
+    with SessionLocal() as db:
+        delete_user_plan_progress(db=db, user_id=current_user.id, plan_id=plan_id)
 
 
 async def get_user_plan_progress(token: str, plan_id: UUID) -> UserPlanProgress:

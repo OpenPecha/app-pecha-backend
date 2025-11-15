@@ -7,7 +7,8 @@ from starlette import status
 from pecha_api.plans.users.recitation.user_recitations_services import (
     create_user_recitation_service,
     get_user_recitations_service,
-    update_recitation_order_service
+    update_recitation_order_service,
+    delete_user_recitation_service
 )
 from pecha_api.plans.users.recitation.user_recitations_response_models import (
     CreateUserRecitationRequest,
@@ -481,6 +482,24 @@ class TestUpdateRecitationOrderService:
         token = "valid_token"
         user_id = uuid4()
         recitation_ids = [uuid4() for _ in range(5)]
+
+
+class TestDeleteUserRecitationService:
+
+    @patch('pecha_api.plans.users.recitation.user_recitations_services.delete_user_recitation')
+    @patch('pecha_api.plans.users.recitation.user_recitations_services.SessionLocal')
+    @patch('pecha_api.plans.users.recitation.user_recitations_services.validate_and_extract_user_details')
+    @pytest.mark.asyncio
+    async def test_delete_user_recitation_service_success(
+        self,
+        mock_validate_user,
+        mock_session_local,
+        mock_delete_recitation
+    ):
+        """Test successful deletion of user recitation."""
+        user_id = uuid4()
+        text_id = uuid4()
+        token = "valid_token"
         
         mock_user = TestDataFactory.create_mock_user(user_id=user_id)
         mock_validate_user.return_value = mock_user
@@ -589,6 +608,36 @@ class TestUpdateRecitationOrderService:
         token = "valid_token"
         user_id = uuid4()
         recitation_ids = [uuid4() for _ in range(3)]
+        mock_db_session = MagicMock()
+        mock_session_local.return_value.__enter__.return_value = mock_db_session
+        mock_session_local.return_value.__exit__.return_value = None
+        
+        mock_delete_recitation.return_value = None
+        
+        result = await delete_user_recitation_service(token=token, text_id=text_id)
+        
+        assert result is None
+        mock_validate_user.assert_called_once_with(token=token)
+        mock_delete_recitation.assert_called_once_with(
+            db=mock_db_session,
+            user_id=user_id,
+            text_id=text_id
+        )
+
+    @patch('pecha_api.plans.users.recitation.user_recitations_services.delete_user_recitation')
+    @patch('pecha_api.plans.users.recitation.user_recitations_services.SessionLocal')
+    @patch('pecha_api.plans.users.recitation.user_recitations_services.validate_and_extract_user_details')
+    @pytest.mark.asyncio
+    async def test_delete_user_recitation_service_not_found(
+        self,
+        mock_validate_user,
+        mock_session_local,
+        mock_delete_recitation
+    ):
+        """Test delete_user_recitation_service when recitation does not exist."""
+        user_id = uuid4()
+        text_id = uuid4()
+        token = "valid_token"
         
         mock_user = TestDataFactory.create_mock_user(user_id=user_id)
         mock_validate_user.return_value = mock_user
@@ -623,17 +672,43 @@ class TestUpdateRecitationOrderService:
             db=mock_db,
             user_id=user_id,
             recitation_updates=expected_updates
+          
+        mock_db_session = MagicMock()
+        mock_session_local.return_value.__enter__.return_value = mock_db_session
+        mock_session_local.return_value.__exit__.return_value = None
+        
+        mock_delete_recitation.side_effect = HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail={
+                "error": "NOT_FOUND",
+                "message": f"Recitation with ID {text_id} not found for this user"
+            }
+        )
+        
+        with pytest.raises(HTTPException) as exc_info:
+            await delete_user_recitation_service(token=token, text_id=text_id)
+        
+        assert exc_info.value.status_code == status.HTTP_404_NOT_FOUND
+        assert exc_info.value.detail["error"] == "NOT_FOUND"
+        mock_validate_user.assert_called_once_with(token=token)
+        mock_delete_recitation.assert_called_once_with(
+            db=mock_db_session,
+            user_id=user_id,
+            text_id=text_id
         )
 
     @patch('pecha_api.plans.users.recitation.user_recitations_services.SessionLocal')
     @patch('pecha_api.plans.users.recitation.user_recitations_services.validate_and_extract_user_details')
     @pytest.mark.asyncio
     async def test_update_recitation_order_service_invalid_token(
+    async def test_delete_user_recitation_service_invalid_token(
         self,
         mock_validate_user,
         mock_session_local
     ):
         """Test update_recitation_order_service with invalid authentication token."""
+        """Test delete_user_recitation_service with invalid authentication token."""
+        text_id = uuid4()
         token = "invalid_token"
         
         mock_validate_user.side_effect = HTTPException(
@@ -671,6 +746,28 @@ class TestUpdateRecitationOrderService:
         """Test update_recitation_order_service when database error occurs."""
         token = "valid_token"
         user_id = uuid4()
+        with pytest.raises(HTTPException) as exc_info:
+            await delete_user_recitation_service(token=token, text_id=text_id)
+        
+        assert exc_info.value.status_code == status.HTTP_401_UNAUTHORIZED
+        assert exc_info.value.detail == "Invalid authentication credentials"
+        mock_validate_user.assert_called_once_with(token=token)
+        mock_session_local.assert_not_called()
+
+    @patch('pecha_api.plans.users.recitation.user_recitations_services.delete_user_recitation')
+    @patch('pecha_api.plans.users.recitation.user_recitations_services.SessionLocal')
+    @patch('pecha_api.plans.users.recitation.user_recitations_services.validate_and_extract_user_details')
+    @pytest.mark.asyncio
+    async def test_delete_user_recitation_service_database_error(
+        self,
+        mock_validate_user,
+        mock_session_local,
+        mock_delete_recitation
+    ):
+        """Test delete_user_recitation_service when database error occurs."""
+        user_id = uuid4()
+        text_id = uuid4()
+        token = "valid_token"
         
         mock_user = TestDataFactory.create_mock_user(user_id=user_id)
         mock_validate_user.return_value = mock_user
@@ -736,4 +833,27 @@ class TestUpdateRecitationOrderService:
             db=mock_db,
             user_id=user_id,
             recitation_updates=[]
+
+        mock_db_session = MagicMock()
+        mock_session_local.return_value.__enter__.return_value = mock_db_session
+        mock_session_local.return_value.__exit__.return_value = None
+        
+        mock_delete_recitation.side_effect = HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail={
+                "error": "BAD_REQUEST",
+                "message": "Database integrity error: constraint violation"
+            }
+        )
+        
+        with pytest.raises(HTTPException) as exc_info:
+            await delete_user_recitation_service(token=token, text_id=text_id)
+        
+        assert exc_info.value.status_code == status.HTTP_400_BAD_REQUEST
+        assert exc_info.value.detail["error"] == "BAD_REQUEST"
+        mock_validate_user.assert_called_once_with(token=token)
+        mock_delete_recitation.assert_called_once_with(
+            db=mock_db_session,
+            user_id=user_id,
+            text_id=text_id
         )

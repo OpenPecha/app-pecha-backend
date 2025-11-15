@@ -2,6 +2,7 @@ from fastapi import APIRouter, Depends
 from starlette import status
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from typing import Annotated
+from uuid import UUID
 
 from pecha_api.plans.users.recitation.user_recitations_response_models import (
     CreateUserRecitationRequest,
@@ -12,6 +13,7 @@ from pecha_api.plans.users.recitation.user_recitations_services import (
     create_user_recitation_service,
     get_user_recitations_service,
     update_recitation_order_service
+    delete_user_recitation_service
 )
 
 oauth2_scheme = HTTPBearer()
@@ -36,6 +38,7 @@ async def get_user_recitations(
 ):
     return await get_user_recitations_service(token=authentication_credential.credentials)
 
+
 @user_recitation_router.put("/recitations/order", status_code=status.HTTP_204_NO_CONTENT)
 async def update_recitation_order(
     authentication_credential: Annotated[HTTPAuthorizationCredentials, Depends(oauth2_scheme)],
@@ -45,3 +48,14 @@ async def update_recitation_order(
         token=authentication_credential.credentials,
         update_order_request=update_order_request
     )
+
+
+@user_recitation_router.delete("/recitations/{text_id}", status_code=status.HTTP_204_NO_CONTENT)
+async def delete_user_recitation(
+    text_id: UUID,
+    authentication_credential: Annotated[HTTPAuthorizationCredentials, Depends(oauth2_scheme)]
+    ):
+    return await delete_user_recitation_service(
+        token=authentication_credential.credentials,
+        text_id=text_id
+        )    
