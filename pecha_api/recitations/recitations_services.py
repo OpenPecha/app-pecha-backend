@@ -10,7 +10,7 @@ from pecha_api.error_contants import ErrorConstants
 # Texts
 from pecha_api.texts.texts_utils import TextUtils
 from pecha_api.texts.texts_response_models import TextDTO, TableOfContent
-from pecha_api.texts.texts_repository import get_texts_by_group_id, get_contents_by_id
+from pecha_api.texts.texts_repository import get_contents_by_id, get_all_texts_by_group_id
 
 # Segments
 from pecha_api.texts.segments.segments_service import get_segment_by_id, get_related_mapped_segments
@@ -55,7 +55,7 @@ async def get_recitation_details_service(text_id: str, recitation_details_reques
     text_detail: TextDTO = await get_text_details_by_text_id(text_id=text_id)
 
     group_id: str = text_detail.group_id
-    texts: List[TextDTO] = await get_texts_by_group_id(group_id=group_id, skip=0, limit=10)
+    texts: List[TextDTO] = await get_all_texts_by_group_id(group_id=group_id)
     
     filtered_text_on_root_and_version = TextUtils.filter_text_on_root_and_version(texts=texts, language=recitation_details_request.language)
     root_text: TextDTO = filtered_text_on_root_and_version[TextType.ROOT_TEXT.value]
