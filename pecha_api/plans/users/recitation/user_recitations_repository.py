@@ -35,23 +35,9 @@ def update_recitation_order_in_bulk(db: Session, user_id: UUID, recitation_updat
             recitation = db.query(UserRecitations).filter(
                 UserRecitations.id == update["id"],
                 UserRecitations.user_id == user_id
-            ).first()
-            
-            if not recitation:
-                raise HTTPException(
-                    status_code=status.HTTP_404_NOT_FOUND,
-                    detail=ResponseError(
-                        error=NOT_FOUND,
-                        message=f"Recitation with ID {update['id']} not found for this user"
-                    ).model_dump()
-                )
-            
-            recitation.display_order = update["display_order"]
-        
+            ).first()           
+            recitation.display_order = update["display_order"]      
         db.commit()
     except IntegrityError as e:
         db.rollback()
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail=ResponseError(error=BAD_REQUEST, message=f"Database integrity error: {str(e.orig)}").model_dump()
-        )
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST,detail=ResponseError(error=BAD_REQUEST, message=str(e.orig)).model_dump())
