@@ -47,7 +47,7 @@ async def create_collection(create_collection_request: CreateCollectionRequest) 
             raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Collection with this slug already exists")
     except AttributeError as e:
         logging.debug(e)
-    new_collection = Collection(slug=create_collection_request.slug, titles=create_collection_request.titles,
+    new_collection = Collection(pecha_collection_id=create_collection_request.pecha_collection_id, slug=create_collection_request.slug, titles=create_collection_request.titles,
                     descriptions=create_collection_request.descriptions, parent_id=create_collection_request.parent_id)
     saved_collection = await new_collection.insert()
     if create_collection_request.parent_id is not None:
