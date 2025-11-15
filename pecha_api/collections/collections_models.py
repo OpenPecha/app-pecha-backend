@@ -5,6 +5,7 @@ from pydantic import  Field
 
 class Collection(Document):
     id: PydanticObjectId = Field(default_factory=PydanticObjectId, alias="_id")
+    pecha_collection_id: Optional[str] = None
     slug: str
     titles: Dict[str, str]  # Dictionary with language_id as key and title as value
     descriptions: Dict[str,str] = Field(default=dict)

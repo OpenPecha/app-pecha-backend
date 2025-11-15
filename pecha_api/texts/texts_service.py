@@ -317,6 +317,7 @@ async def create_new_text(
         new_text = await create_text(create_text_request=create_text_request)
         return TextDTO(
             id=str(new_text.id),
+            pecha_text_id=str(new_text.pecha_text_id),
             title=new_text.title,
             language=new_text.language,
             group_id=new_text.group_id,
@@ -327,7 +328,10 @@ async def create_new_text(
             published_date=new_text.published_date,
             published_by=new_text.published_by,
             categories=new_text.categories,
-            views=new_text.views
+            views=new_text.views,
+            source_link=new_text.source_link,
+            ranking=new_text.ranking,
+            license=new_text.license
         )
     else:
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail=ErrorConstants.TOKEN_ERROR_MESSAGE)
@@ -410,6 +414,7 @@ async def _get_texts_by_collection_id(collection_id: str, language: str, skip: i
     text_list = [
         TextDTO(
             id=str(text.id),
+            pecha_text_id=str(text.pecha_text_id),
             title=text.title,
             language=text.language,
             group_id=text.group_id,
@@ -419,7 +424,11 @@ async def _get_texts_by_collection_id(collection_id: str, language: str, skip: i
             updated_date=text.updated_date,
             published_date=text.published_date,
             published_by=text.published_by,
-            categories=text.categories
+            categories=text.categories,
+            views=text.views,
+            source_link=text.source_link,
+            ranking=text.ranking,
+            license=text.license
         )
         for text in commentary
     ]
@@ -427,6 +436,7 @@ async def _get_texts_by_collection_id(collection_id: str, language: str, skip: i
         text_list.append(
             TextDTO(
                 id=str(root_text.id),
+                pecha_text_id=str(root_text.pecha_text_id),
                 title=root_text.title,
                 language=root_text.language,
                 group_id=root_text.group_id,
@@ -436,7 +446,11 @@ async def _get_texts_by_collection_id(collection_id: str, language: str, skip: i
                 updated_date=root_text.updated_date,
                 published_date=root_text.published_date,
                 published_by=root_text.published_by,
-                categories=root_text.categories
+                categories=root_text.categories,
+                views=root_text.views,
+                source_link=root_text.source_link,
+                ranking=root_text.ranking,
+                license=root_text.license
             )
         )
     return text_list

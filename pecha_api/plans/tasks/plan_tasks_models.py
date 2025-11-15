@@ -28,6 +28,7 @@ class PlanTask(Base):
 
     plan_item = relationship("PlanItem", backref="tasks")
     sub_tasks = relationship("PlanSubTask", back_populates="task", cascade="all, delete-orphan")
+    user_task_completions = relationship("UserTaskCompletion", back_populates="task", cascade="all, delete-orphan", passive_deletes=True)
 
     __table_args__ = (
         Index("idx_tasks_plan_item_order", "plan_item_id", "display_order"),
