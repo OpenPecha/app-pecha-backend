@@ -1,5 +1,4 @@
-
-from pecha_api.recitations.recitations_enum import RecitationSegmentType
+from pecha_api.recitations.recitations_enum import RecitationTextType,RecitationListTextType
 from pecha_api.texts.texts_models import Text
 from pecha_api.texts.texts_enums import TextType
 from typing import List, Dict, Union
@@ -90,17 +89,17 @@ async def _segments_mapping_by_toc(table_of_contents: List[TableOfContent], reci
             segment_details = await get_segment_by_id(segment_id=segment.segment_id)
             mapped_segments = await get_related_mapped_segments(parent_segment_id=segment.segment_id)
             # filter the segments by type and language
-            translations = await SegmentUtils.filter_segment_mapping_by_type_or_text_id(segments=mapped_segments, type= RecitationSegmentType.VERSION)
-            transliterations = await SegmentUtils.filter_segment_mapping_by_type_or_text_id(segments=mapped_segments, type=RecitationSegmentType.VERSION)
-            adaptations = await SegmentUtils.filter_segment_mapping_by_type_or_text_id(segments=mapped_segments, type=RecitationSegmentType.ADAPTATION)
+            translations = await SegmentUtils.filter_segment_mapping_by_type_or_text_id(segments=mapped_segments, type= RecitationTextType.VERSION)
+            transliterations = await SegmentUtils.filter_segment_mapping_by_type_or_text_id(segments=mapped_segments, type=RecitationTextType.VERSION)
+            adaptations = await SegmentUtils.filter_segment_mapping_by_type_or_text_id(segments=mapped_segments, type=RecitationTextType.ADAPTATION)
             
             
             # get other related segments to this text segment
             for key, items, langs in [
-                ("recitation", translations, recitation_details_request.recitation),
-                ("translations", translations, recitation_details_request.translations),
-                ("transliterations", transliterations, recitation_details_request.transliterations),
-                ("adaptations", adaptations, recitation_details_request.adaptations),
+                (RecitationListTextType.RECITATIONS, translations, recitation_details_request.recitation),
+                (RecitationListTextType.TRANSLATIONS, translations, recitation_details_request.translations),
+                (RecitationListTextType.TRANSLITERATIONS, transliterations, recitation_details_request.transliterations),
+                (RecitationListTextType.ADAPTATIONS, adaptations, recitation_details_request.adaptations),
             ]:
                 recitation_segment[key] = _filter_by_type_and_language(key=key,items=items, languages=langs)
 
@@ -122,7 +121,7 @@ def _filter_by_type_and_language(
     return {
         item.language: Segment(
             id=item.segment_id,
-            content=SegmentUtils.apply_bophono(segmentContent=item.content) if key == "transliterations" and item.language == "bo" else item.content
+            content=SegmentUtils.apply_bophono(segmentContent=item.content) if key == RecitationListTextType.TRANSLITERATIONS and item.language == "bo" else item.content
         )
         for item in items
         if item.language in languages
