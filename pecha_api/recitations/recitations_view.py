@@ -11,5 +11,5 @@ recitation_router=APIRouter(
 )
 
 @recitation_router.get("",status_code=status.HTTP_200_OK,response_model=RecitationsResponse)
-async def get_list_of_recitations(language: str = Query()):
-    return await get_list_of_recitations_service(language=language)
+async def get_list_of_recitations(search: Optional[str] = Query(None, description="Search by Recitation title"),language: str = Query()):
+    return await get_list_of_recitations_service(search=search, language=language)

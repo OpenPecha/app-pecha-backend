@@ -21,9 +21,9 @@ async def test_get_list_of_recitations_success():
         return_value=expected,
         new_callable=AsyncMock,
     ) as mock_service:
-        resp = await get_list_of_recitations(language="en")
+        resp = await get_list_of_recitations(search=None, language="en")
 
-        mock_service.assert_awaited_once_with(language="en")
+        mock_service.assert_awaited_once_with(search=None, language="en")
         assert resp == expected
         assert len(resp.recitations) == 2
         assert resp.recitations[0].title == "First Recitation"
@@ -45,10 +45,33 @@ async def test_get_list_of_recitations_single_recitation():
         return_value=expected,
         new_callable=AsyncMock,
     ) as mock_service:
-        resp = await get_list_of_recitations(language="bo")
+        resp = await get_list_of_recitations(search=None, language="bo")
 
-        mock_service.assert_awaited_once_with(language="bo")
+        mock_service.assert_awaited_once_with(search=None, language="bo")
         assert resp == expected
         assert len(resp.recitations) == 1
         assert resp.recitations[0].title == "Single Recitation"
         assert resp.recitations[0].text_id == text_id
+
+
+@pytest.mark.asyncio
+async def test_get_list_of_recitations_with_search():
+    """Test get_list_of_recitations with search parameter."""
+    text_id = uuid.uuid4()
+    expected = RecitationsResponse(
+        recitations=[
+            RecitationDTO(title="Prayer Recitation", text_id=text_id)
+        ]
+    )
+
+    with patch(
+        "pecha_api.recitations.recitations_view.get_list_of_recitations_service",
+        return_value=expected,
+        new_callable=AsyncMock,
+    ) as mock_service:
+        resp = await get_list_of_recitations(search="prayer", language="en")
+
+        mock_service.assert_awaited_once_with(search="prayer", language="en")
+        assert resp == expected
+        assert len(resp.recitations) == 1
+        assert resp.recitations[0].title == "Prayer Recitation"
