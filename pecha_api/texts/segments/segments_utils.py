@@ -8,6 +8,7 @@ from botok.tokenizers.wordtokenizer import WordTokenizer
 
 
 from pecha_api.error_contants import ErrorConstants
+from pecha_api.texts.texts_enums import TextType
 from .segments_response_models import SegmentDTO
 from .segments_repository import (
     check_segment_exists,
@@ -84,15 +85,15 @@ class SegmentUtils:
         """
         Count the number of commentary and version segments in the provided list.
         """
-        count = {"commentary": 0, "version": 0}
+        count = {TextType.COMMENTARY: 0, TextType.VERSION: 0}
         text_ids = [segment.text_id for segment in segments]
         text_details_dict = await TextUtils.get_text_details_by_ids(text_ids=text_ids)
         for segment in segments:
             text_detail = text_details_dict.get(segment.text_id)
-            if text_detail and text_detail.type == "commentary":
-                count["commentary"] += 1
-            elif text_detail and text_detail.type == "version":
-                count["version"] += 1
+            if text_detail and text_detail.type == TextType.COMMENTARY:
+                count[TextType.COMMENTARY] += 1
+            elif text_detail and text_detail.type == TextType.VERSION:
+                count[TextType.VERSION] += 1
         return count
 
     @staticmethod
@@ -114,7 +115,7 @@ class SegmentUtils:
             if not text_detail:
                 continue
 
-            if text_detail.type == "version" and type == "version":
+            if text_detail.type == TextType.VERSION and type == TextType.VERSION:
                 if text_id is not None and text_id != segment.text_id:
                     continue
 
@@ -128,7 +129,7 @@ class SegmentUtils:
                         content=segment.content
                     )
                 )
-            elif text_detail.type == "transliteration" and type == "transliteration":
+            elif text_detail.type == TextType.TRANSLITERATION and type == TextType.TRANSLITERATION:
                 if text_id is not None and text_id != segment.text_id:
                     continue
                 filtered_segments.append(
@@ -141,7 +142,7 @@ class SegmentUtils:
                         content=segment.content
                     )
                 )
-            elif text_detail.type == "adaptation" and type == "adaptation":
+            elif text_detail.type == TextType.ADAPTATION and type == TextType.ADAPTATION:
                 if text_id is not None and text_id != segment.text_id:
                     continue
                 filtered_segments.append(
@@ -154,7 +155,7 @@ class SegmentUtils:
                         content=segment.content
                     )
                 )
-            elif text_detail.type == "commentary" and type == "commentary":
+            elif text_detail.type == TextType.COMMENTARY and type == TextType.COMMENTARY:
                 if text_id is not None and text_id != segment.text_id:
                     continue
                 if segment.text_id in appended_commentary_text_ids:
@@ -230,7 +231,7 @@ class SegmentUtils:
                     segments = await get_related_mapped_segments(parent_segment_id=segment.segment_id)
                     filtered_translation_by_version_id = await SegmentUtils.filter_segment_mapping_by_type_or_text_id(
                         segments=segments,
-                        type="version",
+                        type=TextType.VERSION,
                         text_id=version_id #pass the version_id so that only the mapping with a particular text_id is selected
                     )
                     if filtered_translation_by_version_id:
