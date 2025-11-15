@@ -38,3 +38,43 @@ class SearchResponse(BaseModel):
     skip: int
     limit: int
     total: int
+
+# Multilingual Search Models
+class ExternalSegmentEntity(BaseModel):
+    """Entity from external multilingual search API"""
+    text: str
+
+class ExternalSearchResult(BaseModel):
+    """Individual result from external multilingual search API"""
+    id: str
+    distance: float  # Relevance score/distance
+    entity: ExternalSegmentEntity
+    segmentation_ids: List[str]  # External segment IDs to map
+
+class ExternalSearchResponse(BaseModel):
+    """Response from external multilingual search API"""
+    query: str
+    search_type: str
+    results: List[ExternalSearchResult]
+    count: int
+
+class MultilingualSegmentMatch(BaseModel):
+    """Enriched segment match with ranking"""
+    segment_id: str
+    content: str
+    relevance_score: float  # Distance/ranking from external API
+    pecha_segment_id: str  # External segmentation ID
+
+class MultilingualSourceResult(BaseModel):
+    """Source result with multilingual search enhancements"""
+    text: TextIndex
+    segment_matches: List[MultilingualSegmentMatch]
+
+class MultilingualSearchResponse(BaseModel):
+    """Response for multilingual search endpoint"""
+    query: str
+    search_type: str
+    sources: List[MultilingualSourceResult]
+    skip: int
+    limit: int
+    total: int

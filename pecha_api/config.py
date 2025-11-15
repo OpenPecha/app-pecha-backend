@@ -48,6 +48,10 @@ DEFAULTS = dict(
     CACHE_SHEET_TIMEOUT=60,         # 1 minute for sheets (frequently edited by users)
 
     SHORT_URL_GENERATION_ENDPOINT="https://pech.as/api/v1",
+    
+    # External Multilingual Search API Configuration
+    EXTERNAL_SEARCH_API_URL="https://pecha-backend-dev.web.app/",  # Change this to your actual external API URL
+
     PECHA_BACKEND_ENDPOINT="http://127.0.0.1:8000/api/v1",
 
     # Search configuration
