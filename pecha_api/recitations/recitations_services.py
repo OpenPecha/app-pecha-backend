@@ -1,10 +1,8 @@
 from pecha_api.recitations.recitations_enum import LanguageCode,RecitationListTextType
 from pecha_api.texts.texts_enums import TextType
-from typing import List, Dict, Union
-from typing import Optional
+from typing import List, Dict, Union,Optional
 from pecha_api.collections.collections_repository import get_all_collections_by_parent, get_collection_id_by_slug
 from pecha_api.recitations.recitations_repository import apply_search_recitation_title_filter
-from pecha_api.recitations.recitations_response_models import RecitationDTO, RecitationsResponse
 from pecha_api.texts.texts_service import get_root_text_by_collection_id
 from fastapi import HTTPException
 from starlette import status
@@ -31,11 +29,6 @@ from pecha_api.recitations.recitations_response_models import (
     Segment,
     RecitationSegment
 )
-
-from pecha_api.collections.collections_repository import get_all_collections_by_parent, get_collection_id_by_slug
-from pecha_api.texts.texts_service import get_root_text_by_collection_id
-
-
 
 async def get_list_of_recitations_service(search: Optional[str] = None, language: str = "en") -> RecitationsResponse:
     collection_id = await get_collection_id_by_slug(slug="Liturgy")
