@@ -14,6 +14,7 @@ from pecha_api.plans.users.plan_users_service import (
     get_user_plan_progress,
     get_user_plan_day_details_service,
     delete_task_service,
+    unenroll_user_from_plan,
 )
 from pecha_api.plans.response_message import (
     BAD_REQUEST,
@@ -1324,3 +1325,127 @@ def test_get_user_plan_day_details_service_image_subtask_presigned():
         sub = result.tasks[0].sub_tasks[0]
         assert sub.id == sub_image_id
         assert sub.content == "https://signed.example.com/subtask-image.png"
+
+
+def test_unenroll_user_from_plan_success():
+    """Test successful unenrollment from a plan"""
+    user_id = uuid.uuid4()
+    plan_id = uuid.uuid4()
+
+    db_mock, session_cm = _mock_session_with_db()
+
+    with patch(
+        "pecha_api.plans.users.plan_users_service.validate_and_extract_user_details",
+        return_value=SimpleNamespace(id=user_id),
+    ) as mock_validate, patch(
+        "pecha_api.plans.users.plan_users_service.SessionLocal",
+        return_value=session_cm,
+    ), patch(
+        "pecha_api.plans.users.plan_users_service.delete_user_plan_progress",
+        return_value=None,
+    ) as mock_delete:
+        result = unenroll_user_from_plan(token="token123", plan_id=plan_id)
+
+        assert result is None
+        mock_validate.assert_called_once_with(token="token123")
+        mock_delete.assert_called_once_with(db=db_mock, user_id=user_id, plan_id=plan_id)
+
+
+def test_unenroll_user_from_plan_not_enrolled():
+    """Test unenrollment when user is not enrolled in the plan"""
+    user_id = uuid.uuid4()
+    plan_id = uuid.uuid4()
+
+    db_mock, session_cm = _mock_session_with_db()
+
+    with patch(
+        "pecha_api.plans.users.plan_users_service.validate_and_extract_user_details",
+        return_value=SimpleNamespace(id=user_id),
+    ), patch(
+        "pecha_api.plans.users.plan_users_service.SessionLocal",
+        return_value=session_cm,
+    ), patch(
+        "pecha_api.plans.users.plan_users_service.delete_user_plan_progress",
+        side_effect=HTTPException(
+            status_code=404,
+            detail={"error": "NOT_FOUND", "message": f"User is not enrolled in plan with ID {plan_id}"}
+        ),
+    ):
+        with pytest.raises(HTTPException) as exc_info:
+            unenroll_user_from_plan(token="token123", plan_id=plan_id)
+
+        assert exc_info.value.status_code == 404
+        assert exc_info.value.detail["error"] == "NOT_FOUND"
+        assert "not enrolled" in exc_info.value.detail["message"]
+
+
+def test_unenroll_user_from_plan_invalid_token():
+    """Test unenrollment with invalid authentication token"""
+    plan_id = uuid.uuid4()
+
+    with patch(
+        "pecha_api.plans.users.plan_users_service.validate_and_extract_user_details",
+        side_effect=HTTPException(
+            status_code=401,
+            detail={"error": "Unauthorized", "message": "Invalid authentication token"}
+        ),
+    ):
+        with pytest.raises(HTTPException) as exc_info:
+            unenroll_user_from_plan(token="invalid_token", plan_id=plan_id)
+
+        assert exc_info.value.status_code == 401
+        assert exc_info.value.detail["error"] == "Unauthorized"
+
+
+def test_unenroll_user_from_plan_database_error():
+    """Test unenrollment when database integrity error occurs"""
+    user_id = uuid.uuid4()
+    plan_id = uuid.uuid4()
+
+    db_mock, session_cm = _mock_session_with_db()
+
+    with patch(
+        "pecha_api.plans.users.plan_users_service.validate_and_extract_user_details",
+        return_value=SimpleNamespace(id=user_id),
+    ), patch(
+        "pecha_api.plans.users.plan_users_service.SessionLocal",
+        return_value=session_cm,
+    ), patch(
+        "pecha_api.plans.users.plan_users_service.delete_user_plan_progress",
+        side_effect=HTTPException(
+            status_code=400,
+            detail={"error": "BAD_REQUEST", "message": "Database integrity error"}
+        ),
+    ):
+        with pytest.raises(HTTPException) as exc_info:
+            unenroll_user_from_plan(token="token123", plan_id=plan_id)
+
+        assert exc_info.value.status_code == 400
+        assert exc_info.value.detail["error"] == "BAD_REQUEST"
+        assert "integrity error" in exc_info.value.detail["message"]
+
+
+def test_unenroll_user_from_plan_validates_user_first():
+    """Test that user validation happens before database operations"""
+    plan_id = uuid.uuid4()
+
+    with patch(
+        "pecha_api.plans.users.plan_users_service.validate_and_extract_user_details",
+        side_effect=HTTPException(
+            status_code=401,
+            detail={"error": "Unauthorized", "message": "Token expired"}
+        ),
+    ) as mock_validate, patch(
+        "pecha_api.plans.users.plan_users_service.SessionLocal",
+    ) as mock_session, patch(
+        "pecha_api.plans.users.plan_users_service.delete_user_plan_progress",
+    ) as mock_delete:
+        with pytest.raises(HTTPException) as exc_info:
+            unenroll_user_from_plan(token="expired_token", plan_id=plan_id)
+
+        mock_validate.assert_called_once_with(token="expired_token")
+        
+        mock_session.assert_not_called()
+        mock_delete.assert_not_called()
+
+        assert exc_info.value.status_code == 401
