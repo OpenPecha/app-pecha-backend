@@ -1,6 +1,7 @@
+from uuid import UUID
 from pecha_api.db.database import SessionLocal
 from pecha_api.plans.users.recitation.user_recitations_models import UserRecitations
-from pecha_api.plans.users.recitation.user_recitations_repository import save_user_recitation, get_user_recitations_by_user_id
+from pecha_api.plans.users.recitation.user_recitations_repository import save_user_recitation, get_user_recitations_by_user_id, delete_user_recitation
 from pecha_api.plans.users.recitation.user_recitations_response_models import (
     CreateUserRecitationRequest, 
     UserRecitationsResponse, 
@@ -40,3 +41,10 @@ async def get_user_recitations_service(token: str) -> UserRecitationsResponse:
         ]
         
         return UserRecitationsResponse(recitations=recitations_dto)
+
+
+async def delete_user_recitation_service(token: str, text_id: UUID) -> None:
+    current_user = validate_and_extract_user_details(token=token)
+
+    with SessionLocal() as db:
+        delete_user_recitation(db=db, user_id=current_user.id, text_id=text_id)

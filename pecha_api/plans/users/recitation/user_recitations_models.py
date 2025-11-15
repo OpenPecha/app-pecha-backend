@@ -1,4 +1,5 @@
-from sqlalchemy import Column, Index, UUID, UniqueConstraint
+from sqlalchemy import Column, Index, UniqueConstraint
+from sqlalchemy.dialects.postgresql import UUID
 from uuid import uuid4
 from pecha_api.db.database import Base
 

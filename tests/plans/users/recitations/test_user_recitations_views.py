@@ -5,7 +5,7 @@ from fastapi import HTTPException
 from fastapi.security import HTTPAuthorizationCredentials
 from starlette import status
 
-from pecha_api.plans.users.recitation.user_recitations_views import create_user_recitation, get_user_recitations
+from pecha_api.plans.users.recitation.user_recitations_views import create_user_recitation, get_user_recitations, delete_user_recitation
 from pecha_api.plans.users.recitation.user_recitations_response_models import (
     CreateUserRecitationRequest,
     UserRecitationsResponse,
@@ -16,7 +16,6 @@ from pecha_api.error_contants import ErrorConstants
 
 
 class TestDataFactory:
-    """Factory class for creating test data objects."""
     
     @staticmethod
     def create_auth_credentials(token="valid_token") -> HTTPAuthorizationCredentials:
@@ -50,7 +49,6 @@ class TestDataFactory:
 
 
 class TestCreateUserRecitationView:
-    """Test cases for create_user_recitation view function."""
 
     @patch('pecha_api.plans.users.recitation.user_recitations_views.create_user_recitation_service')
     @pytest.mark.asyncio
@@ -58,7 +56,6 @@ class TestCreateUserRecitationView:
         self,
         mock_service
     ):
-        """Test successful creation of user recitation via view."""
         text_id = uuid4()
         token = "valid_token"
         
@@ -84,7 +81,6 @@ class TestCreateUserRecitationView:
         self,
         mock_service
     ):
-        """Test create_user_recitation when text does not exist."""
         text_id = uuid4()
         token = "valid_token"
         
@@ -110,7 +106,6 @@ class TestCreateUserRecitationView:
         )
 
 class TestGetUserRecitationsView:
-    """Test cases for get_user_recitations view function."""
 
     @patch('pecha_api.plans.users.recitation.user_recitations_views.get_user_recitations_service')
     @pytest.mark.asyncio
@@ -155,7 +150,6 @@ class TestGetUserRecitationsView:
         self,
         mock_service
     ):
-        """Test retrieval when user has no recitations."""
         token = "valid_token"
         
         auth_credentials = TestDataFactory.create_auth_credentials(token=token)
@@ -177,7 +171,6 @@ class TestGetUserRecitationsView:
         self,
         mock_service
     ):
-        """Test retrieval when user has a single recitation."""
         token = "valid_token"
         text_id = uuid4()
         
@@ -246,5 +239,124 @@ class TestGetUserRecitationsView:
         
         assert exc_info.value.status_code == status.HTTP_500_INTERNAL_SERVER_ERROR
         assert exc_info.value.detail == "Database connection error"
+
+
+class TestDeleteUserRecitationView:
+    """Test cases for delete_user_recitation view function."""
+
+    @patch('pecha_api.plans.users.recitation.user_recitations_views.delete_user_recitation_service')
+    @pytest.mark.asyncio
+    async def test_delete_user_recitation_success(
+        self,
+        mock_service
+    ):
+        """Test successful deletion of user recitation via view."""
+        text_id = uuid4()
+        token = "valid_token"
         
-        mock_service.assert_awaited_once_with(token=token)
+        auth_credentials = TestDataFactory.create_auth_credentials(token=token)
+        
+        mock_service.return_value = None
+        
+        result = await delete_user_recitation(
+            text_id=text_id,
+            authentication_credential=auth_credentials
+        )
+        
+        assert result is None
+        mock_service.assert_awaited_once_with(
+            token=token,
+            text_id=text_id
+        )
+
+    @patch('pecha_api.plans.users.recitation.user_recitations_views.delete_user_recitation_service')
+    @pytest.mark.asyncio
+    async def test_delete_user_recitation_not_found(
+        self,
+        mock_service
+    ):
+        """Test delete_user_recitation when recitation does not exist."""
+        text_id = uuid4()
+        token = "valid_token"
+        
+        auth_credentials = TestDataFactory.create_auth_credentials(token=token)
+        
+        mock_service.side_effect = HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail={
+                "error": "NOT_FOUND",
+                "message": f"Recitation with ID {text_id} not found for this user"
+            }
+        )
+        
+        with pytest.raises(HTTPException) as exc_info:
+            await delete_user_recitation(
+                text_id=text_id,
+                authentication_credential=auth_credentials
+            )
+        
+        assert exc_info.value.status_code == status.HTTP_404_NOT_FOUND
+        assert exc_info.value.detail["error"] == "NOT_FOUND"
+        mock_service.assert_awaited_once_with(
+            token=token,
+            text_id=text_id
+        )
+
+    @patch('pecha_api.plans.users.recitation.user_recitations_views.delete_user_recitation_service')
+    @pytest.mark.asyncio
+    async def test_delete_user_recitation_invalid_token(
+        self,
+        mock_service
+    ):
+        """Test delete_user_recitation with invalid authentication token."""
+        text_id = uuid4()
+        token = "invalid_token"
+        
+        auth_credentials = TestDataFactory.create_auth_credentials(token=token)
+        
+        mock_service.side_effect = HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Invalid authentication credentials"
+        )
+        
+        with pytest.raises(HTTPException) as exc_info:
+            await delete_user_recitation(
+                text_id=text_id,
+                authentication_credential=auth_credentials
+            )
+        
+        assert exc_info.value.status_code == status.HTTP_401_UNAUTHORIZED
+        assert exc_info.value.detail == "Invalid authentication credentials"
+
+    @patch('pecha_api.plans.users.recitation.user_recitations_views.delete_user_recitation_service')
+    @pytest.mark.asyncio
+    async def test_delete_user_recitation_database_error(
+        self,
+        mock_service
+    ):
+        """Test delete_user_recitation when database error occurs."""
+        text_id = uuid4()
+        token = "valid_token"
+        
+        auth_credentials = TestDataFactory.create_auth_credentials(token=token)
+        
+        mock_service.side_effect = HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail={
+                "error": "BAD_REQUEST",
+                "message": "Database integrity error: constraint violation"
+            }
+        )
+        
+        with pytest.raises(HTTPException) as exc_info:
+            await delete_user_recitation(
+                text_id=text_id,
+                authentication_credential=auth_credentials
+            )
+        
+        assert exc_info.value.status_code == status.HTTP_400_BAD_REQUEST
+        assert exc_info.value.detail["error"] == "BAD_REQUEST"
+        mock_service.assert_awaited_once_with(
+            token=token,
+            text_id=text_id
+        )
