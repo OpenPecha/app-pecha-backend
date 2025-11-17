@@ -1,6 +1,6 @@
 import asyncio
 from typing import List, Dict
-
+from rich import print
 from fastapi import HTTPException
 from starlette import status
 
@@ -48,23 +48,28 @@ async def update_segment_mapping(text_mapping_request: TextMappingRequest, token
                 detail=ErrorConstants.TEXT_NOT_FOUND_MESSAGE
             )
         tm.text_id = str(pecha_text.id)   
-        pecha_segments=await get_segments_by_pecha_segment_ids(pecha_segment_ids=tm.segment_ids)
+        pecha_segments=await get_segments_by_pecha_segment_ids(pecha_segment_ids=tm.segment_id)
         if not pecha_segments:
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,
                 detail=ErrorConstants.SEGMENT_NOT_FOUND_MESSAGE
             )
-        tm.segment_id =''.join(pecha_segments)
+        tm.segment_id = str(pecha_segments[0].id)
         for map in tm.mappings:
-            map.parent_text_id=str(pecha_text.id)
+            parent_text_id=await get_text_by_pecha_text_id(pecha_text_id=map.parent_text_id)
+            if not parent_text_id:
+                raise HTTPException(
+                    status_code=status.HTTP_404_NOT_FOUND,
+                    detail=ErrorConstants.TEXT_NOT_FOUND_MESSAGE
+                )
+            map.parent_text_id=str(parent_text_id.id)
             list_of_segments=await get_segments_by_pecha_segment_ids(pecha_segment_ids=map.segments)
             if not list_of_segments:
                 raise HTTPException(
                     status_code=status.HTTP_404_NOT_FOUND,
                     detail=ErrorConstants.SEGMENT_NOT_FOUND_MESSAGE
                 )
-            map.segments = list_of_segments
-
+            map.segments = [str(segment.id) for segment in list_of_segments]
     # the id that i got from the get_pecha_text_id will be used in 
     # Validate mapping request
     await _validate_mapping_request(text_mapping_request=text_mapping_request)
