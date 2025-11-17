@@ -37,7 +37,6 @@ async def update_segment_mapping(text_mapping_request: TextMappingRequest, token
             status_code=status.HTTP_403_FORBIDDEN,
             detail=ErrorConstants.ADMIN_ERROR_MESSAGE
         )
-    # my task wiould be to create the input structure
 
     for tm in text_mapping_request.text_mappings:
         pecha_text=await get_text_by_pecha_text_id(pecha_text_id=tm.text_id)
@@ -69,7 +68,6 @@ async def update_segment_mapping(text_mapping_request: TextMappingRequest, token
                     detail=ErrorConstants.SEGMENT_NOT_FOUND_MESSAGE
                 )
             map.segments = [str(segment.id) for segment in list_of_segments]
-    # the id that i got from the get_pecha_text_id will be used in 
     # Validate mapping request
     await _validate_mapping_request(text_mapping_request=text_mapping_request)
     
