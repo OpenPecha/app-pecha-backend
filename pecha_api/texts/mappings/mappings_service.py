@@ -39,25 +39,22 @@ async def update_segment_mapping(text_mapping_request: TextMappingRequest, token
             detail=ErrorConstants.ADMIN_ERROR_MESSAGE
         )
     # my task wiould be to create the input structure
-    pecha_text=await get_text_by_pecha_text_id(pecha_text_id=text_mapping_request.text_id)
-    if not pecha_text:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail=ErrorConstants.TEXT_NOT_FOUND_MESSAGE
-        )
-    text_mapping_request.text_id = str(pecha_text.id)   
 
-    pecha_segments=await get_segments_by_pecha_segment_ids(pecha_segment_ids=[text_mapping_request.segment_ids])
-    #now sometime here we will have 1 segment or multiple segments. when there is 1 segment convert the list to a string
-    if not pecha_segments:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail=ErrorConstants.SEGMENT_NOT_FOUND_MESSAGE
-        )
-    if len(pecha_segments) == 1:
-        text_mapping_request.segment_id = str(pecha_segments[0].id)
-    
     for tm in text_mapping_request.text_mappings:
+        pecha_text=await get_text_by_pecha_text_id(pecha_text_id=tm.text_id)
+        if not pecha_text:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail=ErrorConstants.TEXT_NOT_FOUND_MESSAGE
+            )
+        tm.text_id = str(pecha_text.id)   
+        pecha_segments=await get_segments_by_pecha_segment_ids(pecha_segment_ids=tm.segment_ids)
+        if not pecha_segments:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail=ErrorConstants.SEGMENT_NOT_FOUND_MESSAGE
+            )
+        tm.segment_id =''.join(pecha_segments)
         for map in tm.mappings:
             map.parent_text_id=str(pecha_text.id)
             list_of_segments=await get_segments_by_pecha_segment_ids(pecha_segment_ids=map.segments)

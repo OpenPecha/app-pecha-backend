@@ -26,13 +26,14 @@ async def get_segments_by_text_id(text_id: str) -> List[SegmentDTO]:
         logging.debug(e)
         return []
 
-async def get_segments_by_pecha_segment_ids(pecha_segment_ids: List[str]) -> List[SegmentDTO]:
+async def get_segments_by_pecha_segment_ids(pecha_segment_ids: List[str] | str) -> List[SegmentDTO]:
     try:
-        segments = await Segment.get_segments_by_pecha_segment_ids(pecha_segment_ids=pecha_segment_ids)
-        return segments
+        if isinstance(pecha_segment_ids, str):
+            pecha_segment_ids = [pecha_segment_ids]
+        return await Segment.get_segments_by_pecha_segment_ids(pecha_segment_ids=pecha_segment_ids)
     except CollectionWasNotInitialized as e:
         logging.debug(e)
-        return []
+        return []   
 
 async def get_segment_details_by_id(segment_id: str):
     return await Segment.get_segment_details(segment_id=segment_id)
