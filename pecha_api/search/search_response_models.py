@@ -49,7 +49,7 @@ class ExternalSearchResult(BaseModel):
     id: str
     distance: float  # Relevance score/distance
     entity: ExternalSegmentEntity
-    segmentation_ids: List[str]  # External segment IDs to map
+    segmentation_ids: Optional[List[str]] = None # External segment IDs to map
 
 class ExternalSearchResponse(BaseModel):
     """Response from external multilingual search API"""

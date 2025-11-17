@@ -203,8 +203,6 @@ def _mock_sheet_data_():
             )
         ]
 
-# ==================== MULTILINGUAL SEARCH FUNCTIONS ====================
-
 async def get_multilingual_search_results(
     query: str,
     search_type: str = "hybrid",
@@ -250,12 +248,13 @@ async def get_multilingual_search_results(
         results_map = {}  # Map segmentation_id -> (distance, content)
         
         for result in external_results.results:
-            for seg_id in result.segmentation_ids:
-                segmentation_ids.append(seg_id)
-                results_map[seg_id] = {
-                    "distance": result.distance,
-                    "content": result.entity.text
-                }
+            if result.segmentation_ids:  # Check if segmentation_ids is not None and not empty
+                for seg_id in result.segmentation_ids:
+                    segmentation_ids.append(seg_id)
+                    results_map[seg_id] = {
+                        "distance": result.distance,
+                        "content": result.entity.text
+                    }
         
         if not segmentation_ids:
             logger.info("No segmentation IDs returned from external API")
@@ -309,12 +308,11 @@ async def _call_external_search_api(
     title: Optional[str] = None
 ) -> ExternalSearchResponse:
 
-    external_api_url = "https://api-l25bgmwqoa-uc.a.run.app"  
-    endpoint = f"{external_api_url}/v2/segments/search"
+    print("test")
+    external_api_url = "https://openpecha-search.onrender.com"   #"https://api-l25bgmwqoa-uc.a.run.app" 
+    endpoint = f"{external_api_url}/search"
 
-    print("-"*100)
     print("endpoint", endpoint)
-    print("-"*100)
     
     params = {
         "query": query,
