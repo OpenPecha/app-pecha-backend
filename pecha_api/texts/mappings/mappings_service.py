@@ -4,8 +4,8 @@ from fastapi import HTTPException
 from starlette import status
 
 from pecha_api.error_contants import ErrorConstants
-from pecha_api.texts.segments.segments_repository import get_segments_by_pecha_segment_ids
-from pecha_api.texts.texts_repository import get_text_by_pecha_text_id
+from pecha_api.texts.segments.segments_repository import get_all_segments
+from pecha_api.texts.texts_repository import get_all_texts
 from .mappings_repository import (
     update_mappings, 
     get_segments_by_ids
@@ -37,37 +37,18 @@ async def update_segment_mapping(text_mapping_request: TextMappingRequest, token
             status_code=status.HTTP_403_FORBIDDEN,
             detail=ErrorConstants.ADMIN_ERROR_MESSAGE
         )
-
+ 
+    all_texts = await get_all_texts()
+    all_segments = await get_all_segments()
+    text_id_dict = {text.pecha_text_id: text.id for text in all_texts}
+    segment_id_dict = {segment.pecha_segment_id: segment.id for segment in all_segments}
+    
     for tm in text_mapping_request.text_mappings:
-        pecha_text=await get_text_by_pecha_text_id(pecha_text_id=tm.text_id)
-        if not pecha_text:
-            raise HTTPException(
-                status_code=status.HTTP_404_NOT_FOUND,
-                detail=ErrorConstants.TEXT_NOT_FOUND_MESSAGE
-            )
-        tm.text_id = str(pecha_text.id)   
-        pecha_segments=await get_segments_by_pecha_segment_ids(pecha_segment_ids=tm.segment_id)
-        if not pecha_segments:
-            raise HTTPException(
-                status_code=status.HTTP_404_NOT_FOUND,
-                detail=ErrorConstants.SEGMENT_NOT_FOUND_MESSAGE
-            )
-        tm.segment_id = str(pecha_segments[0].id)
+        tm.text_id = text_id_dict[tm.text_id]
+        tm.segment_id = segment_id_dict[tm.segment_id]
         for map in tm.mappings:
-            parent_text_id=await get_text_by_pecha_text_id(pecha_text_id=map.parent_text_id)
-            if not parent_text_id:
-                raise HTTPException(
-                    status_code=status.HTTP_404_NOT_FOUND,
-                    detail=ErrorConstants.TEXT_NOT_FOUND_MESSAGE
-                )
-            map.parent_text_id=str(parent_text_id.id)
-            list_of_segments=await get_segments_by_pecha_segment_ids(pecha_segment_ids=map.segments)
-            if not list_of_segments:
-                raise HTTPException(
-                    status_code=status.HTTP_404_NOT_FOUND,
-                    detail=ErrorConstants.SEGMENT_NOT_FOUND_MESSAGE
-                )
-            map.segments = [str(segment.id) for segment in list_of_segments]
+            map.parent_text_id=text_id_dict[map.parent_text_id]
+            map.segments = [segment_id_dict[segment] for segment in map.segments]
     # Validate mapping request
     await _validate_mapping_request(text_mapping_request=text_mapping_request)
     

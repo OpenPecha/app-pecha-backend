@@ -73,6 +73,9 @@ class Text(Document):
         collection = "texts"
 
     @classmethod
+    async def get_text_all(cls)->List["Text"]:
+        return await cls.find().to_list()
+    @classmethod
     async def get_text(cls, text_id: str) -> Optional["Text"]:
         try:
             text_uuid = UUID(text_id)
@@ -80,9 +83,6 @@ class Text(Document):
             return None
         return await cls.find_one(cls.id == text_uuid)
     
-    @classmethod
-    async def get_text_by_pecha_text_id(cls, pecha_text_id: str) -> Optional["Text"]:
-        return await cls.find_one(cls.pecha_text_id == pecha_text_id)
     
     @classmethod
     async def get_texts_by_ids(cls, text_ids: List[str]) -> List["Text"]:
