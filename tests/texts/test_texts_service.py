@@ -419,7 +419,7 @@ async def test_create_table_of_content_invalid_text():
         sections=[]
     )
     with patch("pecha_api.texts.texts_service.validate_user_exists", return_value=True), \
-        patch("pecha_api.texts.texts_service.TextUtils.validate_text_exists", new_callable=AsyncMock, return_value=False):
+        patch("pecha_api.texts.texts_service.TextUtils.validate_text_exists", new_callable=AsyncMock, side_effect=HTTPException(status_code=404, detail=ErrorConstants.TEXT_NOT_FOUND_MESSAGE)):
         with pytest.raises(HTTPException) as exc_info:
             await create_table_of_content(table_of_content_request=table_of_content, token="admin")
         assert exc_info.value.status_code == 404

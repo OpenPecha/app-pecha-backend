@@ -133,7 +133,6 @@ async def get_collection(collection_id: str,language: str) -> Optional[Collectio
 
 async def update_existing_collection(collection_id: str, update_collection_request: UpdateCollectionRequest, token: str,
                                language: Optional[str]) -> CollectionModel:
-    print(">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>",up)
     is_admin = verify_admin_access(token=token)
     if is_admin:
         updated_collection = await update_collection_titles(collection_id=collection_id, update_collection_request=update_collection_request)
