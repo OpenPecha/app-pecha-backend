@@ -5,6 +5,8 @@ from fastapi import HTTPException
 from starlette import status
 
 from pecha_api.error_contants import ErrorConstants
+from pecha_api.texts.segments.segments_repository import get_segments_by_pecha_segment_ids
+from pecha_api.texts.texts_repository import get_text_by_pecha_text_id
 from .mappings_repository import (
     update_mappings, 
     get_segments_by_ids
@@ -36,7 +38,37 @@ async def update_segment_mapping(text_mapping_request: TextMappingRequest, token
             status_code=status.HTTP_403_FORBIDDEN,
             detail=ErrorConstants.ADMIN_ERROR_MESSAGE
         )
+    # my task wiould be to create the input structure
+    pecha_text=await get_text_by_pecha_text_id(pecha_text_id=text_mapping_request.text_id)
+    if not pecha_text:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=ErrorConstants.TEXT_NOT_FOUND_MESSAGE
+        )
+    text_mapping_request.text_id = str(pecha_text.id)   
+
+    pecha_segments=await get_segments_by_pecha_segment_ids(pecha_segment_ids=[text_mapping_request.segment_ids])
+    #now sometime here we will have 1 segment or multiple segments. when there is 1 segment convert the list to a string
+    if not pecha_segments:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=ErrorConstants.SEGMENT_NOT_FOUND_MESSAGE
+        )
+    if len(pecha_segments) == 1:
+        text_mapping_request.segment_id = str(pecha_segments[0].id)
     
+    for tm in text_mapping_request.text_mappings:
+        for map in tm.mappings:
+            map.parent_text_id=str(pecha_text.id)
+            list_of_segments=await get_segments_by_pecha_segment_ids(pecha_segment_ids=map.segments)
+            if not list_of_segments:
+                raise HTTPException(
+                    status_code=status.HTTP_404_NOT_FOUND,
+                    detail=ErrorConstants.SEGMENT_NOT_FOUND_MESSAGE
+                )
+            map.segments = list_of_segments
+
+    # the id that i got from the get_pecha_text_id will be used in 
     # Validate mapping request
     await _validate_mapping_request(text_mapping_request=text_mapping_request)
     
