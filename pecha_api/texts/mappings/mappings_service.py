@@ -1,6 +1,5 @@
 import asyncio
 from typing import List, Dict
-from rich import print
 from fastapi import HTTPException
 from starlette import status
 
