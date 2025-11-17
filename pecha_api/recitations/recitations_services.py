@@ -19,7 +19,7 @@ from pecha_api.texts.texts_repository import get_contents_by_id, get_all_texts_b
 # Segments
 from pecha_api.texts.segments.segments_service import get_segment_by_id, get_related_mapped_segments
 from pecha_api.texts.segments.segments_utils import SegmentUtils
-from pecha_api.texts.segments.segments_response_models import SegmentTranslation, SegmentTransliteration, SegmentAdaptation
+from pecha_api.texts.segments.segments_response_models import SegmentTranslation, SegmentTransliteration, SegmentAdaptation, SegmentRecitation
 
 # Recitations
 from pecha_api.recitations.recitations_response_models import (
@@ -81,22 +81,20 @@ async def _segments_mapping_by_toc(table_of_contents: List[TableOfContent], reci
     for table_of_content in table_of_contents:
         # recitation has only one section
         section = table_of_content.sections[0]
-        print("section", section)
-        text = await get_text_details_by_text_id(text_id=table_of_content.text_id)
         for segment in section.segments:
             recitation_segment = {}
             
-            segment_details = await get_segment_by_id(segment_id=segment.segment_id)
             mapped_segments = await get_related_mapped_segments(parent_segment_id=segment.segment_id)
             # filter the segments by type and language
+            recitations = await SegmentUtils.filter_segment_mapping_by_type_or_text_id(segments=mapped_segments, type= TextType.ROOT_TEXT.value)
             translations = await SegmentUtils.filter_segment_mapping_by_type_or_text_id(segments=mapped_segments, type= TextType.VERSION.value)
-            transliterations = await SegmentUtils.filter_segment_mapping_by_type_or_text_id(segments=mapped_segments, type=TextType.VERSION.value)
+            transliterations = await SegmentUtils.filter_segment_mapping_by_type_or_text_id(segments=mapped_segments, type=TextType.TRANSLITERATION.value)
             adaptations = await SegmentUtils.filter_segment_mapping_by_type_or_text_id(segments=mapped_segments, type=TextType.ADAPTATION.value)
             
             
             # get other related segments to this text segment
             for key, items, langs in [
-                (RecitationListTextType.RECITATIONS.value, translations, recitation_details_request.recitation),
+                (RecitationListTextType.RECITATIONS.value, recitations, recitation_details_request.recitation),
                 (RecitationListTextType.TRANSLATIONS.value, translations, recitation_details_request.translations),
                 (RecitationListTextType.TRANSLITERATIONS.value, transliterations, recitation_details_request.transliterations),
                 (RecitationListTextType.ADAPTATIONS.value, adaptations, recitation_details_request.adaptations),
@@ -115,7 +113,7 @@ async def _segments_mapping_by_toc(table_of_contents: List[TableOfContent], reci
 
 def _filter_by_type_and_language(
     key:str,
-    items: List[Union[SegmentTranslation, SegmentTransliteration, SegmentAdaptation]],
+    items: List[Union[SegmentRecitation, SegmentTranslation, SegmentTransliteration, SegmentAdaptation]],
     languages: List[str]
 ) -> Dict[str, Segment]:
     return {

@@ -33,7 +33,7 @@ from .segments_response_models import (
     SegmentTransliteration,
     SegmentAdaptation,
     SegmentRootMapping,
-    SegmentRootMappingResponse
+    SegmentRecitation
 )
 
 class SegmentUtils:
@@ -115,7 +115,22 @@ class SegmentUtils:
             if not text_detail:
                 continue
 
-            if text_detail.type == TextType.VERSION.value and type == TextType.VERSION.value:
+            if text_detail.type == TextType.ROOT_TEXT.value and type == TextType.ROOT_TEXT.value:
+                if text_id is not None and text_id != segment.text_id:
+                    continue
+                
+                filtered_segments.append(
+                    SegmentRecitation(
+                        segment_id=str(segment.id),
+                        text_id=segment.text_id,
+                        title=text_detail.title,
+                        source=text_detail.published_by,
+                        language=text_detail.language,
+                        content=segment.content
+                    )
+                )
+
+            elif text_detail.type == TextType.VERSION.value and type == TextType.VERSION.value:
                 if text_id is not None and text_id != segment.text_id:
                     continue
 
