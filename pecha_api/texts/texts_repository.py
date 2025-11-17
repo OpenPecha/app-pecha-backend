@@ -31,6 +31,14 @@ async def get_texts_by_id(text_id: str) -> Text | None:
         logging.debug(e)
         return None
 
+async def get_text_by_pecha_text_id(pecha_text_id: str) -> Text | None:
+    try:
+        text = await Text.get_text_by_pecha_text_id(pecha_text_id=pecha_text_id)
+        return text
+    except CollectionWasNotInitialized as e:
+        logging.debug(e)
+        return None
+
 async def get_texts_by_ids(text_ids: List[str]) -> Dict[str, TextDTO]:
     list_of_texts_detail = await Text.get_texts_by_ids(text_ids=text_ids)
     return {
