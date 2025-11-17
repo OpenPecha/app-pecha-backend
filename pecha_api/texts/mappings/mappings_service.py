@@ -42,13 +42,12 @@ async def update_segment_mapping(text_mapping_request: TextMappingRequest, token
     all_segments = await get_all_segments()
     text_id_dict = {text.pecha_text_id: text.id for text in all_texts}
     segment_id_dict = {segment.pecha_segment_id: segment.id for segment in all_segments}
-    
     for tm in text_mapping_request.text_mappings:
-        tm.text_id = text_id_dict[tm.text_id]
-        tm.segment_id = segment_id_dict[tm.segment_id]
+        tm.text_id = str(text_id_dict[tm.text_id])
+        tm.segment_id = str(segment_id_dict[tm.segment_id])
         for map in tm.mappings:
-            map.parent_text_id=text_id_dict[map.parent_text_id]
-            map.segments = [segment_id_dict[segment] for segment in map.segments]
+            map.parent_text_id=str(text_id_dict[map.parent_text_id])
+            map.segments = [str(segment_id_dict[segment]) for segment in map.segments]
     # Validate mapping request
     await _validate_mapping_request(text_mapping_request=text_mapping_request)
     
