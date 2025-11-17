@@ -440,9 +440,9 @@ class TestUpdateRecitationOrderService:
         mock_session_local.return_value.__enter__.return_value = mock_db
         
         recitations = [
-            RecitationOrderItem(id=recitation_ids[0], display_order=1),
-            RecitationOrderItem(id=recitation_ids[1], display_order=2),
-            RecitationOrderItem(id=recitation_ids[2], display_order=3)
+            RecitationOrderItem(text_id=recitation_ids[0], display_order=1),
+            RecitationOrderItem(text_id=recitation_ids[1], display_order=2),
+            RecitationOrderItem(text_id=recitation_ids[2], display_order=3)
         ]
         update_order_request = UpdateRecitationOrderRequest(recitations=recitations)
         
@@ -458,9 +458,9 @@ class TestUpdateRecitationOrderService:
         mock_validate_user.assert_called_once_with(token=token)
         
         expected_updates = [
-            {"id": recitation_ids[0], "display_order": 1},
-            {"id": recitation_ids[1], "display_order": 2},
-            {"id": recitation_ids[2], "display_order": 3}
+            {"text_id": recitation_ids[0], "display_order": 1},
+            {"text_id": recitation_ids[1], "display_order": 2},
+            {"text_id": recitation_ids[2], "display_order": 3}
         ]
         mock_update_bulk.assert_called_once_with(
             db=mock_db,
@@ -482,6 +482,45 @@ class TestUpdateRecitationOrderService:
         token = "valid_token"
         user_id = uuid4()
         recitation_ids = [uuid4() for _ in range(5)]
+        
+        mock_user = TestDataFactory.create_mock_user(user_id=user_id)
+        mock_validate_user.return_value = mock_user
+        
+        mock_db = MagicMock()
+        mock_session_local.return_value.__enter__.return_value = mock_db
+        
+        recitations = [
+            RecitationOrderItem(text_id=recitation_ids[0], display_order=1),
+            RecitationOrderItem(text_id=recitation_ids[4], display_order=2),
+            RecitationOrderItem(text_id=recitation_ids[1], display_order=3),
+            RecitationOrderItem(text_id=recitation_ids[2], display_order=4),
+            RecitationOrderItem(text_id=recitation_ids[3], display_order=5)
+        ]
+        update_order_request = UpdateRecitationOrderRequest(recitations=recitations)
+        
+        mock_update_bulk.return_value = None
+        
+        result = await update_recitation_order_service(
+            token=token,
+            update_order_request=update_order_request
+        )
+        
+        assert result is None
+        
+        mock_validate_user.assert_called_once_with(token=token)
+        
+        expected_updates = [
+            {"text_id": recitation_ids[0], "display_order": 1},
+            {"text_id": recitation_ids[4], "display_order": 2},
+            {"text_id": recitation_ids[1], "display_order": 3},
+            {"text_id": recitation_ids[2], "display_order": 4},
+            {"text_id": recitation_ids[3], "display_order": 5}
+        ]
+        mock_update_bulk.assert_called_once_with(
+            db=mock_db,
+            user_id=user_id,
+            recitation_updates=expected_updates
+        )
 
 
 class TestDeleteUserRecitationService:
@@ -507,37 +546,16 @@ class TestDeleteUserRecitationService:
         mock_db = MagicMock()
         mock_session_local.return_value.__enter__.return_value = mock_db
         
-        recitations = [
-            RecitationOrderItem(id=recitation_ids[0], display_order=1),
-            RecitationOrderItem(id=recitation_ids[4], display_order=2),
-            RecitationOrderItem(id=recitation_ids[1], display_order=3),
-            RecitationOrderItem(id=recitation_ids[2], display_order=4),
-            RecitationOrderItem(id=recitation_ids[3], display_order=5)
-        ]
-        update_order_request = UpdateRecitationOrderRequest(recitations=recitations)
+        mock_delete_recitation.return_value = None
         
-        mock_update_bulk.return_value = None
-        
-        result = await update_recitation_order_service(
-            token=token,
-            update_order_request=update_order_request
-        )
+        result = await delete_user_recitation_service(token=token, text_id=text_id)
         
         assert result is None
-        
         mock_validate_user.assert_called_once_with(token=token)
-        
-        expected_updates = [
-            {"id": recitation_ids[0], "display_order": 1},
-            {"id": recitation_ids[4], "display_order": 2},
-            {"id": recitation_ids[1], "display_order": 3},
-            {"id": recitation_ids[2], "display_order": 4},
-            {"id": recitation_ids[3], "display_order": 5}
-        ]
-        mock_update_bulk.assert_called_once_with(
+        mock_delete_recitation.assert_called_once_with(
             db=mock_db,
             user_id=user_id,
-            recitation_updates=expected_updates
+            text_id=text_id
         )
 
     @patch('pecha_api.plans.users.recitation.user_recitations_services.update_recitation_order_in_bulk')
@@ -562,11 +580,11 @@ class TestDeleteUserRecitationService:
         mock_session_local.return_value.__enter__.return_value = mock_db
         
         recitations = [
-            RecitationOrderItem(id=recitation_ids[0], display_order=1),
-            RecitationOrderItem(id=recitation_ids[2], display_order=2),
-            RecitationOrderItem(id=recitation_ids[3], display_order=3),
-            RecitationOrderItem(id=recitation_ids[4], display_order=4),
-            RecitationOrderItem(id=recitation_ids[1], display_order=5)
+            RecitationOrderItem(text_id=recitation_ids[0], display_order=1),
+            RecitationOrderItem(text_id=recitation_ids[2], display_order=2),
+            RecitationOrderItem(text_id=recitation_ids[3], display_order=3),
+            RecitationOrderItem(text_id=recitation_ids[4], display_order=4),
+            RecitationOrderItem(text_id=recitation_ids[1], display_order=5)
         ]
         update_order_request = UpdateRecitationOrderRequest(recitations=recitations)
         
@@ -582,11 +600,11 @@ class TestDeleteUserRecitationService:
         mock_validate_user.assert_called_once_with(token=token)
         
         expected_updates = [
-            {"id": recitation_ids[0], "display_order": 1},
-            {"id": recitation_ids[2], "display_order": 2},
-            {"id": recitation_ids[3], "display_order": 3},
-            {"id": recitation_ids[4], "display_order": 4},
-            {"id": recitation_ids[1], "display_order": 5}
+            {"text_id": recitation_ids[0], "display_order": 1},
+            {"text_id": recitation_ids[2], "display_order": 2},
+            {"text_id": recitation_ids[3], "display_order": 3},
+            {"text_id": recitation_ids[4], "display_order": 4},
+            {"text_id": recitation_ids[1], "display_order": 5}
         ]
         mock_update_bulk.assert_called_once_with(
             db=mock_db,
@@ -608,20 +626,40 @@ class TestDeleteUserRecitationService:
         token = "valid_token"
         user_id = uuid4()
         recitation_ids = [uuid4() for _ in range(3)]
-        mock_db_session = MagicMock()
-        mock_session_local.return_value.__enter__.return_value = mock_db_session
-        mock_session_local.return_value.__exit__.return_value = None
         
-        mock_delete_recitation.return_value = None
+        mock_user = TestDataFactory.create_mock_user(user_id=user_id)
+        mock_validate_user.return_value = mock_user
         
-        result = await delete_user_recitation_service(token=token, text_id=text_id)
+        mock_db = MagicMock()
+        mock_session_local.return_value.__enter__.return_value = mock_db
+        
+        recitations = [
+            RecitationOrderItem(text_id=recitation_ids[2], display_order=1), 
+            RecitationOrderItem(text_id=recitation_ids[0], display_order=2),
+            RecitationOrderItem(text_id=recitation_ids[1], display_order=3)
+        ]
+        update_order_request = UpdateRecitationOrderRequest(recitations=recitations)
+        
+        mock_update_bulk.return_value = None
+        
+        result = await update_recitation_order_service(
+            token=token,
+            update_order_request=update_order_request
+        )
         
         assert result is None
+        
         mock_validate_user.assert_called_once_with(token=token)
-        mock_delete_recitation.assert_called_once_with(
-            db=mock_db_session,
+        
+        expected_updates = [
+            {"text_id": recitation_ids[2], "display_order": 1},
+            {"text_id": recitation_ids[0], "display_order": 2},
+            {"text_id": recitation_ids[1], "display_order": 3}
+        ]
+        mock_update_bulk.assert_called_once_with(
+            db=mock_db,
             user_id=user_id,
-            text_id=text_id
+            recitation_updates=expected_updates
         )
 
     @patch('pecha_api.plans.users.recitation.user_recitations_services.delete_user_recitation')
@@ -645,38 +683,6 @@ class TestDeleteUserRecitationService:
         mock_db = MagicMock()
         mock_session_local.return_value.__enter__.return_value = mock_db
         
-        recitations = [
-            RecitationOrderItem(id=recitation_ids[2], display_order=1), 
-            RecitationOrderItem(id=recitation_ids[0], display_order=2),
-            RecitationOrderItem(id=recitation_ids[1], display_order=3)
-        ]
-        update_order_request = UpdateRecitationOrderRequest(recitations=recitations)
-        
-        mock_update_bulk.return_value = None
-        
-        result = await update_recitation_order_service(
-            token=token,
-            update_order_request=update_order_request
-        )
-        
-        assert result is None
-        
-        mock_validate_user.assert_called_once_with(token=token)
-        
-        expected_updates = [
-            {"id": recitation_ids[2], "display_order": 1},
-            {"id": recitation_ids[0], "display_order": 2},
-            {"id": recitation_ids[1], "display_order": 3}
-        ]
-        mock_update_bulk.assert_called_once_with(
-            db=mock_db,
-            user_id=user_id,
-            recitation_updates=expected_updates
-          
-        mock_db_session = MagicMock()
-        mock_session_local.return_value.__enter__.return_value = mock_db_session
-        mock_session_local.return_value.__exit__.return_value = None
-        
         mock_delete_recitation.side_effect = HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail={
@@ -692,7 +698,7 @@ class TestDeleteUserRecitationService:
         assert exc_info.value.detail["error"] == "NOT_FOUND"
         mock_validate_user.assert_called_once_with(token=token)
         mock_delete_recitation.assert_called_once_with(
-            db=mock_db_session,
+            db=mock_db,
             user_id=user_id,
             text_id=text_id
         )
@@ -700,13 +706,11 @@ class TestDeleteUserRecitationService:
     @patch('pecha_api.plans.users.recitation.user_recitations_services.SessionLocal')
     @patch('pecha_api.plans.users.recitation.user_recitations_services.validate_and_extract_user_details')
     @pytest.mark.asyncio
-    async def test_update_recitation_order_service_invalid_token(
     async def test_delete_user_recitation_service_invalid_token(
         self,
         mock_validate_user,
         mock_session_local
     ):
-        """Test update_recitation_order_service with invalid authentication token."""
         """Test delete_user_recitation_service with invalid authentication token."""
         text_id = uuid4()
         token = "invalid_token"
@@ -716,9 +720,35 @@ class TestDeleteUserRecitationService:
             detail="Invalid authentication credentials"
         )
         
+        with pytest.raises(HTTPException) as exc_info:
+            await delete_user_recitation_service(token=token, text_id=text_id)
+        
+        assert exc_info.value.status_code == status.HTTP_401_UNAUTHORIZED
+        assert exc_info.value.detail == "Invalid authentication credentials"
+        mock_validate_user.assert_called_once_with(token=token)
+        mock_session_local.assert_not_called()
+
+    @patch('pecha_api.plans.users.recitation.user_recitations_services.update_recitation_order_in_bulk')
+    @patch('pecha_api.plans.users.recitation.user_recitations_services.SessionLocal')
+    @patch('pecha_api.plans.users.recitation.user_recitations_services.validate_and_extract_user_details')
+    @pytest.mark.asyncio
+    async def test_update_recitation_order_service_invalid_token(
+        self,
+        mock_validate_user,
+        mock_session_local,
+        mock_update_bulk
+    ):
+        """Test update_recitation_order_service with invalid authentication token."""
+        token = "invalid_token"
+        
+        mock_validate_user.side_effect = HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Invalid authentication credentials"
+        )
+        
         recitations = [
-            RecitationOrderItem(id=uuid4(), display_order=1),
-            RecitationOrderItem(id=uuid4(), display_order=2)
+            RecitationOrderItem(text_id=uuid4(), display_order=1),
+            RecitationOrderItem(text_id=uuid4(), display_order=2)
         ]
         update_order_request = UpdateRecitationOrderRequest(recitations=recitations)
         
@@ -746,28 +776,6 @@ class TestDeleteUserRecitationService:
         """Test update_recitation_order_service when database error occurs."""
         token = "valid_token"
         user_id = uuid4()
-        with pytest.raises(HTTPException) as exc_info:
-            await delete_user_recitation_service(token=token, text_id=text_id)
-        
-        assert exc_info.value.status_code == status.HTTP_401_UNAUTHORIZED
-        assert exc_info.value.detail == "Invalid authentication credentials"
-        mock_validate_user.assert_called_once_with(token=token)
-        mock_session_local.assert_not_called()
-
-    @patch('pecha_api.plans.users.recitation.user_recitations_services.delete_user_recitation')
-    @patch('pecha_api.plans.users.recitation.user_recitations_services.SessionLocal')
-    @patch('pecha_api.plans.users.recitation.user_recitations_services.validate_and_extract_user_details')
-    @pytest.mark.asyncio
-    async def test_delete_user_recitation_service_database_error(
-        self,
-        mock_validate_user,
-        mock_session_local,
-        mock_delete_recitation
-    ):
-        """Test delete_user_recitation_service when database error occurs."""
-        user_id = uuid4()
-        text_id = uuid4()
-        token = "valid_token"
         
         mock_user = TestDataFactory.create_mock_user(user_id=user_id)
         mock_validate_user.return_value = mock_user
@@ -776,8 +784,8 @@ class TestDeleteUserRecitationService:
         mock_session_local.return_value.__enter__.return_value = mock_db
         
         recitations = [
-            RecitationOrderItem(id=uuid4(), display_order=1),
-            RecitationOrderItem(id=uuid4(), display_order=2)
+            RecitationOrderItem(text_id=uuid4(), display_order=1),
+            RecitationOrderItem(text_id=uuid4(), display_order=2)
         ]
         update_order_request = UpdateRecitationOrderRequest(recitations=recitations)
         
@@ -833,10 +841,28 @@ class TestDeleteUserRecitationService:
             db=mock_db,
             user_id=user_id,
             recitation_updates=[]
+        )
 
-        mock_db_session = MagicMock()
-        mock_session_local.return_value.__enter__.return_value = mock_db_session
-        mock_session_local.return_value.__exit__.return_value = None
+    @patch('pecha_api.plans.users.recitation.user_recitations_services.delete_user_recitation')
+    @patch('pecha_api.plans.users.recitation.user_recitations_services.SessionLocal')
+    @patch('pecha_api.plans.users.recitation.user_recitations_services.validate_and_extract_user_details')
+    @pytest.mark.asyncio
+    async def test_delete_user_recitation_service_database_error(
+        self,
+        mock_validate_user,
+        mock_session_local,
+        mock_delete_recitation
+    ):
+        """Test delete_user_recitation_service when database error occurs."""
+        user_id = uuid4()
+        text_id = uuid4()
+        token = "valid_token"
+        
+        mock_user = TestDataFactory.create_mock_user(user_id=user_id)
+        mock_validate_user.return_value = mock_user
+        
+        mock_db = MagicMock()
+        mock_session_local.return_value.__enter__.return_value = mock_db
         
         mock_delete_recitation.side_effect = HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
@@ -853,7 +879,7 @@ class TestDeleteUserRecitationService:
         assert exc_info.value.detail["error"] == "BAD_REQUEST"
         mock_validate_user.assert_called_once_with(token=token)
         mock_delete_recitation.assert_called_once_with(
-            db=mock_db_session,
+            db=mock_db,
             user_id=user_id,
             text_id=text_id
         )
