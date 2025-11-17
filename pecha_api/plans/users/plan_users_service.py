@@ -230,6 +230,15 @@ def complete_sub_task_service(token: str, id: UUID) -> None:
                 task_id=existing_sub_task.task_id
             )   
             save_user_task_completion(db=db, user_task_completion=new_task_completion)
+        
+        is_day_completed = check_day_completion(db=db, user_id=current_user.id, day_id=existing_sub_task.day_id)
+        if is_day_completed:
+            new_day_completion = UserDayCompletion(
+                user_id=current_user.id,
+                day_id=existing_sub_task.day_id
+            )
+            save_user_day_completion(db=db, user_day_completion=new_day_completion)
+
 
 def _check_all_subtasks_completed(user_id: UUID, task_id: UUID) -> bool:
     with SessionLocal() as db:
