@@ -380,9 +380,12 @@ async def test_create_table_of_content_success():
     with patch("pecha_api.texts.texts_service.validate_user_exists", return_value=True), \
             patch("pecha_api.texts.texts_service.TextUtils.validate_text_exists", new_callable=AsyncMock) as mock_validate_text_exists, \
             patch("pecha_api.texts.texts_service.SegmentUtils.validate_segments_exists", new_callable=AsyncMock) as mock_validate_segments_exists, \
+            patch("pecha_api.texts.texts_service.Segment.get_segment_by_pecha_segment_id", new_callable=AsyncMock) as mock_get_segment_by_pecha_segment_id, \
             patch("pecha_api.texts.texts_service.create_table_of_content_detail", new_callable=AsyncMock) as mock_create_table_of_content_detail:
         mock_validate_text_exists.return_value = True
         mock_validate_segments_exists.return_value = True
+        # Return a mock segment whose id matches the provided pecha_segment_id to keep IDs stable in the assertion
+        mock_get_segment_by_pecha_segment_id.return_value = type("Seg", (), {"id": "id_1"})()
         mock_create_table_of_content_detail.return_value = table_of_content
         response = await create_table_of_content(table_of_content_request=table_of_content, token="admin")
         assert response is not None
@@ -416,7 +419,7 @@ async def test_create_table_of_content_invalid_text():
         sections=[]
     )
     with patch("pecha_api.texts.texts_service.validate_user_exists", return_value=True), \
-        patch("pecha_api.texts.texts_utils.check_text_exists", new_callable=AsyncMock, return_value=False):
+        patch("pecha_api.texts.texts_service.TextUtils.validate_text_exists", new_callable=AsyncMock, return_value=False):
         with pytest.raises(HTTPException) as exc_info:
             await create_table_of_content(table_of_content_request=table_of_content, token="admin")
         assert exc_info.value.status_code == 404
@@ -769,7 +772,9 @@ async def test_update_text_details_success():
     )
     with patch("pecha_api.texts.texts_service.TextUtils.validate_text_exists", new_callable=AsyncMock, return_value=True), \
         patch("pecha_api.texts.texts_service.TextUtils.get_text_detail_by_id", new_callable=AsyncMock) as mock_get_text_detail_by_id, \
-        patch("pecha_api.texts.texts_service.update_text_details_by_id", new_callable=AsyncMock, return_value=mock_text_details):
+        patch("pecha_api.texts.texts_service.update_text_details_by_id", new_callable=AsyncMock, return_value=mock_text_details), \
+        patch("pecha_api.texts.texts_service.update_text_details_cache", new_callable=AsyncMock, return_value=None), \
+        patch("pecha_api.texts.texts_service.invalidate_text_cache_on_update", new_callable=AsyncMock, return_value=None):
         mock_get_text_detail_by_id.return_value = mock_text_details
         
         response = await update_text_details(text_id="text_id_1", update_text_request=UpdateTextRequest(title="updated_title", is_published=True))
@@ -1330,7 +1335,8 @@ async def test_get_table_of_content_by_sheet_id_success():
         )
     ]
     with patch("pecha_api.texts.texts_service.TextUtils.validate_text_exists", new_callable=AsyncMock, return_value=True), \
-        patch("pecha_api.texts.texts_service.get_contents_by_id", new_callable=AsyncMock, return_value=mock_table_of_contents):
+        patch("pecha_api.texts.texts_service.get_contents_by_id", new_callable=AsyncMock, return_value=mock_table_of_contents), \
+        patch("pecha_api.texts.texts_service.set_table_of_content_by_sheet_id_cache", new_callable=AsyncMock, return_value=None):
     
         response = await get_table_of_content_by_sheet_id(sheet_id=sheet_id)
 

@@ -44,7 +44,7 @@ async def create_collection(create_collection_request: CreateCollectionRequest) 
     try:
         existing_collection = await Collection.find_one(Collection.slug == create_collection_request.slug)
         if existing_collection:
-            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Collection with this slug already exists")
+            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=f"Collection with this slug {create_collection_request.slug} already exists")
     except AttributeError as e:
         logging.debug(e)
     new_collection = Collection(pecha_collection_id=create_collection_request.pecha_collection_id, slug=create_collection_request.slug, titles=create_collection_request.titles,
