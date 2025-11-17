@@ -99,6 +99,7 @@ async def update_segment_mapping(text_mapping_request: TextMappingRequest, token
         segment_dtos = [
             SegmentDTO(
                 id=str(segment.id),
+                pecha_segment_id=segment.pecha_segment_id,
                 text_id=segment.text_id,
                 content=segment.content,
                 type=segment.type,
