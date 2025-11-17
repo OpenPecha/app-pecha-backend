@@ -4,6 +4,7 @@ from typing import List, Dict, Union
 from fastapi import HTTPException
 from starlette import status
 from uuid import UUID
+from rich import print
 
 from pecha_api.error_contants import ErrorConstants
 
@@ -81,6 +82,7 @@ async def _segments_mapping_by_toc(table_of_contents: List[TableOfContent], reci
     for table_of_content in table_of_contents:
         # recitation has only one section
         section = table_of_content.sections[0]
+        print("section", section)
         text = await get_text_details_by_text_id(text_id=table_of_content.text_id)
         for segment in section.segments:
             recitation_segment = {}
