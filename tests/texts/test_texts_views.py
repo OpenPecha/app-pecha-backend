@@ -21,6 +21,7 @@ client = TestClient(api)
 # Test data
 MOCK_TEXT_DTO = TextDTO(
     id="123e4567-e89b-12d3-a456-426614174000",
+    pecha_text_id="test_pecha_id",
     title="Test Text",
     language="bo",
     group_id="123e4567-e89b-12d3-a456-426614174000",
@@ -31,7 +32,10 @@ MOCK_TEXT_DTO = TextDTO(
     published_date="2025-01-01T00:00:00",
     published_by="test_user",
     categories=[],
-    views=0
+    views=0,
+    source_link="https://test-source.com",
+    ranking=1,
+    license="CC0"
 )
 
 # Create a simple section for the table of contents
@@ -166,13 +170,17 @@ async def test_create_text_success(mocker):
     # Test data - match the CreateTextRequest model
     # Note: The mock returns MOCK_TEXT_DTO which has title="Test Text"
     create_data = {
+        "pecha_text_id": "test_pecha_id",
         "title": "Test Text",  # Match the mock data
         "language": "bo",
         "isPublished": True,
         "group_id": "123e4567-e89b-12d3-a456-426614174000",
         "type": "version",
         "published_by": "test_user",
-        "categories": []
+        "categories": [],
+        "source_link": "https://test-source.com",
+        "ranking": 1,
+        "license": "CC0"
     }
     
     # Make the request

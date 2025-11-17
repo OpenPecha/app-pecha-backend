@@ -4,6 +4,7 @@ from pydantic import BaseModel
 
 
 class CreateCollectionRequest(BaseModel):
+    pecha_collection_id: Optional[str] = None
     slug: str
     titles: Dict[str, str]
     descriptions: Dict[str, str]
@@ -15,6 +16,7 @@ class UpdateCollectionRequest(BaseModel):
 
 class CollectionModel(BaseModel):
     id: str
+    pecha_collection_id: Optional[str] = None
     title: str
     description: str
     language: str

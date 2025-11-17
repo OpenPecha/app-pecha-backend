@@ -15,6 +15,7 @@ class CreateSegment(BaseModel):
 
 
 class CreateSegmentRequest(BaseModel):
+    pecha_segment_id: Optional[str] = None
     text_id: str
     segments: List[CreateSegment]
 
@@ -25,6 +26,7 @@ class MappingResponse(BaseModel):
 
 class SegmentDTO(BaseModel):
     id: str
+    pecha_segment_id: Optional[str] = None
     text_id: str
     content: str
     type: SegmentType

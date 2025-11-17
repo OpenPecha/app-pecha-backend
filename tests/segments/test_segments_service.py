@@ -113,12 +113,14 @@ async def test_create_new_segment():
         patch('pecha_api.texts.segments.segments_service.create_segment', new_callable=AsyncMock) as mock_create_segment:
         mock_segment = type('Segment', (), {
             'id': uuid.UUID("efb26a06-f373-450b-ba57-e7a8d4dd5b64"),
+            'pecha_segment_id': "pecha_efb26a06-f373-450b-ba57-e7a8d4dd5b64",
             'text_id': "efb26a06-f373-450b-ba57-e7a8d4dd5b64",
             'content': "content",
             'mapping': [],
             'type': SegmentType.SOURCE,
             'model_dump': lambda self: {
                 'id': self.id,
+                'pecha_segment_id': self.pecha_segment_id,
                 'text_id': self.text_id,
                 'content': self.content,
                 'mapping': self.mapping,
@@ -136,6 +138,7 @@ async def test_create_new_segment():
             segments=[
                 SegmentDTO(
                     id="efb26a06-f373-450b-ba57-e7a8d4dd5b64",
+                    pecha_segment_id="pecha_efb26a06-f373-450b-ba57-e7a8d4dd5b64",
                     text_id="efb26a06-f373-450b-ba57-e7a8d4dd5b64",
                     content="content",
                     mapping=[],
@@ -212,12 +215,14 @@ async def test_get_segment_details_by_id_without_text_details_success():
     segment_id = "efb26a06-f373-450b-ba57-e7a8d4dd5b64"
     mock_segment = type('Segment', (), {
         'id': segment_id,
+        'pecha_segment_id': f"pecha_{segment_id}",
         'text_id': "text123",
         'content': "test content",
         'mapping': [],
         'type': SegmentType.SOURCE,
         'model_dump': lambda self: {
             'id': self.id,
+            'pecha_segment_id': self.pecha_segment_id,
             'text_id': self.text_id,
             'content': self.content,
             'mapping': self.mapping,

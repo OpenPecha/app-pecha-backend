@@ -650,3 +650,86 @@ def test_get_user_plan_day_details_unauthenticated(unauthenticated_client):
 
     assert response.status_code == status.HTTP_403_FORBIDDEN
 
+
+def test_unenroll_from_plan_success(authenticated_client):
+    """Test successful unenrollment from a plan"""
+    plan_id = uuid.uuid4()
+
+    with patch("pecha_api.plans.users.plan_users_views.unenroll_user_from_plan", return_value=None) as mock_unenroll:
+        response = authenticated_client.delete(
+            f"/users/me/plans/{plan_id}",
+            headers={"Authorization": f"Bearer {VALID_TOKEN}"}
+        )
+
+        assert response.status_code == status.HTTP_204_NO_CONTENT
+        assert response.text == ""
+        assert mock_unenroll.call_count == 1
+        assert mock_unenroll.call_args.kwargs.get("token") == VALID_TOKEN
+        assert mock_unenroll.call_args.kwargs.get("plan_id") == plan_id
+
+
+def test_unenroll_from_plan_not_enrolled(authenticated_client):
+    """Test unenrollment when user is not enrolled in the plan"""
+    plan_id = uuid.uuid4()
+
+    with patch("pecha_api.plans.users.plan_users_views.unenroll_user_from_plan") as mock_unenroll:
+        mock_unenroll.side_effect = HTTPException(
+            status_code=404,
+            detail={"error": "NOT_FOUND", "message": f"User is not enrolled in plan with ID {plan_id}"}
+        )
+
+        response = authenticated_client.delete(
+            f"/users/me/plans/{plan_id}",
+            headers={"Authorization": f"Bearer {VALID_TOKEN}"}
+        )
+
+        assert response.status_code == status.HTTP_404_NOT_FOUND
+        assert response.json()["detail"]["error"] == "NOT_FOUND"
+        assert "not enrolled" in response.json()["detail"]["message"]
+
+
+def test_unenroll_from_plan_invalid_token(authenticated_client):
+    """Test unenrollment with invalid authentication token"""
+    plan_id = uuid.uuid4()
+
+    with patch("pecha_api.plans.users.plan_users_views.unenroll_user_from_plan") as mock_unenroll:
+        mock_unenroll.side_effect = HTTPException(
+            status_code=401,
+            detail={"error": "Unauthorized", "message": "Invalid authentication token"}
+        )
+
+        response = authenticated_client.delete(
+            f"/users/me/plans/{plan_id}",
+            headers={"Authorization": f"Bearer {VALID_TOKEN}"}
+        )
+
+        assert response.status_code == status.HTTP_401_UNAUTHORIZED
+        assert response.json()["detail"]["error"] == "Unauthorized"
+
+
+def test_unenroll_from_plan_database_error(authenticated_client):
+    """Test unenrollment when database error occurs"""
+    plan_id = uuid.uuid4()
+
+    with patch("pecha_api.plans.users.plan_users_views.unenroll_user_from_plan") as mock_unenroll:
+        mock_unenroll.side_effect = HTTPException(
+            status_code=400,
+            detail={"error": "BAD_REQUEST", "message": "Database integrity error"}
+        )
+
+        response = authenticated_client.delete(
+            f"/users/me/plans/{plan_id}",
+            headers={"Authorization": f"Bearer {VALID_TOKEN}"}
+        )
+
+        assert response.status_code == status.HTTP_400_BAD_REQUEST
+        assert response.json()["detail"]["error"] == "BAD_REQUEST"
+
+
+def test_unenroll_from_plan_unauthenticated(unauthenticated_client):
+    """Test unenrollment without authentication"""
+    plan_id = uuid.uuid4()
+
+    response = unauthenticated_client.delete(f"/users/me/plans/{plan_id}")
+
+    assert response.status_code == status.HTTP_403_FORBIDDEN

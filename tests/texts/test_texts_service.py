@@ -263,6 +263,7 @@ async def test_create_new_text():
             patch('pecha_api.texts.texts_service.validate_group_exists', new_callable=AsyncMock) as mock_validate_group_exists:
         mock_create_text.return_value = AsyncMock(
             id=text_id,
+            pecha_text_id="test_pecha_id",
             title=title,
             language=language,
             is_published=is_published,
@@ -273,16 +274,24 @@ async def test_create_new_text():
             published_by=published_by,
             type=type_,
             categories=categories,
+            views=0,
+            source_link="https://test-source.com",
+            ranking=1,
+            license="CC0"
         )
         mock_validate_group_exists.return_value = True
         response = await create_new_text(
             create_text_request=CreateTextRequest(
+                pecha_text_id="test_pecha_id",
                 title=title,
                 language=language,
                 group_id=group_id,
                 published_by=published_by,
                 type=type_,
-                categories=categories
+                categories=categories,
+                source_link="https://test-source.com",
+                ranking=1,
+                license="CC0"
             ),
             token="admin"
         )
@@ -306,12 +315,16 @@ async def test_create_new_text_invalid_group_id():
         with pytest.raises(HTTPException) as exc_info:
             await create_new_text(
                 create_text_request=CreateTextRequest(
+                    pecha_text_id="test_pecha_id",
                     title="བྱང་ཆུབ་སེམས་དཔའི་སྤྱོད་པ་ལ་འཇུག་པ།",
                     language="bo",
                     group_id="invalid_group_id",
                     published_by="pecha",
                     type=TextType.VERSION,
-                    categories=[]
+                    categories=[],
+                    source_link="https://test-source.com",
+                    ranking=1,
+                    license="CC0"
                 ),
                 token="user"
             )
@@ -324,12 +337,16 @@ async def test_create_new_text_invalid_user():
         with pytest.raises(HTTPException) as exc_info:
             await create_new_text(
                 create_text_request=CreateTextRequest(
+                    pecha_text_id="test_pecha_id",
                     title="བྱང་ཆུབ་སེམས་དཔའི་སྤྱོད་པ་ལ་འཇུག་པ།",
                     language="bo",
                     group_id="67dd22a8d9f06ab28feedc90",
                     published_by="pecha",
                     type=TextType.VERSION,
-                    categories=[]
+                    categories=[],
+                    source_link="https://test-source.com",
+                    ranking=1,
+                    license="CC0"
                 ),
                 token="user"
             )
