@@ -37,6 +37,7 @@ async def update_segment_mapping(text_mapping_request: TextMappingRequest, token
             detail=ErrorConstants.ADMIN_ERROR_MESSAGE
         )
     
+    
     # Validate mapping request
     await _validate_mapping_request(text_mapping_request=text_mapping_request)
     
