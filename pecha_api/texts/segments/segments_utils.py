@@ -4,6 +4,8 @@ from uuid import UUID
 from fastapi import HTTPException
 from starlette import status
 
+from pecha_api.texts.texts_response_models import TextDTO
+
 from pecha_api.error_contants import ErrorConstants
 from .segments_response_models import SegmentDTO
 from .segments_repository import (
@@ -75,6 +77,7 @@ class SegmentUtils:
     @staticmethod
     async def get_count_of_each_commentary_and_version(
         segments: List[SegmentDTO],
+        parent_text: TextDTO
     ) -> Dict[str, int]:
         """
         Count the number of commentary and version segments in the provided list.
@@ -86,7 +89,7 @@ class SegmentUtils:
             text_detail = text_details_dict.get(segment.text_id)
             if text_detail and text_detail.type == "commentary":
                 count["commentary"] += 1
-            elif text_detail and text_detail.type == "version":
+            elif text_detail and text_detail.type == "version" and text_detail.group_id == parent_text.group_id:
                 count["version"] += 1
         return count
 

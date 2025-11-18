@@ -155,12 +155,12 @@ async def get_info_by_segment_id(segment_id: str) -> SegmentInfoResponse:
     if not is_valid_segment:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=ErrorConstants.SEGMENT_NOT_FOUND_MESSAGE)
     
-    cache_data = await get_segment_info_by_id_cache(segment_id=segment_id, cache_type=CacheType.SEGMENT_INFO)
-    if cache_data:
-        return cache_data
-    
+    # cache_data = await get_segment_info_by_id_cache(segment_id=segment_id, cache_type=CacheType.SEGMENT_INFO)
+    # if cache_data:
+    #     return cache_data
+    segment_details = await get_segment_details_by_id(segment_id=segment_id, text_details=True)
     mapped_segments = await get_related_mapped_segments(parent_segment_id=segment_id)
-    counts = await SegmentUtils.get_count_of_each_commentary_and_version(mapped_segments)
+    counts = await SegmentUtils.get_count_of_each_commentary_and_version(mapped_segments, segment_details.text)
     segment_root_mapping_count = await SegmentUtils.get_root_mapping_count(segment_id=segment_id)
     response = SegmentInfoResponse(
         segment_info= SegmentInfo(
