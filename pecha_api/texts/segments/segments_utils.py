@@ -261,7 +261,7 @@ class SegmentUtils:
 
         for mapping in segment.mapping:
             text_detail = texts_dict.get(mapping.text_id)
-            if text_detail:
+            if text_detail and text_detail.type != segment.text.type and text_detail.group_id != segment.text.group_id:
                 for segment_id in mapping.segments:
                     segment_details = await get_segment_by_id(segment_id=segment_id)
                     list_of_segment_root_mapping.append(
