@@ -50,6 +50,7 @@ async def get_user_recitations_service(token: str) -> UserRecitationsResponse:
             UserRecitationDTO(
                 title=texts_dict[str(recitation.text_id)].title, 
                 text_id=recitation.text_id,
+                language=texts_dict[str(recitation.text_id)].language,
                 display_order=recitation.display_order
             )
             for recitation in user_recitations
