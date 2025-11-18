@@ -49,7 +49,7 @@ class SegmentUtils:
         if not is_exists:
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,
-                detail=ErrorConstants.SEGMENT_NOT_FOUND_MESSAGE,
+                detail=f"{ErrorConstants.SEGMENT_NOT_FOUND_MESSAGE} {segment_id}",
             )
         return is_exists
     
