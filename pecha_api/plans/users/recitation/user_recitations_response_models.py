@@ -8,6 +8,7 @@ class CreateUserRecitationRequest(BaseModel):
 class UserRecitationDTO(BaseModel):
     title: str
     text_id: UUID
+    language: str
     display_order: int
 
 class UserRecitationsResponse(BaseModel):
