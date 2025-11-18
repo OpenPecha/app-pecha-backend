@@ -1,5 +1,7 @@
 from pydantic import BaseModel
 from typing import List, Optional
+
+from sqlalchemy.orm import strategies
 from .segments_models import Mapping
 
 from .segments_enum import SegmentType
@@ -41,6 +43,30 @@ class ParentSegment(BaseModel):
 
 # segment translation models
 class SegmentTranslation(BaseModel):
+    segment_id: str
+    text_id: str
+    title: str
+    source: str
+    language: str
+    content: str
+
+class SegmentRecitation(BaseModel):
+    segment_id: str
+    text_id: str
+    title: str
+    source: str
+    language: str
+    content: str
+
+class SegmentTransliteration(BaseModel):
+    segment_id: str
+    text_id: str
+    title: str
+    source: str
+    language: str
+    content: str
+
+class SegmentAdaptation(BaseModel):
     segment_id: str
     text_id: str
     title: str

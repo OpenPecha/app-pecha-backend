@@ -3,8 +3,12 @@ from uuid import UUID
 
 from fastapi import HTTPException
 from starlette import status
+import bophono
+from botok.tokenizers.wordtokenizer import WordTokenizer
+
 
 from pecha_api.error_contants import ErrorConstants
+from pecha_api.texts.texts_enums import TextType
 from .segments_response_models import SegmentDTO
 from .segments_repository import (
     check_segment_exists,
@@ -26,8 +30,10 @@ from ..texts_response_models import (
 from .segments_response_models import (
     SegmentCommentry,
     SegmentTranslation,
+    SegmentTransliteration,
+    SegmentAdaptation,
     SegmentRootMapping,
-    SegmentRootMappingResponse
+    SegmentRecitation
 )
 
 class SegmentUtils:
@@ -79,26 +85,27 @@ class SegmentUtils:
         """
         Count the number of commentary and version segments in the provided list.
         """
-        count = {"commentary": 0, "version": 0}
+        count = {TextType.COMMENTARY.value: 0, TextType.VERSION.value: 0}
         text_ids = [segment.text_id for segment in segments]
         text_details_dict = await TextUtils.get_text_details_by_ids(text_ids=text_ids)
         for segment in segments:
             text_detail = text_details_dict.get(segment.text_id)
-            if text_detail and text_detail.type == "commentary":
-                count["commentary"] += 1
-            elif text_detail and text_detail.type == "version":
-                count["version"] += 1
+            if text_detail and text_detail.type == TextType.COMMENTARY.value:
+                count[TextType.COMMENTARY.value] += 1
+            elif text_detail and text_detail.type == TextType.VERSION.value:
+                count[TextType.VERSION.value] += 1
         return count
 
     @staticmethod
     async def filter_segment_mapping_by_type_or_text_id(
         segments: List[SegmentDTO], type: str, text_id: Optional[str] = None
-    ) -> List[Union[SegmentCommentry, SegmentTranslation]]:
+    ) -> List[Union[SegmentCommentry, SegmentTranslation, SegmentTransliteration, SegmentAdaptation]]:
         """
         Filter segment mappings by type and optionally by text_id.
         """
         text_ids = [segment.text_id for segment in segments]
         text_details_dict = await TextUtils.get_text_details_by_ids(text_ids=text_ids)
+        
         grouped_segments = SegmentUtils._group_segment_content_by_text_id(segments=segments)
         filtered_segments = []
         appended_commentary_text_ids = []
@@ -108,7 +115,22 @@ class SegmentUtils:
             if not text_detail:
                 continue
 
-            if text_detail.type == "version" and type == "version":
+            if text_detail.type == TextType.ROOT_TEXT.value and type == TextType.ROOT_TEXT.value:
+                if text_id is not None and text_id != segment.text_id:
+                    continue
+                
+                filtered_segments.append(
+                    SegmentRecitation(
+                        segment_id=str(segment.id),
+                        text_id=segment.text_id,
+                        title=text_detail.title,
+                        source=text_detail.published_by,
+                        language=text_detail.language,
+                        content=segment.content
+                    )
+                )
+
+            elif text_detail.type == TextType.VERSION.value and type == TextType.VERSION.value:
                 if text_id is not None and text_id != segment.text_id:
                     continue
 
@@ -122,7 +144,33 @@ class SegmentUtils:
                         content=segment.content
                     )
                 )
-            elif text_detail.type == "commentary" and type == "commentary":
+            elif text_detail.type == TextType.TRANSLITERATION.value and type == TextType.TRANSLITERATION.value:
+                if text_id is not None and text_id != segment.text_id:
+                    continue
+                filtered_segments.append(
+                    SegmentTransliteration(
+                        segment_id=str(segment.id),
+                        text_id=segment.text_id,
+                        title=text_detail.title,
+                        source=text_detail.published_by,
+                        language=text_detail.language,
+                        content=segment.content
+                    )
+                )
+            elif text_detail.type == TextType.ADAPTATION.value and type == TextType.ADAPTATION.value:
+                if text_id is not None and text_id != segment.text_id:
+                    continue
+                filtered_segments.append(
+                    SegmentAdaptation(
+                        segment_id=str(segment.id),
+                        text_id=segment.text_id,
+                        title=text_detail.title,
+                        source=text_detail.published_by,
+                        language=text_detail.language,
+                        content=segment.content
+                    )
+                )
+            elif text_detail.type == TextType.COMMENTARY.value and type == TextType.COMMENTARY.value:
                 if text_id is not None and text_id != segment.text_id:
                     continue
                 if segment.text_id in appended_commentary_text_ids:
@@ -198,7 +246,7 @@ class SegmentUtils:
                     segments = await get_related_mapped_segments(parent_segment_id=segment.segment_id)
                     filtered_translation_by_version_id = await SegmentUtils.filter_segment_mapping_by_type_or_text_id(
                         segments=segments,
-                        type="version",
+                        type=TextType.VERSION.value,
                         text_id=version_id #pass the version_id so that only the mapping with a particular text_id is selected
                     )
                     if filtered_translation_by_version_id:
@@ -266,3 +314,20 @@ class SegmentUtils:
                 grouped_segments[segment.text_id] = []
             grouped_segments[segment.text_id].append(segment)
         return grouped_segments
+    
+    @staticmethod
+    def apply_bophono(segmentContent:str)->str:
+        options = {
+            'aspirateLowTones': True
+        }
+        tokenizer = WordTokenizer()
+        tokens = tokenizer.tokenize(segmentContent)
+        token_text =  []
+        for token in tokens:
+            token_text.append(token.text)
+        kvpconverter = bophono.UnicodeToApi(schema="KVP", options = options)
+        kvp_ipa_list = []
+        for segment in token_text:
+            kvp_ipa = kvpconverter.get_api(segment)
+            kvp_ipa_list.append(kvp_ipa)
+        return " ".join(kvp_ipa_list)
