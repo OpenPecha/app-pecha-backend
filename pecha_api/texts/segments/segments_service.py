@@ -161,7 +161,7 @@ async def get_info_by_segment_id(segment_id: str) -> SegmentInfoResponse:
     segment_details = await get_segment_details_by_id(segment_id=segment_id, text_details=True)
     mapped_segments = await get_related_mapped_segments(parent_segment_id=segment_id)
     counts = await SegmentUtils.get_count_of_each_commentary_and_version(mapped_segments, segment_details.text)
-    segment_root_mapping_count = await SegmentUtils.get_root_mapping_count(segment_id=segment_id)
+    segment_root_mapping_count = await SegmentUtils.get_root_mapping_count(segment_id=segment_id, parent_text=segment_details.text)
     response = SegmentInfoResponse(
         segment_info= SegmentInfo(
             segment_id=segment_id,

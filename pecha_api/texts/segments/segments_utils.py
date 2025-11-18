@@ -147,15 +147,29 @@ class SegmentUtils:
         return filtered_segments
     
     @staticmethod
-    async def get_root_mapping_count(segment_id: str) -> int:
+    async def get_root_mapping_count(segment_id: str, parent_text: TextDTO) -> int:
         segment = await get_segment_by_id(segment_id=segment_id)
         text_id = segment.text_id
+        
+        # Get all mapped text details
+        mapped_text_ids = [mapping.text_id for mapping in segment.mapping]
+        mapped_text_details = await TextUtils.get_text_details_by_ids(text_ids=mapped_text_ids)
+        
+        # Filter mappings with different type and group_id
+        filtered_mappings = []
+        for mapping in segment.mapping:
+            mapped_text = mapped_text_details.get(mapping.text_id)
+            if mapped_text and (mapped_text.type != parent_text.type and mapped_text.group_id != parent_text.group_id):
+                filtered_mappings.append(mapping)
+
+        parent_group_id = parent_text.group_id
         text_detail = await TextUtils.get_text_details_by_id(text_id=text_id)
         group_id = text_detail.group_id
+
         group_detail = await get_group_details(group_id=group_id)
         if group_detail.type == "text":
             return 0
-        root_mapping_count = len(segment.mapping)
+        root_mapping_count = len(filtered_mappings)
         return root_mapping_count
 
     @staticmethod
