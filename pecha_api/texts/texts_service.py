@@ -51,6 +51,7 @@ from pecha_api.texts.texts_cache_service import (
     update_text_details_cache,
     invalidate_text_cache_on_update
 )
+from .segments.segments_repository import get_segments_by_text_id
 from pecha_api.sheets.sheets_enum import (
     SortBy,
     SortOrder
@@ -344,11 +345,10 @@ async def create_table_of_content(table_of_content_request: TableOfContent, toke
     if is_valid_user:
         
         await TextUtils.validate_text_exists(text_id=table_of_content_request.text_id)
-        new_toc = await replace_pecha_segment_id_with_segment_id(table_of_content=table_of_content_request)
-        print("new_toc>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>",new_toc)
-        segment_ids = TextUtils.get_all_segment_ids(table_of_content=new_toc)
+        replaced_table_of_content = await replace_pecha_segment_id_with_segment_id(table_of_content=table_of_content_request)
+        segment_ids = TextUtils.get_all_segment_ids(table_of_content=replaced_table_of_content)
         await SegmentUtils.validate_segments_exists(segment_ids=segment_ids)
-        table_of_content = await create_table_of_content_detail(table_of_content_request=new_toc)
+        table_of_content = await create_table_of_content_detail(table_of_content_request=replaced_table_of_content)
         return table_of_content
     else:
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail=ErrorConstants.TOKEN_ERROR_MESSAGE)
@@ -358,7 +358,8 @@ async def create_table_of_content(table_of_content_request: TableOfContent, toke
 
 # PRIVATE FUNCTIONS
 async def replace_pecha_segment_id_with_segment_id(table_of_content: TableOfContent) -> TableOfContent:
-
+    text_segments = await get_segments_by_text_id(text_id=table_of_content.text_id)
+    segments_dict = {segment.pecha_segment_id: segment.id for segment in text_segments}
     new_toc = TableOfContent(
         text_id=table_of_content.text_id,
         sections=[]
@@ -367,10 +368,9 @@ async def replace_pecha_segment_id_with_segment_id(table_of_content: TableOfCont
     for section in table_of_content.sections:
         new_segments = []
         for segment in section.segments:
-            db_segment = await Segment.get_segment_by_pecha_segment_id(pecha_segment_id=segment.segment_id)
             new_segments.append(
                 TextSegment(
-                    segment_id=str(db_segment.id),
+                    segment_id=segments_dict[segment.pecha_segment_id],
                     segment_number=segment.segment_number
                 )
             )
