@@ -1,6 +1,6 @@
 from typing import Dict, List, Optional, Union
 from uuid import UUID
-
+import logging
 from fastapi import HTTPException
 from starlette import status
 
@@ -63,7 +63,9 @@ class SegmentUtils:
                 status_code=status.HTTP_400_BAD_REQUEST,
                 detail=f"Invalid segment ID format: {str(e)}. All segment IDs must be valid UUIDs."
             )
+        logging.info(f"segment_ids: {segment_ids} ahahhahah")
         all_exists = await check_all_segment_exists(segment_ids=uuid_segment_ids)
+        logging.info(f"all_exists: {all_exists} ahahhahah")
         if not all_exists:
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,
