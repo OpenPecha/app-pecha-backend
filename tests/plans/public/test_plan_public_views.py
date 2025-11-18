@@ -25,7 +25,7 @@ def sample_author_dto():
         id=uuid4(),
         firstname="John",
         lastname="Doe",
-        image_url="https://bucket.s3.amazonaws.com/presigned-url"
+        image=None
     )
 
 
@@ -38,7 +38,7 @@ def sample_plan_dto(sample_author_dto):
         description="A comprehensive guide to meditation practices",
         language="en",
         difficulty_level=DifficultyLevel.BEGINNER,
-        image_url="https://bucket.s3.amazonaws.com/presigned-url",
+        image=None,
         total_days=30,
         tags=["meditation", "mindfulness", "beginner"],
         author=sample_author_dto
@@ -84,7 +84,7 @@ async def test_get_plans_success(sample_plans_response):
         assert "id" in plan["author"]
         assert plan["author"]["firstname"] == "John"
         assert plan["author"]["lastname"] == "Doe"
-        assert "image_url" in plan["author"]
+        assert "image" in plan["author"]
         
         mock_service.assert_called_once_with(
             search=None,
@@ -280,8 +280,8 @@ async def test_get_plan_details_success(sample_plan_dto):
         assert data["author"]["firstname"] == "John"
         assert data["author"]["lastname"] == "Doe"
         
-        assert "image_url" in data
-        assert data["author"]["image_url"] is not None
+        assert "image" in data
+        assert "image" in data["author"]
         
         mock_service.assert_called_once_with(plan_id=plan_id)
 
@@ -318,7 +318,7 @@ async def test_get_plan_details_without_author(sample_plan_dto):
         description="Test Description",
         language="en",
         difficulty_level=DifficultyLevel.BEGINNER,
-        image_url=None,
+        image=None,
         total_days=10,
         tags=[],
         author=None
