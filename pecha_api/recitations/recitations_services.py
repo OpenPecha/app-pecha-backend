@@ -8,6 +8,7 @@ from fastapi import HTTPException
 from starlette import status
 from uuid import UUID
 from rich import print
+import logging
 
 from pecha_api.error_contants import ErrorConstants
 
@@ -17,9 +18,12 @@ from pecha_api.texts.texts_response_models import TextDTO, TableOfContent
 from pecha_api.texts.texts_repository import get_contents_by_id, get_all_texts_by_group_id
 
 # Segments
-from pecha_api.texts.segments.segments_service import get_segment_by_id, get_related_mapped_segments
+from pecha_api.texts.segments.segments_service import get_segment_by_id, get_related_mapped_segments, get_segment_details_by_id
 from pecha_api.texts.segments.segments_utils import SegmentUtils
 from pecha_api.texts.segments.segments_response_models import SegmentTranslation, SegmentTransliteration, SegmentAdaptation, SegmentRecitation
+from pecha_api.texts.segments.segments_response_models import (
+    SegmentDTO
+)
 
 # Recitations
 from pecha_api.recitations.recitations_response_models import (
@@ -30,6 +34,8 @@ from pecha_api.recitations.recitations_response_models import (
     Segment,
     RecitationSegment
 )
+
+logger = logging.getLogger(__name__)
 
 async def get_list_of_recitations_service(search: Optional[str] = None, language: str = "en") -> RecitationsResponse:
     collection_id = await get_collection_id_by_slug(slug="Liturgy")
@@ -81,20 +87,38 @@ async def _segments_mapping_by_toc(table_of_contents: List[TableOfContent], reci
     for table_of_content in table_of_contents:
         # recitation has only one section
         section = table_of_content.sections[0]
+
         for segment in section.segments:
             recitation_segment = {}
+            mapped_segments = []
+            segment_details = await get_segment_details_by_id(segment_id=segment.segment_id, text_details=True)
+            segment_model = SegmentDTO(
+                id=segment_details.id,
+                text_id=segment_details.text_id,
+                content=segment_details.content,
+                mapping=segment_details.mapping,
+                type=segment_details.type
+            )
             
             mapped_segments = await get_related_mapped_segments(parent_segment_id=segment.segment_id)
+            mapped_segments.append(segment_model)
+            # print(len(mapped_segments))
+            # logger.info(f"Found {len(mapped_segments)} mapped segments for segment_id: {segment.segment_id}")
+            # for seg in mapped_segments:
+            #     logger.info(f"Segment ID: {seg.id}, Type: {getattr(seg, 'type', 'N/A')}, Content: {getattr(seg, 'content', 'N/A')}")
             # filter the segments by type and language
-            recitations = await SegmentUtils.filter_segment_mapping_by_type_or_text_id(segments=mapped_segments, type= TextType.ROOT_TEXT.value)
+            recitationss = await SegmentUtils.filter_segment_mapping_by_type_or_text_id(segments=mapped_segments, type= TextType.VERSION.value)
             translations = await SegmentUtils.filter_segment_mapping_by_type_or_text_id(segments=mapped_segments, type= TextType.VERSION.value)
             transliterations = await SegmentUtils.filter_segment_mapping_by_type_or_text_id(segments=mapped_segments, type=TextType.TRANSLITERATION.value)
             adaptations = await SegmentUtils.filter_segment_mapping_by_type_or_text_id(segments=mapped_segments, type=TextType.ADAPTATION.value)
-            
-            
+
+            print("recitations___", recitationss)
+            print("translations", translations)
+            print("transliterations", transliterations)
+            print("adaptations", adaptations)
             # get other related segments to this text segment
             for key, items, langs in [
-                (RecitationListTextType.RECITATIONS.value, recitations, recitation_details_request.recitation),
+                (RecitationListTextType.RECITATIONS.value, recitationss, recitation_details_request.recitation),
                 (RecitationListTextType.TRANSLATIONS.value, translations, recitation_details_request.translations),
                 (RecitationListTextType.TRANSLITERATIONS.value, transliterations, recitation_details_request.transliterations),
                 (RecitationListTextType.ADAPTATIONS.value, adaptations, recitation_details_request.adaptations),
