@@ -355,7 +355,8 @@ async def test_create_new_text_invalid_user():
 
 @pytest.mark.asyncio
 async def test_create_table_of_content_success():
-    table_of_content = TableOfContent (
+    # Incoming TOC from client uses pecha_segment_id; service will map to real segment_id
+    incoming_toc = TableOfContent(
         id="id_1",
         text_id="id_1",
         sections=[
@@ -365,10 +366,29 @@ async def test_create_table_of_content_success():
                 section_number=1,
                 parent_id="id_1",
                 segments=[
-                    TextSegment(
-                        segment_id="id_1", segment_number=1
-                    )
+                    # Placeholder; will be replaced below with an object having pecha_segment_id
+                    TextSegment(segment_id="placeholder", segment_number=1)
                 ],
+                sections=[],
+                created_date="2025-03-16 04:40:54.757652",
+                updated_date="2025-03-16 04:40:54.757652",
+                published_date="2025-03-16 04:40:54.757652"
+            )
+        ]
+    )
+    # Replace the placeholder TextSegment with an object that exposes pecha_segment_id
+    incoming_toc.sections[0].segments[0] = type("IncomingSeg", (), {"pecha_segment_id": "pseg_1", "segment_number": 1})()
+    # Expected TOC after mapping pecha_segment_id -> segment_id
+    expected_toc = TableOfContent(
+        id="id_1",
+        text_id="id_1",
+        sections=[
+            Section(
+                id="id_1",
+                title="section_1",
+                section_number=1,
+                parent_id="id_1",
+                segments=[TextSegment(segment_id="id_1", segment_number=1)],
                 sections=[],
                 created_date="2025-03-16 04:40:54.757652",
                 updated_date="2025-03-16 04:40:54.757652",
@@ -380,28 +400,28 @@ async def test_create_table_of_content_success():
     with patch("pecha_api.texts.texts_service.validate_user_exists", return_value=True), \
             patch("pecha_api.texts.texts_service.TextUtils.validate_text_exists", new_callable=AsyncMock) as mock_validate_text_exists, \
             patch("pecha_api.texts.texts_service.SegmentUtils.validate_segments_exists", new_callable=AsyncMock) as mock_validate_segments_exists, \
-            patch("pecha_api.texts.texts_service.Segment.get_segment_by_pecha_segment_id", new_callable=AsyncMock) as mock_get_segment_by_pecha_segment_id, \
+            patch("pecha_api.texts.texts_service.get_segments_by_text_id", new_callable=AsyncMock) as mock_get_segments_by_text_id, \
             patch("pecha_api.texts.texts_service.create_table_of_content_detail", new_callable=AsyncMock) as mock_create_table_of_content_detail:
         mock_validate_text_exists.return_value = True
         mock_validate_segments_exists.return_value = True
-        # Return a mock segment whose id matches the provided pecha_segment_id to keep IDs stable in the assertion
-        mock_get_segment_by_pecha_segment_id.return_value = type("Seg", (), {"id": "id_1"})()
-        mock_create_table_of_content_detail.return_value = table_of_content
-        response = await create_table_of_content(table_of_content_request=table_of_content, token="admin")
+        # Return segments for the text so mapping pseg_1 -> id_1 works
+        mock_get_segments_by_text_id.return_value = [type("Seg", (), {"id": "id_1", "pecha_segment_id": "pseg_1"})()]
+        mock_create_table_of_content_detail.return_value = expected_toc
+        response = await create_table_of_content(table_of_content_request=incoming_toc, token="admin")
         assert response is not None
         assert isinstance(response, TableOfContent)
-        assert response.id == table_of_content.id
-        assert response.text_id == table_of_content.text_id
+        assert response.id == expected_toc.id
+        assert response.text_id == expected_toc.text_id
         assert response.sections is not None
         assert len(response.sections) == 1
-        assert response.sections[0].id == table_of_content.sections[0].id
-        assert response.sections[0].title == table_of_content.sections[0].title
-        assert response.sections[0].section_number == table_of_content.sections[0].section_number
-        assert response.sections[0].parent_id == table_of_content.sections[0].parent_id
+        assert response.sections[0].id == expected_toc.sections[0].id
+        assert response.sections[0].title == expected_toc.sections[0].title
+        assert response.sections[0].section_number == expected_toc.sections[0].section_number
+        assert response.sections[0].parent_id == expected_toc.sections[0].parent_id
         assert response.sections[0].segments is not None
         assert len(response.sections[0].segments) == 1
-        assert response.sections[0].segments[0].segment_id == table_of_content.sections[0].segments[0].segment_id
-        assert response.sections[0].segments[0].segment_number == table_of_content.sections[0].segments[0].segment_number
+        assert response.sections[0].segments[0].segment_id == expected_toc.sections[0].segments[0].segment_id
+        assert response.sections[0].segments[0].segment_number == expected_toc.sections[0].segments[0].segment_number
     
 @pytest.mark.asyncio
 async def test_create_table_of_content_invalid_user():
@@ -439,6 +459,7 @@ async def test_create_table_of_content_invalid_segment():
     with patch("pecha_api.texts.texts_service.validate_user_exists", return_value=True), \
         patch("pecha_api.texts.texts_service.TextUtils.get_all_segment_ids", return_value=segment_ids), \
         patch("pecha_api.texts.texts_service.TextUtils.validate_text_exists", new_callable=AsyncMock, return_value=True), \
+        patch("pecha_api.texts.texts_service.get_segments_by_text_id", new_callable=AsyncMock, return_value=[]), \
         patch("pecha_api.texts.segments.segments_utils.check_all_segment_exists", new_callable=AsyncMock, return_value=False):
         with pytest.raises(HTTPException) as exc_info:
             await create_table_of_content(table_of_content_request=table_of_content, token="admin")
