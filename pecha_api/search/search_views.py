@@ -44,6 +44,9 @@ async def multilingual_search(
     text_id: Optional[str] = Query(
         default=None
     ),
+    language: Optional[str] = Query(
+        default=None
+    ),
     limit: int = Query(default=10, ge=1, le=100)
 ) -> MultilingualSearchResponse:
 
@@ -51,5 +54,6 @@ async def multilingual_search(
         query=query,
         search_type=search_type.value,
         text_id=text_id,
-        limit=limit
+        limit=limit,
+        language=language
     )

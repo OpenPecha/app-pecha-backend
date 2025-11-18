@@ -22,6 +22,8 @@ import logging
 
 from pecha_api.texts.segments.segments_models import Segment
 from pecha_api.texts.texts_models import Text
+from pecha_api.config import get
+from fastapi import HTTPException
 
 logger = logging.getLogger(__name__)
 
@@ -207,7 +209,8 @@ async def get_multilingual_search_results(
     query: str,
     search_type: str = "hybrid",
     text_id: Optional[str] = None,
-    limit: int = 10
+    limit: int = 10,
+    language: Optional[str] = None
 ) -> MultilingualSearchResponse:
     """
     Performs multilingual search by:
@@ -221,6 +224,7 @@ async def get_multilingual_search_results(
         search_type: Type of search (hybrid, bm25, semantic, exact)
         text_id: Optional text_id for individual text search
         limit: Maximum number of results
+        language: Optional language filter ('bo', 'en', or 'zh')
         
     Returns:
         MultilingualSearchResponse with enriched segment data
@@ -240,7 +244,8 @@ async def get_multilingual_search_results(
             query=query,
             search_type=search_type,
             limit=limit,
-            title=title
+            title=title,
+            language=language
         )
         
         # Step 3: Extract segmentation_ids from external response
@@ -302,40 +307,68 @@ async def get_multilingual_search_results(
 
 async def _call_external_search_api(
     query: str,
-    search_type: str,
-    limit: int,
-    title: Optional[str] = None
+    search_type: str = "hybrid",
+    limit: int = 10,
+    title: Optional[str] = None,
+    language: Optional[str] = None
 ) -> ExternalSearchResponse:
-
-    print("test")
-    external_api_url = "https://openpecha-search.onrender.com"   #"https://api-l25bgmwqoa-uc.a.run.app" 
-    endpoint = f"{external_api_url}/search"
-
-    print("endpoint", endpoint)
+    """
+    Calls external multilingual search API.
     
-    params = {
+    Args:
+        query: Search query text
+        search_type: Type of search (hybrid, bm25, semantic, exact)
+        limit: Maximum number of results
+        title: Optional title for individual text search
+        language: Optional language filter ('bo', 'en', or 'zh')
+        
+    Returns:
+        ExternalSearchResponse parsed from API
+    """
+    external_api_url = "https://openpecha-search.onrender.com"  # Updated default URL
+    endpoint = f"{external_api_url}/search"  # Ensure this matches the API's expected endpoint
+    
+    # Prepare the request payload with hierarchical: true
+    payload = {
         "query": query,
         "search_type": search_type,
-        "limit": limit
+        "limit": limit,
+        "hierarchical": True
     }
     
+    # Add language filter if specified
+    if language and language in ['bo', 'en', 'zh']:
+        payload["language"] = language
+    
     if title:
-        params["title"] = title
+        payload["title"] = title
     
     try:
         async with httpx.AsyncClient(timeout=30.0) as client:
-            response = await client.get(endpoint, params=params)
+            # Send a POST request with JSON body
+            response = await client.post(
+                endpoint,
+                json=payload,
+                headers={"Content-Type": "application/json"}
+            )
             response.raise_for_status()
             
+            # Parse the response
             data = response.json()
             return ExternalSearchResponse(**data)
             
-    except httpx.HTTPError as e:
-        logger.error(f"HTTP error calling external search API: {str(e)}")
-        raise
-    except Exception as e:
-        logger.error(f"Error calling external search API: {str(e)}", exc_info=True)
-        raise
+    except httpx.HTTPStatusError as e:
+        logger.error(f"External API error: {e.response.status_code} - {e.response.text}")
+        raise HTTPException(
+            status_code=e.response.status_code,
+            detail=f"External search API error: {e.response.text}"
+        )
+    except httpx.RequestError as e:
+        logger.error(f"Request to external API failed: {str(e)}")
+        raise HTTPException(
+            status_code=500,
+            detail="Failed to connect to the search service. Please try again later."
+        )
 
 
 async def _build_multilingual_sources(
