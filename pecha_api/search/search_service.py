@@ -248,13 +248,12 @@ async def get_multilingual_search_results(
         results_map = {}  # Map segmentation_id -> (distance, content)
         
         for result in external_results.results:
-            if result.segmentation_ids:  # Check if segmentation_ids is not None and not empty
-                for seg_id in result.segmentation_ids:
-                    segmentation_ids.append(seg_id)
-                    results_map[seg_id] = {
-                        "distance": result.distance,
-                        "content": result.entity.text
-                    }
+            if result.id:  # Now using id instead of segmentation_ids
+                segmentation_ids.append(result.id)
+                results_map[result.id] = {
+                    "distance": result.distance,
+                    "content": result.entity.text
+                }
         
         if not segmentation_ids:
             logger.info("No segmentation IDs returned from external API")
