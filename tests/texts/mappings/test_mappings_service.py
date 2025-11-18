@@ -61,12 +61,12 @@ async def test_update_segment_mapping_invalid_text():
     mock_segment_obj.pecha_segment_id = segment_id
 
     with patch('pecha_api.texts.mappings.mappings_service.verify_admin_access', return_value=True), \
-            patch('pecha_api.texts.mappings.mappings_service.get_all_texts', new_callable=AsyncMock) as mock_get_all_texts, \
-            patch('pecha_api.texts.mappings.mappings_service.get_all_segments', new_callable=AsyncMock) as mock_get_all_segments:
+            patch('pecha_api.texts.mappings.mappings_service.get_texts_by_pecha_text_ids', new_callable=AsyncMock) as mock_get_texts, \
+            patch('pecha_api.texts.mappings.mappings_service.get_segments_by_pecha_segment_ids', new_callable=AsyncMock) as mock_get_segments:
         
         # Return only valid texts (missing text_id)
-        mock_get_all_texts.return_value = [mock_parent_text]
-        mock_get_all_segments.return_value = [mock_segment_obj]
+        mock_get_texts.return_value = [mock_parent_text]
+        mock_get_segments.return_value = [mock_segment_obj]
         
         # Act & Assert
         with pytest.raises(KeyError):
@@ -101,12 +101,12 @@ async def test_update_segment_mapping_invalid_segment():
     mock_parent_text.pecha_text_id = parent_text_id
 
     with patch('pecha_api.texts.mappings.mappings_service.verify_admin_access', return_value=True), \
-            patch('pecha_api.texts.mappings.mappings_service.get_all_texts', new_callable=AsyncMock) as mock_get_all_texts, \
-            patch('pecha_api.texts.mappings.mappings_service.get_all_segments', new_callable=AsyncMock) as mock_get_all_segments:
+            patch('pecha_api.texts.mappings.mappings_service.get_texts_by_pecha_text_ids', new_callable=AsyncMock) as mock_get_texts, \
+            patch('pecha_api.texts.mappings.mappings_service.get_segments_by_pecha_segment_ids', new_callable=AsyncMock) as mock_get_segments:
         
         # Return texts but no segments (segment_id is invalid)
-        mock_get_all_texts.return_value = [mock_text, mock_parent_text]
-        mock_get_all_segments.return_value = []
+        mock_get_texts.return_value = [mock_text, mock_parent_text]
+        mock_get_segments.return_value = []
         
         # Act & Assert
         with pytest.raises(KeyError):
@@ -142,12 +142,12 @@ async def test_update_segment_mapping_invalid_parent_text():
     mock_segment_obj.pecha_segment_id = segment_id
 
     with patch('pecha_api.texts.mappings.mappings_service.verify_admin_access', return_value=True), \
-            patch('pecha_api.texts.mappings.mappings_service.get_all_texts', new_callable=AsyncMock) as mock_get_all_texts, \
-            patch('pecha_api.texts.mappings.mappings_service.get_all_segments', new_callable=AsyncMock) as mock_get_all_segments:
+            patch('pecha_api.texts.mappings.mappings_service.get_texts_by_pecha_text_ids', new_callable=AsyncMock) as mock_get_texts, \
+            patch('pecha_api.texts.mappings.mappings_service.get_segments_by_pecha_segment_ids', new_callable=AsyncMock) as mock_get_segments:
         
         # Return only valid text (missing parent_text_id)
-        mock_get_all_texts.return_value = [mock_text]
-        mock_get_all_segments.return_value = [mock_segment_obj]
+        mock_get_texts.return_value = [mock_text]
+        mock_get_segments.return_value = [mock_segment_obj]
         
         # Act & Assert
         with pytest.raises(KeyError):
@@ -187,12 +187,12 @@ async def test_update_segment_mapping_invalid_parent_segment():
     mock_segment_obj.pecha_segment_id = segment_id
 
     with patch('pecha_api.texts.mappings.mappings_service.verify_admin_access', return_value=True), \
-            patch('pecha_api.texts.mappings.mappings_service.get_all_texts', new_callable=AsyncMock) as mock_get_all_texts, \
-            patch('pecha_api.texts.mappings.mappings_service.get_all_segments', new_callable=AsyncMock) as mock_get_all_segments:
+            patch('pecha_api.texts.mappings.mappings_service.get_texts_by_pecha_text_ids', new_callable=AsyncMock) as mock_get_texts, \
+            patch('pecha_api.texts.mappings.mappings_service.get_segments_by_pecha_segment_ids', new_callable=AsyncMock) as mock_get_segments:
         
         # Return texts and segment but not parent segment (invalid_parent_segment is missing)
-        mock_get_all_texts.return_value = [mock_text, mock_parent_text]
-        mock_get_all_segments.return_value = [mock_segment_obj]
+        mock_get_texts.return_value = [mock_text, mock_parent_text]
+        mock_get_segments.return_value = [mock_segment_obj]
         
         # Act & Assert
         with pytest.raises(KeyError):
