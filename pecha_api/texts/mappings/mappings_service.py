@@ -4,8 +4,8 @@ from fastapi import HTTPException
 from starlette import status
 
 from pecha_api.error_contants import ErrorConstants
-from pecha_api.texts.segments.segments_repository import get_all_segments
-from pecha_api.texts.texts_repository import get_all_texts
+from pecha_api.texts.segments.segments_repository import get_segments_by_pecha_segment_ids
+from pecha_api.texts.texts_repository import get_texts_by_pecha_text_ids
 from .mappings_repository import (
     update_mappings, 
     get_segments_by_ids
@@ -37,17 +37,26 @@ async def update_segment_mapping(text_mapping_request: TextMappingRequest, token
             status_code=status.HTTP_403_FORBIDDEN,
             detail=ErrorConstants.ADMIN_ERROR_MESSAGE
         )
- 
-    all_texts = await get_all_texts()
-    all_segments = await get_all_segments()
-    text_id_dict = {text.pecha_text_id: text.id for text in all_texts}
-    segment_id_dict = {segment.pecha_segment_id: segment.id for segment in all_segments}
+    segment_ids=[]
+    text_ids=[]
     for tm in text_mapping_request.text_mappings:
-        tm.text_id = str(text_id_dict[tm.text_id])
-        tm.segment_id = str(segment_id_dict[tm.segment_id])
+        text_ids.append(tm.text_id)
+        segment_ids.append(tm.segment_id)
         for map in tm.mappings:
-            map.parent_text_id=str(text_id_dict[map.parent_text_id])
-            map.segments = [str(segment_id_dict[segment]) for segment in map.segments]
+            text_ids.append(map.parent_text_id)
+            for segment in map.segments:
+                segment_ids.append(segment)
+    texts = await get_texts_by_pecha_text_ids(pecha_text_ids=text_ids)
+    segments = await get_segments_by_pecha_segment_ids(pecha_segment_ids=segment_ids)
+    text_id_dict = {text.pecha_text_id: str(text.id) for text in texts}
+    segment_id_dict = {segment.pecha_segment_id: str(segment.id) for segment in segments}
+    for tm in text_mapping_request.text_mappings:
+        tm.text_id = text_id_dict[tm.text_id]
+        tm.segment_id = segment_id_dict[tm.segment_id]
+        for map in tm.mappings:
+            map.parent_text_id = text_id_dict[map.parent_text_id]
+            map.segments = [segment_id_dict[segment] for segment in map.segments]
+
     # Validate mapping request
     await _validate_mapping_request(text_mapping_request=text_mapping_request)
     

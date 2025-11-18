@@ -20,8 +20,12 @@ from .texts_models import Text, TableOfContent
 from datetime import datetime, timezone
 from pecha_api.utils import Utils
 
-async def get_all_texts() -> List[Text]:
-    return await Text.get_text_all()
+async def get_texts_by_pecha_text_ids(pecha_text_ids: List[str]) -> List[Text]:
+    try:
+        return await Text.get_texts_by_pecha_text_ids(pecha_text_ids=pecha_text_ids)
+    except CollectionWasNotInitialized as e:
+        logging.debug(e)
+        return None
 
 async def get_sections_count_of_table_of_content(content_id: str) -> int:
     return await TableOfContent.get_sections_count(content_id=content_id)

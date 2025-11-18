@@ -9,8 +9,12 @@ import logging
 from beanie.exceptions import CollectionWasNotInitialized
 from typing import List, Dict
 
-async def get_all_segments() -> List[Segment]:
-    return await Segment.get_segments_all()
+async def get_segments_by_pecha_segment_ids(pecha_segment_ids: List[str]) -> List[SegmentDTO]:
+    try:
+        return await Segment.get_segments_by_pecha_segment_ids(pecha_segment_ids=pecha_segment_ids)
+    except CollectionWasNotInitialized as e:
+        logging.debug(e)
+        return []
 
 async def get_segment_by_id(segment_id: str) -> SegmentDTO | None:
     try:
