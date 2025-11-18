@@ -8,6 +8,10 @@ class PlanDayBasic(BaseModel):
     id: str
     day_number: int
 
+class ImageUrlModel(BaseModel):
+    thumbnail: str
+    medium: str
+    original: str       
 
 class PlanDaysResponse(BaseModel):
     days: List[PlanDayBasic]
@@ -16,15 +20,17 @@ class AuthorDTO(BaseModel):
     id: UUID
     firstname: str
     lastname: str
-    image_url: Optional[str] = None  
+    image: Optional[ImageUrlModel] = None
 
+
+    
 class PublicPlanDTO(BaseModel):
     id: UUID
     title: str
     description: str
     language: str
     difficulty_level: Optional[DifficultyLevel] = None
-    image_url: Optional[str] = None
+    image: Optional[ImageUrlModel] = None
     total_days: int
     tags: Optional[List[str]] = [],
     author: Optional[AuthorDTO] = None
@@ -53,8 +59,8 @@ class PlanWithDays(BaseModel):
     title: str
     description: str            
     language: str
-    image_url: Optional[str] = None
-    plan_image_url: Optional[str] = None
+    image: Optional[ImageUrlModel] = None
+    plan_image: Optional[ImageUrlModel] = None
     total_days: int
     difficulty_level: str
     tags: List[str]
