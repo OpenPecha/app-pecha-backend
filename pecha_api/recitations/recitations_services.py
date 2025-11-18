@@ -33,8 +33,9 @@ async def get_list_of_recitations_service(search: Optional[str] = None, language
     
     text_id, text_title = await get_root_text_by_collection_id(collection_id=collection_id, language=language)
 
-    # if search:
-    #     list_of_texts=apply_search_recitation_title_filter(text=list_of_texts, search=search)
+    text_title=apply_search_recitation_title_filter(text_title=text_title, search=search)
+    if text_title is None:
+        return RecitationsResponse(recitations=[])
     recitations_dto = [RecitationDTO(title=text_title, text_id=text_id)]
     return RecitationsResponse(recitations=recitations_dto)
 
