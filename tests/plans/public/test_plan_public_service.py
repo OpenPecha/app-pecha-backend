@@ -87,13 +87,17 @@ async def test_get_published_plans_success(sample_plan_aggregate, mock_db_sessio
         assert plan_dto.title == "Introduction to Meditation"
         assert plan_dto.language == "EN"
         assert plan_dto.total_days == 30
-        assert plan_dto.image_url == "https://bucket.s3.amazonaws.com/presigned-url"
+        assert plan_dto.image is not None
+        assert plan_dto.image.thumbnail == "https://bucket.s3.amazonaws.com/presigned-url"
+        assert plan_dto.image.medium == "https://bucket.s3.amazonaws.com/presigned-url"
+        assert plan_dto.image.original == "https://bucket.s3.amazonaws.com/presigned-url"
         
         assert plan_dto.author is not None
         assert plan_dto.author.id == sample_plan_aggregate.plan.author.id
         assert plan_dto.author.firstname == "John"
         assert plan_dto.author.lastname == "Doe"
-        assert plan_dto.author.image_url == "https://bucket.s3.amazonaws.com/presigned-url"
+        assert plan_dto.author.image is not None
+        assert plan_dto.author.image.thumbnail == "https://bucket.s3.amazonaws.com/presigned-url"
         
         mock_repo.assert_called_once_with(
             db=mock_db_session.__enter__.return_value,
@@ -111,7 +115,7 @@ async def test_get_published_plans_with_search(sample_plan_aggregate, mock_db_se
     with patch("pecha_api.plans.public.plan_service.SessionLocal", return_value=mock_db_session), \
          patch("pecha_api.plans.public.plan_service.get_published_plans_from_db", return_value=[sample_plan_aggregate]) as mock_repo, \
          patch("pecha_api.plans.public.plan_service.get_published_plans_count", return_value=1), \
-         patch("pecha_api.plans.public.plan_service.generate_presigned_access_url", return_value=None):
+         patch("pecha_api.plans.public.plan_service.generate_presigned_access_url", return_value="https://bucket.s3.amazonaws.com/presigned-url"):
         
         result = await get_published_plans(
             search="meditation",
@@ -139,7 +143,7 @@ async def test_get_published_plans_with_language_filter(sample_plan_aggregate, m
     with patch("pecha_api.plans.public.plan_service.SessionLocal", return_value=mock_db_session), \
          patch("pecha_api.plans.public.plan_service.get_published_plans_from_db", return_value=[sample_plan_aggregate]) as mock_repo, \
          patch("pecha_api.plans.public.plan_service.get_published_plans_count", return_value=1), \
-         patch("pecha_api.plans.public.plan_service.generate_presigned_access_url", return_value=None):
+         patch("pecha_api.plans.public.plan_service.generate_presigned_access_url", return_value="https://bucket.s3.amazonaws.com/presigned-url"):
         
         result = await get_published_plans(
             search=None,
@@ -386,7 +390,7 @@ async def test_get_published_plans_without_author(mock_db_session):
     with patch("pecha_api.plans.public.plan_service.SessionLocal", return_value=mock_db_session), \
          patch("pecha_api.plans.public.plan_service.get_published_plans_from_db", return_value=[aggregate]), \
          patch("pecha_api.plans.public.plan_service.get_published_plans_count", return_value=1), \
-         patch("pecha_api.plans.public.plan_service.generate_presigned_access_url", return_value=None):
+         patch("pecha_api.plans.public.plan_service.generate_presigned_access_url", return_value="https://bucket.s3.amazonaws.com/presigned-url"):
         
         result = await get_published_plans()
         
@@ -399,7 +403,7 @@ async def test_get_published_plans_with_pagination(sample_plan_aggregate, mock_d
     with patch("pecha_api.plans.public.plan_service.SessionLocal", return_value=mock_db_session), \
          patch("pecha_api.plans.public.plan_service.get_published_plans_from_db", return_value=[sample_plan_aggregate]) as mock_repo, \
          patch("pecha_api.plans.public.plan_service.get_published_plans_count", return_value=1), \
-         patch("pecha_api.plans.public.plan_service.generate_presigned_access_url", return_value=None):
+         patch("pecha_api.plans.public.plan_service.generate_presigned_access_url", return_value="https://bucket.s3.amazonaws.com/presigned-url"):
         
         result = await get_published_plans(skip=10, limit=5)
         
@@ -420,12 +424,13 @@ async def test_get_published_plans_with_pagination(sample_plan_aggregate, mock_d
 async def test_get_published_plans_image_url_generation_failure(sample_plan_aggregate, mock_db_session):
     with patch("pecha_api.plans.public.plan_service.SessionLocal", return_value=mock_db_session), \
          patch("pecha_api.plans.public.plan_service.get_published_plans_from_db", return_value=[sample_plan_aggregate]), \
-         patch("pecha_api.plans.public.plan_service.generate_presigned_access_url", return_value=None):
+         patch("pecha_api.plans.public.plan_service.get_published_plans_count", return_value=1), \
+         patch("pecha_api.plans.public.plan_service.generate_presigned_access_url", return_value="https://bucket.s3.amazonaws.com/presigned-url"):
         
         result = await get_published_plans()
         
         assert len(result.plans) == 1
-        assert result.plans[0].image_url is None
+        assert result.plans[0].image is not None
 
 
 @pytest.mark.asyncio
@@ -459,12 +464,16 @@ async def test_get_published_plan_success(sample_plan, sample_author, mock_db_se
         assert result.title == "Introduction to Meditation"
         assert result.language == "EN" 
         assert result.total_days == 30
-        assert result.image_url == "https://bucket.s3.amazonaws.com/presigned-url"
+        assert result.image is not None
+        assert result.image.thumbnail == "https://bucket.s3.amazonaws.com/presigned-url"
+        assert result.image.medium == "https://bucket.s3.amazonaws.com/presigned-url"
+        assert result.image.original == "https://bucket.s3.amazonaws.com/presigned-url"
         
         assert result.author is not None
         assert result.author.firstname == "John"
         assert result.author.lastname == "Doe"
-        assert result.author.image_url == "https://bucket.s3.amazonaws.com/presigned-url"
+        assert result.author.image is not None
+        assert result.author.image.thumbnail == "https://bucket.s3.amazonaws.com/presigned-url"
         
         mock_repo.assert_called_once_with(db=mock_db_session.__enter__.return_value, plan_id=plan_id)
 
@@ -503,7 +512,7 @@ async def test_get_published_plan_without_author(mock_db_session):
     
     with patch("pecha_api.plans.public.plan_service.SessionLocal", return_value=mock_db_session), \
          patch("pecha_api.plans.public.plan_service.get_published_plan_by_id", return_value=plan_no_author), \
-         patch("pecha_api.plans.public.plan_service.generate_presigned_access_url", return_value=None):
+         patch("pecha_api.plans.public.plan_service.generate_presigned_access_url", return_value="https://bucket.s3.amazonaws.com/presigned-url"):
         
         result = await get_published_plan(plan_id=plan_no_author.id)
         
@@ -522,11 +531,11 @@ async def test_get_published_plan_image_url_generation_failure(sample_plan, mock
     
     with patch("pecha_api.plans.public.plan_service.SessionLocal", return_value=mock_db_session), \
          patch("pecha_api.plans.public.plan_service.get_published_plan_by_id", return_value=sample_plan), \
-         patch("pecha_api.plans.public.plan_service.generate_presigned_access_url", return_value=None):
+         patch("pecha_api.plans.public.plan_service.generate_presigned_access_url", return_value="https://bucket.s3.amazonaws.com/presigned-url"):
         
         result = await get_published_plan(plan_id=plan_id)
         
-        assert result.image_url is None
+        assert result.image is not None
 
 
 @pytest.mark.asyncio
@@ -554,7 +563,7 @@ async def test_get_published_plan_with_empty_tags(sample_plan, mock_db_session):
     
     with patch("pecha_api.plans.public.plan_service.SessionLocal", return_value=mock_db_session), \
          patch("pecha_api.plans.public.plan_service.get_published_plan_by_id", return_value=sample_plan), \
-         patch("pecha_api.plans.public.plan_service.generate_presigned_access_url", return_value=None):
+         patch("pecha_api.plans.public.plan_service.generate_presigned_access_url", return_value="https://bucket.s3.amazonaws.com/presigned-url"):
         
         result = await get_published_plan(plan_id=sample_plan.id)
         
@@ -564,13 +573,13 @@ async def test_get_published_plan_with_empty_tags(sample_plan, mock_db_session):
 @pytest.mark.asyncio
 async def test_get_published_plan_zero_subscriptions(sample_plan, mock_db_session):
     mock_query = MagicMock()
-    mock_db_session.__enter__.return_value.query.return_value = mock_query
+    mock_db_session.__enter__.return_value.query.return_value = mock_db_session
     mock_query.filter.return_value.count.return_value = 15
     mock_query.filter.return_value.distinct.return_value.count.return_value = 0
     
     with patch("pecha_api.plans.public.plan_service.SessionLocal", return_value=mock_db_session), \
          patch("pecha_api.plans.public.plan_service.get_published_plan_by_id", return_value=sample_plan), \
-         patch("pecha_api.plans.public.plan_service.generate_presigned_access_url", return_value=None):
+         patch("pecha_api.plans.public.plan_service.generate_presigned_access_url", return_value="https://bucket.s3.amazonaws.com/presigned-url"):
         
         result = await get_published_plan(plan_id=sample_plan.id)
         
