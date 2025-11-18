@@ -7,25 +7,15 @@ from pecha_api.texts.texts_service import get_root_text_by_collection_id
 from fastapi import HTTPException
 from starlette import status
 from uuid import UUID
-from rich import print
-import logging
 
 from pecha_api.error_contants import ErrorConstants
-
-# Texts
 from pecha_api.texts.texts_utils import TextUtils
 from pecha_api.texts.texts_response_models import TextDTO, TableOfContent
 from pecha_api.texts.texts_repository import get_contents_by_id, get_all_texts_by_group_id
-
-# Segments
 from pecha_api.texts.segments.segments_service import get_segment_by_id, get_related_mapped_segments, get_segment_details_by_id
 from pecha_api.texts.segments.segments_utils import SegmentUtils
 from pecha_api.texts.segments.segments_response_models import SegmentTranslation, SegmentTransliteration, SegmentAdaptation, SegmentRecitation
-from pecha_api.texts.segments.segments_response_models import (
-    SegmentDTO
-)
-
-# Recitations
+from pecha_api.texts.segments.segments_response_models import SegmentDTO
 from pecha_api.recitations.recitations_response_models import (
     RecitationDTO, 
     RecitationsResponse, 
@@ -34,8 +24,6 @@ from pecha_api.recitations.recitations_response_models import (
     Segment,
     RecitationSegment
 )
-
-logger = logging.getLogger(__name__)
 
 async def get_list_of_recitations_service(search: Optional[str] = None, language: str = "en") -> RecitationsResponse:
     collection_id = await get_collection_id_by_slug(slug="Liturgy")
@@ -68,7 +56,7 @@ async def get_recitation_details_service(text_id: str, recitation_details_reques
     if root_text is None:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=ErrorConstants.TEXT_NOT_FOUND_MESSAGE)
     table_of_contents: List[TableOfContent] = await get_contents_by_id(text_id=root_text.id)
-    segments = await _segments_mapping_by_toc(table_of_contents=table_of_contents, recitation_details_request=recitation_details_request)
+    segments = await segments_mapping_by_toc(table_of_contents=table_of_contents, recitation_details_request=recitation_details_request)
 
     recitation_details_response = RecitationDetailsResponse(
         text_id=UUID(text_detail.id),
@@ -82,14 +70,13 @@ async def get_text_details_by_text_id(text_id: str) -> TextDTO:
     return await TextUtils.get_text_detail_by_id(text_id=text_id)
 
 
-async def _segments_mapping_by_toc(table_of_contents: List[TableOfContent], recitation_details_request: RecitationDetailsRequest) -> List[Segment]:
-    segments = []
+async def segments_mapping_by_toc(table_of_contents: List[TableOfContent], recitation_details_request: RecitationDetailsRequest) -> List[Segment]:
+    filter_mapped_segments = []
     for table_of_content in table_of_contents:
-        # recitation has only one section
         section = table_of_content.sections[0]
 
         for segment in section.segments:
-            recitation_segment = {}
+            recitation_segment = RecitationSegment()
             mapped_segments = []
             segment_details = await get_segment_details_by_id(segment_id=segment.segment_id, text_details=True)
             segment_model = SegmentDTO(
@@ -102,49 +89,38 @@ async def _segments_mapping_by_toc(table_of_contents: List[TableOfContent], reci
             
             mapped_segments = await get_related_mapped_segments(parent_segment_id=segment.segment_id)
             mapped_segments.append(segment_model)
-            # print(len(mapped_segments))
-            # logger.info(f"Found {len(mapped_segments)} mapped segments for segment_id: {segment.segment_id}")
-            # for seg in mapped_segments:
-            #     logger.info(f"Segment ID: {seg.id}, Type: {getattr(seg, 'type', 'N/A')}, Content: {getattr(seg, 'content', 'N/A')}")
-            # filter the segments by type and language
-            recitationss = await SegmentUtils.filter_segment_mapping_by_type_or_text_id(segments=mapped_segments, type= TextType.VERSION.value)
+            
+            recitations = await SegmentUtils.filter_segment_mapping_by_type_or_text_id(segments=mapped_segments, type= TextType.VERSION.value)
             translations = await SegmentUtils.filter_segment_mapping_by_type_or_text_id(segments=mapped_segments, type= TextType.VERSION.value)
-            transliterations = await SegmentUtils.filter_segment_mapping_by_type_or_text_id(segments=mapped_segments, type=TextType.TRANSLITERATION.value)
-            adaptations = await SegmentUtils.filter_segment_mapping_by_type_or_text_id(segments=mapped_segments, type=TextType.ADAPTATION.value)
+            transliterations = await SegmentUtils.filter_segment_mapping_by_type_or_text_id(segments=mapped_segments, type=TextType.VERSION.value)
+            adaptations = await SegmentUtils.filter_segment_mapping_by_type_or_text_id(segments=mapped_segments, type=TextType.VERSION.value)
 
-            print("recitations___", recitationss)
-            print("translations", translations)
-            print("transliterations", transliterations)
-            print("adaptations", adaptations)
-            # get other related segments to this text segment
-            for key, items, langs in [
-                (RecitationListTextType.RECITATIONS.value, recitationss, recitation_details_request.recitation),
+
+            for type, segments, langs in [
+                (RecitationListTextType.RECITATIONS.value, recitations, recitation_details_request.recitation),
                 (RecitationListTextType.TRANSLATIONS.value, translations, recitation_details_request.translations),
                 (RecitationListTextType.TRANSLITERATIONS.value, transliterations, recitation_details_request.transliterations),
                 (RecitationListTextType.ADAPTATIONS.value, adaptations, recitation_details_request.adaptations),
             ]:
-                recitation_segment[key] = _filter_by_type_and_language(key=key,items=items, languages=langs)
+                if type == RecitationListTextType.RECITATIONS.value:
+                    recitation_segment.recitation = filter_by_type_and_language(type=type, segments=segments, languages=langs)
+                elif type == RecitationListTextType.TRANSLATIONS.value:
+                    recitation_segment.translations = filter_by_type_and_language(type=type, segments=segments, languages=langs)
+                elif type == RecitationListTextType.TRANSLITERATIONS.value:
+                    recitation_segment.transliterations = filter_by_type_and_language(type=type, segments=segments, languages=langs)
+                elif type == RecitationListTextType.ADAPTATIONS.value:
+                    recitation_segment.adaptations = filter_by_type_and_language(type=type, segments=segments, languages=langs)
+           
+            filter_mapped_segments.append(recitation_segment)
+    return filter_mapped_segments
 
-            # #get text toc segment
-            # recitation_segment["translations"][text.language] = Segment(
-            #     id=segment.segment_id,
-            #     content=segment_details.content
-            # )
-
-            recitation_segment = RecitationSegment(**recitation_segment)
-            segments.append(recitation_segment)
-    return segments
-
-def _filter_by_type_and_language(
-    key:str,
-    items: List[Union[SegmentRecitation, SegmentTranslation, SegmentTransliteration, SegmentAdaptation]],
-    languages: List[str]
-) -> Dict[str, Segment]:
-    return {
-        item.language: Segment(
-            id=item.segment_id,
-            content=SegmentUtils.apply_bophono(segmentContent=item.content) if key == RecitationListTextType.TRANSLITERATIONS.value and item.language == LanguageCode.BO.value else item.content
+def filter_by_type_and_language(type:str,segments: List[Union[SegmentRecitation, SegmentTranslation, SegmentTransliteration, SegmentAdaptation]],languages: List[str]) -> Dict[str, Segment]:
+    filtered_segments = {
+        segment.language: Segment(
+            id=segment.segment_id,
+            content=SegmentUtils.apply_bophono(segmentContent=segment.content) if type == RecitationListTextType.TRANSLITERATIONS.value and segment.language == LanguageCode.BO.value else segment.content
         )
-        for item in items
-        if item.language in languages
+        for segment in segments
+        if segment.language in languages
     }
+    return filtered_segments
