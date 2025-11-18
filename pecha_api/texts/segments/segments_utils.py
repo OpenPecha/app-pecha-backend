@@ -159,7 +159,7 @@ class SegmentUtils:
         filtered_mappings = []
         for mapping in segment.mapping:
             mapped_text = mapped_text_details.get(mapping.text_id)
-            if mapped_text and (mapped_text.type != parent_text.type and mapped_text.group_id != parent_text.group_id):
+            if mapped_text and (mapped_text.type != parent_text.type or mapped_text.group_id != parent_text.group_id):
                 filtered_mappings.append(mapping)
 
         parent_group_id = parent_text.group_id
