@@ -5,7 +5,7 @@ from fastapi import HTTPException
 from starlette import status
 
 from pecha_api.error_contants import ErrorConstants
-from .segments_response_models import SegmentDTO
+from .segments_response_models import MappedSegmentDTO, SegmentDTO
 from .segments_repository import (
     check_segment_exists,
     check_all_segment_exists,
@@ -123,18 +123,22 @@ class SegmentUtils:
                     )
                 )
             elif text_detail.type == "commentary" and type == "commentary":
+                mapped_segments=[]
                 if text_id is not None and text_id != segment.text_id:
                     continue
                 if segment.text_id in appended_commentary_text_ids:
                     continue
-                segment_contents = [segment_item.content for segment_item in grouped_segments.get(segment.text_id, [])]
-                count = len(segment_contents)
+                for segment_item in grouped_segments.get(segment.text_id, []):
+                    mapped_segments.append(MappedSegmentDTO(
+                        segment_id=str(segment_item.id),
+                        content=segment_item.content
+                    ))
+                count = len(mapped_segments)
                 filtered_segments.append(
                     SegmentCommentry(
-                        segment_id=str(segment.id),
                         text_id=segment.text_id,
                         title=text_detail.title,
-                        content=segment_contents,
+                        segments=mapped_segments,
                         language=text_detail.language,
                         count=count
                     )

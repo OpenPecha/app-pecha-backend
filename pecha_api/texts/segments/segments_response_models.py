@@ -31,6 +31,9 @@ class SegmentDTO(BaseModel):
     mapping: Optional[List[MappingResponse]] = None
     text: Optional[TextDTO] = None
 
+class MappedSegmentDTO(BaseModel):
+    segment_id: str
+    content: str
 
 class SegmentResponse(BaseModel):
     segments: List[SegmentDTO]
@@ -54,10 +57,9 @@ class SegmentTranslationsResponse(BaseModel):
 
 # segment commentary models
 class SegmentCommentry(BaseModel):
-    segment_id: str
     text_id: str
     title: str
-    content: List[str]
+    segments: List[MappedSegmentDTO]
     language: str
     count: int
 
