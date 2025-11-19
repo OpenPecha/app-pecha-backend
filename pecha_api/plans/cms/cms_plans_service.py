@@ -392,6 +392,6 @@ def _check_published_plan_day_availability(plan_id: UUID, plan_status: PlanStatu
 def update_plan_featured_service(token:str, plan_id: UUID):
     current_author = validate_and_extract_author_details(token=token)
     with SessionLocal() as db:
-        plan = _check_author_plan_availability(plan_id=plan_id, author_id=current_author.id)
+        plan = _check_author_plan_availability(plan_id=plan_id, author_id=current_author.id, is_admin=current_author.is_admin)
         plan.featured = not plan.featured
         plan = update_plan(db=db, plan=plan)
