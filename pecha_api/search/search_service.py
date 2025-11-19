@@ -209,6 +209,7 @@ async def get_multilingual_search_results(
     query: str,
     search_type: str = "hybrid",
     text_id: Optional[str] = None,
+    skip: int = 0,
     limit: int = 10,
     language: Optional[str] = None
 ) -> MultilingualSearchResponse:
@@ -247,7 +248,7 @@ async def get_multilingual_search_results(
                 query=query,
                 search_type=search_type,
                 sources=[],
-                skip=0,
+                skip=skip,
                 limit=limit,
                 total=0
             )
@@ -263,7 +264,7 @@ async def get_multilingual_search_results(
                 query=query,
                 search_type=search_type,
                 sources=[],
-                skip=0,
+                skip=skip,
                 limit=limit,
                 total=0
             )
@@ -274,7 +275,7 @@ async def get_multilingual_search_results(
             query=query,
             search_type=search_type,
             sources=sources,
-            skip=0,
+            skip=skip,
             limit=limit,
             total=len(segments)
         )
