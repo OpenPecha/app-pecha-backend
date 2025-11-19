@@ -5,7 +5,7 @@ from fastapi import HTTPException
 from starlette import status
 
 from pecha_api.error_contants import ErrorConstants
-from .segments_response_models import MappedSegmentDTO, SegmentDTO
+from .segments_response_models import MappedSegmentDTO, MappedSegmentResponseDTO, SegmentDTO
 from .segments_repository import (
     check_segment_exists,
     check_all_segment_exists,
@@ -237,29 +237,31 @@ class SegmentUtils:
         return detail_table_of_content
     
     @staticmethod
-    async def get_segment_root_mapping_details(segment: SegmentDTO) -> List[SegmentRootMapping]:
+    async def get_segment_root_mapping_details(segments: List[SegmentDTO]) -> List[SegmentRootMapping]:
         list_of_text_ids = [
-            mapping.text_id
-            for mapping in segment.mapping
+            segment.text_id
+            for segment in segments
         ]
         texts_dict = await TextUtils.get_text_details_by_ids(text_ids=list_of_text_ids)
-        
+        grouped_segments = SegmentUtils._group_segment_content_by_text_id(segments=segments)
         list_of_segment_root_mapping = []
-
-        for mapping in segment.mapping:
-            text_detail = texts_dict.get(mapping.text_id)
+        for segment in segments:
+            text_detail = texts_dict.get(segment.text_id)
             if text_detail:
-                for segment_id in mapping.segments:
-                    segment_details = await get_segment_by_id(segment_id=segment_id)
-                    list_of_segment_root_mapping.append(
-                        SegmentRootMapping(
-                            segment_id=str(segment_id),
-                            text_id=segment_details.text_id,
-                            title=text_detail.title,
-                            content=segment_details.content,
-                            language=text_detail.language
-                        )
+                mapped_segments = []
+                for segment_item in grouped_segments.get(segment.text_id, []):
+                    mapped_segments.append(MappedSegmentResponseDTO(
+                        segment_id=str(segment_item.id),
+                        content=segment_item.content,
+                        language=text_detail.language
+                    ))
+                list_of_segment_root_mapping.append(
+                    SegmentRootMapping(
+                        text_id=segment.text_id,
+                        title=text_detail.title,
+                        segments=mapped_segments
                     )
+                )
         return list_of_segment_root_mapping
 
     @staticmethod

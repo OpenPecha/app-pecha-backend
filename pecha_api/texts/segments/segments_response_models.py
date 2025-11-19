@@ -90,12 +90,15 @@ class SegmentInfoResponse(BaseModel):
 
 # segment's root mapping models
 
-class SegmentRootMapping(BaseModel):
+class MappedSegmentResponseDTO(BaseModel):
     segment_id: str
-    text_id: str
-    title: str
     content: str
     language: str
+
+class SegmentRootMapping(BaseModel):
+    text_id: str
+    title: str
+    segments: List[MappedSegmentResponseDTO]
 
 class SegmentRootMappingResponse(BaseModel):
     parent_segment: ParentSegment
