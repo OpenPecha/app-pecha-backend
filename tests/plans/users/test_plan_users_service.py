@@ -143,6 +143,7 @@ def test_complete_sub_task_service_success():
     user_id = uuid.uuid4()
     sub_task_id = uuid.uuid4()
     task_id = uuid.uuid4()
+    day_id = uuid.uuid4()
 
     db_mock, session_cm = _mock_session_with_db()
 
@@ -156,6 +157,9 @@ def test_complete_sub_task_service_success():
         "pecha_api.plans.users.plan_users_service.get_sub_task_by_subtask_id",
         return_value=SimpleNamespace(id=sub_task_id, task_id=task_id),
     ) as mock_get_sub_task, patch(
+        "pecha_api.plans.users.plan_users_service.get_task_by_id",
+        return_value=SimpleNamespace(id=task_id, plan_item_id=day_id),
+    ) as mock_get_task, patch(
         "pecha_api.plans.users.plan_users_service.UserSubTaskCompletion",
     ) as MockUserSubTaskCompletion, patch(
         "pecha_api.plans.users.plan_users_service.save_user_sub_task_completions",
@@ -164,7 +168,9 @@ def test_complete_sub_task_service_success():
         return_value=False,
     ) as mock_check_all, patch(
         "pecha_api.plans.users.plan_users_service.save_user_task_completion",
-    ) as mock_save_task_completion:
+    ) as mock_save_task_completion, patch(
+        "pecha_api.plans.users.plan_users_service.check_day_completion",
+    ) as mock_check_day:
         constructed = SimpleNamespace(user_id=user_id, sub_task_id=sub_task_id)
         MockUserSubTaskCompletion.return_value = constructed
 
@@ -174,6 +180,7 @@ def test_complete_sub_task_service_success():
 
         mock_validate.assert_called_once_with(token="token123")
         mock_get_sub_task.assert_called_once_with(db=db_mock, id=sub_task_id)
+        mock_get_task.assert_called_once_with(db=db_mock, task_id=task_id)
 
         ctor_kwargs = MockUserSubTaskCompletion.call_args.kwargs
         assert ctor_kwargs["user_id"] == user_id
@@ -186,6 +193,7 @@ def test_complete_sub_task_service_success():
         assert mock_check_all.call_args.kwargs["user_id"] == user_id
         assert mock_check_all.call_args.kwargs["task_id"] == task_id
         mock_save_task_completion.assert_not_called()
+        mock_check_day.assert_called_once_with(db=db_mock, user_id=user_id, day_id=day_id)
 
 
 def test_complete_sub_task_service_sub_task_not_found_raises_404():
@@ -216,6 +224,7 @@ def test_complete_sub_task_service_marks_task_completion_when_all_subtasks_done(
     user_id = uuid.uuid4()
     sub_task_id = uuid.uuid4()
     task_id = uuid.uuid4()
+    day_id = uuid.uuid4()
 
     db_mock, session_cm = _mock_session_with_db()
 
@@ -229,6 +238,9 @@ def test_complete_sub_task_service_marks_task_completion_when_all_subtasks_done(
         "pecha_api.plans.users.plan_users_service.get_sub_task_by_subtask_id",
         return_value=SimpleNamespace(id=sub_task_id, task_id=task_id),
     ), patch(
+        "pecha_api.plans.users.plan_users_service.get_task_by_id",
+        return_value=SimpleNamespace(id=task_id, plan_item_id=day_id),
+    ), patch(
         "pecha_api.plans.users.plan_users_service.UserSubTaskCompletion",
     ) as MockUserSubTaskCompletion, patch(
         "pecha_api.plans.users.plan_users_service.save_user_sub_task_completions",
@@ -239,7 +251,9 @@ def test_complete_sub_task_service_marks_task_completion_when_all_subtasks_done(
         "pecha_api.plans.users.plan_users_service.UserTaskCompletion",
     ) as MockUserTaskCompletion, patch(
         "pecha_api.plans.users.plan_users_service.save_user_task_completion",
-    ) as mock_save_task:
+    ) as mock_save_task, patch(
+        "pecha_api.plans.users.plan_users_service.check_day_completion",
+    ) as mock_check_day:
         constructed_sub = SimpleNamespace(user_id=user_id, sub_task_id=sub_task_id)
         MockUserSubTaskCompletion.return_value = constructed_sub
 
@@ -261,6 +275,9 @@ def test_complete_sub_task_service_marks_task_completion_when_all_subtasks_done(
         mock_save_task.assert_called_once()
         assert mock_save_task.call_args.kwargs["db"] is db_mock
         assert mock_save_task.call_args.kwargs["user_task_completion"] is constructed_task
+        
+        # check_day_completion should be called
+        mock_check_day.assert_called_once_with(db=db_mock, user_id=user_id, day_id=day_id)
 
 
 @pytest.mark.asyncio
