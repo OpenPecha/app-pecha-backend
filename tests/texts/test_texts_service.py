@@ -15,6 +15,7 @@ from pecha_api.texts.texts_service import (
     delete_text_by_text_id,
     get_sheet,
     get_table_of_content_by_sheet_id,
+    get_table_of_content_by_type,
     _validate_text_detail_request,
     get_root_text_by_collection_id
 )
@@ -24,6 +25,7 @@ from pecha_api.texts.texts_response_models import (
     TextDTO,
     TextVersion,
     TableOfContent,
+    TableOfContentType,
     Section,
     TextSegment,
     TableOfContentResponse,
@@ -204,6 +206,7 @@ async def test_get_versions_by_group_id():
     mock_table_of_content = TableOfContent(
             id="table_of_content_id",
             text_id="text_id_1",
+            type=TableOfContentType.TEXT,
             sections=[
                 Section(
                     id="id_1",
@@ -355,10 +358,11 @@ async def test_create_new_text_invalid_user():
 
 @pytest.mark.asyncio
 async def test_create_table_of_content_success():
-    # Incoming TOC from client uses pecha_segment_id; service will map to real segment_id
+    # Incoming TOC from client uses segment_id to hold pecha_segment_id; service will map to real segment_id
     incoming_toc = TableOfContent(
         id="id_1",
         text_id="id_1",
+        type=TableOfContentType.TEXT,
         sections=[
             Section(
                 id="id_1",
@@ -366,8 +370,8 @@ async def test_create_table_of_content_success():
                 section_number=1,
                 parent_id="id_1",
                 segments=[
-                    # Placeholder; will be replaced below with an object having pecha_segment_id
-                    TextSegment(segment_id="placeholder", segment_number=1)
+                    # segment_id holds the pecha_segment_id value
+                    TextSegment(segment_id="pseg_1", segment_number=1)
                 ],
                 sections=[],
                 created_date="2025-03-16 04:40:54.757652",
@@ -376,12 +380,11 @@ async def test_create_table_of_content_success():
             )
         ]
     )
-    # Replace the placeholder TextSegment with an object that exposes pecha_segment_id
-    incoming_toc.sections[0].segments[0] = type("IncomingSeg", (), {"pecha_segment_id": "pseg_1", "segment_number": 1})()
     # Expected TOC after mapping pecha_segment_id -> segment_id
     expected_toc = TableOfContent(
         id="id_1",
         text_id="id_1",
+        type=TableOfContentType.TEXT,
         sections=[
             Section(
                 id="id_1",
@@ -436,6 +439,7 @@ async def test_create_table_of_content_invalid_text():
     table_of_content = TableOfContent(
         id="id_1",
         text_id="efb26a06-f373-450b-ba57-e7a8d4dd5b64",
+        type=TableOfContentType.TEXT,
         sections=[]
     )
     with patch("pecha_api.texts.texts_service.validate_user_exists", return_value=True), \
@@ -450,6 +454,7 @@ async def test_create_table_of_content_invalid_segment():
     table_of_content = TableOfContent(
         id="id_1",
         text_id="efb26a06-f373-450b-ba57-e7a8d4dd5b64",
+        type=TableOfContentType.TEXT,
         sections=[]
     )
     segment_ids = [
@@ -464,7 +469,9 @@ async def test_create_table_of_content_invalid_segment():
         with pytest.raises(HTTPException) as exc_info:
             await create_table_of_content(table_of_content_request=table_of_content, token="admin")
         assert exc_info.value.status_code == 404
-        assert exc_info.value.detail == ErrorConstants.SEGMENT_NOT_FOUND_MESSAGE
+        # The error message includes the segment IDs in the format: "Segment not found {segment_ids}"
+        assert ErrorConstants.SEGMENT_NOT_FOUND_MESSAGE in exc_info.value.detail
+        assert str(segment_ids) in exc_info.value.detail
     
 @pytest.mark.asyncio
 async def test_get_table_of_contents_by_text_id_success():
@@ -522,6 +529,7 @@ async def test_get_table_of_contents_by_text_id_success():
         TableOfContent(
             id="id_1",
             text_id=text_id,
+            type=TableOfContentType.TEXT,
             sections=[
                 Section(
                     id="id_1",
@@ -627,6 +635,7 @@ async def test_get_table_of_contents_by_text_id_success_language_is_none():
         TableOfContent(
             id="id_1",
             text_id=text_id,
+            type=TableOfContentType.TEXT,
             sections=[
                 Section(
                     id="id_1",
@@ -728,6 +737,7 @@ async def test_get_table_of_contents_by_text_id_root_text_is_none():
         TableOfContent(
             id="id_1",
             text_id=text_id,
+            type=TableOfContentType.TEXT,
             sections=[
                 Section(
                     id="id_1",
@@ -895,6 +905,7 @@ async def test_get_text_details_by_text_id_with_text_id_content_id_segment_id_su
     mock_table_of_content = TableOfContent(
         id=content_id,
         text_id=text_id,
+        type=TableOfContentType.TEXT,
         sections=[
             Section(
                 id="section_id_1",
@@ -986,7 +997,7 @@ async def test_get_text_details_by_text_id_with_text_id_content_id_segment_id_su
         assert response.pagination_direction == PaginationDirection.NEXT
 
 @pytest.mark.asyncio
-async def test_get_text_details_by_text_id_with_text_id_content_id_segment_id_success():
+async def test_get_text_details_by_text_id_with_text_id_content_id_segment_id_previous_success():
     text_id = "text_id_1"
     content_id = "content_id_1"
     segment_id = "segment_id_1"
@@ -1007,6 +1018,7 @@ async def test_get_text_details_by_text_id_with_text_id_content_id_segment_id_su
     mock_table_of_content = TableOfContent(
         id=content_id,
         text_id=text_id,
+        type=TableOfContentType.TEXT,
         sections=[
             Section(
                 id="section_id_1",
@@ -1113,6 +1125,7 @@ async def test_get_text_details_by_text_id_with_segment_id_only_success():
         TableOfContent(
             id=f"content_id_{i}",
             text_id=text_id,
+            type=TableOfContentType.TEXT,
             sections=[
                 Section(
                     id="section_id_1",
@@ -1213,6 +1226,7 @@ async def test_get_text_details_by_text_id_with_content_id_only_success():
         TableOfContent(
             id=f"content_id_{i}",
             text_id=text_id,
+            type=TableOfContentType.TEXT,
             sections=[
                 Section(
                     id="section_id_1",
@@ -1335,6 +1349,7 @@ async def test_get_table_of_content_by_sheet_id_success():
         TableOfContent(
             id="content_id_1",
             text_id=sheet_id,
+            type=TableOfContentType.SHEET,
             sections=[
                 Section(
                     id="section_id_1",
@@ -1543,6 +1558,7 @@ async def test_get_versions_by_group_id_language_is_none():
     mock_table_of_content = TableOfContent(
             id="table_of_content_id",
             text_id="text_id_1",
+            type=TableOfContentType.TEXT,
             sections=[
                 Section(
                     id="id_1",

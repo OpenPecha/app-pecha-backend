@@ -201,6 +201,7 @@ class TextUtils:
                 filtered_content = TableOfContent(
                     id=str(content.id),
                     text_id=content.text_id,
+                    type=content.type,
                     sections=[found_section]  # Only include the section with the segment_id
                 )
                 return filtered_content

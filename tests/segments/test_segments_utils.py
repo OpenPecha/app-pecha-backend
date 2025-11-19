@@ -20,7 +20,8 @@ from pecha_api.texts.texts_response_models import (
     DetailTableOfContent,
     Section,
     TextSegment,
-    TableOfContent
+    TableOfContent,
+    TableOfContentType
 )
 from pecha_api.texts.segments.segments_enum import SegmentType
 
@@ -270,6 +271,7 @@ async def test_mapped_segment_content_for_table_of_content_without_version_id_su
     table_of_content = TableOfContent(
         id="efb26a06-f373-450b-ba57-e7a8d4dd5b64",
         text_id="5f3c2e9d-9b7a-4f5e-8e2a-6a8b7c9d4e0f",
+        type=TableOfContentType.TEXT,
         sections=[
             Section(
                 id="123e4567-e89b-12d3-a456-426614174000",
@@ -428,6 +430,7 @@ async def test_mapped_segment_content_for_table_of_content_with_version_id_succe
     table_of_content = TableOfContent(
         id="efb26a06-f373-450b-ba57-e7a8d4dd5b64",
         text_id="5f3c2e9d-9b7a-4f5e-8e2a-6a8b7c9d4e0f",
+        type=TableOfContentType.TEXT,
         sections=[
             Section(
                 id="123e4567-e89b-12d3-a456-426614174000",

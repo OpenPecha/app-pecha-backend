@@ -208,7 +208,9 @@ async def test_validate_segments_exists_not_found():
         with pytest.raises(HTTPException) as exc_info:
             await SegmentUtils.validate_segments_exists(segment_ids)
         assert exc_info.value.status_code == 404
-        assert exc_info.value.detail == ErrorConstants.SEGMENT_NOT_FOUND_MESSAGE
+        # The error message includes the segment IDs in the format: "Segment not found {segment_ids}"
+        assert ErrorConstants.SEGMENT_NOT_FOUND_MESSAGE in exc_info.value.detail
+        assert str(segment_ids) in exc_info.value.detail
 
 @pytest.mark.asyncio
 async def test_get_segment_details_by_id_without_text_details_success():

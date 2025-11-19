@@ -179,6 +179,7 @@ async def get_table_of_contents_by_text_id(text_id: str, language: str = None, s
             TableOfContent(
                 id=str(content.id),
                 text_id=content.text_id,
+                type=content.type,
                 sections=_get_paginated_sections(sections=content.sections, skip=skip, limit=limit)
             )
             for content in table_of_contents
@@ -611,6 +612,7 @@ def _generate_paginated_table_of_content_by_segments_(
     paginated_table_of_content = TableOfContent(
         id=str(table_of_content.id),
         text_id=table_of_content.text_id,
+        type=table_of_content.type,
         sections=filtered_sections
     )
     
