@@ -283,11 +283,10 @@ async def get_text_versions_by_group_id(text_id: str, language: str, skip: int, 
     filtered_text_on_root_and_version = TextUtils.filter_text_on_root_and_version(texts=texts, language=language)
     root_text = filtered_text_on_root_and_version["root_text"]
     versions = filtered_text_on_root_and_version["versions"]
-
     versions_table_of_content_id_dict: Dict[str, List[str]] = await _get_table_of_content_by_version_text_id(versions=versions)
-
     list_of_version = _get_list_of_text_version_response_model(versions=versions, versions_table_of_content_id_dict=versions_table_of_content_id_dict)
-
+    print(list_of_version)
+    print("*"*100)
     response = TextVersionResponse(
         text=root_text,
         versions=list_of_version
@@ -478,7 +477,10 @@ def _get_list_of_text_version_response_model(versions: List[TextDTO], versions_t
             created_date=version.created_date,
             updated_date=version.updated_date,
             published_date=version.published_date,
-            published_by=version.published_by
+            published_by=version.published_by,
+            source_link=version.source_link,
+            ranking=version.ranking,
+            license=version.license
         )
         for version in versions
     ]
