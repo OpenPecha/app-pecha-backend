@@ -1,5 +1,5 @@
 import pytest
-from unittest.mock import patch
+from unittest.mock import patch, MagicMock
 from uuid import uuid4
 from fastapi import HTTPException
 from starlette import status
@@ -7,8 +7,8 @@ from starlette import status
 from pecha_api.recitations.recitations_services import (
     get_list_of_recitations_service,
     get_recitation_details_service,
-    _segments_mapping_by_toc,
-    _filter_by_type_and_language,
+    segments_mapping_by_toc,
+    filter_by_type_and_language,
 )
 from pecha_api.recitations.recitations_response_models import (
     RecitationDTO,
@@ -170,7 +170,7 @@ class TestGetListOfRecitationsService:
         assert result.recitations[0].title == text_title
         
         # Verify language is passed correctly
-        mock_get_root_text.assert_called_once_with(collection_id=collection.id, language="bo")
+        mock_get_root_text.assert_called_once_with(collection_id=liturgy_collection_id, language="bo")
 
 
 class TestGetRecitationDetailsService:
@@ -302,8 +302,7 @@ class TestSegmentsMappingByToc:
             content=content
         )
 
-    @patch('pecha_api.recitations.recitations_services.get_text_details_by_text_id')
-    @patch('pecha_api.recitations.recitations_services.get_segment_by_id')
+    @patch('pecha_api.recitations.recitations_services.get_segment_details_by_id')
     @patch('pecha_api.recitations.recitations_services.get_related_mapped_segments')
     @patch('pecha_api.recitations.recitations_services.SegmentUtils.filter_segment_mapping_by_type_or_text_id')
     @pytest.mark.asyncio
@@ -311,8 +310,7 @@ class TestSegmentsMappingByToc:
         self,
         mock_filter_segments,
         mock_get_related_segments,
-        mock_get_segment,
-        mock_get_text_details
+        mock_get_segment_details
     ):
         """Test mapping with empty table of contents."""
         request = RecitationDetailsRequest(
@@ -324,20 +322,19 @@ class TestSegmentsMappingByToc:
         )
 
         # Execute
-        result = await _segments_mapping_by_toc([], request)
+        result = await segments_mapping_by_toc([], request)
 
         # Verify
         assert len(result) == 0
         assert result == []
         
         # Verify no mock calls were made
-        mock_get_text_details.assert_not_called()
-        mock_get_segment.assert_not_called()
+        mock_get_segment_details.assert_not_called()
         mock_get_related_segments.assert_not_called()
         mock_filter_segments.assert_not_called()
 
 class TestFilterByTypeAndLanguage:
-    """Test cases for _filter_by_type_and_language function."""
+    """Test cases for filter_by_type_and_language function."""
 
     def test_filter_by_type_and_language_translations(self):
         """Test filtering translations by language."""
@@ -362,9 +359,9 @@ class TestFilterByTypeAndLanguage:
         ]
         languages = ["en"]
         
-        result = _filter_by_type_and_language(
-            key=RecitationListTextType.TRANSLATIONS.value,
-            items=items,
+        result = filter_by_type_and_language(
+            type=RecitationListTextType.TRANSLATIONS.value,
+            segments=items,
             languages=languages
         )
         
@@ -391,9 +388,9 @@ class TestFilterByTypeAndLanguage:
         ]
         languages = ["bo"]
         
-        result = _filter_by_type_and_language(
-            key=RecitationListTextType.TRANSLITERATIONS.value,
-            items=items,
+        result = filter_by_type_and_language(
+            type=RecitationListTextType.TRANSLITERATIONS.value,
+            segments=items,
             languages=languages
         )
         
@@ -417,9 +414,9 @@ class TestFilterByTypeAndLanguage:
         ]
         languages = ["en"]
         
-        result = _filter_by_type_and_language(
-            key=RecitationListTextType.TRANSLITERATIONS.value,
-            items=items,
+        result = filter_by_type_and_language(
+            type=RecitationListTextType.TRANSLITERATIONS.value,
+            segments=items,
             languages=languages
         )
         
@@ -429,9 +426,9 @@ class TestFilterByTypeAndLanguage:
 
     def test_filter_by_type_and_language_empty_items(self):
         """Test filtering with empty items list."""
-        result = _filter_by_type_and_language(
-            key=RecitationListTextType.TRANSLATIONS.value,
-            items=[],
+        result = filter_by_type_and_language(
+            type=RecitationListTextType.TRANSLATIONS.value,
+            segments=[],
             languages=["en"]
         )
         
@@ -453,9 +450,9 @@ class TestFilterByTypeAndLanguage:
         ]
         languages = ["en", "bo"]  # Request different languages
         
-        result = _filter_by_type_and_language(
-            key=RecitationListTextType.TRANSLATIONS.value,
-            items=items,
+        result = filter_by_type_and_language(
+            type=RecitationListTextType.TRANSLATIONS.value,
+            segments=items,
             languages=languages
         )
         
