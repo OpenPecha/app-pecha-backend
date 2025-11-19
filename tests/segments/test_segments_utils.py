@@ -112,7 +112,7 @@ async def test_get_count_of_each_commentary_and_version_success():
         )
     ]
     with patch("pecha_api.texts.segments.segments_utils.TextUtils.get_text_details_by_ids", new_callable=AsyncMock, return_value=text_details):
-        result = await SegmentUtils.get_count_of_each_commentary_and_version(list_of_segment_paramenter, parent_text)
+        result = await SegmentUtils.get_count_of_each_commentary_and_version(segments=list_of_segment_paramenter, parent_text=parent_text)
         assert result["commentary"] == 2
         assert result["version"] == 1
 
@@ -297,7 +297,7 @@ async def test_get_segment_root_mapping_details_success():
     
     segment = SegmentDTO(
         id="efb26a06-f373-450b-ba57-e7a8d4dd5b64",
-        text_id="efb26a06-f373-450b-ba57-e7a8d4dd5b64",
+        text_id="parent_text_id",
         content="content",
         mapping=[
             MappingResponse(
@@ -488,7 +488,7 @@ async def test_get_root_mapping_count_group_type_text_returns_zero():
         patch("pecha_api.texts.segments.segments_utils.TextUtils.get_text_details_by_id", new_callable=AsyncMock, return_value=text_details), \
         patch("pecha_api.texts.segments.segments_utils.TextUtils.get_text_details_by_ids", new_callable=AsyncMock, return_value=mapped_text_details), \
         patch("pecha_api.texts.segments.segments_utils.get_group_details", new_callable=AsyncMock, return_value=group_detail):
-        count = await SegmentUtils.get_root_mapping_count(segment_id, parent_text)
+        count = await SegmentUtils.get_root_mapping_count(segment_id=segment_id, parent_text=parent_text)
         assert count == 0
 
 
