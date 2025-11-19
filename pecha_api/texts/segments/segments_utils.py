@@ -245,9 +245,13 @@ class SegmentUtils:
         texts_dict = await TextUtils.get_text_details_by_ids(text_ids=list_of_text_ids)
         grouped_segments = SegmentUtils._group_segment_content_by_text_id(segments=segments)
         list_of_segment_root_mapping = []
+        appended_text_ids = []
+        
         for segment in segments:
             text_detail = texts_dict.get(segment.text_id)
             if text_detail:
+                if segment.text_id in appended_text_ids:
+                    continue
                 mapped_segments = []
                 for segment_item in grouped_segments.get(segment.text_id, []):
                     mapped_segments.append(MappedSegmentResponseDTO(
@@ -262,6 +266,7 @@ class SegmentUtils:
                         segments=mapped_segments
                     )
                 )
+                appended_text_ids.append(segment.text_id)
         return list_of_segment_root_mapping
 
     @staticmethod
