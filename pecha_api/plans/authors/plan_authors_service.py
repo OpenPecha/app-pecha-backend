@@ -1,5 +1,5 @@
 import logging
-from typing import List, Dict
+from typing import List, Dict, Optional
 from uuid import UUID
 
 from fastapi import HTTPException
@@ -18,7 +18,8 @@ from pecha_api.plans.authors.plan_authors_repository import get_author_by_email,
 import jose
 
 from pecha_api.plans.authors.plan_authors_response_models import AuthorInfoResponse, SocialMediaProfile, \
-    AuthorsResponse, AuthorInfoRequest, AuthorUpdateResponse, AuthorPlanDTO, AuthorPlansResponse
+    AuthorsResponse, AuthorInfoRequest, AuthorUpdateResponse, AuthorPlanDTO, AuthorPlansResponse, \
+    ImageUrlModel, AuthorInfoPublicResponse
 from pecha_api.plans.plans_response_models import PlansResponse
 
 from pecha_api.plans.shared.utils import load_plans_from_json
@@ -106,16 +107,29 @@ async def update_author_info(token: str, author_info_request: AuthorInfoRequest)
             logging.error(f"Failed to update user info: {e}")
             raise HTTPException(status_code=500, detail="Internal Server Error")
 
+def get_image_url(image_url: Optional[str]) -> Optional[ImageUrlModel]:
+    if not image_url:
+        return None
+        
+    thumbnail_url = image_url.replace("original", "thumbnail")
+    medium_url = image_url.replace("original", "medium")
+    original_url = image_url
+    return ImageUrlModel(
+        thumbnail=generate_presigned_access_url(bucket_name=get("AWS_BUCKET_NAME"), s3_key=thumbnail_url),
+        medium=generate_presigned_access_url(bucket_name=get("AWS_BUCKET_NAME"), s3_key=medium_url),
+        original=generate_presigned_access_url(bucket_name=get("AWS_BUCKET_NAME"), s3_key=original_url)
+    )
 
-async def get_selected_author_details(author_id: UUID) -> AuthorInfoResponse:
+async def get_selected_author_details(author_id: UUID) -> AuthorInfoPublicResponse:
     author = await _get_author_details_by_id(author_id=author_id)
+    author_image: Optional[ImageUrlModel] = get_image_url(image_url=author.image_url)
     social_media_profiles = _get_author_social_profile(author=author)
-    return AuthorInfoResponse(
+    return AuthorInfoPublicResponse(
         id=author.id,
         firstname=author.first_name,
         lastname=author.last_name,
         email=author.email,
-        image_url=generate_presigned_access_url(bucket_name=get("AWS_BUCKET_NAME"), s3_key= author.image_url),
+        image=author_image,
         bio=author.bio,
         social_profiles=social_media_profiles
     )
@@ -133,10 +147,7 @@ async def get_plans_by_author(author_id: UUID,skip: int, limit: int) -> AuthorPl
                 language=aggregate.plan.language,
                 total_days=aggregate.total_days,
                 subscription_count=aggregate.subscription_count,
-                image_url=generate_presigned_access_url(
-                    bucket_name=get("AWS_BUCKET_NAME"),
-                    s3_key=aggregate.plan.image_url
-                ) if aggregate.plan.image_url else None,
+                image=get_image_url(aggregate.plan.image_url),
             )
             for aggregate in published_plans
         ]
