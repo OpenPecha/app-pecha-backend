@@ -13,11 +13,12 @@ from pecha_api.sheets.sheets_enum import (
 )
 
 from .texts_enums import TextType
-from .texts_response_models import TextDTO
+from .texts_response_models import TextDTO, TableOfContentType
 
 class TableOfContent(Document):
     id: uuid.UUID = Field(default_factory=uuid.uuid4)
     text_id: str
+    type: Optional[TableOfContentType] = None
     sections: List[Section]
 
     class Settings:

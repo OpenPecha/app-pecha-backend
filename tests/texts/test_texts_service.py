@@ -1756,3 +1756,787 @@ async def test_get_root_text_by_collection_id_success_with_root_text():
         assert len(result) == 2
         assert result[0] == "text_id_1"
         assert result[1] == "བྱང་ཆུབ་སེམས་དཔའི་སྤྱོད་པ་ལ་འཇུག་པ།"
+
+@pytest.mark.asyncio
+async def test_get_root_text_by_collection_id_no_root_text():
+    """Test get_root_text_by_collection_id when no root text is found"""
+    collection_id = "collection_id_1"
+    language = "zh"
+    
+    mock_texts = [
+        TextDTO(
+            id="text_id_1",
+            title="བྱང་ཆུབ་སེམས་དཔའི་སྤྱོད་པ་ལ་འཇུག་པ།",
+            language="bo",
+            group_id="group_id_1",
+            type="version",
+            is_published=True,
+            created_date="2025-03-20 09:26:16.571522",
+            updated_date="2025-03-20 09:26:16.571532",
+            published_date="2025-03-20 09:26:16.571536",
+            published_by="pecha",
+            categories=[],
+            views=0
+        )
+    ]
+    
+    # Mock the filtered result with no root text found
+    mock_filtered_result = {
+        "root_text": None,
+        "versions": mock_texts
+    }
+    
+    with patch("pecha_api.texts.texts_service.get_all_texts_by_collection", new_callable=AsyncMock) as mock_get_all_texts, \
+         patch("pecha_api.texts.texts_service.TextUtils.filter_text_on_root_and_version") as mock_filter:
+        
+        mock_get_all_texts.return_value = mock_texts
+        mock_filter.return_value = mock_filtered_result
+        
+        result = await get_root_text_by_collection_id(collection_id=collection_id, language=language)
+        
+        # Verify the result
+        assert result is not None
+        assert isinstance(result, tuple)
+        assert len(result) == 2
+        assert result[0] is None
+        assert result[1] is None
+
+@pytest.mark.asyncio
+async def test_get_table_of_content_by_type_text_type():
+    """Test get_table_of_content_by_type with TEXT type"""
+    text_id = "text_id_1"
+    
+    incoming_toc = TableOfContent(
+        id="toc_id_1",
+        text_id=text_id,
+        type=TableOfContentType.TEXT,
+        sections=[
+            Section(
+                id="section_id_1",
+                title="section_1",
+                section_number=1,
+                parent_id="parent_id_1",
+                segments=[
+                    TextSegment(segment_id="pseg_1", segment_number=1)
+                ],
+                sections=[],
+                created_date="2025-03-16 04:40:54.757652",
+                updated_date="2025-03-16 04:40:54.757652",
+                published_date="2025-03-16 04:40:54.757652"
+            )
+        ]
+    )
+    
+    expected_toc = TableOfContent(
+        text_id=text_id,
+        type=TableOfContentType.TEXT,
+        sections=[
+            Section(
+                id="section_id_1",
+                title="section_1",
+                section_number=1,
+                segments=[TextSegment(segment_id="seg_id_1", segment_number=1)]
+            )
+        ]
+    )
+    
+    with patch("pecha_api.texts.texts_service.get_segments_by_text_id", new_callable=AsyncMock) as mock_get_segments:
+        mock_get_segments.return_value = [type("Seg", (), {"id": "seg_id_1", "pecha_segment_id": "pseg_1"})()]
+        
+        result = await get_table_of_content_by_type(table_of_content=incoming_toc)
+        
+        assert result is not None
+        assert isinstance(result, TableOfContent)
+        assert result.text_id == text_id
+        assert result.type == TableOfContentType.TEXT
+        assert len(result.sections) == 1
+        assert result.sections[0].segments[0].segment_id == "seg_id_1"
+
+@pytest.mark.asyncio
+async def test_get_table_of_content_by_type_sheet_type():
+    """Test get_table_of_content_by_type with SHEET type"""
+    text_id = "text_id_1"
+    
+    incoming_toc = TableOfContent(
+        id="toc_id_1",
+        text_id=text_id,
+        type=TableOfContentType.SHEET,
+        sections=[
+            Section(
+                id="section_id_1",
+                title="section_1",
+                section_number=1,
+                parent_id="parent_id_1",
+                segments=[
+                    TextSegment(segment_id="seg_1", segment_number=1)
+                ],
+                sections=[],
+                created_date="2025-03-16 04:40:54.757652",
+                updated_date="2025-03-16 04:40:54.757652",
+                published_date="2025-03-16 04:40:54.757652"
+            )
+        ]
+    )
+    
+    result = await get_table_of_content_by_type(table_of_content=incoming_toc)
+    
+    assert result is not None
+    assert isinstance(result, TableOfContent)
+    assert result.text_id == text_id
+    assert result.type == TableOfContentType.SHEET
+    assert result.sections == incoming_toc.sections
+
+def test_get_trimmed_segment_dict_next_direction():
+    """Test _get_trimmed_segment_dict_ with NEXT direction"""
+    from pecha_api.texts.texts_service import _get_trimmed_segment_dict_
+    
+    segments_with_position = [
+        ("seg_1", 1),
+        ("seg_2", 2),
+        ("seg_3", 3),
+        ("seg_4", 4),
+        ("seg_5", 5)
+    ]
+    
+    result = _get_trimmed_segment_dict_(
+        segments_with_position=segments_with_position,
+        segment_id="seg_2",
+        direction=PaginationDirection.NEXT,
+        size=2
+    )
+    
+    assert result is not None
+    assert isinstance(result, dict)
+    assert len(result) == 2
+    assert "seg_2" in result
+    assert "seg_3" in result
+    assert result["seg_2"] == 2
+    assert result["seg_3"] == 3
+
+def test_get_trimmed_segment_dict_previous_direction():
+    """Test _get_trimmed_segment_dict_ with PREVIOUS direction"""
+    from pecha_api.texts.texts_service import _get_trimmed_segment_dict_
+    
+    segments_with_position = [
+        ("seg_1", 1),
+        ("seg_2", 2),
+        ("seg_3", 3),
+        ("seg_4", 4),
+        ("seg_5", 5)
+    ]
+    
+    result = _get_trimmed_segment_dict_(
+        segments_with_position=segments_with_position,
+        segment_id="seg_4",
+        direction=PaginationDirection.PREVIOUS,
+        size=2
+    )
+    
+    assert result is not None
+    assert isinstance(result, dict)
+    assert len(result) == 2
+    assert "seg_3" in result
+    assert "seg_4" in result
+    assert result["seg_3"] == 3
+    assert result["seg_4"] == 4
+
+def test_get_trimmed_segment_dict_next_at_end():
+    """Test _get_trimmed_segment_dict_ with NEXT direction at end of list"""
+    from pecha_api.texts.texts_service import _get_trimmed_segment_dict_
+    
+    segments_with_position = [
+        ("seg_1", 1),
+        ("seg_2", 2),
+        ("seg_3", 3)
+    ]
+    
+    result = _get_trimmed_segment_dict_(
+        segments_with_position=segments_with_position,
+        segment_id="seg_2",
+        direction=PaginationDirection.NEXT,
+        size=5
+    )
+    
+    assert result is not None
+    assert isinstance(result, dict)
+    assert len(result) == 2
+    assert "seg_2" in result
+    assert "seg_3" in result
+
+def test_get_trimmed_segment_dict_previous_at_start():
+    """Test _get_trimmed_segment_dict_ with PREVIOUS direction at start of list"""
+    from pecha_api.texts.texts_service import _get_trimmed_segment_dict_
+    
+    segments_with_position = [
+        ("seg_1", 1),
+        ("seg_2", 2),
+        ("seg_3", 3)
+    ]
+    
+    result = _get_trimmed_segment_dict_(
+        segments_with_position=segments_with_position,
+        segment_id="seg_1",
+        direction=PaginationDirection.PREVIOUS,
+        size=5
+    )
+    
+    assert result is not None
+    assert isinstance(result, dict)
+    assert len(result) == 1
+    assert "seg_1" in result
+
+def test_get_segments_with_position_simple():
+    """Test _get_segments_with_position_ with simple sections"""
+    from pecha_api.texts.texts_service import _get_segments_with_position_
+    
+    table_of_content = TableOfContent(
+        id="toc_id",
+        text_id="text_id",
+        type=TableOfContentType.TEXT,
+        sections=[
+            Section(
+                id="section_1",
+                title="Section 1",
+                section_number=1,
+                segments=[
+                    TextSegment(segment_id="seg_1", segment_number=1),
+                    TextSegment(segment_id="seg_2", segment_number=2)
+                ],
+                sections=[]
+            )
+        ]
+    )
+    
+    result = _get_segments_with_position_(table_of_content=table_of_content)
+    
+    assert result is not None
+    assert isinstance(result, list)
+    assert len(result) == 2
+    assert result[0] == ("seg_1", 1)
+    assert result[1] == ("seg_2", 2)
+
+def test_get_segments_with_position_nested():
+    """Test _get_segments_with_position_ with nested sections"""
+    from pecha_api.texts.texts_service import _get_segments_with_position_
+    
+    table_of_content = TableOfContent(
+        id="toc_id",
+        text_id="text_id",
+        type=TableOfContentType.TEXT,
+        sections=[
+            Section(
+                id="section_1",
+                title="Section 1",
+                section_number=1,
+                segments=[
+                    TextSegment(segment_id="seg_1", segment_number=1)
+                ],
+                sections=[
+                    Section(
+                        id="section_2",
+                        title="Section 2",
+                        section_number=2,
+                        segments=[
+                            TextSegment(segment_id="seg_2", segment_number=1)
+                        ],
+                        sections=[]
+                    )
+                ]
+            )
+        ]
+    )
+    
+    result = _get_segments_with_position_(table_of_content=table_of_content)
+    
+    assert result is not None
+    assert isinstance(result, list)
+    assert len(result) == 2
+    assert result[0] == ("seg_1", 1)
+    assert result[1] == ("seg_2", 2)
+
+def test_filter_single_section_with_wanted_segments():
+    """Test _filter_single_section_ with wanted segments"""
+    from pecha_api.texts.texts_service import _filter_single_section_
+    
+    section = Section(
+        id="section_1",
+        title="Section 1",
+        section_number=1,
+        segments=[
+            TextSegment(segment_id="seg_1", segment_number=1),
+            TextSegment(segment_id="seg_2", segment_number=2),
+            TextSegment(segment_id="seg_3", segment_number=3)
+        ],
+        sections=[]
+    )
+    
+    wanted_segment_ids = {"seg_1", "seg_3"}
+    
+    result = _filter_single_section_(section=section, wanted_segment_ids=wanted_segment_ids)
+    
+    assert result is not None
+    assert isinstance(result, Section)
+    assert len(result.segments) == 2
+    assert result.segments[0].segment_id == "seg_1"
+    assert result.segments[1].segment_id == "seg_3"
+
+def test_filter_single_section_no_wanted_segments():
+    """Test _filter_single_section_ with no wanted segments"""
+    from pecha_api.texts.texts_service import _filter_single_section_
+    
+    section = Section(
+        id="section_1",
+        title="Section 1",
+        section_number=1,
+        segments=[
+            TextSegment(segment_id="seg_1", segment_number=1),
+            TextSegment(segment_id="seg_2", segment_number=2)
+        ],
+        sections=[]
+    )
+    
+    wanted_segment_ids = {"seg_3", "seg_4"}
+    
+    result = _filter_single_section_(section=section, wanted_segment_ids=wanted_segment_ids)
+    
+    assert result is None
+
+def test_filter_single_section_nested_with_wanted_segments():
+    """Test _filter_single_section_ with nested sections containing wanted segments"""
+    from pecha_api.texts.texts_service import _filter_single_section_
+    
+    section = Section(
+        id="section_1",
+        title="Section 1",
+        section_number=1,
+        segments=[
+            TextSegment(segment_id="seg_1", segment_number=1)
+        ],
+        sections=[
+            Section(
+                id="section_2",
+                title="Section 2",
+                section_number=2,
+                segments=[
+                    TextSegment(segment_id="seg_2", segment_number=1)
+                ],
+                sections=[]
+            )
+        ]
+    )
+    
+    wanted_segment_ids = {"seg_2"}
+    
+    result = _filter_single_section_(section=section, wanted_segment_ids=wanted_segment_ids)
+    
+    assert result is not None
+    assert isinstance(result, Section)
+    assert len(result.segments) == 0  # Parent has no wanted segments
+    assert len(result.sections) == 1  # But subsection has wanted segments
+    assert result.sections[0].segments[0].segment_id == "seg_2"
+
+def test_generate_paginated_table_of_content_by_segments():
+    """Test _generate_paginated_table_of_content_by_segments_"""
+    from pecha_api.texts.texts_service import _generate_paginated_table_of_content_by_segments_
+    
+    table_of_content = TableOfContent(
+        id="toc_id",
+        text_id="text_id",
+        type=TableOfContentType.TEXT,
+        sections=[
+            Section(
+                id="section_1",
+                title="Section 1",
+                section_number=1,
+                segments=[
+                    TextSegment(segment_id="seg_1", segment_number=1),
+                    TextSegment(segment_id="seg_2", segment_number=2),
+                    TextSegment(segment_id="seg_3", segment_number=3)
+                ],
+                sections=[]
+            )
+        ]
+    )
+    
+    segment_dict = {
+        "seg_1": 1,
+        "seg_3": 3
+    }
+    
+    result = _generate_paginated_table_of_content_by_segments_(
+        table_of_content=table_of_content,
+        segment_dict=segment_dict
+    )
+    
+    assert result is not None
+    assert isinstance(result, TableOfContent)
+    assert len(result.sections) == 1
+    assert len(result.sections[0].segments) == 2
+    assert result.sections[0].segments[0].segment_id == "seg_1"
+    assert result.sections[0].segments[1].segment_id == "seg_3"
+
+def test_search_section_found():
+    """Test _search_section_ when segment is found"""
+    from pecha_api.texts.texts_service import _search_section_
+    
+    sections = [
+        Section(
+            id="section_1",
+            title="Section 1",
+            section_number=1,
+            segments=[
+                TextSegment(segment_id="seg_1", segment_number=1),
+                TextSegment(segment_id="seg_2", segment_number=2)
+            ],
+            sections=[]
+        )
+    ]
+    
+    result = _search_section_(sections=sections, segment_id="seg_2")
+    
+    assert result is True
+
+def test_search_section_not_found():
+    """Test _search_section_ when segment is not found"""
+    from pecha_api.texts.texts_service import _search_section_
+    
+    sections = [
+        Section(
+            id="section_1",
+            title="Section 1",
+            section_number=1,
+            segments=[
+                TextSegment(segment_id="seg_1", segment_number=1)
+            ],
+            sections=[]
+        )
+    ]
+    
+    result = _search_section_(sections=sections, segment_id="seg_3")
+    
+    assert result is False
+
+def test_search_section_nested():
+    """Test _search_section_ with nested sections"""
+    from pecha_api.texts.texts_service import _search_section_
+    
+    sections = [
+        Section(
+            id="section_1",
+            title="Section 1",
+            section_number=1,
+            segments=[
+                TextSegment(segment_id="seg_1", segment_number=1)
+            ],
+            sections=[
+                Section(
+                    id="section_2",
+                    title="Section 2",
+                    section_number=2,
+                    segments=[
+                        TextSegment(segment_id="seg_2", segment_number=1)
+                    ],
+                    sections=[]
+                )
+            ]
+        )
+    ]
+    
+    result = _search_section_(sections=sections, segment_id="seg_2")
+    
+    assert result is True
+
+def test_search_table_of_content_where_segment_id_exists_found():
+    """Test _search_table_of_content_where_segment_id_exists when segment is found"""
+    from pecha_api.texts.texts_service import _search_table_of_content_where_segment_id_exists
+    
+    table_of_contents = [
+        TableOfContent(
+            id="toc_1",
+            text_id="text_id",
+            type=TableOfContentType.TEXT,
+            sections=[
+                Section(
+                    id="section_1",
+                    title="Section 1",
+                    section_number=1,
+                    segments=[
+                        TextSegment(segment_id="seg_1", segment_number=1)
+                    ],
+                    sections=[]
+                )
+            ]
+        ),
+        TableOfContent(
+            id="toc_2",
+            text_id="text_id",
+            type=TableOfContentType.TEXT,
+            sections=[
+                Section(
+                    id="section_2",
+                    title="Section 2",
+                    section_number=1,
+                    segments=[
+                        TextSegment(segment_id="seg_2", segment_number=1)
+                    ],
+                    sections=[]
+                )
+            ]
+        )
+    ]
+    
+    result = _search_table_of_content_where_segment_id_exists(
+        table_of_contents=table_of_contents,
+        segment_id="seg_2"
+    )
+    
+    assert result is not None
+    assert isinstance(result, TableOfContent)
+    assert result.id == "toc_2"
+
+def test_search_table_of_content_where_segment_id_exists_not_found():
+    """Test _search_table_of_content_where_segment_id_exists when segment is not found"""
+    from pecha_api.texts.texts_service import _search_table_of_content_where_segment_id_exists
+    
+    table_of_contents = [
+        TableOfContent(
+            id="toc_1",
+            text_id="text_id",
+            type=TableOfContentType.TEXT,
+            sections=[
+                Section(
+                    id="section_1",
+                    title="Section 1",
+                    section_number=1,
+                    segments=[
+                        TextSegment(segment_id="seg_1", segment_number=1)
+                    ],
+                    sections=[]
+                )
+            ]
+        )
+    ]
+    
+    with pytest.raises(HTTPException) as exc_info:
+        _search_table_of_content_where_segment_id_exists(
+            table_of_contents=table_of_contents,
+            segment_id="seg_3"
+        )
+    
+    assert exc_info.value.status_code == 404
+    assert exc_info.value.detail == ErrorConstants.TABLE_OF_CONTENT_NOT_FOUND_MESSAGE
+
+def test_get_first_segment_and_table_of_content_success():
+    """Test _get_first_segment_and_table_of_content_ when segment is found"""
+    from pecha_api.texts.texts_service import _get_first_segment_and_table_of_content_
+    
+    table_of_contents = [
+        TableOfContent(
+            id="toc_1",
+            text_id="text_id",
+            type=TableOfContentType.TEXT,
+            sections=[
+                Section(
+                    id="section_1",
+                    title="Section 1",
+                    section_number=1,
+                    segments=[
+                        TextSegment(segment_id="seg_1", segment_number=1)
+                    ],
+                    sections=[]
+                )
+            ]
+        )
+    ]
+    
+    segment_id, table_of_content = _get_first_segment_and_table_of_content_(
+        table_of_contents=table_of_contents
+    )
+    
+    assert segment_id == "seg_1"
+    assert table_of_content is not None
+    assert table_of_content.id == "toc_1"
+
+def test_get_first_segment_and_table_of_content_no_segments():
+    """Test _get_first_segment_and_table_of_content_ when no segments exist"""
+    from pecha_api.texts.texts_service import _get_first_segment_and_table_of_content_
+    
+    table_of_contents = [
+        TableOfContent(
+            id="toc_1",
+            text_id="text_id",
+            type=TableOfContentType.TEXT,
+            sections=[
+                Section(
+                    id="section_1",
+                    title="Section 1",
+                    section_number=1,
+                    segments=[],
+                    sections=[]
+                )
+            ]
+        )
+    ]
+    
+    segment_id, table_of_content = _get_first_segment_and_table_of_content_(
+        table_of_contents=table_of_contents
+    )
+    
+    assert segment_id is None
+    assert table_of_content is None
+
+def test_get_paginated_sections():
+    """Test _get_paginated_sections"""
+    from pecha_api.texts.texts_service import _get_paginated_sections
+    
+    sections = [
+        Section(
+            id="section_1",
+            title="Section 1",
+            section_number=1,
+            segments=[
+                TextSegment(segment_id="seg_1", segment_number=1),
+                TextSegment(segment_id="seg_2", segment_number=2)
+            ],
+            sections=[]
+        ),
+        Section(
+            id="section_2",
+            title="Section 2",
+            section_number=2,
+            segments=[
+                TextSegment(segment_id="seg_3", segment_number=1)
+            ],
+            sections=[]
+        ),
+        Section(
+            id="section_3",
+            title="Section 3",
+            section_number=3,
+            segments=[
+                TextSegment(segment_id="seg_4", segment_number=1)
+            ],
+            sections=[]
+        )
+    ]
+    
+    result = _get_paginated_sections(sections=sections, skip=0, limit=2)
+    
+    assert result is not None
+    assert isinstance(result, list)
+    assert len(result) == 2
+    assert result[0].id == "section_1"
+    assert result[1].id == "section_2"
+    # Each section should only have first segment
+    assert len(result[0].segments) == 1
+    assert result[0].segments[0].segment_id == "seg_1"
+
+def test_get_paginated_sections_with_skip():
+    """Test _get_paginated_sections with skip"""
+    from pecha_api.texts.texts_service import _get_paginated_sections
+    
+    sections = [
+        Section(
+            id="section_1",
+            title="Section 1",
+            section_number=1,
+            segments=[
+                TextSegment(segment_id="seg_1", segment_number=1)
+            ],
+            sections=[]
+        ),
+        Section(
+            id="section_2",
+            title="Section 2",
+            section_number=2,
+            segments=[
+                TextSegment(segment_id="seg_2", segment_number=1)
+            ],
+            sections=[]
+        )
+    ]
+    
+    result = _get_paginated_sections(sections=sections, skip=1, limit=2)
+    
+    assert result is not None
+    assert isinstance(result, list)
+    assert len(result) == 1
+    assert result[0].id == "section_2"
+
+@pytest.mark.asyncio
+async def test_update_text_details_cache_update_fails():
+    """Test update_text_details when cache update fails"""
+    mock_text_details = TextDTO(
+        id="text_id_1",
+        title="text_title",
+        language="bo",
+        group_id="group_id_1",
+        type="version",
+        is_published=False,
+        created_date="created_date",
+        updated_date="updated_date",
+        published_date="published_date",
+        published_by="published_by",
+        categories=[],
+        views=0
+    )
+    
+    with patch("pecha_api.texts.texts_service.TextUtils.validate_text_exists", new_callable=AsyncMock, return_value=True), \
+        patch("pecha_api.texts.texts_service.TextUtils.get_text_detail_by_id", new_callable=AsyncMock, return_value=mock_text_details), \
+        patch("pecha_api.texts.texts_service.update_text_details_by_id", new_callable=AsyncMock, return_value=mock_text_details), \
+        patch("pecha_api.texts.texts_service.update_text_details_cache", new_callable=AsyncMock, side_effect=Exception("Cache error")), \
+        patch("pecha_api.texts.texts_service.invalidate_text_cache_on_update", new_callable=AsyncMock, return_value=None) as mock_invalidate:
+        
+        response = await update_text_details(text_id="text_id_1", update_text_request=UpdateTextRequest(title="updated_title", is_published=True))
+        
+        assert response is not None
+        # Verify that invalidate was called as fallback
+        mock_invalidate.assert_called_once_with(text_id="text_id_1")
+
+@pytest.mark.asyncio  
+async def test_get_table_of_content_by_sheet_id_with_cache():
+    """Test get_table_of_content_by_sheet_id when data is in cache"""
+    sheet_id = "sheet_id_1"
+    cached_toc = TableOfContent(
+        id="content_id_1",
+        text_id=sheet_id,
+        type=TableOfContentType.SHEET,
+        sections=[
+            Section(
+                id="section_id_1",
+                title="section_title",
+                section_number=1,
+                parent_id="parent_id_1",
+                segments=[
+                    TextSegment(
+                        segment_id="segment_id_1",
+                        segment_number=1
+                    )
+                ],
+                sections=[],
+                created_date="created_date",
+                updated_date="updated_date",
+                published_date="published_date"
+            )
+        ]
+    )
+    
+    with patch("pecha_api.texts.texts_service.get_table_of_content_by_sheet_id_cache", new_callable=AsyncMock, return_value=cached_toc):
+        response = await get_table_of_content_by_sheet_id(sheet_id=sheet_id)
+        
+        assert response is not None
+        assert isinstance(response, TableOfContent)
+        assert response.id == "content_id_1"
+
+@pytest.mark.asyncio
+async def test_get_table_of_content_by_sheet_id_no_content():
+    """Test get_table_of_content_by_sheet_id when no content exists"""
+    sheet_id = "sheet_id_1"
+    
+    with patch("pecha_api.texts.texts_service.TextUtils.validate_text_exists", new_callable=AsyncMock, return_value=True), \
+        patch("pecha_api.texts.texts_service.get_contents_by_id", new_callable=AsyncMock, return_value=[]), \
+        patch("pecha_api.texts.texts_service.get_table_of_content_by_sheet_id_cache", new_callable=AsyncMock, return_value=None):
+        
+        response = await get_table_of_content_by_sheet_id(sheet_id=sheet_id)
+        
+        assert response is None
