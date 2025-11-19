@@ -1,5 +1,5 @@
 import pytest
-from unittest.mock import patch, MagicMock, AsyncMock
+from unittest.mock import patch
 from uuid import uuid4
 from fastapi import HTTPException
 from starlette import status
@@ -29,29 +29,17 @@ from pecha_api.texts.texts_enums import TextType
 from pecha_api.error_contants import ErrorConstants
 
 
-class TestDataFactory:
-    """Factory class for creating test data objects."""
-    
-    @staticmethod
-    def create_mock_collection(collection_id=None, slug="test-collection"):
-        """Create a mock Collection object with specified attributes."""
-        mock_collection = MagicMock()
-        mock_collection.id = collection_id or str(uuid4())
-        mock_collection.slug = slug
-        return mock_collection
-
-
 class TestGetListOfRecitationsService:
     """Test cases for get_list_of_recitations_service function."""
 
     @patch('pecha_api.recitations.recitations_services.get_collection_id_by_slug')
-    @patch('pecha_api.recitations.recitations_services.get_all_collections_by_parent')
     @patch('pecha_api.recitations.recitations_services.get_root_text_by_collection_id')
+    @patch('pecha_api.recitations.recitations_services.apply_search_recitation_title_filter')
     @pytest.mark.asyncio
     async def test_get_list_of_recitations_service_success(
         self,
+        mock_apply_search_filter,
         mock_get_root_text,
-        mock_get_all_collections,
         mock_get_collection_id
     ):
         """Test successful retrieval of recitations list."""
@@ -59,40 +47,27 @@ class TestGetListOfRecitationsService:
         liturgy_collection_id = str(uuid4())
         mock_get_collection_id.return_value = liturgy_collection_id
         
-        collection_1 = TestDataFactory.create_mock_collection(collection_id=str(uuid4()))
-        collection_2 = TestDataFactory.create_mock_collection(collection_id=str(uuid4()))
-        mock_get_all_collections.return_value = [collection_1, collection_2]
-        
-        text_id_1 = str(uuid4())
-        text_id_2 = str(uuid4())
-        mock_get_root_text.side_effect = [
-            (text_id_1, "First Recitation"),
-            (text_id_2, "Second Recitation")
-        ]
+        text_id = str(uuid4())
+        text_title = "Test Recitation"
+        mock_get_root_text.return_value = (text_id, text_title)
+        mock_apply_search_filter.return_value = text_title
         
         # Execute
         result = await get_list_of_recitations_service(language="en")
         
         # Verify
         assert isinstance(result, RecitationsResponse)
-        assert len(result.recitations) == 2
+        assert len(result.recitations) == 1
         
-        first_recitation = result.recitations[0]
-        assert isinstance(first_recitation, RecitationDTO)
-        assert first_recitation.title == "First Recitation"
-        assert str(first_recitation.text_id) == text_id_1
-        
-        second_recitation = result.recitations[1]
-        assert isinstance(second_recitation, RecitationDTO)
-        assert second_recitation.title == "Second Recitation"
-        assert str(second_recitation.text_id) == text_id_2
+        recitation = result.recitations[0]
+        assert isinstance(recitation, RecitationDTO)
+        assert recitation.title == text_title
+        assert str(recitation.text_id) == text_id
         
         # Verify mock calls
         mock_get_collection_id.assert_called_once_with(slug="Liturgy")
-        mock_get_all_collections.assert_called_once_with(parent_id=liturgy_collection_id)
-        assert mock_get_root_text.call_count == 2
-        mock_get_root_text.assert_any_call(collection_id=collection_1.id, language="en")
-        mock_get_root_text.assert_any_call(collection_id=collection_2.id, language="en")
+        mock_get_root_text.assert_called_once_with(collection_id=liturgy_collection_id, language="en")
+        mock_apply_search_filter.assert_called_once_with(text_title=text_title, search=None)
 
     @patch('pecha_api.recitations.recitations_services.get_collection_id_by_slug')
     @pytest.mark.asyncio
@@ -111,127 +86,88 @@ class TestGetListOfRecitationsService:
         mock_get_collection_id.assert_called_once_with(slug="Liturgy")
 
     @patch('pecha_api.recitations.recitations_services.get_collection_id_by_slug')
-    @patch('pecha_api.recitations.recitations_services.get_all_collections_by_parent')
     @patch('pecha_api.recitations.recitations_services.get_root_text_by_collection_id')
+    @patch('pecha_api.recitations.recitations_services.apply_search_recitation_title_filter')
     @pytest.mark.asyncio
-    async def test_get_list_of_recitations_service_empty_collections(
+    async def test_get_list_of_recitations_service_search_filter_no_match(
         self,
+        mock_apply_search_filter,
         mock_get_root_text,
-        mock_get_all_collections,
         mock_get_collection_id
     ):
-        """Test get_list_of_recitations_service when no child collections exist."""
+        """Test get_list_of_recitations_service when search filter returns no match."""
         liturgy_collection_id = str(uuid4())
         mock_get_collection_id.return_value = liturgy_collection_id
-        mock_get_all_collections.return_value = []
-        
-        result = await get_list_of_recitations_service(language="en")
-        
-        assert isinstance(result, RecitationsResponse)
-        assert len(result.recitations) == 0
-        assert result.recitations == []
-        
-        mock_get_collection_id.assert_called_once_with(slug="Liturgy")
-        mock_get_all_collections.assert_called_once_with(parent_id=liturgy_collection_id)
-        mock_get_root_text.assert_not_called()
-
-    @patch('pecha_api.recitations.recitations_services.get_collection_id_by_slug')
-    @patch('pecha_api.recitations.recitations_services.get_all_collections_by_parent')
-    @patch('pecha_api.recitations.recitations_services.get_root_text_by_collection_id')
-    @pytest.mark.asyncio
-    async def test_get_list_of_recitations_service_no_texts_found(
-        self,
-        mock_get_root_text,
-        mock_get_all_collections,
-        mock_get_collection_id
-    ):
-        """Test get_list_of_recitations_service when collections exist but no texts are found."""
-        liturgy_collection_id = str(uuid4())
-        mock_get_collection_id.return_value = liturgy_collection_id
-        
-        collection_1 = TestDataFactory.create_mock_collection()
-        collection_2 = TestDataFactory.create_mock_collection()
-        mock_get_all_collections.return_value = [collection_1, collection_2]
-        
-        # Mock get_root_text to return None for both collections
-        mock_get_root_text.side_effect = [(None, None), (None, None)]
-        
-        result = await get_list_of_recitations_service(language="en")
-        
-        assert isinstance(result, RecitationsResponse)
-        assert len(result.recitations) == 0
-        assert result.recitations == []
-        
-        mock_get_collection_id.assert_called_once_with(slug="Liturgy")
-        mock_get_all_collections.assert_called_once_with(parent_id=liturgy_collection_id)
-        assert mock_get_root_text.call_count == 2
-
-    @patch('pecha_api.recitations.recitations_services.get_collection_id_by_slug')
-    @patch('pecha_api.recitations.recitations_services.get_all_collections_by_parent')
-    @patch('pecha_api.recitations.recitations_services.get_root_text_by_collection_id')
-    @pytest.mark.asyncio
-    async def test_get_list_of_recitations_service_partial_texts_found(
-        self,
-        mock_get_root_text,
-        mock_get_all_collections,
-        mock_get_collection_id
-    ):
-        """Test get_list_of_recitations_service when only some collections have texts."""
-        liturgy_collection_id = str(uuid4())
-        mock_get_collection_id.return_value = liturgy_collection_id
-        
-        collection_1 = TestDataFactory.create_mock_collection()
-        collection_2 = TestDataFactory.create_mock_collection()
-        collection_3 = TestDataFactory.create_mock_collection()
-        mock_get_all_collections.return_value = [collection_1, collection_2, collection_3]
         
         text_id = str(uuid4())
-        # Only collection_2 has a text
-        mock_get_root_text.side_effect = [
-            (None, None),  # collection_1 has no text
-            (text_id, "Found Recitation"),  # collection_2 has text
-            (None, None)   # collection_3 has no text
-        ]
+        text_title = "Test Recitation"
+        mock_get_root_text.return_value = (text_id, text_title)
+        mock_apply_search_filter.return_value = None
         
-        result = await get_list_of_recitations_service(language="bo")
+        result = await get_list_of_recitations_service(search="nonexistent", language="en")
+        
+        assert isinstance(result, RecitationsResponse)
+        assert len(result.recitations) == 0
+        assert result.recitations == []
+        
+        mock_get_collection_id.assert_called_once_with(slug="Liturgy")
+        mock_get_root_text.assert_called_once_with(collection_id=liturgy_collection_id, language="en")
+        mock_apply_search_filter.assert_called_once_with(text_title=text_title, search="nonexistent")
+
+    @patch('pecha_api.recitations.recitations_services.get_collection_id_by_slug')
+    @patch('pecha_api.recitations.recitations_services.get_root_text_by_collection_id')
+    @patch('pecha_api.recitations.recitations_services.apply_search_recitation_title_filter')
+    @pytest.mark.asyncio
+    async def test_get_list_of_recitations_service_with_search_match(
+        self,
+        mock_apply_search_filter,
+        mock_get_root_text,
+        mock_get_collection_id
+    ):
+        """Test get_list_of_recitations_service when search filter matches."""
+        liturgy_collection_id = str(uuid4())
+        mock_get_collection_id.return_value = liturgy_collection_id
+        
+        text_id = str(uuid4())
+        text_title = "Morning Prayer Recitation"
+        mock_get_root_text.return_value = (text_id, text_title)
+        mock_apply_search_filter.return_value = text_title
+        
+        result = await get_list_of_recitations_service(search="morning", language="en")
         
         assert isinstance(result, RecitationsResponse)
         assert len(result.recitations) == 1
-        
-        recitation = result.recitations[0]
-        assert isinstance(recitation, RecitationDTO)
-        assert recitation.title == "Found Recitation"
-        assert str(recitation.text_id) == text_id
+        assert result.recitations[0].title == text_title
+        assert str(result.recitations[0].text_id) == text_id
         
         mock_get_collection_id.assert_called_once_with(slug="Liturgy")
-        mock_get_all_collections.assert_called_once_with(parent_id=liturgy_collection_id)
-        assert mock_get_root_text.call_count == 3
+        mock_get_root_text.assert_called_once_with(collection_id=liturgy_collection_id, language="en")
+        mock_apply_search_filter.assert_called_once_with(text_title=text_title, search="morning")
 
     @patch('pecha_api.recitations.recitations_services.get_collection_id_by_slug')
-    @patch('pecha_api.recitations.recitations_services.get_all_collections_by_parent')
     @patch('pecha_api.recitations.recitations_services.get_root_text_by_collection_id')
+    @patch('pecha_api.recitations.recitations_services.apply_search_recitation_title_filter')
     @pytest.mark.asyncio
     async def test_get_list_of_recitations_service_different_languages(
         self,
+        mock_apply_search_filter,
         mock_get_root_text,
-        mock_get_all_collections,
         mock_get_collection_id
     ):
         """Test get_list_of_recitations_service with different language parameters."""
         liturgy_collection_id = str(uuid4())
         mock_get_collection_id.return_value = liturgy_collection_id
         
-        collection = TestDataFactory.create_mock_collection()
-        mock_get_all_collections.return_value = [collection]
-        
         text_id = str(uuid4())
-        mock_get_root_text.return_value = (text_id, "Tibetan Recitation")
+        text_title = "Tibetan Recitation"
+        mock_get_root_text.return_value = (text_id, text_title)
+        mock_apply_search_filter.return_value = text_title
         
         result = await get_list_of_recitations_service(language="bo")
         
         assert isinstance(result, RecitationsResponse)
         assert len(result.recitations) == 1
-        assert result.recitations[0].title == "Tibetan Recitation"
+        assert result.recitations[0].title == text_title
         
         # Verify language is passed correctly
         mock_get_root_text.assert_called_once_with(collection_id=collection.id, language="bo")
