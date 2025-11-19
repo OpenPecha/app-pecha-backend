@@ -263,6 +263,7 @@ class SegmentUtils:
                     SegmentRootMapping(
                         text_id=segment.text_id,
                         title=text_detail.title,
+                        language=text_detail.language,
                         segments=mapped_segments
                     )
                 )

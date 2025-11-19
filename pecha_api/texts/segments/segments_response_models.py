@@ -93,11 +93,11 @@ class SegmentInfoResponse(BaseModel):
 class MappedSegmentResponseDTO(BaseModel):
     segment_id: str
     content: str
-    language: str
 
 class SegmentRootMapping(BaseModel):
     text_id: str
     title: str
+    language: str
     segments: List[MappedSegmentResponseDTO]
 
 class SegmentRootMappingResponse(BaseModel):
