@@ -21,7 +21,7 @@ from .groups.groups_service import (
 )
 from .groups.groups_response_models import GroupDTO
 from .texts_repository import get_contents_by_id, get_texts_by_id
-
+from .texts_models import Text
 from .texts_cache_service import (
     get_text_details_by_id_cache,
     set_text_details_by_id_cache,
@@ -240,6 +240,33 @@ class TextUtils:
                     commentary.append(text)
             filtere_text["commentary"] = commentary
         return filtere_text
+
+    @staticmethod
+    async def get_commentaries_by_text_type(text_type: str, language: str, skip: int, limit: int) -> List[TextDTO]:
+        texts = await Text.find({"type": "commentary"}).to_list()
+    
+        return [
+            TextDTO(
+                id=str(text.id),
+                pecha_text_id=str(text.pecha_text_id) if text.pecha_text_id else None,
+                title=text.title,
+                language=text.language,
+                group_id=text.group_id,
+                type=text.type,
+                is_published=text.is_published,
+                created_date=text.created_date,
+                updated_date=text.updated_date,
+                published_date=text.published_date,
+                published_by=text.published_by,
+                categories=text.categories,
+                views=text.views,
+                source_link=text.source_link,
+                ranking=text.ranking,
+                license=text.license
+            )
+            for text in texts
+        ]
+        
     
 
 def _find_section_with_segment(sections, segment_id: str):
