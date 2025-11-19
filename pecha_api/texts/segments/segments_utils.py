@@ -4,6 +4,8 @@ import logging
 from fastapi import HTTPException
 from starlette import status
 
+from pecha_api.texts.texts_response_models import TextDTO
+
 from pecha_api.error_contants import ErrorConstants
 from .segments_response_models import SegmentDTO
 from .segments_repository import (
@@ -77,6 +79,7 @@ class SegmentUtils:
     @staticmethod
     async def get_count_of_each_commentary_and_version(
         segments: List[SegmentDTO],
+        parent_text: TextDTO
     ) -> Dict[str, int]:
         """
         Count the number of commentary and version segments in the provided list.
@@ -88,7 +91,7 @@ class SegmentUtils:
             text_detail = text_details_dict.get(segment.text_id)
             if text_detail and text_detail.type == "commentary":
                 count["commentary"] += 1
-            elif text_detail and text_detail.type == "version":
+            elif text_detail and text_detail.type == "version" and text_detail.group_id == parent_text.group_id:
                 count["version"] += 1
         return count
 
@@ -146,15 +149,29 @@ class SegmentUtils:
         return filtered_segments
     
     @staticmethod
-    async def get_root_mapping_count(segment_id: str) -> int:
+    async def get_root_mapping_count(segment_id: str, parent_text: TextDTO) -> int:
         segment = await get_segment_by_id(segment_id=segment_id)
         text_id = segment.text_id
+        
+        # Get all mapped text details
+        mapped_text_ids = [mapping.text_id for mapping in segment.mapping]
+        mapped_text_details = await TextUtils.get_text_details_by_ids(text_ids=mapped_text_ids)
+        
+        # Filter mappings with different type and group_id
+        filtered_mappings = []
+        for mapping in segment.mapping:
+            mapped_text = mapped_text_details.get(mapping.text_id)
+            if mapped_text and (mapped_text.type != parent_text.type or mapped_text.group_id != parent_text.group_id):
+                filtered_mappings.append(mapping)
+
+        parent_group_id = parent_text.group_id
         text_detail = await TextUtils.get_text_details_by_id(text_id=text_id)
         group_id = text_detail.group_id
+
         group_detail = await get_group_details(group_id=group_id)
         if group_detail.type == "text":
             return 0
-        root_mapping_count = len(segment.mapping)
+        root_mapping_count = len(filtered_mappings)
         return root_mapping_count
 
     @staticmethod
@@ -246,7 +263,7 @@ class SegmentUtils:
 
         for mapping in segment.mapping:
             text_detail = texts_dict.get(mapping.text_id)
-            if text_detail:
+            if text_detail and text_detail.type != segment.text.type and text_detail.group_id != segment.text.group_id:
                 for segment_id in mapping.segments:
                     segment_details = await get_segment_by_id(segment_id=segment_id)
                     list_of_segment_root_mapping.append(
