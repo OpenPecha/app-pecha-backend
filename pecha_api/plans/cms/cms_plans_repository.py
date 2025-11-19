@@ -28,13 +28,16 @@ def get_plans_by_author_id(
     db: Session,
     search: Optional[str],
     author_id: UUID,
+    is_admin: bool,
     sort_by: str,
     sort_order: str,
     skip: int,
     limit: int,
 ) -> PlansRepositoryResponse:
     # Filters
-    filters = [Plan.deleted_at.is_(None), Plan.author_id == author_id]
+    filters = [Plan.deleted_at.is_(None)]
+    if not is_admin:
+        filters.append(Plan.author_id == author_id)
     if search:
         filters.append(Plan.title.ilike(f"%{search}%"))
 
