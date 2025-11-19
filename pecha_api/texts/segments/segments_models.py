@@ -25,9 +25,15 @@ class Segment(Document):
         ]
 
     @classmethod
+    async def get_segments_by_pecha_segment_ids(cls, pecha_segment_ids: List[str]) -> List["Segment"]:
+        pecha_segment_ids = [str(pecha_segment_id) for pecha_segment_id in pecha_segment_ids]
+        return await cls.find({cls.pecha_segment_id: {"$in": pecha_segment_ids}}).to_list()
+
+    @classmethod
     async def get_segment_by_id(cls, segment_id: str) -> Optional["Segment"]:
         return await cls.find_one(cls.id == uuid.UUID(segment_id))
 
+    
     @classmethod
     async def get_segments_by_ids(cls, segment_ids: List[str]) -> List["Segment"]:
         segment_ids = [uuid.UUID(segment_id) for segment_id in segment_ids]
