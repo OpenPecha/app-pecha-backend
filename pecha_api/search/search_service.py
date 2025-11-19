@@ -212,25 +212,8 @@ async def get_multilingual_search_results(
     limit: int = 10,
     language: Optional[str] = None
 ) -> MultilingualSearchResponse:
-    """
-    Performs multilingual search by:
-    1. Getting text title if text_id is provided (for individual search)
-    2. Calling external multilingual search API
-    3. Mapping external segmentation_ids to internal segment_ids
-    4. Building enriched response with ranking
-    
-    Args:
-        query: Search query text
-        search_type: Type of search (hybrid, bm25, semantic, exact)
-        text_id: Optional text_id for individual text search
-        limit: Maximum number of results
-        language: Optional language filter ('bo', 'en', or 'zh')
-        
-    Returns:
-        MultilingualSearchResponse with enriched segment data
-    """
+
     try:
-        # Step 1: Get text title if searching within individual text
         title = None
         if text_id:
             text = await Text.get_text(text_id)
@@ -239,8 +222,7 @@ async def get_multilingual_search_results(
             else:
                 logger.warning(f"Text with ID {text_id} not found")
         
-        # Step 2: Call external multilingual search API
-        external_results = await _call_external_search_api(
+        external_results = await call_external_search_api(
             query=query,
             search_type=search_type,
             limit=limit,
@@ -248,12 +230,11 @@ async def get_multilingual_search_results(
             language=language
         )
         
-        # Step 3: Extract segmentation_ids from external response
         segmentation_ids = []
-        results_map = {}  # Map segmentation_id -> (distance, content)
+        results_map = {} 
         
         for result in external_results.results:
-            if result.id:  # Now using id instead of segmentation_ids
+            if result.id: 
                 segmentation_ids.append(result.id)
                 results_map[result.id] = {
                     "distance": result.distance,
@@ -271,7 +252,6 @@ async def get_multilingual_search_results(
                 total=0
             )
         
-        # Step 4: Map external segmentation_ids to internal segments
         segments = await Segment.get_segments_by_pecha_ids(
             pecha_segment_ids=segmentation_ids,
             text_id=text_id
@@ -288,8 +268,7 @@ async def get_multilingual_search_results(
                 total=0
             )
         
-        # Step 5: Group segments by text_id and build response
-        sources = await _build_multilingual_sources(segments, results_map)
+        sources = await build_multilingual_sources(segments, results_map)
         
         return MultilingualSearchResponse(
             query=query,
@@ -305,30 +284,17 @@ async def get_multilingual_search_results(
         raise
 
 
-async def _call_external_search_api(
+async def call_external_search_api(
     query: str,
     search_type: str = "hybrid",
     limit: int = 10,
     title: Optional[str] = None,
     language: Optional[str] = None
 ) -> ExternalSearchResponse:
-    """
-    Calls external multilingual search API.
     
-    Args:
-        query: Search query text
-        search_type: Type of search (hybrid, bm25, semantic, exact)
-        limit: Maximum number of results
-        title: Optional title for individual text search
-        language: Optional language filter ('bo', 'en', or 'zh')
-        
-    Returns:
-        ExternalSearchResponse parsed from API
-    """
-    external_api_url = "https://openpecha-search.onrender.com"  # Updated default URL
-    endpoint = f"{external_api_url}/search"  # Ensure this matches the API's expected endpoint
+    external_api_url = "https://openpecha-search.onrender.com" 
+    endpoint = f"{external_api_url}/search"
     
-    # Prepare the request payload with hierarchical: true
     payload = {
         "query": query,
         "search_type": search_type,
@@ -336,7 +302,6 @@ async def _call_external_search_api(
         "hierarchical": True
     }
     
-    # Add language filter if specified
     if language and language in ['bo', 'en', 'zh']:
         payload["language"] = language
     
@@ -345,7 +310,6 @@ async def _call_external_search_api(
     
     try:
         async with httpx.AsyncClient(timeout=30.0) as client:
-            # Send a POST request with JSON body
             response = await client.post(
                 endpoint,
                 json=payload,
@@ -353,39 +317,18 @@ async def _call_external_search_api(
             )
             response.raise_for_status()
             
-            # Parse the response
             data = response.json()
             return ExternalSearchResponse(**data)
             
     except httpx.HTTPStatusError as e:
         logger.error(f"External API error: {e.response.status_code} - {e.response.text}")
-        raise HTTPException(
-            status_code=e.response.status_code,
-            detail=f"External search API error: {e.response.text}"
-        )
+        raise HTTPException(status_code=e.response.status_code,detail=f"External search API error: {e.response.text}")
     except httpx.RequestError as e:
         logger.error(f"Request to external API failed: {str(e)}")
-        raise HTTPException(
-            status_code=500,
-            detail="Failed to connect to the search service. Please try again later."
-        )
+        raise HTTPException(status_code=500,detail="Failed to connect to the search service. Please try again later.")
 
 
-async def _build_multilingual_sources(
-    segments: List[Segment],
-    results_map: Dict[str, Dict]
-) -> List[MultilingualSourceResult]:
-    """
-    Groups segments by text and builds MultilingualSourceResult objects.
-    
-    Args:
-        segments: List of Segment documents
-        results_map: Mapping of pecha_segment_id to distance and content
-        
-    Returns:
-        List of MultilingualSourceResult grouped by text
-    """
-    # Group segments by text_id
+async def build_multilingual_sources(segments: List[Segment], results_map: Dict[str, Dict]) -> List[MultilingualSourceResult]:
     text_segments_map: Dict[str, List[Segment]] = {}
     text_info_map: Dict[str, TextIndex] = {}
     
@@ -394,7 +337,6 @@ async def _build_multilingual_sources(
             text_segments_map[segment.text_id] = []
         text_segments_map[segment.text_id].append(segment)
     
-    # Get text information for each unique text_id
     for text_id in text_segments_map.keys():
         text = await Text.get_text(text_id)
         if text:
@@ -405,13 +347,11 @@ async def _build_multilingual_sources(
                 published_date=str(text.created_at) if hasattr(text, 'created_at') else ""
             )
     
-    # Build sources list
     sources = []
     for text_id, text_segments in text_segments_map.items():
         if text_id not in text_info_map:
             continue
         
-        # Build segment matches with ranking
         segment_matches = []
         for segment in text_segments:
             pecha_id = segment.pecha_segment_id
@@ -425,7 +365,6 @@ async def _build_multilingual_sources(
                     )
                 )
         
-        # Sort by relevance score (lower distance = more relevant)
         segment_matches.sort(key=lambda x: x.relevance_score)
         
         sources.append(
