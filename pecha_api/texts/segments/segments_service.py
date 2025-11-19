@@ -1,5 +1,4 @@
 from pecha_api.error_contants import ErrorConstants
-from rich import print
 from .segments_repository import (
     create_segment,
     get_segment_by_id, 

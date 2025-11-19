@@ -90,8 +90,6 @@ class SegmentUtils:
                 continue
             unique_text_ids.add(text_id)
             text_detail = text_details_dict.get(text_id)
-            print(text_detail)
-            print("--------------------------------"*100)
             if text_detail and text_detail.type == "commentary":
                 count["commentary"] += 1
             elif text_detail and text_detail.type == "version" and text_detail.group_id == group_id:
