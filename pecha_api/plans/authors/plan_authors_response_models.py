@@ -9,6 +9,11 @@ class SocialMediaProfile(BaseModel):
     account: SocialProfile
     url: str
 
+class ImageUrlModel(BaseModel):
+    thumbnail: str
+    medium: str
+    original: str 
+
 class AuthorUpdateResponse(BaseModel):
     id: UUID
     firstname: str
@@ -35,6 +40,15 @@ class AuthorInfoResponse(BaseModel):
     bio: Optional[str] = None
     social_profiles: List[SocialMediaProfile]
 
+class AuthorInfoPublicResponse(BaseModel):
+    id: UUID
+    firstname: str
+    lastname: str
+    email: str
+    image: Optional[ImageUrlModel] = None
+    bio: Optional[str] = None
+    social_profiles: List[SocialMediaProfile]
+
 class AuthorsResponse(BaseModel):
     authors: List[AuthorInfoResponse]
     skip: int
@@ -48,7 +62,7 @@ class AuthorPlanDTO(BaseModel):
     language: str
     total_days: int
     subscription_count: int
-    image_url: Optional[str] = None
+    image: Optional[ImageUrlModel] = None
 
 class AuthorPlansResponse(BaseModel):
     plans: List[AuthorPlanDTO]
