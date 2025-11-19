@@ -1,5 +1,5 @@
 import asyncio
-from typing import List, Dict
+from typing import List, Dict, Tuple
 from fastapi import HTTPException
 from starlette import status
 
@@ -37,19 +37,7 @@ async def update_segment_mapping(text_mapping_request: TextMappingRequest, token
             status_code=status.HTTP_403_FORBIDDEN,
             detail=ErrorConstants.ADMIN_ERROR_MESSAGE
         )
-    segment_ids=[]
-    text_ids=[]
-    for tm in text_mapping_request.text_mappings:
-        text_ids.append(tm.text_id)
-        segment_ids.append(tm.segment_id)
-        for map in tm.mappings:
-            text_ids.append(map.parent_text_id)
-            for segment in map.segments:
-                segment_ids.append(segment)
-    texts = await get_texts_by_pecha_text_ids(pecha_text_ids=text_ids)
-    segments = await get_segments_by_pecha_segment_ids(pecha_segment_ids=segment_ids)
-    text_id_dict = {text.pecha_text_id: str(text.id) for text in texts}
-    segment_id_dict = {segment.pecha_segment_id: str(segment.id) for segment in segments}
+    text_id_dict, segment_id_dict = await _get_text_and_segment_ids(text_mapping_request=text_mapping_request)
     for tm in text_mapping_request.text_mappings:
         tm.text_id = text_id_dict[tm.text_id]
         tm.segment_id = segment_id_dict[tm.segment_id]
@@ -145,6 +133,22 @@ async def delete_segment_mapping(text_mapping_request: TextMappingRequest,token:
             status_code=status.HTTP_400_BAD_REQUEST,
             detail=ErrorConstants.SEGMENT_MAPPING_ERROR_MESSAGE
         )
+
+async def _get_text_and_segment_ids(text_mapping_request: TextMappingRequest) -> Tuple[Dict[str, str], Dict[str, str]]:
+    segment_ids=[]
+    text_ids=[]
+    for tm in text_mapping_request.text_mappings:
+        text_ids.append(tm.text_id)
+        segment_ids.append(tm.segment_id)
+        for map in tm.mappings:
+            text_ids.append(map.parent_text_id)
+            for segment in map.segments:
+                segment_ids.append(segment)
+    texts = await get_texts_by_pecha_text_ids(pecha_text_ids=text_ids)
+    segments = await get_segments_by_pecha_segment_ids(pecha_segment_ids=segment_ids)
+    text_id_dict = {text.pecha_text_id: str(text.id) for text in texts}
+    segment_id_dict = {segment.pecha_segment_id: str(segment.id) for segment in segments}
+    return text_id_dict, segment_id_dict
 
 async def _construct_delete_segments(segments: List[Segment], delete_segment_dict: Dict[str, List[Mapping]]) -> List[
     Segment]:
