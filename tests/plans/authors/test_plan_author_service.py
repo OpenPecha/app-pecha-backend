@@ -40,6 +40,8 @@ from pecha_api.plans.authors.plan_authors_response_models import (
     AuthorUpdateResponse,
     AuthorPlansResponse,
     AuthorPlanDTO,
+    AuthorInfoPublicResponse,
+    ImageUrlModel,
 )
 from pecha_api.users.users_enums import SocialProfile
 from pecha_api.error_contants import ErrorConstants
@@ -771,13 +773,16 @@ class TestGetSelectedAuthorDetails:
         result = await get_selected_author_details(author_id)
         
         # Assert
-        assert isinstance(result, AuthorInfoResponse)
+        assert isinstance(result, AuthorInfoPublicResponse)
         assert result.id == mock_author.id
         assert result.firstname == mock_author.first_name
         assert result.lastname == mock_author.last_name
         assert result.email == mock_author.email
         assert result.bio == mock_author.bio
-        assert result.image_url == presigned_url
+        assert isinstance(result.image, ImageUrlModel)
+        assert result.image.thumbnail == presigned_url
+        assert result.image.medium == presigned_url
+        assert result.image.original == presigned_url
         assert result.social_profiles == social_profiles
         
         # Verify function calls
@@ -830,15 +835,16 @@ class TestGetPlansByAuthor:
         assert result.limit == 20
         assert result.total == 1
         assert len(result.plans) == 1
-        assert result.plans[0] == AuthorPlanDTO(
-            id=plan_obj.id,
-            title="Plan 1",
-            description="Desc",
-            language="en",
-            total_days=10,
-            subscription_count=3,
-            image_url=presigned_url,
-        )
+        assert result.plans[0].id == plan_obj.id
+        assert result.plans[0].title == "Plan 1"
+        assert result.plans[0].description == "Desc"
+        assert result.plans[0].language == "en"
+        assert result.plans[0].total_days == 10
+        assert result.plans[0].subscription_count == 3
+        assert isinstance(result.plans[0].image, ImageUrlModel)
+        assert result.plans[0].image.thumbnail == presigned_url
+        assert result.plans[0].image.medium == presigned_url
+        assert result.plans[0].image.original == presigned_url
         mock_get_published_plans.assert_called_once()
         kwargs = mock_get_published_plans.call_args.kwargs
         assert kwargs["author_id"] == author_id
@@ -887,7 +893,11 @@ class TestGetPlansByAuthor:
 
         mock_get_published_plans.return_value = ([aggregate_a, aggregate_b], 5)
         mock_get_config.return_value = "bucket"
-        mock_generate_presigned_url.side_effect = ["url-a", "url-b"]
+        # Need 6 URLs: 3 for plan_a (thumbnail, medium, original) and 3 for plan_b
+        mock_generate_presigned_url.side_effect = [
+            "url-a-thumb", "url-a-med", "url-a-orig",
+            "url-b-thumb", "url-b-med", "url-b-orig"
+        ]
         
         # Act
         result = await get_plans_by_author(author_id, skip=2, limit=2)
@@ -898,24 +908,30 @@ class TestGetPlansByAuthor:
         assert result.limit == 2
         assert result.total == 5
         assert len(result.plans) == 2
-        assert result.plans[0] == AuthorPlanDTO(
-            id=plan_a.id,
-            title="A",
-            description="DA",
-            language="en",
-            total_days=7,
-            subscription_count=2,
-            image_url="url-a"
-        )
-        assert result.plans[1] == AuthorPlanDTO(
-            id=plan_b.id,
-            title="B",
-            description="DB",
-            language="en",
-            total_days=8,
-            subscription_count=4,
-            image_url="url-b"
-        )
+        
+        # Check plan A
+        assert result.plans[0].id == plan_a.id
+        assert result.plans[0].title == "A"
+        assert result.plans[0].description == "DA"
+        assert result.plans[0].language == "en"
+        assert result.plans[0].total_days == 7
+        assert result.plans[0].subscription_count == 2
+        assert isinstance(result.plans[0].image, ImageUrlModel)
+        assert result.plans[0].image.thumbnail == "url-a-thumb"
+        assert result.plans[0].image.medium == "url-a-med"
+        assert result.plans[0].image.original == "url-a-orig"
+        
+        # Check plan B
+        assert result.plans[1].id == plan_b.id
+        assert result.plans[1].title == "B"
+        assert result.plans[1].description == "DB"
+        assert result.plans[1].language == "en"
+        assert result.plans[1].total_days == 8
+        assert result.plans[1].subscription_count == 4
+        assert isinstance(result.plans[1].image, ImageUrlModel)
+        assert result.plans[1].image.thumbnail == "url-b-thumb"
+        assert result.plans[1].image.medium == "url-b-med"
+        assert result.plans[1].image.original == "url-b-orig"
 
 
 class TestGetAuthorDetailsById:

@@ -142,6 +142,9 @@ class TextVersion(BaseModel):
     updated_date: str
     published_date: str
     published_by: str
+    source_link:Optional[str] = None
+    ranking:Optional[int] = None
+    license:Optional[str] = None
 
 class TextVersionResponse(BaseModel):
     text: Optional[TextDTO] = None
