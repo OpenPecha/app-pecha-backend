@@ -96,9 +96,12 @@ def get_plan_by_id(db: Session, plan_id: UUID) -> Plan:
             detail=f"Failed to get plan by id: {str(e)}"
         )
 
-def get_plan_by_id_and_created_by(db: Session, plan_id: UUID, created_by: str) -> Plan:
+def get_plan_by_id_and_created_by(db: Session, plan_id: UUID, created_by: str, is_admin: bool) -> Plan:
     try:
-        return db.query(Plan).filter(Plan.id == plan_id, Plan.created_by == created_by).first()
+        if not is_admin:
+            return db.query(Plan).filter(Plan.id == plan_id, Plan.created_by == created_by).first()
+        else:
+            return db.query(Plan).filter(Plan.id == plan_id).first()
     except Exception as e:
         db.rollback()
         print(f"Error getting plan by id and created by: {str(e)}")
