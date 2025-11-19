@@ -31,7 +31,8 @@ from pecha_api.texts.segments.segments_response_models import (
     RelatedText,
     Resources,
     SegmentRootMappingResponse,
-    SegmentRootMapping
+    SegmentRootMapping,
+    MappedSegmentDTO
 )
 
 from pecha_api.texts.segments.segments_enum import SegmentType
@@ -316,10 +317,14 @@ async def test_get_commentaries_by_segment_id_success():
     ]
     filtered_commentaries = [
         SegmentCommentry(
-            segment_id=f"id_{i}",
             text_id=f"text_id_{i}",
             title=f"title_{i}",
-            content=[f"content_{i}"],
+            segments=[
+                MappedSegmentDTO(
+                    segment_id=f"id_{i}",
+                    content=f"content_{i}"
+                )
+            ],
             language="en",
             count=1
         )
@@ -337,7 +342,9 @@ async def test_get_commentaries_by_segment_id_success():
         assert response.parent_segment.segment_id == parent_segment_id
         assert response.parent_segment.content == "parent_segment_content"
         assert response.commentaries[0].text_id == "text_id_1"
-        assert response.commentaries[0].content == ["content_1"]
+        assert len(response.commentaries[0].segments) == 1
+        assert response.commentaries[0].segments[0].segment_id == "id_1"
+        assert response.commentaries[0].segments[0].content == "content_1"
         assert response.commentaries[0].language == "en"
         assert response.commentaries[0].count == 1
 

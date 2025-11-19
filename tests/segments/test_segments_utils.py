@@ -13,7 +13,8 @@ from pecha_api.texts.segments.segments_response_models import (
     SegmentDTO,
     SegmentTranslation,
     SegmentCommentry,
-    SegmentRootMapping
+    SegmentRootMapping,
+    MappedSegmentDTO
 )
 from pecha_api.texts.texts_response_models import (
     TextDTO,
@@ -175,7 +176,9 @@ async def test_filter_segment_mapping_by_type_success():
         assert len(response) == 2
         assert response[0].text_id == "efb26a06-f373-450b-ba57-e7a8d4dd5b64"
         assert response[0].title == "title"
-        assert response[0].content == ["content"]
+        assert len(response[0].segments) == 1
+        assert response[0].segments[0].segment_id == "efb26a06-f373-450b-ba57-e7a8d4dd5b64"
+        assert response[0].segments[0].content == "content"
         assert response[0].language == "language"
         assert response[0].count == 1
         
@@ -420,7 +423,11 @@ async def test_filter_segment_mapping_by_type_commentary_merges_same_text_id():
         assert commentary.text_id == text_id
         assert commentary.title == "Commentary Title"
         assert commentary.language == "bo"
-        assert commentary.content == ["c1", "c2"]
+        assert len(commentary.segments) == 2
+        assert commentary.segments[0].segment_id == "seg-1"
+        assert commentary.segments[0].content == "c1"
+        assert commentary.segments[1].segment_id == "seg-2"
+        assert commentary.segments[1].content == "c2"
         assert commentary.count == 2
 
 @pytest.mark.asyncio
