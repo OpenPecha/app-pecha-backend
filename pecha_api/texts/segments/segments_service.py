@@ -1,5 +1,5 @@
 from pecha_api.error_contants import ErrorConstants
-
+from rich import print
 from .segments_repository import (
     create_segment,
     get_segment_by_id, 
@@ -158,9 +158,10 @@ async def get_info_by_segment_id(segment_id: str) -> SegmentInfoResponse:
     cache_data = await get_segment_info_by_id_cache(segment_id=segment_id, cache_type=CacheType.SEGMENT_INFO)
     if cache_data:
         return cache_data
-    
+    segment = await get_segment_by_id(segment_id=segment_id)
+    text_detail=await TextUtils.get_text_details_by_id(text_id=segment.text_id)
     mapped_segments = await get_related_mapped_segments(parent_segment_id=segment_id)
-    counts = await SegmentUtils.get_count_of_each_commentary_and_version(mapped_segments)
+    counts = await SegmentUtils.get_count_of_each_commentary_and_version(mapped_segments,group_id=text_detail.group_id)
     segment_root_mapping_count = await SegmentUtils.get_root_mapping_count(segment_id=segment_id)
     response = SegmentInfoResponse(
         segment_info= SegmentInfo(

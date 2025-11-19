@@ -75,18 +75,26 @@ class SegmentUtils:
     @staticmethod
     async def get_count_of_each_commentary_and_version(
         segments: List[SegmentDTO],
+        group_id: str
     ) -> Dict[str, int]:
         """
         Count the number of commentary and version segments in the provided list.
         """
         count = {"commentary": 0, "version": 0}
+        unique_text_ids = set()
         text_ids = [segment.text_id for segment in segments]
         text_details_dict = await TextUtils.get_text_details_by_ids(text_ids=text_ids)
         for segment in segments:
-            text_detail = text_details_dict.get(segment.text_id)
+            text_id = segment.text_id
+            if text_id in unique_text_ids:
+                continue
+            unique_text_ids.add(text_id)
+            text_detail = text_details_dict.get(text_id)
+            print(text_detail)
+            print("--------------------------------"*100)
             if text_detail and text_detail.type == "commentary":
                 count["commentary"] += 1
-            elif text_detail and text_detail.type == "version":
+            elif text_detail and text_detail.type == "version" and text_detail.group_id == group_id:
                 count["version"] += 1
         return count
 
