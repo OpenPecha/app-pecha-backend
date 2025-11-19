@@ -89,7 +89,8 @@ class DetailTableOfContentResponse(BaseModel):
     total_segments: int
 
 class TextSegment(BaseModel):
-    segment_id: str
+    segment_id: Optional[str] = None
+    pecha_segment_id: Optional[str] = None
     segment_number: int
 
 class Section(BaseModel):

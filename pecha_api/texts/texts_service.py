@@ -346,7 +346,7 @@ async def create_table_of_content(table_of_content_request: TableOfContent, toke
     
     if is_valid_user:
         await TextUtils.validate_text_exists(text_id=table_of_content_request.text_id)
-        new_table_of_content = await get_table_of_content_by_type(table_of_content_request=table_of_content_request)
+        new_table_of_content = await get_table_of_content_by_type(table_of_content=table_of_content_request)
         segment_ids = TextUtils.get_all_segment_ids(table_of_content=new_table_of_content)
         await SegmentUtils.validate_segments_exists(segment_ids=segment_ids)
         table_of_content = await create_table_of_content_detail(table_of_content_request=new_table_of_content)
@@ -359,12 +359,11 @@ async def create_table_of_content(table_of_content_request: TableOfContent, toke
 
 # PRIVATE FUNCTIONS
 
-async def get_table_of_content_by_type(table_of_content_request: TableOfContent):
-    new_table_of_content = TableOfContent()
-    if table_of_content_request.type == TableOfContentType.TEXT:
-        new_table_of_content = await replace_pecha_segment_id_with_segment_id(table_of_content=table_of_content_request)
+async def get_table_of_content_by_type(table_of_content: TableOfContent):
+    if table_of_content.type == TableOfContentType.TEXT:
+        new_table_of_content = await replace_pecha_segment_id_with_segment_id(table_of_content=table_of_content)
     else: 
-        new_table_of_content = table_of_content_request
+        new_table_of_content = table_of_content
     
     return new_table_of_content
     
@@ -373,17 +372,21 @@ async def get_table_of_content_by_type(table_of_content_request: TableOfContent)
 async def replace_pecha_segment_id_with_segment_id(table_of_content: TableOfContent) -> TableOfContent:
     text_segments = await get_segments_by_text_id(text_id=table_of_content.text_id)
     segments_dict = {segment.pecha_segment_id: segment.id for segment in text_segments}
+    print(segments_dict)
+
     new_toc = TableOfContent(
         text_id=table_of_content.text_id,
+        type=table_of_content.type,
         sections=[]
     )
     new_sections = []
     for section in table_of_content.sections:
         new_segments = []
         for segment in section.segments:
+            # db_segment = await Segment.get_segment_by_pecha_segment_id(pecha_segment_id=segment.pecha_segment_id)
             new_segments.append(
                 TextSegment(
-                    segment_id=segments_dict[segment.pecha_segment_id],
+                    segment_id=str(segments_dict[segment.segment_id]),
                     segment_number=segment.segment_number
                 )
             )
