@@ -13,7 +13,8 @@ from pecha_api.texts.segments.segments_response_models import (
     SegmentDTO,
     SegmentTranslation,
     SegmentCommentry,
-    SegmentRootMapping
+    SegmentRootMapping,
+    MappedSegmentDTO
 )
 from pecha_api.texts.texts_response_models import (
     TextDTO,
@@ -112,7 +113,7 @@ async def test_get_count_of_each_commentary_and_version_success():
         )
     ]
     with patch("pecha_api.texts.segments.segments_utils.TextUtils.get_text_details_by_ids", new_callable=AsyncMock, return_value=text_details):
-        result = await SegmentUtils.get_count_of_each_commentary_and_version(segments=list_of_segment_paramenter, parent_text=parent_text)
+        result = await SegmentUtils.get_count_of_each_commentary_and_version(list_of_segment_paramenter, group_id="group_id")
         assert result["commentary"] == 2
         assert result["version"] == 1
 
@@ -191,7 +192,9 @@ async def test_filter_segment_mapping_by_type_success():
         assert len(response) == 2
         assert response[0].text_id == "efb26a06-f373-450b-ba57-e7a8d4dd5b64"
         assert response[0].title == "title"
-        assert response[0].content == ["content"]
+        assert len(response[0].segments) == 1
+        assert response[0].segments[0].segment_id == "efb26a06-f373-450b-ba57-e7a8d4dd5b64"
+        assert response[0].segments[0].content == "content"
         assert response[0].language == "language"
         assert response[0].count == 1
         
@@ -280,45 +283,22 @@ async def test_get_root_mapping_count_success():
     
 @pytest.mark.asyncio
 async def test_get_segment_root_mapping_details_success():
-    parent_text = TextDTO(
-        id="parent_text_id",
-        title="parent title",
-        language="language",
-        group_id="parent_group_id",
-        type="root_text",
-        is_published=True,
-        created_date="created_date",
-        updated_date="updated_date",
-        published_date="published_date",
-        published_by="published_by",
-        categories=["categories"],
-        views=0
-    )
-    
-    segment = SegmentDTO(
-        id="efb26a06-f373-450b-ba57-e7a8d4dd5b64",
-        text_id="parent_text_id",
-        content="content",
-        mapping=[
-            MappingResponse(
-                text_id="text_id_1",
-                segments=[
-                    "segment_id_1"
-                ]
-            )
-        ],
-        type=SegmentType.SOURCE,
-        text=parent_text
-    )
-    
-    mapped_segment = SegmentDTO(
-        id="segment_id_1",
-        text_id="text_id_1",
-        content="content",
-        mapping=[],
-        type=SegmentType.SOURCE
-    )
-    
+    segments = [
+        SegmentDTO(
+            id="efb26a06-f373-450b-ba57-e7a8d4dd5b64",
+            text_id="text_id_1",
+            content="content",
+            mapping=[
+                MappingResponse(
+                    text_id="text_id_1",
+                    segments=[
+                        "segment_id_1"
+                    ]
+                )
+            ],
+            type=SegmentType.SOURCE
+        )
+    ]
     text_details = {
         "text_id_1": TextDTO(
             id="text_id_1",
@@ -335,16 +315,15 @@ async def test_get_segment_root_mapping_details_success():
             views=0
         )
     }
-    
-    with patch("pecha_api.texts.segments.segments_utils.TextUtils.get_text_details_by_ids", new_callable=AsyncMock, return_value=text_details), \
-        patch("pecha_api.texts.segments.segments_utils.get_segment_by_id", new_callable=AsyncMock, return_value=mapped_segment):
-        response = await SegmentUtils.get_segment_root_mapping_details(segment=segment)
+    with patch("pecha_api.texts.segments.segments_utils.TextUtils.get_text_details_by_ids", new_callable=AsyncMock, return_value=text_details):
+        response = await SegmentUtils.get_segment_root_mapping_details(segments=segments)
         assert isinstance(response[0], SegmentRootMapping)
         assert response[0].text_id == "text_id_1"
-        assert response[0].segment_id == "segment_id_1"
         assert response[0].title == "title"
-        assert response[0].content == "content"
         assert response[0].language == "language"
+        assert len(response[0].segments) == 1
+        assert response[0].segments[0].segment_id == "efb26a06-f373-450b-ba57-e7a8d4dd5b64"
+        assert response[0].segments[0].content == "content"
           
 @pytest.mark.asyncio
 async def test_mapped_segment_content_for_table_of_content_without_version_id_success():
@@ -537,7 +516,11 @@ async def test_filter_segment_mapping_by_type_commentary_merges_same_text_id():
         assert commentary.text_id == text_id
         assert commentary.title == "Commentary Title"
         assert commentary.language == "bo"
-        assert commentary.content == ["c1", "c2"]
+        assert len(commentary.segments) == 2
+        assert commentary.segments[0].segment_id == "seg-1"
+        assert commentary.segments[0].content == "c1"
+        assert commentary.segments[1].segment_id == "seg-2"
+        assert commentary.segments[1].content == "c2"
         assert commentary.count == 2
 
 @pytest.mark.asyncio
