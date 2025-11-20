@@ -1,6 +1,6 @@
 from typing import Dict, List, Optional, Union
 from uuid import UUID
-
+from rich import print
 from fastapi import HTTPException
 from starlette import status
 import bophono
@@ -214,7 +214,12 @@ class SegmentUtils:
         group_detail = await get_group_details(group_id=group_id)
         if group_detail.type == "text":
             return 0
-        root_mapping_count = len(segment.mapping)
+        root_mapping_count = 0
+        for mapping in segment.mapping:
+            text_detail = await TextUtils.get_text_details_by_id(text_id=mapping.text_id)
+            if text_detail.type == "commentary":
+                continue
+            root_mapping_count += 1
         return root_mapping_count
 
     @staticmethod
