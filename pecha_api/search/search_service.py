@@ -24,6 +24,7 @@ from pecha_api.texts.segments.segments_models import Segment
 from pecha_api.texts.texts_models import Text
 from pecha_api.config import get
 from fastapi import HTTPException
+from rich import print
 
 logger = logging.getLogger(__name__)
 
@@ -234,6 +235,7 @@ async def get_multilingual_search_results(
         )
         
         segmentation_ids = []
+        print("external_results", external_results.results)
         results_map = {} 
         
         for result in external_results.results:
@@ -241,7 +243,7 @@ async def get_multilingual_search_results(
                 segmentation_ids.append(result.id)
                 results_map[result.id] = {
                     "distance": result.distance,
-                    "content": result.entity.text
+                    "content": result.entity.text if result.entity.text else ""  # Handle None when return_text is false
                 }
         
         if not segmentation_ids:
@@ -259,6 +261,7 @@ async def get_multilingual_search_results(
             pecha_segment_ids=segmentation_ids,
             text_id=text_id
         )
+        print("segments", segments)
         
         if not segments:
             logger.warning(f"No internal segments found for {len(segmentation_ids)} segmentation IDs")
