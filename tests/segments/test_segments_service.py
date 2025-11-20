@@ -414,8 +414,6 @@ async def test_get_infos_by_segment_id_success():
         patch("pecha_api.texts.segments.segments_service.SegmentUtils.get_root_mapping_count", new_callable=AsyncMock, return_value=3), \
         patch("pecha_api.texts.segments.segments_service.set_segment_info_by_id_cache", new_callable=AsyncMock):
         mock_get_related_mapped_segment.return_value = related_mapped_segments
-        mock_count.return_value = {"version": 1, "commentary": 2}
-        mock_root_count.return_value = 3
         
         response = await get_info_by_segment_id(segment_id=segment_id)
         assert isinstance(response, SegmentInfoResponse)
@@ -577,14 +575,13 @@ async def test_get_info_by_segment_id_cache_hit():
         views=0
     )
     
-    mock_segment = SegmentDTO(
-        id=segment_id,
-        text_id="text_id_1",
-        content="content",
-        mapping=[],
-        type=SegmentType.SOURCE,
-        text=mock_text_detail
-    )
+    mock_segment = type('Segment', (), {
+        'id': segment_id,
+        'text_id': "text_id_1",
+        'content': "content",
+        'mapping': [],
+        'type': SegmentType.SOURCE
+    })()
 
     with patch(
         "pecha_api.texts.segments.segments_service.SegmentUtils.validate_segment_exists",
@@ -595,9 +592,13 @@ async def test_get_info_by_segment_id_cache_hit():
         new_callable=AsyncMock,
         return_value=None,  # Changed to None to test actual flow
     ), patch(
-        "pecha_api.texts.segments.segments_service.get_segment_details_by_id",
+        "pecha_api.texts.segments.segments_service.get_segment_by_id",
         new_callable=AsyncMock,
         return_value=mock_segment,
+    ), patch(
+        "pecha_api.texts.segments.segments_service.TextUtils.get_text_details_by_id",
+        new_callable=AsyncMock,
+        return_value=mock_text_detail,
     ), patch(
         "pecha_api.texts.segments.segments_service.get_related_mapped_segments",
         new_callable=AsyncMock,

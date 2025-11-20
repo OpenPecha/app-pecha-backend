@@ -278,7 +278,7 @@ async def test_get_root_mapping_count_success():
         patch("pecha_api.texts.segments.segments_utils.TextUtils.get_text_details_by_id", new_callable=AsyncMock, return_value=text_details), \
         patch("pecha_api.texts.segments.segments_utils.TextUtils.get_text_details_by_ids", new_callable=AsyncMock, return_value=mapped_text_details), \
         patch("pecha_api.texts.segments.segments_utils.get_group_details", new_callable=AsyncMock, return_value=mock_group_details):
-        response = await SegmentUtils.get_root_mapping_count(segment_id=segment_id, parent_text=parent_text)
+        response = await SegmentUtils.get_root_mapping_count(segment_id=segment_id)
         assert response == 5
     
 @pytest.mark.asyncio
@@ -467,7 +467,7 @@ async def test_get_root_mapping_count_group_type_text_returns_zero():
         patch("pecha_api.texts.segments.segments_utils.TextUtils.get_text_details_by_id", new_callable=AsyncMock, return_value=text_details), \
         patch("pecha_api.texts.segments.segments_utils.TextUtils.get_text_details_by_ids", new_callable=AsyncMock, return_value=mapped_text_details), \
         patch("pecha_api.texts.segments.segments_utils.get_group_details", new_callable=AsyncMock, return_value=group_detail):
-        count = await SegmentUtils.get_root_mapping_count(segment_id=segment_id, parent_text=parent_text)
+        count = await SegmentUtils.get_root_mapping_count(segment_id=segment_id)
         assert count == 0
 
 

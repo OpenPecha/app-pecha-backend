@@ -1,10 +1,8 @@
 from typing import Dict, List, Optional, Union
 from uuid import UUID
-import logging
+
 from fastapi import HTTPException
 from starlette import status
-
-from pecha_api.texts.texts_response_models import TextDTO
 
 from pecha_api.error_contants import ErrorConstants
 from .segments_response_models import MappedSegmentDTO, MappedSegmentResponseDTO, SegmentDTO
@@ -65,9 +63,7 @@ class SegmentUtils:
                 status_code=status.HTTP_400_BAD_REQUEST,
                 detail=f"Invalid segment ID format: {str(e)}. All segment IDs must be valid UUIDs."
             )
-        logging.info(f"segment_ids: {segment_ids} ahahhahah")
         all_exists = await check_all_segment_exists(segment_ids=uuid_segment_ids)
-        logging.info(f"all_exists: {all_exists} ahahhahah")
         if not all_exists:
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,
@@ -158,29 +154,15 @@ class SegmentUtils:
         return filtered_segments
     
     @staticmethod
-    async def get_root_mapping_count(segment_id: str, parent_text: TextDTO) -> int:
+    async def get_root_mapping_count(segment_id: str) -> int:
         segment = await get_segment_by_id(segment_id=segment_id)
         text_id = segment.text_id
-        
-        # Get all mapped text details
-        mapped_text_ids = [mapping.text_id for mapping in segment.mapping]
-        mapped_text_details = await TextUtils.get_text_details_by_ids(text_ids=mapped_text_ids)
-        
-        # Filter mappings with different type and group_id
-        filtered_mappings = []
-        for mapping in segment.mapping:
-            mapped_text = mapped_text_details.get(mapping.text_id)
-            if mapped_text and (mapped_text.type != parent_text.type or mapped_text.group_id != parent_text.group_id):
-                filtered_mappings.append(mapping)
-
-        parent_group_id = parent_text.group_id
         text_detail = await TextUtils.get_text_details_by_id(text_id=text_id)
         group_id = text_detail.group_id
-
         group_detail = await get_group_details(group_id=group_id)
         if group_detail.type == "text":
             return 0
-        root_mapping_count = len(filtered_mappings)
+        root_mapping_count = len(segment.mapping)
         return root_mapping_count
 
     @staticmethod
