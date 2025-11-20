@@ -86,21 +86,22 @@ async def get_text_by_text_id_or_collection(
     if language is None:
         language = get("DEFAULT_LANGUAGE")
 
-    cached_data: TextsCategoryResponse | TextDTO = await get_text_by_text_id_or_collection_cache(
-        text_id = text_id,
-        collection_id = collection_id,
-        language = language,
-        skip = skip,
-        limit = limit,
-        cache_type = CacheType.TEXTS_BY_ID_OR_COLLECTION
-    )
+    # cached_data: TextsCategoryResponse | TextDTO = await get_text_by_text_id_or_collection_cache(
+    #     text_id = text_id,
+    #     collection_id = collection_id,
+    #     language = language,
+    #     skip = skip,
+    #     limit = limit,
+    #     cache_type = CacheType.TEXTS_BY_ID_OR_COLLECTION
+    # )
 
-    if cached_data is not None:
-        return cached_data
+    # if cached_data is not None:
+    #     return cached_data
 
     if collection_id is not None:
         collection = await get_collection(collection_id=collection_id, language=language)
         texts = await _get_texts_by_collection_id(collection_id=collection_id, language=language, skip=skip, limit=limit)
+        print("texts :>>>>>>>>>>>>>>>>> ", texts)
         response = TextsCategoryResponse(
             collection=collection,
             texts=texts,
@@ -454,55 +455,40 @@ async def get_root_text_by_collection_id(collection_id: str, language: str) -> O
         return root_text.id, root_text.title
     return None, None
 
+def _group_texts_by_group_id(texts: List[TextDTO]) -> Dict[str, List[TextDTO]]:
+    texts_by_group_id = {}
+    for text in texts:
+        group_id = str(text.group_id)
+        if group_id not in texts_by_group_id:
+            texts_by_group_id[group_id] = []
+        texts_by_group_id[group_id].append(text)
+    return texts_by_group_id
+
 async def _get_texts_by_collection_id(collection_id: str, language: str, skip: int, limit: int) -> List[TextDTO]:
     texts = await get_texts_by_collection(collection_id=collection_id, language=language, skip=skip, limit=limit)
-    filter_text_base_on_group_id_type = await TextUtils.filter_text_base_on_group_id_type(texts=texts,
-                                                                                          language=language)
-    root_text = filter_text_base_on_group_id_type["root_text"]
-    commentary = filter_text_base_on_group_id_type["commentary"]
-    text_list = [
-        TextDTO(
-            id=str(text.id),
-            pecha_text_id=str(text.pecha_text_id),
-            title=text.title,
-            language=text.language,
-            group_id=text.group_id,
-            type="commentary",
-            is_published=text.is_published,
-            created_date=text.created_date,
-            updated_date=text.updated_date,
-            published_date=text.published_date,
-            published_by=text.published_by,
-            categories=text.categories,
-            views=text.views,
-            source_link=text.source_link,
-            ranking=text.ranking,
-            license=text.license
-        )
-        for text in commentary
-    ]
-    if root_text is not None:
-        text_list.append(
-            TextDTO(
-                id=str(root_text.id),
-                pecha_text_id=str(root_text.pecha_text_id),
-                title=root_text.title,
-                language=root_text.language,
-                group_id=root_text.group_id,
-                type="root_text",
-                is_published=root_text.is_published,
-                created_date=root_text.created_date,
-                updated_date=root_text.updated_date,
-                published_date=root_text.published_date,
-                published_by=root_text.published_by,
-                categories=root_text.categories,
-                views=root_text.views,
-                source_link=root_text.source_link,
-                ranking=root_text.ranking,
-                license=root_text.license
-            )
-        )
+    grouped_texts = _group_texts_by_group_id(texts=texts)
+    text_list = []
+
+    for texts in grouped_texts.values():
+        filter_text_base_on_group_id_type = await TextUtils.filter_text_base_on_group_id_type(texts=texts,
+                                                                                              language=language)
+        root_text = filter_text_base_on_group_id_type["root_text"]
+        if root_text is not None:
+            text_list.append(TextDTO(
+            id=str(root_text.id),
+            pecha_text_id=str(root_text.pecha_text_id),
+            title=root_text.title,
+            language=root_text.language,
+            group_id=root_text.group_id,
+            type="root_text",
+            is_published=root_text.is_published,
+            created_date=root_text.created_date,
+            updated_date=root_text.updated_date,
+            published_date=root_text.published_date,
+            published_by=root_text.published_by,
+        ))
     return text_list
+
 
 async def _get_table_of_content_by_version_text_id(versions: List[TextDTO]) -> Dict[str, List[str]]:
     versions_table_of_content_id_dict = {}
