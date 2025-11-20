@@ -526,7 +526,7 @@ async def get_commentaries_by_text_id(text_id: str, skip: int, limit: int) -> Li
     commentaries = await TextUtils.get_commentaries_by_text_type(text_type="commentary", language=root_text.language, skip=skip, limit=limit)
     final_commentary = []
     for commentary in commentaries:
-        if commentary.categories == group_id:
+        if commentary.categories and group_id in commentary.categories:
             final_commentary.append(commentary)
     return final_commentary
 
