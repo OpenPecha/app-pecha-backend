@@ -612,7 +612,7 @@ def _generate_paginated_table_of_content_by_segments_(
     paginated_table_of_content = TableOfContent(
         id=str(table_of_content.id),
         text_id=table_of_content.text_id,
-        type=table_of_content.type if table_of_content.type else TableOfContentType.TEXT,
+        type=table_of_content.type,
         sections=filtered_sections
     )
     
