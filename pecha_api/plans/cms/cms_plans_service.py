@@ -1,6 +1,5 @@
 import py_compile
 from typing import Optional, List, Dict
-
 from starlette import status
 from pecha_api.plans.plans_models import Plan
 from pecha_api.plans.items.plan_items_models import PlanItem
@@ -99,6 +98,7 @@ async def get_filtered_plans(token: str, search: Optional[str], sort_by: str, so
         plan_repository_response : PlansRepositoryResponse = get_plans_by_author_id(
             db=db_session,
             author_id=current_author.id,
+            is_admin=current_author.is_admin,
             search=search,
             sort_by=sort_by,
             sort_order=sort_order,
@@ -249,9 +249,8 @@ def _get_plan_details(db: Session, plan_id: UUID) -> PlanWithDays:
 async def update_plan_details(token: str, plan_id: UUID, update_plan_request: UpdatePlanRequest) -> PlanDTO:
 
     author_details = validate_and_extract_author_details(token=token)
-    
     with SessionLocal() as db:
-        plan = _check_author_plan_availability(plan_id=plan_id, author_id=author_details.id)
+        plan = _check_author_plan_availability(plan_id=plan_id, author_id=author_details.id, is_admin=author_details.is_admin)
         
         if update_plan_request.title is not None:
             plan.title = update_plan_request.title
@@ -304,9 +303,10 @@ async def update_plan_details(token: str, plan_id: UUID, update_plan_request: Up
 async def update_selected_plan_status(token:str,plan_id: UUID, plan_status_update: PlanStatusUpdate) -> PlanDTO:
     
    current_author = validate_and_extract_author_details(token=token)
+
    with SessionLocal() as db:
 
-        plan = _check_author_plan_availability(plan_id=plan_id, author_id=current_author.id)
+        plan = _check_author_plan_availability(plan_id=plan_id, author_id=current_author.id, is_admin=current_author.is_admin)
         _check_published_plan_day_availability(plan_id=plan_id, plan_status=plan_status_update.status)
 
         plan.status = plan_status_update.status
@@ -328,7 +328,7 @@ async def update_selected_plan_status(token:str,plan_id: UUID, plan_status_updat
 async def delete_selected_plan(token:str,plan_id: UUID):
     current_author = validate_and_extract_author_details(token=token)
     with SessionLocal() as db:
-        plan = _check_author_plan_availability(plan_id=plan_id, author_id=current_author.id)
+        plan = _check_author_plan_availability(plan_id=plan_id, author_id=current_author.id, is_admin=current_author.is_admin)
         _soft_delete_plan_by_id(db=db, plan_id=plan.id, author=current_author)
         return
 
@@ -374,12 +374,12 @@ def _soft_delete_plan_by_id(db: Session, plan_id: UUID, author: Author):
     plan = update_plan(db=db, plan=plan)
 
 
-def _check_author_plan_availability(plan_id: UUID, author_id: Optional[UUID] = None) -> Plan:
+def _check_author_plan_availability(plan_id: UUID, author_id: Optional[UUID] = None, is_admin: bool = False) -> Plan:
     with SessionLocal() as db:
         plan = get_plan_by_id(db=db, plan_id=plan_id)
         if not plan:
             raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=ResponseError(error=BAD_REQUEST, message=PLAN_NOT_FOUND).model_dump())
-        if author_id and plan.author_id != author_id:
+        if not is_admin and author_id and plan.author_id != author_id:
             raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail=ResponseError(error=BAD_REQUEST, message=PLAN_AUTHOR_MISMATCH).model_dump())
         return plan
 
@@ -392,6 +392,6 @@ def _check_published_plan_day_availability(plan_id: UUID, plan_status: PlanStatu
 def update_plan_featured_service(token:str, plan_id: UUID):
     current_author = validate_and_extract_author_details(token=token)
     with SessionLocal() as db:
-        plan = _check_author_plan_availability(plan_id=plan_id, author_id=current_author.id)
+        plan = _check_author_plan_availability(plan_id=plan_id, author_id=current_author.id, is_admin=current_author.is_admin)
         plan.featured = not plan.featured
         plan = update_plan(db=db, plan=plan)

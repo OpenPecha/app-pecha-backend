@@ -16,7 +16,8 @@ from pecha_api.texts.texts_service import (
     get_sheet,
     get_table_of_content_by_sheet_id,
     _validate_text_detail_request,
-    get_root_text_by_collection_id
+    get_root_text_by_collection_id,
+    get_commentaries_by_text_id
 )
 from pecha_api.terms.terms_response_models import TermsModel
 from pecha_api.texts.texts_response_models import (
@@ -1689,9 +1690,8 @@ async def test_get_root_text_by_collection_id_success_with_root_text():
         )
     ]
     
-    # Mock the filtered result with root text found
     mock_filtered_result = {
-        "root_text": mock_texts[0],  # First text matches the language
+        "root_text": mock_texts[0],  
         "versions": [mock_texts[1]]
     }
     
@@ -1703,13 +1703,441 @@ async def test_get_root_text_by_collection_id_success_with_root_text():
         
         result = await get_root_text_by_collection_id(collection_id=collection_id, language=language)
         
-        # Verify the function calls
         mock_get_all_texts.assert_called_once_with(collection_id=collection_id)
         mock_filter.assert_called_once_with(texts=mock_texts, language=language)
         
-        # Verify the result
         assert result is not None
         assert isinstance(result, tuple)
         assert len(result) == 2
         assert result[0] == "text_id_1"
         assert result[1] == "བྱང་ཆུབ་སེམས་དཔའི་སྤྱོད་པ་ལ་འཇུག་པ།"
+
+
+@pytest.mark.asyncio
+async def test_get_commentaries_by_text_id_success():
+    """Test get_commentaries_by_text_id with valid text_id and matching commentaries"""
+    text_id = "root-text-uuid"
+    group_id = "group-uuid-123"
+    skip = 0
+    limit = 10
+    
+    mock_root_text = MagicMock()
+    mock_root_text.id = text_id
+    mock_root_text.group_id = group_id
+    mock_root_text.language = "bo"
+    mock_root_text.type = "root"
+    
+    mock_commentary_1 = MagicMock()
+    mock_commentary_1.id = "commentary-1-uuid"
+    mock_commentary_1.pecha_text_id = "commentary_pecha_1"
+    mock_commentary_1.title = "Commentary on Heart Sutra"
+    mock_commentary_1.language = "bo"
+    mock_commentary_1.group_id = "commentary-group-1"
+    mock_commentary_1.type = "commentary"
+    mock_commentary_1.is_published = True
+    mock_commentary_1.created_date = "2025-01-01T00:00:00"
+    mock_commentary_1.updated_date = "2025-01-01T00:00:00"
+    mock_commentary_1.published_date = "2025-01-01T00:00:00"
+    mock_commentary_1.published_by = "commentator_1"
+    mock_commentary_1.categories = [group_id, "other-category"]
+    mock_commentary_1.views = 100
+    mock_commentary_1.source_link = "https://commentary-1.com"
+    mock_commentary_1.ranking = 1
+    mock_commentary_1.license = "CC0"
+    
+    mock_commentary_2 = MagicMock()
+    mock_commentary_2.id = "commentary-2-uuid"
+    mock_commentary_2.pecha_text_id = "commentary_pecha_2"
+    mock_commentary_2.title = "Another Commentary"
+    mock_commentary_2.language = "bo"
+    mock_commentary_2.group_id = "commentary-group-2"
+    mock_commentary_2.type = "commentary"
+    mock_commentary_2.is_published = True
+    mock_commentary_2.created_date = "2025-01-02T00:00:00"
+    mock_commentary_2.updated_date = "2025-01-02T00:00:00"
+    mock_commentary_2.published_date = "2025-01-02T00:00:00"
+    mock_commentary_2.published_by = "commentator_2"
+    mock_commentary_2.categories = [group_id]
+    mock_commentary_2.views = 50
+    mock_commentary_2.source_link = "https://commentary-2.com"
+    mock_commentary_2.ranking = 2
+    mock_commentary_2.license = "CC BY"
+    
+    mock_commentary_3 = MagicMock()
+    mock_commentary_3.id = "commentary-3-uuid"
+    mock_commentary_3.pecha_text_id = "commentary_pecha_3"
+    mock_commentary_3.title = "Unrelated Commentary"
+    mock_commentary_3.language = "bo"
+    mock_commentary_3.group_id = "commentary-group-3"
+    mock_commentary_3.type = "commentary"
+    mock_commentary_3.is_published = True
+    mock_commentary_3.created_date = "2025-01-03T00:00:00"
+    mock_commentary_3.updated_date = "2025-01-03T00:00:00"
+    mock_commentary_3.published_date = "2025-01-03T00:00:00"
+    mock_commentary_3.published_by = "commentator_3"
+    mock_commentary_3.categories = ["different-group-id"]
+    mock_commentary_3.views = 25
+    mock_commentary_3.source_link = None
+    mock_commentary_3.ranking = None
+    mock_commentary_3.license = None
+    
+    with patch('pecha_api.texts.texts_service.TextUtils.validate_text_exists', new_callable=AsyncMock) as mock_validate, \
+         patch('pecha_api.texts.texts_service.TextUtils.get_text_detail_by_id', new_callable=AsyncMock) as mock_get_text, \
+         patch('pecha_api.texts.texts_service.TextUtils.get_commentaries_by_text_type', new_callable=AsyncMock) as mock_get_commentaries:
+        
+        mock_validate.return_value = True
+        mock_get_text.return_value = mock_root_text
+        mock_get_commentaries.return_value = [mock_commentary_1, mock_commentary_2, mock_commentary_3]
+        
+        result = await get_commentaries_by_text_id(text_id=text_id, skip=skip, limit=limit)
+        
+        mock_validate.assert_called_once_with(text_id=text_id)
+        mock_get_text.assert_called_once_with(text_id=text_id)
+        mock_get_commentaries.assert_called_once_with(
+            text_type="commentary",
+            language="bo",
+            skip=skip,
+            limit=limit
+        )
+        
+        assert len(result) == 2
+        assert result[0].id == "commentary-1-uuid"
+        assert result[0].title == "Commentary on Heart Sutra"
+        assert result[0].categories == [group_id, "other-category"]
+        assert result[1].id == "commentary-2-uuid"
+        assert result[1].title == "Another Commentary"
+        assert result[1].categories == [group_id]
+
+
+@pytest.mark.asyncio
+async def test_get_commentaries_by_text_id_no_matching_commentaries():
+    """Test get_commentaries_by_text_id when no commentaries match the group_id"""
+    text_id = "root-text-uuid"
+    group_id = "group-uuid-123"
+    skip = 0
+    limit = 10
+    
+    mock_root_text = MagicMock()
+    mock_root_text.id = text_id
+    mock_root_text.group_id = group_id
+    mock_root_text.language = "bo"
+    mock_root_text.type = "root"
+    
+    mock_commentary = MagicMock()
+    mock_commentary.id = "commentary-uuid"
+    mock_commentary.pecha_text_id = "commentary_pecha"
+    mock_commentary.title = "Unrelated Commentary"
+    mock_commentary.language = "bo"
+    mock_commentary.group_id = "commentary-group"
+    mock_commentary.type = "commentary"
+    mock_commentary.is_published = True
+    mock_commentary.created_date = "2025-01-01T00:00:00"
+    mock_commentary.updated_date = "2025-01-01T00:00:00"
+    mock_commentary.published_date = "2025-01-01T00:00:00"
+    mock_commentary.published_by = "commentator"
+    mock_commentary.categories = ["different-group-id", "another-category"]
+    mock_commentary.views = 10
+    mock_commentary.source_link = None
+    mock_commentary.ranking = None
+    mock_commentary.license = None
+    
+    with patch('pecha_api.texts.texts_service.TextUtils.validate_text_exists', new_callable=AsyncMock) as mock_validate, \
+         patch('pecha_api.texts.texts_service.TextUtils.get_text_detail_by_id', new_callable=AsyncMock) as mock_get_text, \
+         patch('pecha_api.texts.texts_service.TextUtils.get_commentaries_by_text_type', new_callable=AsyncMock) as mock_get_commentaries:
+        
+        mock_validate.return_value = True
+        mock_get_text.return_value = mock_root_text
+        mock_get_commentaries.return_value = [mock_commentary]
+        
+        result = await get_commentaries_by_text_id(text_id=text_id, skip=skip, limit=limit)
+        
+        assert len(result) == 0
+        assert result == []
+
+
+@pytest.mark.asyncio
+async def test_get_commentaries_by_text_id_empty_commentaries_list():
+    """Test get_commentaries_by_text_id when no commentaries exist at all"""
+    text_id = "root-text-uuid"
+    group_id = "group-uuid-123"
+    skip = 0
+    limit = 10
+    
+    mock_root_text = MagicMock()
+    mock_root_text.id = text_id
+    mock_root_text.group_id = group_id
+    mock_root_text.language = "en"
+    mock_root_text.type = "root"
+    
+    with patch('pecha_api.texts.texts_service.TextUtils.validate_text_exists', new_callable=AsyncMock) as mock_validate, \
+         patch('pecha_api.texts.texts_service.TextUtils.get_text_detail_by_id', new_callable=AsyncMock) as mock_get_text, \
+         patch('pecha_api.texts.texts_service.TextUtils.get_commentaries_by_text_type', new_callable=AsyncMock) as mock_get_commentaries:
+        
+        mock_validate.return_value = True
+        mock_get_text.return_value = mock_root_text
+        mock_get_commentaries.return_value = []
+        
+        result = await get_commentaries_by_text_id(text_id=text_id, skip=skip, limit=limit)
+        
+        assert len(result) == 0
+        assert result == []
+
+
+@pytest.mark.asyncio
+async def test_get_commentaries_by_text_id_text_not_found():
+    """Test get_commentaries_by_text_id with non-existent text_id"""
+    text_id = "non-existent-uuid"
+    skip = 0
+    limit = 10
+    
+    with patch('pecha_api.texts.texts_service.TextUtils.validate_text_exists', new_callable=AsyncMock) as mock_validate:
+        mock_validate.return_value = False
+        
+        with pytest.raises(HTTPException) as exc_info:
+            await get_commentaries_by_text_id(text_id=text_id, skip=skip, limit=limit)
+        
+        assert exc_info.value.status_code == 404
+        assert exc_info.value.detail == ErrorConstants.TEXT_NOT_FOUND_MESSAGE
+        mock_validate.assert_called_once_with(text_id=text_id)
+
+
+@pytest.mark.asyncio
+async def test_get_commentaries_by_text_id_with_pagination():
+    """Test get_commentaries_by_text_id with custom pagination parameters"""
+    text_id = "root-text-uuid"
+    group_id = "group-uuid-123"
+    skip = 5
+    limit = 20
+    
+    mock_root_text = MagicMock()
+    mock_root_text.id = text_id
+    mock_root_text.group_id = group_id
+    mock_root_text.language = "zh"
+    mock_root_text.type = "root"
+    
+    mock_commentary = MagicMock()
+    mock_commentary.id = "commentary-uuid"
+    mock_commentary.pecha_text_id = "commentary_pecha"
+    mock_commentary.title = "Chinese Commentary"
+    mock_commentary.language = "zh"
+    mock_commentary.group_id = "commentary-group"
+    mock_commentary.type = "commentary"
+    mock_commentary.is_published = True
+    mock_commentary.created_date = "2025-01-01T00:00:00"
+    mock_commentary.updated_date = "2025-01-01T00:00:00"
+    mock_commentary.published_date = "2025-01-01T00:00:00"
+    mock_commentary.published_by = "commentator"
+    mock_commentary.categories = [group_id]
+    mock_commentary.views = 30
+    mock_commentary.source_link = "https://chinese-commentary.com"
+    mock_commentary.ranking = 1
+    mock_commentary.license = "CC BY-SA"
+    
+    with patch('pecha_api.texts.texts_service.TextUtils.validate_text_exists', new_callable=AsyncMock) as mock_validate, \
+         patch('pecha_api.texts.texts_service.TextUtils.get_text_detail_by_id', new_callable=AsyncMock) as mock_get_text, \
+         patch('pecha_api.texts.texts_service.TextUtils.get_commentaries_by_text_type', new_callable=AsyncMock) as mock_get_commentaries:
+        
+        mock_validate.return_value = True
+        mock_get_text.return_value = mock_root_text
+        mock_get_commentaries.return_value = [mock_commentary]
+        
+        result = await get_commentaries_by_text_id(text_id=text_id, skip=skip, limit=limit)
+        
+        mock_get_commentaries.assert_called_once_with(
+            text_type="commentary",
+            language="zh",
+            skip=skip,
+            limit=limit
+        )
+        
+        assert len(result) == 1
+        assert result[0].language == "zh"
+
+
+@pytest.mark.asyncio
+async def test_get_commentaries_by_text_id_commentary_with_none_categories():
+    """Test get_commentaries_by_text_id when commentary has None categories"""
+    text_id = "root-text-uuid"
+    group_id = "group-uuid-123"
+    skip = 0
+    limit = 10
+    
+    mock_root_text = MagicMock()
+    mock_root_text.id = text_id
+    mock_root_text.group_id = group_id
+    mock_root_text.language = "bo"
+    mock_root_text.type = "root"
+    
+    mock_commentary = MagicMock()
+    mock_commentary.id = "commentary-uuid"
+    mock_commentary.pecha_text_id = "commentary_pecha"
+    mock_commentary.title = "Commentary with None categories"
+    mock_commentary.language = "bo"
+    mock_commentary.group_id = "commentary-group"
+    mock_commentary.type = "commentary"
+    mock_commentary.is_published = True
+    mock_commentary.created_date = "2025-01-01T00:00:00"
+    mock_commentary.updated_date = "2025-01-01T00:00:00"
+    mock_commentary.published_date = "2025-01-01T00:00:00"
+    mock_commentary.published_by = "commentator"
+    mock_commentary.categories = None
+    mock_commentary.views = 5
+    mock_commentary.source_link = None
+    mock_commentary.ranking = None
+    mock_commentary.license = None
+    
+    with patch('pecha_api.texts.texts_service.TextUtils.validate_text_exists', new_callable=AsyncMock) as mock_validate, \
+         patch('pecha_api.texts.texts_service.TextUtils.get_text_detail_by_id', new_callable=AsyncMock) as mock_get_text, \
+         patch('pecha_api.texts.texts_service.TextUtils.get_commentaries_by_text_type', new_callable=AsyncMock) as mock_get_commentaries:
+        
+        mock_validate.return_value = True
+        mock_get_text.return_value = mock_root_text
+        mock_get_commentaries.return_value = [mock_commentary]
+        
+        result = await get_commentaries_by_text_id(text_id=text_id, skip=skip, limit=limit)
+        
+        assert len(result) == 0
+
+
+@pytest.mark.asyncio
+async def test_get_commentaries_by_text_id_commentary_with_empty_categories():
+    """Test get_commentaries_by_text_id when commentary has empty categories list"""
+    text_id = "root-text-uuid"
+    group_id = "group-uuid-123"
+    skip = 0
+    limit = 10
+    
+    mock_root_text = MagicMock()
+    mock_root_text.id = text_id
+    mock_root_text.group_id = group_id
+    mock_root_text.language = "bo"
+    mock_root_text.type = "root"
+    
+    mock_commentary = MagicMock()
+    mock_commentary.id = "commentary-uuid"
+    mock_commentary.pecha_text_id = "commentary_pecha"
+    mock_commentary.title = "Commentary with empty categories"
+    mock_commentary.language = "bo"
+    mock_commentary.group_id = "commentary-group"
+    mock_commentary.type = "commentary"
+    mock_commentary.is_published = True
+    mock_commentary.created_date = "2025-01-01T00:00:00"
+    mock_commentary.updated_date = "2025-01-01T00:00:00"
+    mock_commentary.published_date = "2025-01-01T00:00:00"
+    mock_commentary.published_by = "commentator"
+    mock_commentary.categories = []
+    mock_commentary.views = 0
+    mock_commentary.source_link = None
+    mock_commentary.ranking = None
+    mock_commentary.license = None
+    
+    with patch('pecha_api.texts.texts_service.TextUtils.validate_text_exists', new_callable=AsyncMock) as mock_validate, \
+         patch('pecha_api.texts.texts_service.TextUtils.get_text_detail_by_id', new_callable=AsyncMock) as mock_get_text, \
+         patch('pecha_api.texts.texts_service.TextUtils.get_commentaries_by_text_type', new_callable=AsyncMock) as mock_get_commentaries:
+        
+        mock_validate.return_value = True
+        mock_get_text.return_value = mock_root_text
+        mock_get_commentaries.return_value = [mock_commentary]
+        
+        result = await get_commentaries_by_text_id(text_id=text_id, skip=skip, limit=limit)
+        
+        assert len(result) == 0
+
+
+@pytest.mark.asyncio
+async def test_get_commentaries_by_text_id_single_matching_commentary():
+    """Test get_commentaries_by_text_id with single matching commentary"""
+    text_id = "root-text-uuid"
+    group_id = "group-uuid-123"
+    skip = 0
+    limit = 10
+    
+    mock_root_text = MagicMock()
+    mock_root_text.id = text_id
+    mock_root_text.group_id = group_id
+    mock_root_text.language = "en"
+    mock_root_text.type = "root"
+    
+    mock_commentary = MagicMock()
+    mock_commentary.id = "single-commentary-uuid"
+    mock_commentary.pecha_text_id = "single_commentary_pecha"
+    mock_commentary.title = "Single Commentary"
+    mock_commentary.language = "en"
+    mock_commentary.group_id = "commentary-group"
+    mock_commentary.type = "commentary"
+    mock_commentary.is_published = True
+    mock_commentary.created_date = "2025-01-01T00:00:00"
+    mock_commentary.updated_date = "2025-01-01T00:00:00"
+    mock_commentary.published_date = "2025-01-01T00:00:00"
+    mock_commentary.published_by = "single_commentator"
+    mock_commentary.categories = [group_id]
+    mock_commentary.views = 15
+    mock_commentary.source_link = "https://single-commentary.com"
+    mock_commentary.ranking = 1
+    mock_commentary.license = "CC0"
+    
+    with patch('pecha_api.texts.texts_service.TextUtils.validate_text_exists', new_callable=AsyncMock) as mock_validate, \
+         patch('pecha_api.texts.texts_service.TextUtils.get_text_detail_by_id', new_callable=AsyncMock) as mock_get_text, \
+         patch('pecha_api.texts.texts_service.TextUtils.get_commentaries_by_text_type', new_callable=AsyncMock) as mock_get_commentaries:
+        
+        mock_validate.return_value = True
+        mock_get_text.return_value = mock_root_text
+        mock_get_commentaries.return_value = [mock_commentary]
+        
+        result = await get_commentaries_by_text_id(text_id=text_id, skip=skip, limit=limit)
+        
+        assert len(result) == 1
+        assert result[0].id == "single-commentary-uuid"
+        assert result[0].title == "Single Commentary"
+        assert result[0].type == "commentary"
+        assert result[0].categories == [group_id]
+
+
+@pytest.mark.asyncio
+async def test_get_commentaries_by_text_id_with_optional_fields_none():
+    """Test get_commentaries_by_text_id with optional fields as None"""
+    text_id = "root-text-uuid"
+    group_id = "group-uuid-123"
+    skip = 0
+    limit = 10
+    
+    mock_root_text = MagicMock()
+    mock_root_text.id = text_id
+    mock_root_text.group_id = group_id
+    mock_root_text.language = "bo"
+    mock_root_text.type = "root"
+    
+    mock_commentary = MagicMock()
+    mock_commentary.id = "commentary-uuid"
+    mock_commentary.pecha_text_id = None
+    mock_commentary.title = "Commentary with None fields"
+    mock_commentary.language = "bo"
+    mock_commentary.group_id = "commentary-group"
+    mock_commentary.type = "commentary"
+    mock_commentary.is_published = True
+    mock_commentary.created_date = "2025-01-01T00:00:00"
+    mock_commentary.updated_date = "2025-01-01T00:00:00"
+    mock_commentary.published_date = "2025-01-01T00:00:00"
+    mock_commentary.published_by = "commentator"
+    mock_commentary.categories = [group_id]
+    mock_commentary.views = 0
+    mock_commentary.source_link = None
+    mock_commentary.ranking = None
+    mock_commentary.license = None
+    
+    with patch('pecha_api.texts.texts_service.TextUtils.validate_text_exists', new_callable=AsyncMock) as mock_validate, \
+         patch('pecha_api.texts.texts_service.TextUtils.get_text_detail_by_id', new_callable=AsyncMock) as mock_get_text, \
+         patch('pecha_api.texts.texts_service.TextUtils.get_commentaries_by_text_type', new_callable=AsyncMock) as mock_get_commentaries:
+        
+        mock_validate.return_value = True
+        mock_get_text.return_value = mock_root_text
+        mock_get_commentaries.return_value = [mock_commentary]
+        
+        result = await get_commentaries_by_text_id(text_id=text_id, skip=skip, limit=limit)
+        
+        assert len(result) == 1
+        assert result[0].pecha_text_id is None
+        assert result[0].source_link is None
+        assert result[0].ranking is None
+        assert result[0].license is None
+        assert result[0].views == 0

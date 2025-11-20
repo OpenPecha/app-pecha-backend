@@ -53,7 +53,7 @@ async def delete_task_by_id(task_id: UUID, token: str):
     current_author = validate_and_extract_author_details(token=token)
     
     with SessionLocal() as db:
-        task = _get_author_task(db=db, task_id=task_id, current_author=current_author)
+        task = _get_author_task(db=db, task_id=task_id, current_author=current_author,is_admin=current_author.is_admin)
         delete_task(db=db, task_id=task.id)
 
         tasks = get_tasks_by_plan_item_id(db=db, plan_item_id=task.plan_item_id)
@@ -71,7 +71,7 @@ async def change_task_day_service(token: str, task_id: UUID, update_task_request
         if not targeted_day:
             raise HTTPException(status_code=404, detail=ResponseError(error=BAD_REQUEST, message=PLAN_DAY_NOT_FOUND).model_dump())
         
-        task = _get_author_task(db=db, task_id=task_id, current_author=current_author)
+        task = _get_author_task(db=db, task_id=task_id, current_author=current_author,is_admin=current_author.is_admin)
         task.plan_item_id = update_task_request.target_day_id
         task.display_order = display_order
 
@@ -92,7 +92,7 @@ async def update_task_title_service(token: str, task_id: UUID, update_request: U
     current_author = validate_and_extract_author_details(token=token)
     
     with SessionLocal() as db:
-        task = _get_author_task(db=db, task_id=task_id, current_author=current_author)
+        task = _get_author_task(db=db, task_id=task_id, current_author=current_author,is_admin=current_author.is_admin)
 
         task.title = update_request.title
         updated_task = update_task_title(db=db, updated_task=task)
@@ -117,7 +117,7 @@ async def get_task_subtasks_service(task_id: UUID, token: str) -> GetTaskRespons
     current_user = validate_and_extract_author_details(token=token)
 
     with SessionLocal() as db:
-        task = _get_author_task(db=db, task_id=task_id, current_author=current_user)
+        task = _get_author_task(db=db, task_id=task_id, current_author=current_user,is_admin=current_user.is_admin)
 
         subtasks_dto = []
         for sub_task in task.sub_tasks:
@@ -165,11 +165,11 @@ def _reorder_sequentially(db: SessionLocal(), tasks: List[PlanTask]):
         reorder_day_tasks_display_order(db=db, tasks=tasks_to_update)
 
 
-def _get_author_task(db: SessionLocal(), task_id: UUID, current_author: Author) -> PlanTask:
+def _get_author_task(db: SessionLocal(), task_id: UUID, current_author: Author, is_admin: bool) -> PlanTask:
     task = get_task_by_id(db=db, task_id=task_id)
     if not task:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=ResponseError(error=BAD_REQUEST, message=TASK_NOT_FOUND).model_dump())
-    if task.created_by != current_author.email:
+    if not is_admin and task.created_by != current_author.email:
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail=ResponseError(error=FORBIDDEN, message=UNAUTHORIZED_TASK_ACCESS).model_dump())
     return task
 

@@ -61,6 +61,7 @@ def test_create_new_plan_success():
         author = MagicMock()
         author.id = uuid.uuid4()
         author.email = "author@example.com"
+        author.is_admin = False
         mock_validate_author.return_value = author
 
         response = create_new_plan(token="dummy", create_plan_request=request)
@@ -152,7 +153,8 @@ async def test_get_filtered_plans_success():
         db_session = _mock_session_local(mock_session_local)
         mock_get_plans_by_author_id.return_value = repo_response
         # author.id is used in service to pass author_id to repository
-        mock_validate_author.return_value = MagicMock(id=uuid.uuid4())
+        mock_author = MagicMock(id=uuid.uuid4(), is_admin=False)
+        mock_validate_author.return_value = mock_author
         # Return the original key so assertions comparing to plan.image_url still pass
         mock_presign.side_effect = lambda bucket_name, s3_key: s3_key
         mock_get_config.return_value = "dummy-bucket"
@@ -173,7 +175,8 @@ async def test_get_filtered_plans_success():
         called_kwargs = mock_get_plans_by_author_id.call_args.kwargs
         assert called_kwargs == {
             "db": db_session,
-            "author_id": mock_validate_author.return_value.id,
+            "author_id": mock_author.id,
+            "is_admin": False,
             "search": "plan",
             "sort_by": "created_at",
             "sort_order": "desc",
@@ -262,7 +265,7 @@ async def test_get_details_plan_success():
         patch("pecha_api.plans.cms.cms_plans_service.generate_presigned_access_url") as mock_presign, \
         patch("pecha_api.plans.cms.cms_plans_service.get") as mock_get_config:
         db_session = _mock_session_local(mock_session_local)
-        mock_validate_author.return_value = MagicMock()
+        mock_validate_author.return_value = MagicMock(is_admin=False)
         mock_get_plan_by_id.return_value = plan
         mock_get_plan_items_by_plan_id.return_value = [item1, item2]
         mock_get_tasks_by_item_ids.return_value = [task1, task2]
@@ -470,6 +473,7 @@ async def test_update_plan_details_success():
         mock_author = MagicMock()
         mock_author.email = author_email
         mock_author.id = author_id
+        mock_author.is_admin = False
         mock_validate_author.return_value = mock_author
         
         mock_get_plan.return_value = mock_plan
@@ -540,6 +544,7 @@ async def test_update_plan_details_partial_update():
         mock_author = MagicMock()
         mock_author.email = "author@example.com"
         mock_author.id = author_id
+        mock_author.is_admin = False
         mock_validate_author.return_value = mock_author
         
         mock_get_plan.return_value = mock_plan
@@ -623,6 +628,7 @@ async def test_update_plan_details_with_image_url_generation():
         
         mock_author = MagicMock()
         mock_author.id = author_id
+        mock_author.is_admin = False
         mock_validate_author.return_value = mock_author
         
         mock_get_plan.return_value = mock_plan
@@ -678,6 +684,7 @@ async def test_update_plan_details_image_url_generation_failure():
         
         mock_author = MagicMock()
         mock_author.id = author_id
+        mock_author.is_admin = False
         mock_validate_author.return_value = mock_author
         
         mock_get_plan.return_value = mock_plan
@@ -728,6 +735,7 @@ async def test_update_plan_details_no_image_url():
         
         mock_author = MagicMock()
         mock_author.id = author_id
+        mock_author.is_admin = False
         mock_validate_author.return_value = mock_author
         
         mock_get_plan.return_value = mock_plan
@@ -772,7 +780,7 @@ async def test_update_selected_plan_status_success_db_backed():
          patch("pecha_api.plans.cms.cms_plans_service.validate_and_extract_author_details") as mock_validate_author:
         db_session = _mock_session_local(mock_session_local)
 
-        mock_validate_author.return_value = MagicMock(id=author_id)
+        mock_validate_author.return_value = MagicMock(id=author_id, is_admin=False)
         mock_get_plan_by_id.return_value = mock_plan
         mock_get_items.return_value = items
         mock_get_progress.return_value = user_progress
@@ -810,7 +818,7 @@ async def test_update_selected_plan_status_invalid_transition_no_days():
          patch("pecha_api.plans.cms.cms_plans_service.get_plan_items_by_plan_id") as mock_get_items, \
          patch("pecha_api.plans.cms.cms_plans_service.validate_and_extract_author_details") as mock_validate_author:
         _ = _mock_session_local(mock_session_local)
-        mock_validate_author.return_value = MagicMock(id=author_id)
+        mock_validate_author.return_value = MagicMock(id=author_id, is_admin=False)
         mock_get_plan_by_id.return_value = mock_plan
         mock_get_items.return_value = []
 
@@ -833,7 +841,7 @@ async def test_update_selected_plan_status_not_found():
          patch("pecha_api.plans.cms.cms_plans_service.get_plan_by_id") as mock_get_plan_by_id, \
          patch("pecha_api.plans.cms.cms_plans_service.validate_and_extract_author_details") as mock_validate_author:
         _ = _mock_session_local(mock_session_local)
-        mock_validate_author.return_value = MagicMock(id=uuid.uuid4())
+        mock_validate_author.return_value = MagicMock(id=uuid.uuid4(), is_admin=False)
         mock_get_plan_by_id.return_value = None
 
         with pytest.raises(HTTPException) as exc_info:
@@ -859,7 +867,7 @@ async def test_update_selected_plan_status_author_mismatch():
          patch("pecha_api.plans.cms.cms_plans_service.get_plan_by_id") as mock_get_plan_by_id, \
          patch("pecha_api.plans.cms.cms_plans_service.validate_and_extract_author_details") as mock_validate_author:
         _ = _mock_session_local(mock_session_local)
-        mock_validate_author.return_value = MagicMock(id=uuid.uuid4())
+        mock_validate_author.return_value = MagicMock(id=uuid.uuid4(), is_admin=False)
         mock_get_plan_by_id.return_value = mock_plan
 
         with pytest.raises(HTTPException) as exc_info:
@@ -878,6 +886,7 @@ async def test_delete_selected_plan_success():
     plan_id = uuid.uuid4()
     author = MagicMock()
     author.id = uuid.uuid4()
+    author.is_admin = False
 
     plan = MagicMock(spec=Plan)
     plan.id = plan_id

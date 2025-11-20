@@ -47,7 +47,7 @@ async def test_create_new_sub_tasks_builds_and_saves_with_incremented_display_or
 
     with patch(
         "pecha_api.plans.tasks.sub_tasks.plan_sub_tasks_services.validate_and_extract_author_details",
-        return_value=SimpleNamespace(email="author@example.com"),
+        return_value=SimpleNamespace(email="author@example.com", is_admin=False),
     ) as mock_validate, patch(
         "pecha_api.plans.tasks.sub_tasks.plan_sub_tasks_services.SessionLocal",
         return_value=session_cm,
@@ -152,7 +152,7 @@ async def test_create_new_sub_tasks_task_not_found_raises_http_exception():
 
     with patch(
         "pecha_api.plans.tasks.sub_tasks.plan_sub_tasks_services.validate_and_extract_author_details",
-        return_value=SimpleNamespace(email="author@example.com"),
+        return_value=SimpleNamespace(email="author@example.com", is_admin=False),
     ), patch(
         "pecha_api.plans.tasks.sub_tasks.plan_sub_tasks_services.SessionLocal",
         return_value=session_cm,
@@ -192,7 +192,7 @@ async def test_update_sub_task_by_task_id_deletes_missing_and_updates_existing_a
 
     with patch(
         "pecha_api.plans.tasks.sub_tasks.plan_sub_tasks_services.validate_and_extract_author_details",
-        return_value=SimpleNamespace(email="author@example.com"),
+        return_value=SimpleNamespace(email="author@example.com", is_admin=False),
     ) as mock_validate, patch(
         "pecha_api.plans.tasks.sub_tasks.plan_sub_tasks_services.SessionLocal",
         return_value=session_cm,
@@ -256,7 +256,7 @@ async def test_update_sub_task_by_task_id_unauthorized_raises_http_exception_403
 
     with patch(
         "pecha_api.plans.tasks.sub_tasks.plan_sub_tasks_services.validate_and_extract_author_details",
-        return_value=SimpleNamespace(email="author@example.com"),
+        return_value=SimpleNamespace(email="author@example.com", is_admin=False),
     ), patch(
         "pecha_api.plans.tasks.sub_tasks.plan_sub_tasks_services.SessionLocal",
         return_value=session_cm,
@@ -312,7 +312,7 @@ async def test_update_sub_task_by_task_id_creates_new_sub_tasks_for_none_ids():
 
     with patch(
         "pecha_api.plans.tasks.sub_tasks.plan_sub_tasks_services.validate_and_extract_author_details",
-        return_value=SimpleNamespace(email="author@example.com"),
+        return_value=SimpleNamespace(email="author@example.com", is_admin=False),
     ), patch(
         "pecha_api.plans.tasks.sub_tasks.plan_sub_tasks_services.SessionLocal",
         return_value=session_cm,
@@ -387,7 +387,7 @@ async def test_update_sub_task_by_task_id_task_not_found_raises_http_exception_4
 
     with patch(
         "pecha_api.plans.tasks.sub_tasks.plan_sub_tasks_services.validate_and_extract_author_details",
-        return_value=SimpleNamespace(email="author@example.com"),
+        return_value=SimpleNamespace(email="author@example.com", is_admin=False),
     ), patch(
         "pecha_api.plans.tasks.sub_tasks.plan_sub_tasks_services.SessionLocal",
         return_value=session_cm,
@@ -430,7 +430,7 @@ async def test_change_subtask_order_service_success():
     
     with patch(
         "pecha_api.plans.tasks.sub_tasks.plan_sub_tasks_services.validate_and_extract_author_details",
-        return_value=SimpleNamespace(email="author@example.com"),
+        return_value=SimpleNamespace(email="author@example.com", is_admin=False),
     ) as mock_validate, patch(
         "pecha_api.plans.tasks.sub_tasks.plan_sub_tasks_services.SessionLocal",
         return_value=session_cm,
@@ -453,7 +453,8 @@ async def test_change_subtask_order_service_success():
         mock_get_task.assert_called_once_with(
             db=db_mock,
             task_id=task_id,
-            current_author=mock_validate.return_value
+            current_author=mock_validate.return_value,
+            is_admin=mock_validate.return_value.is_admin
         )
         
         mock_update_bulk.assert_called_once_with(
@@ -489,7 +490,7 @@ async def test_change_subtask_order_service_move_up():
     
     with patch(
         "pecha_api.plans.tasks.sub_tasks.plan_sub_tasks_services.validate_and_extract_author_details",
-        return_value=SimpleNamespace(email="author@example.com"),
+        return_value=SimpleNamespace(email="author@example.com", is_admin=False),
     ), patch(
         "pecha_api.plans.tasks.sub_tasks.plan_sub_tasks_services.SessionLocal",
         return_value=session_cm,
@@ -536,7 +537,7 @@ async def test_change_subtask_order_service_move_down():
     
     with patch(
         "pecha_api.plans.tasks.sub_tasks.plan_sub_tasks_services.validate_and_extract_author_details",
-        return_value=SimpleNamespace(email="author@example.com"),
+        return_value=SimpleNamespace(email="author@example.com", is_admin=False),
     ), patch(
         "pecha_api.plans.tasks.sub_tasks.plan_sub_tasks_services.SessionLocal",
         return_value=session_cm,
@@ -581,7 +582,7 @@ async def test_change_subtask_order_service_to_first_position():
     
     with patch(
         "pecha_api.plans.tasks.sub_tasks.plan_sub_tasks_services.validate_and_extract_author_details",
-        return_value=SimpleNamespace(email="author@example.com"),
+        return_value=SimpleNamespace(email="author@example.com", is_admin=False),
     ), patch(
         "pecha_api.plans.tasks.sub_tasks.plan_sub_tasks_services.SessionLocal",
         return_value=session_cm,
@@ -647,7 +648,7 @@ async def test_change_subtask_order_service_task_not_found():
     
     with patch(
         "pecha_api.plans.tasks.sub_tasks.plan_sub_tasks_services.validate_and_extract_author_details",
-        return_value=SimpleNamespace(email="author@example.com"),
+        return_value=SimpleNamespace(email="author@example.com", is_admin=False),
     ), patch(
         "pecha_api.plans.tasks.sub_tasks.plan_sub_tasks_services.SessionLocal",
         return_value=session_cm,
@@ -684,7 +685,7 @@ async def test_change_subtask_order_service_unauthorized():
     
     with patch(
         "pecha_api.plans.tasks.sub_tasks.plan_sub_tasks_services.validate_and_extract_author_details",
-        return_value=SimpleNamespace(email="author@example.com"),
+        return_value=SimpleNamespace(email="author@example.com", is_admin=False),
     ), patch(
         "pecha_api.plans.tasks.sub_tasks.plan_sub_tasks_services.SessionLocal",
         return_value=session_cm,
@@ -727,7 +728,7 @@ async def test_change_subtask_order_service_database_error():
     
     with patch(
         "pecha_api.plans.tasks.sub_tasks.plan_sub_tasks_services.validate_and_extract_author_details",
-        return_value=SimpleNamespace(email="author@example.com"),
+        return_value=SimpleNamespace(email="author@example.com", is_admin=False),
     ), patch(
         "pecha_api.plans.tasks.sub_tasks.plan_sub_tasks_services.SessionLocal",
         side_effect=Exception("Database connection error"),
@@ -766,7 +767,7 @@ async def test_change_subtask_order_service_update_failed():
     
     with patch(
         "pecha_api.plans.tasks.sub_tasks.plan_sub_tasks_services.validate_and_extract_author_details",
-        return_value=SimpleNamespace(email="author@example.com"),
+        return_value=SimpleNamespace(email="author@example.com", is_admin=False),
     ), patch(
         "pecha_api.plans.tasks.sub_tasks.plan_sub_tasks_services.SessionLocal",
         return_value=session_cm,
