@@ -1,5 +1,6 @@
 from fastapi import HTTPException
 from starlette import status
+from rich import print
 
 from pecha_api.error_contants import ErrorConstants
 from .texts_repository import (
@@ -18,9 +19,11 @@ from .texts_repository import (
 )
 from .texts_response_models import (
     TableOfContent,
+    TableOfContentType,
     DetailTableOfContentResponse,
     TableOfContentResponse,
     TextDTO,
+    TextSegment,
     TextVersionResponse,
     TextVersion,
     TextsCategoryResponse,
@@ -34,6 +37,7 @@ from .texts_response_models import (
 from .groups.groups_service import (
     validate_group_exists
 )
+from .segments.segments_models import Segment
 from pecha_api.texts.texts_cache_service import (
     set_text_details_cache,
     get_text_details_cache,
@@ -49,6 +53,7 @@ from pecha_api.texts.texts_cache_service import (
     update_text_details_cache,
     invalidate_text_cache_on_update
 )
+from .segments.segments_repository import get_segments_by_text_id
 from pecha_api.sheets.sheets_enum import (
     SortBy,
     SortOrder
@@ -176,6 +181,7 @@ async def get_table_of_contents_by_text_id(text_id: str, language: str = None, s
             TableOfContent(
                 id=str(content.id),
                 text_id=content.text_id,
+                type=content.type if content.type else TableOfContentType.TEXT,
                 sections=_get_paginated_sections(sections=content.sections, skip=skip, limit=limit)
             )
             for content in table_of_contents
@@ -337,17 +343,62 @@ async def create_new_text(
 
 async def create_table_of_content(table_of_content_request: TableOfContent, token: str):
     is_valid_user = validate_user_exists(token=token)
+    
     if is_valid_user:
         await TextUtils.validate_text_exists(text_id=table_of_content_request.text_id)
-        segment_ids = TextUtils.get_all_segment_ids(table_of_content=table_of_content_request)
+        new_table_of_content = await get_table_of_content_by_type(table_of_content=table_of_content_request)
+        segment_ids = TextUtils.get_all_segment_ids(table_of_content=new_table_of_content)
         await SegmentUtils.validate_segments_exists(segment_ids=segment_ids)
-        table_of_content = await create_table_of_content_detail(table_of_content_request=table_of_content_request)
+        table_of_content = await create_table_of_content_detail(table_of_content_request=new_table_of_content)
         return table_of_content
     else:
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail=ErrorConstants.TOKEN_ERROR_MESSAGE)
+    
+
 
 
 # PRIVATE FUNCTIONS
+
+async def get_table_of_content_by_type(table_of_content: TableOfContent):
+    if table_of_content.type == TableOfContentType.TEXT:
+        new_table_of_content = await replace_pecha_segment_id_with_segment_id(table_of_content=table_of_content)
+    else: 
+        new_table_of_content = table_of_content
+    
+    return new_table_of_content
+    
+
+
+async def replace_pecha_segment_id_with_segment_id(table_of_content: TableOfContent) -> TableOfContent:
+    text_segments = await get_segments_by_text_id(text_id=table_of_content.text_id)
+    segments_dict = {segment.pecha_segment_id: segment.id for segment in text_segments}
+    print(segments_dict)
+
+    new_toc = TableOfContent(
+        text_id=table_of_content.text_id,
+        type=table_of_content.type,
+        sections=[]
+    )
+    new_sections = []
+    for section in table_of_content.sections:
+        new_segments = []
+        for segment in section.segments:
+            # db_segment = await Segment.get_segment_by_pecha_segment_id(pecha_segment_id=segment.pecha_segment_id)
+            new_segments.append(
+                TextSegment(
+                    segment_id=str(segments_dict[segment.segment_id]),
+                    segment_number=segment.segment_number
+                )
+            )
+        new_section = Section(
+            id=section.id,
+            title=section.title,
+            section_number=section.section_number,
+            segments=new_segments
+        )
+        new_sections.append(new_section)
+    new_toc.sections = new_sections
+    return new_toc
 
 async def _mapping_table_of_content(
         text: TextDTO, 
@@ -463,6 +514,23 @@ async def _get_table_of_content_by_version_text_id(versions: List[TextDTO]) -> D
         versions_table_of_content_id_dict[str(version.id)] = list_of_table_of_contents_ids
     return versions_table_of_content_id_dict
 
+
+async def get_commentaries_by_text_id(text_id: str, skip: int, limit: int) -> List[TextDTO]:
+    is_valid_text = await TextUtils.validate_text_exists(text_id=text_id)
+    if not is_valid_text:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=ErrorConstants.TEXT_NOT_FOUND_MESSAGE)
+    
+    root_text = await TextUtils.get_text_detail_by_id(text_id=text_id)
+    group_id = root_text.group_id
+
+    commentaries = await TextUtils.get_commentaries_by_text_type(text_type="commentary", language=root_text.language, skip=skip, limit=limit)
+    final_commentary = []
+    for commentary in commentaries:
+        if commentary.categories and group_id in commentary.categories:
+            final_commentary.append(commentary)
+    return final_commentary
+
+
 def _get_list_of_text_version_response_model(versions: List[TextDTO], versions_table_of_content_id_dict: Dict[str, List[str]]) -> List[TextVersion]:
     list_of_version = [
         TextVersion(
@@ -563,6 +631,7 @@ def _generate_paginated_table_of_content_by_segments_(
     paginated_table_of_content = TableOfContent(
         id=str(table_of_content.id),
         text_id=table_of_content.text_id,
+        type=table_of_content.type,
         sections=filtered_sections
     )
     
@@ -667,4 +736,4 @@ def _search_table_of_content_where_segment_id_exists(table_of_contents: List[Tab
     raise HTTPException(
         status_code=status.HTTP_404_NOT_FOUND,
         detail=ErrorConstants.TABLE_OF_CONTENT_NOT_FOUND_MESSAGE
-    )
+    )   

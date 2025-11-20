@@ -74,7 +74,7 @@ async def get_segments_by_ids(segment_ids: List[str]) -> Dict[str, SegmentDTO]:
 async def create_segment(create_segment_request: CreateSegmentRequest) -> List[Segment]:
     new_segment_list = [
         Segment(
-            pecha_segment_id=create_segment_request.pecha_segment_id,
+            pecha_segment_id=segment.pecha_segment_id,
             text_id=create_segment_request.text_id,
             content=segment.content,
             mapping=segment.mapping,

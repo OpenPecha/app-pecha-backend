@@ -16,7 +16,7 @@ def create_plan_item(token: str, plan_id: UUID) -> ItemDTO:
     current_author = validate_and_extract_author_details(token=token)
 
     with SessionLocal() as db_session:
-        plan = _get_author_plan(plan_id=plan_id, current_author=current_author)
+        plan = _get_author_plan(plan_id=plan_id, current_author=current_author,is_admin=current_author.is_admin)
         last_day_number = get_last_day_number(db=db_session, plan_id=plan.id)
         new_day_number = last_day_number + 1
         plan_item = PlanItem(
@@ -36,7 +36,7 @@ def delete_plan_day_by_id(token: str, plan_id: UUID, day_id: UUID) -> None:
     current_author = validate_and_extract_author_details(token=token)
 
     with SessionLocal() as db_session:
-        plan = _get_author_plan(plan_id=plan_id, current_author=current_author)
+        plan = _get_author_plan(plan_id=plan_id, current_author=current_author,is_admin=current_author.is_admin)
 
         item = get_day_by_plan_day_id(db=db_session, plan_id=plan.id, day_id=day_id)
         delete_day_by_id(db=db_session, plan_id=plan.id, day_id=item.id)
@@ -45,7 +45,7 @@ def delete_plan_day_by_id(token: str, plan_id: UUID, day_id: UUID) -> None:
 def update_plans_day_number(token: str, plan_id: UUID, reorder_days_request: ReorderDaysRequest) -> None:
     current_author = validate_and_extract_author_details(token=token)
     with SessionLocal() as db_session:
-        plan = _get_author_plan(plan_id=plan_id, current_author=current_author)
+        plan = _get_author_plan(plan_id=plan_id, current_author=current_author,is_admin=current_author.is_admin)
         _check_duplicate_day_number_payload(payload=reorder_days_request)
         update_days_in_bulk_by_plan_id(db=db_session, plan_id=plan.id, days=reorder_days_request.days)
 
@@ -58,10 +58,10 @@ def _reorder_day_display_order(db: SessionLocal(), plan_id: UUID) -> None:
         update_day_by_id(db=db, plan_id=plan_id, day_id=item.id, day_number=index)
 
 
-def _get_author_plan(plan_id: UUID, current_author: Author) -> Plan:
+def _get_author_plan(plan_id: UUID, current_author: Author, is_admin: bool) -> Plan:
     with SessionLocal() as db_session:
-        plan = get_plan_by_id_and_created_by(db=db_session, plan_id=plan_id, created_by=current_author.email)
-        if plan is None:
+        plan = get_plan_by_id_and_created_by(db=db_session, plan_id=plan_id, created_by=current_author.email, is_admin=is_admin)
+        if not is_admin and plan is None:
             raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=ResponseError(error=BAD_REQUEST, message=PLAN_NOT_FOUND).model_dump())
         return plan
 

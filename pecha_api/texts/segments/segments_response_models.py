@@ -9,13 +9,14 @@ from pecha_api.texts.texts_response_models import TextDTO
 
 
 class CreateSegment(BaseModel):
+    pecha_segment_id: Optional[str] = None
     content: str
+    pecha_segment_id: Optional[str] = None
     type: SegmentType
     mapping: Optional[List[Mapping]] = []
 
 
 class CreateSegmentRequest(BaseModel):
-    pecha_segment_id: Optional[str] = None
     text_id: str
     segments: List[CreateSegment]
 

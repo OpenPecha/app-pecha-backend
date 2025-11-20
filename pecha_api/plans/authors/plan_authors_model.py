@@ -18,6 +18,7 @@ class Author(Base):
     password = Column(String(255), nullable=False)
     is_verified = Column(Boolean, default=False)
     is_active = Column(Boolean, default=False)
+    is_admin = Column(Boolean, default=False)
     created_at = Column(DateTime(timezone=True), default=datetime.now(_datetime.timezone.utc),nullable=False)
     created_by = Column(String(255), nullable=False)
     updated_at = Column(DateTime(timezone=True), default=datetime.now(_datetime.timezone.utc))

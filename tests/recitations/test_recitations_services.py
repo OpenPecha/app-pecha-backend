@@ -1,6 +1,7 @@
 import pytest
 from unittest.mock import patch, MagicMock
-from uuid import uuid4, UUID
+from uuid import uuid4
+
 from fastapi import HTTPException
 from starlette import status
 
@@ -17,7 +18,7 @@ from pecha_api.recitations.recitations_response_models import (
     RecitationSegment,
     Segment,
 )
-from pecha_api.texts.texts_response_models import TableOfContent, Section, TextSegment, TextDTO
+from pecha_api.texts.texts_response_models import TableOfContent, TableOfContentType, Section, TextSegment, TextDTO
 from pecha_api.texts.segments.segments_response_models import (
     SegmentDTO,
     SegmentTranslation,
@@ -52,6 +53,10 @@ class TestGetListOfRecitationsService:
         text_title = "Test Recitation"
         mock_get_root_text.return_value = (text_id, text_title)
         mock_apply_search_filter.return_value = text_title
+        text_id = str(uuid4())
+        text_title = "Test Recitation"
+        mock_get_root_text.return_value = (text_id, text_title)
+        mock_apply_search_filter.return_value = text_title
         
         # Execute
         result = await get_list_of_recitations_service(language="en")
@@ -59,7 +64,12 @@ class TestGetListOfRecitationsService:
         # Verify
         assert isinstance(result, RecitationsResponse)
         assert len(result.recitations) == 1
+        assert len(result.recitations) == 1
         
+        recitation = result.recitations[0]
+        assert isinstance(recitation, RecitationDTO)
+        assert recitation.title == text_title
+        assert str(recitation.text_id) == text_id
         recitation = result.recitations[0]
         assert isinstance(recitation, RecitationDTO)
         assert recitation.title == text_title
@@ -67,6 +77,8 @@ class TestGetListOfRecitationsService:
         
         # Verify mock calls
         mock_get_collection_id.assert_called_once_with(slug="Liturgy")
+        mock_get_root_text.assert_called_once_with(collection_id=liturgy_collection_id, language="en")
+        mock_apply_search_filter.assert_called_once_with(text_title=text_title, search=None)
         mock_get_root_text.assert_called_once_with(collection_id=liturgy_collection_id, language="en")
         mock_apply_search_filter.assert_called_once_with(text_title=text_title, search=None)
 
@@ -89,6 +101,7 @@ class TestGetListOfRecitationsService:
     @patch('pecha_api.recitations.recitations_services.get_collection_id_by_slug')
     @patch('pecha_api.recitations.recitations_services.get_root_text_by_collection_id')
     @patch('pecha_api.recitations.recitations_services.apply_search_recitation_title_filter')
+    @patch('pecha_api.recitations.recitations_services.apply_search_recitation_title_filter')
     @pytest.mark.asyncio
     async def test_get_list_of_recitations_service_search_filter_no_match(
         self,
@@ -106,12 +119,15 @@ class TestGetListOfRecitationsService:
         mock_apply_search_filter.return_value = None
         
         result = await get_list_of_recitations_service(search="nonexistent", language="en")
+        result = await get_list_of_recitations_service(search="nonexistent", language="en")
         
         assert isinstance(result, RecitationsResponse)
         assert len(result.recitations) == 0
         assert result.recitations == []
         
         mock_get_collection_id.assert_called_once_with(slug="Liturgy")
+        mock_get_root_text.assert_called_once_with(collection_id=liturgy_collection_id, language="en")
+        mock_apply_search_filter.assert_called_once_with(text_title=text_title, search="nonexistent")
         mock_get_root_text.assert_called_once_with(collection_id=liturgy_collection_id, language="en")
         mock_apply_search_filter.assert_called_once_with(text_title=text_title, search="nonexistent")
 
@@ -133,15 +149,23 @@ class TestGetListOfRecitationsService:
         text_title = "Morning Prayer Recitation"
         mock_get_root_text.return_value = (text_id, text_title)
         mock_apply_search_filter.return_value = text_title
+        text_title = "Morning Prayer Recitation"
+        mock_get_root_text.return_value = (text_id, text_title)
+        mock_apply_search_filter.return_value = text_title
         
+        result = await get_list_of_recitations_service(search="morning", language="en")
         result = await get_list_of_recitations_service(search="morning", language="en")
         
         assert isinstance(result, RecitationsResponse)
         assert len(result.recitations) == 1
         assert result.recitations[0].title == text_title
         assert str(result.recitations[0].text_id) == text_id
+        assert result.recitations[0].title == text_title
+        assert str(result.recitations[0].text_id) == text_id
         
         mock_get_collection_id.assert_called_once_with(slug="Liturgy")
+        mock_get_root_text.assert_called_once_with(collection_id=liturgy_collection_id, language="en")
+        mock_apply_search_filter.assert_called_once_with(text_title=text_title, search="morning")
         mock_get_root_text.assert_called_once_with(collection_id=liturgy_collection_id, language="en")
         mock_apply_search_filter.assert_called_once_with(text_title=text_title, search="morning")
 
@@ -163,11 +187,15 @@ class TestGetListOfRecitationsService:
         text_title = "Tibetan Recitation"
         mock_get_root_text.return_value = (text_id, text_title)
         mock_apply_search_filter.return_value = text_title
+        text_title = "Tibetan Recitation"
+        mock_get_root_text.return_value = (text_id, text_title)
+        mock_apply_search_filter.return_value = text_title
         
         result = await get_list_of_recitations_service(language="bo")
         
         assert isinstance(result, RecitationsResponse)
         assert len(result.recitations) == 1
+        assert result.recitations[0].title == text_title
         assert result.recitations[0].title == text_title
         
         # Verify language is passed correctly
@@ -237,6 +265,7 @@ class TestSegmentsMappingByToc:
         
         return TableOfContent(
             id=str(uuid4()),
+            type=TableOfContentType.TEXT,
             text_id=text_id,
             sections=[section]
         )
@@ -543,7 +572,7 @@ class TestGetRecitationDetailsServiceSuccess:
         )
         mock_filter_texts.return_value = {TextType.ROOT_TEXT.value: root_text}
         
-        toc = [TableOfContent(id=str(uuid4()), text_id=root_text_id, sections=[])]
+        toc = [TableOfContent(id=str(uuid4()), type=TableOfContentType.TEXT, text_id=root_text_id, sections=[])]
         mock_get_contents.return_value = toc
         
         mock_segments = [RecitationSegment()]
@@ -594,6 +623,7 @@ class TestSegmentsMappingByTocWithData:
         toc = [
             TableOfContent(
                 id=str(uuid4()),
+                type=TableOfContentType.TEXT,
                 text_id=text_id,
                 sections=[
                     Section(
@@ -662,6 +692,7 @@ class TestSegmentsMappingByTocWithData:
         toc = [
             TableOfContent(
                 id=str(uuid4()),
+                type=TableOfContentType.TEXT,
                 text_id=text_id,
                 sections=[
                     Section(
@@ -726,6 +757,7 @@ class TestSegmentsMappingByTocWithData:
         toc = [
             TableOfContent(
                 id=str(uuid4()),
+                type=TableOfContentType.TEXT,
                 text_id=text_id,
                 sections=[
                     Section(
@@ -812,6 +844,7 @@ class TestSegmentsMappingByTocWithData:
         toc = [
             TableOfContent(
                 id=str(uuid4()),
+                type=TableOfContentType.TEXT,
                 text_id=text_id,
                 sections=[
                     Section(
