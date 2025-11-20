@@ -2170,10 +2170,49 @@ def test_generate_paginated_table_of_content_by_segments():
     
     assert result is not None
     assert isinstance(result, TableOfContent)
+    assert result.type == TableOfContentType.TEXT
     assert len(result.sections) == 1
     assert len(result.sections[0].segments) == 2
     assert result.sections[0].segments[0].segment_id == "seg_1"
     assert result.sections[0].segments[1].segment_id == "seg_3"
+
+def test_generate_paginated_table_of_content_by_segments_with_sheet_type():
+    """Test _generate_paginated_table_of_content_by_segments_ preserves SHEET type"""
+    from pecha_api.texts.texts_service import _generate_paginated_table_of_content_by_segments_
+    
+    table_of_content = TableOfContent(
+        id="toc_id",
+        text_id="text_id",
+        type=TableOfContentType.SHEET,
+        sections=[
+            Section(
+                id="section_1",
+                title="Section 1",
+                section_number=1,
+                segments=[
+                    TextSegment(segment_id="seg_1", segment_number=1),
+                    TextSegment(segment_id="seg_2", segment_number=2)
+                ],
+                sections=[]
+            )
+        ]
+    )
+    
+    segment_dict = {
+        "seg_1": 1
+    }
+    
+    result = _generate_paginated_table_of_content_by_segments_(
+        table_of_content=table_of_content,
+        segment_dict=segment_dict
+    )
+    
+    assert result is not None
+    assert isinstance(result, TableOfContent)
+    assert result.type == TableOfContentType.SHEET
+    assert len(result.sections) == 1
+    assert len(result.sections[0].segments) == 1
+    assert result.sections[0].segments[0].segment_id == "seg_1"
 
 def test_search_section_found():
     """Test _search_section_ when segment is found"""
