@@ -205,6 +205,8 @@ def _mock_sheet_data_():
             )
         ]
 
+
+
 async def get_multilingual_search_results(
     query: str,
     search_type: str = "hybrid",
@@ -292,22 +294,32 @@ async def call_external_search_api(
     title: Optional[str] = None,
     language: Optional[str] = None
 ) -> ExternalSearchResponse:
-    
-    external_api_url = "https://openpecha-search.onrender.com" 
+
+    external_api_url = "https://openpecha-search.onrender.com"
     endpoint = f"{external_api_url}/search"
     
     payload = {
         "query": query,
         "search_type": search_type,
         "limit": limit,
-        "hierarchical": True
+        "return_text": False,
+        "hierarchical": True,
+        "filter": {}
     }
     
-    if language and language in ['bo', 'en', 'zh']:
-        payload["language"] = language
-    
-    if title:
-        payload["title"] = title
+    if language or title:
+        filter_obj = {}
+        
+        if language:
+            if language == "bo":
+                filter_obj["language"] = ["bo", "tib"]
+            else:
+                filter_obj["language"] = [language]
+        
+        if title:
+            filter_obj["title"] = [title]
+        
+        payload["filter"] = filter_obj
     
     try:
         async with httpx.AsyncClient(timeout=30.0) as client:
@@ -323,10 +335,16 @@ async def call_external_search_api(
             
     except httpx.HTTPStatusError as e:
         logger.error(f"External API error: {e.response.status_code} - {e.response.text}")
-        raise HTTPException(status_code=e.response.status_code,detail=f"External search API error: {e.response.text}")
+        raise HTTPException(
+            status_code=e.response.status_code,
+            detail=f"External search API error: {e.response.text}"
+        )
     except httpx.RequestError as e:
         logger.error(f"Request to external API failed: {str(e)}")
-        raise HTTPException(status_code=500,detail="Failed to connect to the search service. Please try again later.")
+        raise HTTPException(
+            status_code=500,
+            detail="Failed to connect to the search service. Please try again later."
+        )
 
 
 async def build_multilingual_sources(segments: List[Segment], results_map: Dict[str, Dict]) -> List[MultilingualSourceResult]:
