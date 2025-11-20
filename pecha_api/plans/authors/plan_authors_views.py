@@ -5,7 +5,7 @@ from fastapi import APIRouter, Depends
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from starlette import status
 
-from pecha_api.plans.authors.plan_authors_response_models import AuthorInfoResponse, AuthorsResponse, AuthorInfoRequest, AuthorUpdateResponse
+from pecha_api.plans.authors.plan_authors_response_models import AuthorInfoResponse, AuthorsResponse, AuthorInfoRequest, AuthorUpdateResponse, AuthorInfoPublicResponse
 from pecha_api.plans.authors.plan_authors_service import get_selected_author_details, update_author_info
 from pecha_api.plans.authors.plan_authors_service import get_plans_by_author,get_authors,get_author_details
 from pecha_api.plans.authors.plan_authors_response_models import AuthorPlansResponse, AuthorInfoResponse
@@ -29,7 +29,7 @@ async def update_author_information(authentication_credential: Annotated[HTTPAut
     return await update_author_info(token=authentication_credential.credentials, author_info_request=author_info_request)
 
 @author_router.get("/{author_id}", status_code=status.HTTP_200_OK)
-async def get_author_information(author_id: UUID)  -> AuthorInfoResponse:
+async def get_author_information(author_id: UUID)  -> AuthorInfoPublicResponse:
     return await get_selected_author_details(author_id=author_id)
 
 @author_router.get("/{author_id}/plans", status_code=status.HTTP_200_OK)

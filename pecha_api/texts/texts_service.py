@@ -165,6 +165,7 @@ async def get_table_of_contents_by_text_id(text_id: str, language: str = None, s
     texts: List[TextDTO] = await get_texts_by_group_id(group_id=group_id, skip=skip, limit=limit)
     filtered_text_on_root_and_version = TextUtils.filter_text_on_root_and_version(texts=texts, language=language)
     root_text: TextDTO = filtered_text_on_root_and_version["root_text"]
+    print(f"root_text: {root_text} ahahhahah")
     if root_text is None:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=ErrorConstants.TEXT_NOT_FOUND_MESSAGE)
     table_of_contents: List[TableOfContent] = await get_contents_by_id(text_id=root_text.id)
@@ -283,11 +284,8 @@ async def get_text_versions_by_group_id(text_id: str, language: str, skip: int, 
     filtered_text_on_root_and_version = TextUtils.filter_text_on_root_and_version(texts=texts, language=language)
     root_text = filtered_text_on_root_and_version["root_text"]
     versions = filtered_text_on_root_and_version["versions"]
-
     versions_table_of_content_id_dict: Dict[str, List[str]] = await _get_table_of_content_by_version_text_id(versions=versions)
-
     list_of_version = _get_list_of_text_version_response_model(versions=versions, versions_table_of_content_id_dict=versions_table_of_content_id_dict)
-
     response = TextVersionResponse(
         text=root_text,
         versions=list_of_version
@@ -478,7 +476,10 @@ def _get_list_of_text_version_response_model(versions: List[TextDTO], versions_t
             created_date=version.created_date,
             updated_date=version.updated_date,
             published_date=version.published_date,
-            published_by=version.published_by
+            published_by=version.published_by,
+            source_link=version.source_link,
+            ranking=version.ranking,
+            license=version.license
         )
         for version in versions
     ]
