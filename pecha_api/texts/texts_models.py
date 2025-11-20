@@ -73,6 +73,10 @@ class Text(Document):
         collection = "texts"
 
     @classmethod
+    async def get_texts_by_pecha_text_ids(cls, pecha_text_ids: List[str]) -> List["Text"]:
+        return await cls.find({cls.pecha_text_id: {"$in": pecha_text_ids}}).to_list()
+
+    @classmethod
     async def get_text(cls, text_id: str) -> Optional["Text"]:
         try:
             text_uuid = UUID(text_id)

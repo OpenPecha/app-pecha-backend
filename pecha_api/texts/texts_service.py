@@ -1,5 +1,6 @@
 from fastapi import HTTPException
 from starlette import status
+from rich import print
 
 from pecha_api.error_contants import ErrorConstants
 from .texts_repository import (
@@ -283,11 +284,8 @@ async def get_text_versions_by_group_id(text_id: str, language: str, skip: int, 
     filtered_text_on_root_and_version = TextUtils.filter_text_on_root_and_version(texts=texts, language=language)
     root_text = filtered_text_on_root_and_version["root_text"]
     versions = filtered_text_on_root_and_version["versions"]
-
     versions_table_of_content_id_dict: Dict[str, List[str]] = await _get_table_of_content_by_version_text_id(versions=versions)
-
     list_of_version = _get_list_of_text_version_response_model(versions=versions, versions_table_of_content_id_dict=versions_table_of_content_id_dict)
-
     response = TextVersionResponse(
         text=root_text,
         versions=list_of_version
@@ -465,6 +463,23 @@ async def _get_table_of_content_by_version_text_id(versions: List[TextDTO]) -> D
         versions_table_of_content_id_dict[str(version.id)] = list_of_table_of_contents_ids
     return versions_table_of_content_id_dict
 
+
+async def get_commentaries_by_text_id(text_id: str, skip: int, limit: int) -> List[TextDTO]:
+    is_valid_text = await TextUtils.validate_text_exists(text_id=text_id)
+    if not is_valid_text:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=ErrorConstants.TEXT_NOT_FOUND_MESSAGE)
+    
+    root_text = await TextUtils.get_text_detail_by_id(text_id=text_id)
+    group_id = root_text.group_id
+
+    commentaries = await TextUtils.get_commentaries_by_text_type(text_type="commentary", language=root_text.language, skip=skip, limit=limit)
+    final_commentary = []
+    for commentary in commentaries:
+        if commentary.categories == group_id:
+            final_commentary.append(commentary)
+    return final_commentary
+
+
 def _get_list_of_text_version_response_model(versions: List[TextDTO], versions_table_of_content_id_dict: Dict[str, List[str]]) -> List[TextVersion]:
     list_of_version = [
         TextVersion(
@@ -478,7 +493,10 @@ def _get_list_of_text_version_response_model(versions: List[TextDTO], versions_t
             created_date=version.created_date,
             updated_date=version.updated_date,
             published_date=version.published_date,
-            published_by=version.published_by
+            published_by=version.published_by,
+            source_link=version.source_link,
+            ranking=version.ranking,
+            license=version.license
         )
         for version in versions
     ]
@@ -666,4 +684,4 @@ def _search_table_of_content_where_segment_id_exists(table_of_contents: List[Tab
     raise HTTPException(
         status_code=status.HTTP_404_NOT_FOUND,
         detail=ErrorConstants.TABLE_OF_CONTENT_NOT_FOUND_MESSAGE
-    )
+    )   
