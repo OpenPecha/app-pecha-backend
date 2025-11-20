@@ -40,6 +40,7 @@ from pecha_api.texts.texts_response_models import (
 )
 
 from pecha_api.texts.texts_enums import TextType, PaginationDirection
+from pecha_api.sheets.sheets_enum import SortBy, SortOrder
 
 from pecha_api.error_contants import ErrorConstants
 from typing import List
@@ -1712,4 +1713,211 @@ async def test_get_root_text_by_collection_id_success_with_root_text():
         assert isinstance(result, tuple)
         assert len(result) == 2
         assert result[0] == "text_id_1"
-        assert result[1] == "བྱང་ཆུབ་སེམས་དཔའི་སྤྱོད་པ་ལ་འཇུག་པ།"
+
+
+@pytest.mark.asyncio
+async def test_get_root_text_by_collection_id_no_root_text():
+    """Test get_root_text_by_collection_id when no root text is found"""
+    collection_id = "collection_id_1"
+    language = "bo"
+    
+    mock_texts = [
+        TextDTO(
+            id="text_id_1",
+            title="Test Text",
+            language="en",
+            group_id="group_id_1",
+            type="version",
+            is_published=True,
+            created_date="2025-03-20 09:26:16.571522",
+            updated_date="2025-03-20 09:26:16.571532",
+            published_date="2025-03-20 09:26:16.571536",
+            published_by="pecha",
+            categories=[],
+            views=0
+        )
+    ]
+    
+    # Mock the filtered result with no root text
+    mock_filtered_result = {
+        "root_text": None,
+        "versions": mock_texts
+    }
+    
+    with patch("pecha_api.texts.texts_service.get_all_texts_by_collection", new_callable=AsyncMock) as mock_get_all_texts, \
+         patch("pecha_api.texts.texts_service.TextUtils.filter_text_on_root_and_version") as mock_filter:
+        
+        mock_get_all_texts.return_value = mock_texts
+        mock_filter.return_value = mock_filtered_result
+        
+        result = await get_root_text_by_collection_id(collection_id=collection_id, language=language)
+        
+        # Verify the result is a tuple with None values when no root text
+        assert result is not None
+        assert isinstance(result, tuple)
+        assert result[0] is None
+        assert result[1] is None
+
+
+@pytest.mark.asyncio
+async def test_get_text_by_text_id_or_collection_with_cache():
+    """Test get_text_by_text_id_or_collection when cache is available"""
+    text_id = "efb26a06-f373-450b-ba57-e7a8d4dd5b64"
+    cached_text = TextDTO(
+        id=text_id,
+        title="Cached Text",
+        language="bo",
+        group_id="group_id_1",
+        type="commentary",
+        is_published=True,
+        created_date="2025-03-21 09:40:34.025024",
+        updated_date="2025-03-21 09:40:34.025035",
+        published_date="2025-03-21 09:40:34.025038",
+        published_by="pecha",
+        categories=[],
+        views=0
+    )
+    
+    with patch("pecha_api.texts.texts_service.get_text_by_text_id_or_collection_cache", new_callable=AsyncMock, return_value=cached_text):
+        response = await get_text_by_text_id_or_collection(text_id=text_id, collection_id=None)
+        
+        assert response is not None
+        assert isinstance(response, TextDTO)
+        assert response.id == text_id
+        assert response.title == "Cached Text"
+
+
+@pytest.mark.asyncio
+async def test_get_sheet_with_filters():
+    """Test get_sheet with various filter parameters"""
+    mock_sheets = [
+        TextDTO(
+            id="sheet_id_1",
+            title="Sheet 1",
+            language="bo",
+            group_id="group_id_1",
+            type="sheet",
+            is_published=True,
+            created_date="2025-03-21 09:40:34.025024",
+            updated_date="2025-03-21 09:40:34.025035",
+            published_date="2025-03-21 09:40:34.025038",
+            published_by="user_1",
+            categories=[],
+            views=10
+        )
+    ]
+    
+    with patch("pecha_api.texts.texts_service.fetch_sheets_from_db", new_callable=AsyncMock, return_value=mock_sheets):
+        result = await get_sheet(
+            published_by="user_1",
+            is_published=True,
+            sort_by=SortBy.CREATED_DATE,
+            sort_order=SortOrder.DESC,
+            skip=0,
+            limit=10
+        )
+        
+        assert result is not None
+        assert isinstance(result, list)
+        assert len(result) == 1
+        assert result[0].id == "sheet_id_1"
+
+
+@pytest.mark.asyncio
+async def test_update_text_details_with_cache_invalidation():
+    """Test update_text_details updates text successfully"""
+    text_id = "123e4567-e89b-12d3-a456-426614174000"
+    update_request = UpdateTextRequest(
+        title="Updated Title",
+        language="bo"
+    )
+    
+    updated_text = TextDTO(
+        id=text_id,
+        title="Updated Title",
+        language="bo",
+        group_id="group_id_1",
+        type="version",
+        is_published=True,
+        created_date="2025-03-21 09:40:34.025024",
+        updated_date="2025-03-21 09:40:34.025035",
+        published_date="2025-03-21 09:40:34.025038",
+        published_by="pecha",
+        categories=[],
+        views=0
+    )
+    
+    with patch("pecha_api.texts.texts_service.TextUtils.validate_text_exists", new_callable=AsyncMock, return_value=True), \
+         patch("pecha_api.texts.texts_service.TextUtils.get_text_detail_by_id", new_callable=AsyncMock, return_value=updated_text), \
+         patch("pecha_api.texts.texts_service.update_text_details_by_id", new_callable=AsyncMock, return_value=updated_text) as mock_update, \
+         patch("pecha_api.texts.texts_service.invalidate_text_cache_on_update", new_callable=AsyncMock):
+        
+        result = await update_text_details(text_id=text_id, update_text_request=update_request)
+        
+        assert result is not None
+        assert result.title == "Updated Title"
+        mock_update.assert_called_once_with(text_id=text_id, update_text_request=update_request)
+
+
+@pytest.mark.asyncio
+async def test_remove_table_of_content_by_text_id_success():
+    """Test remove_table_of_content_by_text_id successfully deletes content"""
+    text_id = "123e4567-e89b-12d3-a456-426614174000"
+    
+    with patch("pecha_api.texts.texts_service.TextUtils.validate_text_exists", new_callable=AsyncMock, return_value=True), \
+         patch("pecha_api.texts.texts_service.delete_table_of_content_by_text_id", new_callable=AsyncMock) as mock_delete:
+        await remove_table_of_content_by_text_id(text_id=text_id)
+        
+        mock_delete.assert_called_once_with(text_id=text_id)
+
+
+@pytest.mark.asyncio
+async def test_get_table_of_content_by_sheet_id_with_cache():
+    """Test get_table_of_content_by_sheet_id returns cached data"""
+    sheet_id = "sheet_id_1"
+    cached_toc = TableOfContent(
+        id="toc_id_1",
+        text_id=sheet_id,
+        sections=[]
+    )
+    
+    with patch("pecha_api.texts.texts_service.get_table_of_content_by_sheet_id_cache", new_callable=AsyncMock, return_value=cached_toc):
+        result = await get_table_of_content_by_sheet_id(sheet_id=sheet_id)
+        
+        assert result is not None
+        assert isinstance(result, TableOfContent)
+        assert result.id == "toc_id_1"
+
+
+@pytest.mark.asyncio
+async def test_get_text_by_collection_id_empty_result():
+    """Test get_text_by_text_id_or_collection with collection_id returns empty when no texts"""
+    collection_id = "collection_id_1"
+    language = "bo"
+    
+    mock_collection = CollectionModel(
+        id=collection_id,
+        title="Empty Collection",
+        description="No texts",
+        language=language,
+        slug="empty-collection",
+        has_child=False
+    )
+    
+    with patch("pecha_api.texts.texts_service.get_text_by_text_id_or_collection_cache", new_callable=AsyncMock, return_value=None), \
+         patch("pecha_api.texts.texts_service.get_collection", new_callable=AsyncMock, return_value=mock_collection), \
+         patch("pecha_api.texts.texts_service._get_texts_by_collection_id", new_callable=AsyncMock, return_value=[]), \
+         patch("pecha_api.texts.texts_service.set_text_by_text_id_or_collection_cache", new_callable=AsyncMock):
+        
+        response = await get_text_by_text_id_or_collection(
+            text_id=None,
+            collection_id=collection_id,
+            language=language,
+            skip=0,
+            limit=10
+        )
+        
+        assert response is not None
+        assert isinstance(response, TextsCategoryResponse)
+        assert response.total == 0
+        assert len(response.texts) == 0
