@@ -70,6 +70,244 @@ def test_search_type_source_success():
         assert data["sources"][0]["text"]["language"] == "en"
 
 
+def test_search_type_sheet_success():
+    """Test search endpoint with SHEET search type"""
+    mock_search_query = Search(
+        text="sheet query",
+        type=SearchType.SHEET
+    )
+    mock_sheet_result_item = [
+        SheetResultItem(
+            sheet_id=i,
+            sheet_title=f"Sheet Title {i}",
+            sheet_summary=f"Sheet summary {i}",
+            publisher_id=100 + i,
+            publisher_name=f"Publisher {i}",
+            publisher_url=f"https://publisher{i}.com",
+            publisher_image=f"https://publisher{i}.com/image.jpg",
+            publisher_position=f"Position {i}",
+            publisher_organization=f"Organization {i}"
+        )
+        for i in range(1, 4)
+    ]
+    mock_search_results = SearchResponse(
+        search=mock_search_query,
+        sheets=mock_sheet_result_item,
+        skip=0,
+        limit=10,
+        total=3
+    )
+    
+    with patch("pecha_api.search.search_views.get_search_results", new_callable=AsyncMock, return_value=mock_search_results):
+        
+        response = client.get("/search?query=sheet query&search_type=SHEET")
+        
+        assert response.status_code == status.HTTP_200_OK
+        data = response.json()
+        
+        assert data["search"]["text"] == "sheet query"
+        assert data["search"]["type"] == "SHEET"
+        assert data["sheets"] is not None
+        assert len(data["sheets"]) == 3
+        assert data["sheets"][0]["sheet_id"] == 1
+        assert data["sheets"][0]["sheet_title"] == "Sheet Title 1"
+        assert data["sheets"][0]["publisher_name"] == "Publisher 1"
+        assert data["total"] == 3
+
+
+def test_search_with_text_id():
+    """Test search endpoint with specific text_id parameter"""
+    mock_search_query = Search(
+        text="query in text",
+        type=SearchType.SOURCE
+    )
+    mock_search_results = SearchResponse(
+        search=mock_search_query,
+        sources=[],
+        skip=0,
+        limit=10,
+        total=0
+    )
+    
+    with patch("pecha_api.search.search_views.get_search_results", new_callable=AsyncMock, return_value=mock_search_results) as mock_service:
+        
+        response = client.get("/search?query=query in text&search_type=SOURCE&text_id=specific_text_123")
+        
+        assert response.status_code == status.HTTP_200_OK
+        mock_service.assert_called_once_with(
+            query="query in text",
+            search_type=SearchType.SOURCE,
+            text_id="specific_text_123",
+            skip=0,
+            limit=10
+        )
+
+
+def test_search_with_pagination():
+    """Test search endpoint with custom pagination"""
+    mock_search_query = Search(
+        text="paginated query",
+        type=SearchType.SOURCE
+    )
+    mock_search_results = SearchResponse(
+        search=mock_search_query,
+        sources=[],
+        skip=20,
+        limit=50,
+        total=100
+    )
+    
+    with patch("pecha_api.search.search_views.get_search_results", new_callable=AsyncMock, return_value=mock_search_results):
+        
+        response = client.get("/search?query=paginated query&search_type=SOURCE&skip=20&limit=50")
+        
+        assert response.status_code == status.HTTP_200_OK
+        data = response.json()
+        assert data["skip"] == 20
+        assert data["limit"] == 50
+        assert data["total"] == 100
+
+
+def test_search_with_all_parameters():
+    """Test search endpoint with all optional parameters"""
+    mock_search_query = Search(
+        text="full query",
+        type=SearchType.SOURCE
+    )
+    mock_search_results = SearchResponse(
+        search=mock_search_query,
+        sources=[],
+        skip=10,
+        limit=25,
+        total=50
+    )
+    
+    with patch("pecha_api.search.search_views.get_search_results", new_callable=AsyncMock, return_value=mock_search_results) as mock_service:
+        
+        response = client.get("/search?query=full query&search_type=SOURCE&text_id=text_456&skip=10&limit=25")
+        
+        assert response.status_code == status.HTTP_200_OK
+        data = response.json()
+        assert data["skip"] == 10
+        assert data["limit"] == 25
+        assert data["total"] == 50
+        
+        mock_service.assert_called_once_with(
+            query="full query",
+            search_type=SearchType.SOURCE,
+            text_id="text_456",
+            skip=10,
+            limit=25
+        )
+
+
+def test_search_empty_results():
+    """Test search endpoint with no results found"""
+    mock_search_query = Search(
+        text="no results query",
+        type=SearchType.SOURCE
+    )
+    mock_search_results = SearchResponse(
+        search=mock_search_query,
+        sources=[],
+        skip=0,
+        limit=10,
+        total=0
+    )
+    
+    with patch("pecha_api.search.search_views.get_search_results", new_callable=AsyncMock, return_value=mock_search_results):
+        
+        response = client.get("/search?query=no results query&search_type=SOURCE")
+        
+        assert response.status_code == status.HTTP_200_OK
+        data = response.json()
+        assert data["sources"] == []
+        assert data["total"] == 0
+
+
+def test_search_with_default_parameters():
+    """Test search endpoint with default parameters (query and search_type are None)"""
+    mock_search_query = Search(
+        text=None,
+        type=None
+    )
+    mock_search_results = SearchResponse(
+        search=mock_search_query,
+        sources=[],
+        skip=0,
+        limit=10,
+        total=0
+    )
+    
+    with patch("pecha_api.search.search_views.get_search_results", new_callable=AsyncMock, return_value=mock_search_results) as mock_service:
+        
+        response = client.get("/search")
+        
+        assert response.status_code == status.HTTP_200_OK
+        mock_service.assert_called_once_with(
+            query=None,
+            search_type=None,
+            text_id=None,
+            skip=0,
+            limit=10
+        )
+
+
+def test_search_multiple_sources():
+    """Test search endpoint with multiple source results"""
+    mock_search_query = Search(
+        text="multi source query",
+        type=SearchType.SOURCE
+    )
+    mock_sources = [
+        SourceResultItem(
+            text=TextIndex(
+                text_id=f"text_{i}",
+                language="en",
+                title=f"Title {i}",
+                published_date="2024-01-01"
+            ),
+            segment_match=[
+                SegmentMatch(
+                    segment_id=f"seg_{i}",
+                    content=f"Content {i}"
+                )
+            ]
+        )
+        for i in range(1, 6)
+    ]
+    mock_search_results = SearchResponse(
+        search=mock_search_query,
+        sources=mock_sources,
+        skip=0,
+        limit=10,
+        total=5
+    )
+    
+    with patch("pecha_api.search.search_views.get_search_results", new_callable=AsyncMock, return_value=mock_search_results):
+        
+        response = client.get("/search?query=multi source query&search_type=SOURCE")
+        
+        assert response.status_code == status.HTTP_200_OK
+        data = response.json()
+        assert len(data["sources"]) == 5
+        assert data["total"] == 5
+        assert data["sources"][0]["text"]["text_id"] == "text_1"
+        assert data["sources"][4]["text"]["text_id"] == "text_5"
+
+
+def test_search_service_error():
+    """Test search endpoint when service raises an exception"""
+    test_client = TestClient(api, raise_server_exceptions=False)
+    
+    with patch("pecha_api.search.search_views.get_search_results", 
+               new_callable=AsyncMock, side_effect=Exception("Service error")):
+        
+        response = test_client.get("/search?query=error query&search_type=SOURCE")
+        
+        assert response.status_code == status.HTTP_500_INTERNAL_SERVER_ERROR
+
+
 def test_multilingual_search_success_hybrid():
     """Test multilingual search with HYBRID search type (default)"""
     mock_segment_matches = [
