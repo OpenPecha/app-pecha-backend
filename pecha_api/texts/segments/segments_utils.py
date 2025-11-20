@@ -182,6 +182,7 @@ class SegmentUtils:
                     continue
                 if segment.text_id in appended_commentary_text_ids:
                     continue
+                mapped_segments = []
                 for segment_item in grouped_segments.get(segment.text_id, []):
                     mapped_segments.append(MappedSegmentDTO(
                         segment_id=str(segment_item.id),
