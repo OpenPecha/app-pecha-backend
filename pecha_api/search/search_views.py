@@ -38,22 +38,17 @@ async def search(
 @search_router.get("/multilingual", status_code=status.HTTP_200_OK)
 async def multilingual_search(
     query: str = Query(...),
-    search_type: MultilingualSearchType = Query(
-        default=MultilingualSearchType.HYBRID
-    ),
-    text_id: Optional[str] = Query(
-        default=None
-    ),
-    language: Optional[str] = Query(
-        default=None
-    ),
+    search_type: MultilingualSearchType = Query(default=MultilingualSearchType.HYBRID),
+    text_id: Optional[str] = Query(default=None),
+    language: Optional[str] = Query(default=None),
+    skip: int = Query(default=0, ge=0),
     limit: int = Query(default=10, ge=1, le=100)
 ) -> MultilingualSearchResponse:
 
-    return await get_multilingual_search_results(
-        query=query,
+    return await get_multilingual_search_results(query=query,
         search_type=search_type.value,
         text_id=text_id,
+        skip=skip,
         limit=limit,
         language=language
     )
