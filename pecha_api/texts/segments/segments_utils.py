@@ -1,6 +1,5 @@
 from typing import Dict, List, Optional, Union
 from uuid import UUID
-from rich import print
 from fastapi import HTTPException
 from starlette import status
 import bophono
@@ -124,54 +123,12 @@ class SegmentUtils:
             if not text_detail:
                 continue
 
-            if text_detail.type == TextType.VERSION.value and type == TextType.VERSION.value:
-                if text_id is not None and text_id != segment.text_id:
-                    continue
-                
-                filtered_segments.append(
-                    SegmentRecitation(
-                        segment_id=str(segment.id),
-                        text_id=segment.text_id,
-                        title=text_detail.title,
-                        source=text_detail.published_by,
-                        language=text_detail.language,
-                        content=segment.content
-                    )
-                )
-
             elif text_detail.type == TextType.VERSION.value and type == TextType.VERSION.value:
                 if text_id is not None and text_id != segment.text_id:
                     continue
 
                 filtered_segments.append(
                     SegmentTranslation(
-                        segment_id=str(segment.id),
-                        text_id=segment.text_id,
-                        title=text_detail.title,
-                        source=text_detail.published_by,
-                        language=text_detail.language,
-                        content=segment.content
-                    )
-                )
-            elif text_detail.type == TextType.VERSION.value and type == TextType.VERSION.value:
-                mapped_segments=[]
-                if text_id is not None and text_id != segment.text_id:
-                    continue
-                filtered_segments.append(
-                    SegmentTransliteration(
-                        segment_id=str(segment.id),
-                        text_id=segment.text_id,
-                        title=text_detail.title,
-                        source=text_detail.published_by,
-                        language=text_detail.language,
-                        content=segment.content
-                    )
-                )
-            elif text_detail.type == TextType.VERSION.value and type == TextType.VERSION.value:
-                if text_id is not None and text_id != segment.text_id:
-                    continue
-                filtered_segments.append(
-                    SegmentAdaptation(
                         segment_id=str(segment.id),
                         text_id=segment.text_id,
                         title=text_detail.title,
