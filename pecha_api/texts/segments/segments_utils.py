@@ -1,6 +1,6 @@
 from typing import Dict, List, Optional, Union
 from uuid import UUID
-
+from rich import print
 from fastapi import HTTPException
 from starlette import status
 import bophono
@@ -16,6 +16,9 @@ from .segments_repository import (
     get_segment_by_id,
     get_related_mapped_segments,
 )
+from ..texts_response_models import TextDTO
+
+
 from ..groups.groups_service import (
     get_group_details
 )
@@ -81,7 +84,7 @@ class SegmentUtils:
     @staticmethod
     async def get_count_of_each_commentary_and_version(
         segments: List[SegmentDTO],
-        group_id: str
+        parent_text: TextDTO
     ) -> Dict[str, int]:
         """
         Count the number of commentary and version segments in the provided list.
@@ -98,7 +101,7 @@ class SegmentUtils:
             text_detail = text_details_dict.get(text_id)
             if text_detail and text_detail.type == "commentary":
                 count["commentary"] += 1
-            elif text_detail and text_detail.type == "version" and text_detail.group_id == group_id:
+            elif text_detail and text_detail.type == "version" and text_detail.type == parent_text.type:
                 count["version"] += 1
         return count
 
@@ -211,7 +214,12 @@ class SegmentUtils:
         group_detail = await get_group_details(group_id=group_id)
         if group_detail.type == "text":
             return 0
-        root_mapping_count = len(segment.mapping)
+        root_mapping_count = 0
+        for mapping in segment.mapping:
+            text_detail = await TextUtils.get_text_details_by_id(text_id=mapping.text_id)
+            if text_detail.type == "commentary":
+                continue
+            root_mapping_count += 1
         return root_mapping_count
 
     @staticmethod
@@ -292,7 +300,7 @@ class SegmentUtils:
         return detail_table_of_content
     
     @staticmethod
-    async def get_segment_root_mapping_details(segments: List[SegmentDTO]) -> List[SegmentRootMapping]:
+    async def get_segment_root_mapping_details(segments: List[SegmentDTO], parent_segment_text: TextDTO) -> List[SegmentRootMapping]:
         list_of_text_ids = [
             segment.text_id
             for segment in segments
@@ -314,6 +322,8 @@ class SegmentUtils:
                         content=segment_item.content,
                         language=text_detail.language
                     ))
+                if text_detail.type == parent_segment_text.type:
+                    continue
                 list_of_segment_root_mapping.append(
                     SegmentRootMapping(
                         text_id=segment.text_id,
