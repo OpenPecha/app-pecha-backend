@@ -119,11 +119,12 @@ async def test_get_count_of_each_commentary_and_version_success():
 
 @pytest.mark.asyncio
 async def test_filter_segment_mapping_by_type_success():
+    """Test filtering segments by commentary type returns correct SegmentCommentry objects."""
     text_details = {
         "efb26a06-f373-450b-ba57-e7a8d4dd5b64": TextDTO(
             id="efb26a06-f373-450b-ba57-e7a8d4dd5b64",
-            title="title",
-            language="language",
+            title="Commentary One",
+            language="bo",
             group_id="group_id",
             type="commentary",
             is_published=True,
@@ -136,8 +137,8 @@ async def test_filter_segment_mapping_by_type_success():
         ),
         "efb26a06-f373-450b-ba57-e7a8d4dd5b65": TextDTO(
             id="efb26a06-f373-450b-ba57-e7a8d4dd5b65",
-            title="title",
-            language="language",
+            title="Version One",
+            language="en",
             group_id="group_id",
             type="version",
             is_published=True,
@@ -150,8 +151,8 @@ async def test_filter_segment_mapping_by_type_success():
         ),
         "efb26a06-f373-450b-ba57-e7a8d4dd5b66": TextDTO(
             id="efb26a06-f373-450b-ba57-e7a8d4dd5b66",
-            title="title",
-            language="language",
+            title="Commentary Two",
+            language="bo",
             group_id="group_id",
             type="commentary",
             is_published=True,
@@ -163,40 +164,54 @@ async def test_filter_segment_mapping_by_type_success():
             views=0
         )
     }
-    list_of_segment_paramenter = [
+    segments = [
         SegmentDTO(
             id="efb26a06-f373-450b-ba57-e7a8d4dd5b64",
             text_id="efb26a06-f373-450b-ba57-e7a8d4dd5b64",
-            content="content",
+            content="commentary one content",
             mapping=[],
             type=SegmentType.SOURCE
         ),
         SegmentDTO(
             id="efb26a06-f373-450b-ba57-e7a8d4dd5b65",
             text_id="efb26a06-f373-450b-ba57-e7a8d4dd5b65",
-            content="content",
+            content="version content",
             mapping=[],
             type=SegmentType.SOURCE
         ),
         SegmentDTO(
             id="efb26a06-f373-450b-ba57-e7a8d4dd5b66",
             text_id="efb26a06-f373-450b-ba57-e7a8d4dd5b66",
-            content="content",
+            content="commentary two content",
             mapping=[],
             type=SegmentType.SOURCE
         )
     ]
     with patch("pecha_api.texts.segments.segments_utils.TextUtils.get_text_details_by_ids", new_callable=AsyncMock, return_value=text_details):
-        response = await SegmentUtils.filter_segment_mapping_by_type_or_text_id(list_of_segment_paramenter, "commentary")
-        assert isinstance(response[0], SegmentCommentry)
+        response = await SegmentUtils.filter_segment_mapping_by_type_or_text_id(segments, "commentary")
+        
+        # Should return 2 commentary results (filtering out the version)
         assert len(response) == 2
+        assert isinstance(response[0], SegmentCommentry)
+        assert isinstance(response[1], SegmentCommentry)
+        
+        # Verify first commentary
         assert response[0].text_id == "efb26a06-f373-450b-ba57-e7a8d4dd5b64"
-        assert response[0].title == "title"
+        assert response[0].title == "Commentary One"
+        assert response[0].language == "bo"
         assert len(response[0].segments) == 1
         assert response[0].segments[0].segment_id == "efb26a06-f373-450b-ba57-e7a8d4dd5b64"
-        assert response[0].segments[0].content == "content"
-        assert response[0].language == "language"
+        assert response[0].segments[0].content == "commentary one content"
         assert response[0].count == 1
+        
+        # Verify second commentary
+        assert response[1].text_id == "efb26a06-f373-450b-ba57-e7a8d4dd5b66"
+        assert response[1].title == "Commentary Two"
+        assert response[1].language == "bo"
+        assert len(response[1].segments) == 1
+        assert response[1].segments[0].segment_id == "efb26a06-f373-450b-ba57-e7a8d4dd5b66"
+        assert response[1].segments[0].content == "commentary two content"
+        assert response[1].count == 1
         
 @pytest.mark.asyncio
 async def test_get_root_mapping_count_success():
@@ -473,20 +488,23 @@ async def test_get_root_mapping_count_group_type_text_returns_zero():
 
 @pytest.mark.asyncio
 async def test_filter_segment_mapping_by_type_commentary_merges_same_text_id():
-    # two segments from same commentary text should merge content and increment count
+    """
+    Test that multiple segments from the same commentary text_id are merged into a single
+    SegmentCommentry object with all segments included and correct count.
+    """
     text_id = "commentary-text-1"
     segments = [
         SegmentDTO(
             id="seg-1",
             text_id=text_id,
-            content="c1",
+            content="First segment content",
             mapping=[],
             type=SegmentType.SOURCE,
         ),
         SegmentDTO(
             id="seg-2",
             text_id=text_id,
-            content="c2",
+            content="Second segment content",
             mapping=[],
             type=SegmentType.SOURCE,
         ),
@@ -510,18 +528,207 @@ async def test_filter_segment_mapping_by_type_commentary_merges_same_text_id():
 
     with patch("pecha_api.texts.segments.segments_utils.TextUtils.get_text_details_by_ids", new_callable=AsyncMock, return_value=text_details):
         result = await SegmentUtils.filter_segment_mapping_by_type_or_text_id(segments, type="commentary")
+        
+        # Should return only 1 commentary (merged)
         assert len(result) == 1
         commentary = result[0]
+        
+        # Verify it's the correct type
         assert isinstance(commentary, SegmentCommentry)
+        
+        # Verify commentary details
         assert commentary.text_id == text_id
         assert commentary.title == "Commentary Title"
         assert commentary.language == "bo"
+        
+        # Verify both segments are merged into this commentary
         assert len(commentary.segments) == 2
-        assert commentary.segments[0].segment_id == "seg-1"
-        assert commentary.segments[0].content == "c1"
-        assert commentary.segments[1].segment_id == "seg-2"
-        assert commentary.segments[1].content == "c2"
         assert commentary.count == 2
+        
+        # Verify first segment
+        assert commentary.segments[0].segment_id == "seg-1"
+        assert commentary.segments[0].content == "First segment content"
+        
+        # Verify second segment
+        assert commentary.segments[1].segment_id == "seg-2"
+        assert commentary.segments[1].content == "Second segment content"
+
+
+@pytest.mark.asyncio
+async def test_filter_segment_mapping_by_type_no_matching_type():
+    """Test that filtering returns empty list when no segments match the requested type."""
+    text_id = "version-text-1"
+    segments = [
+        SegmentDTO(
+            id="seg-1",
+            text_id=text_id,
+            content="Version content",
+            mapping=[],
+            type=SegmentType.SOURCE,
+        ),
+    ]
+    text_details = {
+        text_id: TextDTO(
+            id=text_id,
+            title="Version Title",
+            language="en",
+            type="version",
+            group_id="g1",
+            is_published=True,
+            created_date="",
+            updated_date="",
+            published_date="",
+            published_by="",
+            categories=[],
+            views=0,
+        )
+    }
+
+    with patch("pecha_api.texts.segments.segments_utils.TextUtils.get_text_details_by_ids", new_callable=AsyncMock, return_value=text_details):
+        # Request commentary but only version exists
+        result = await SegmentUtils.filter_segment_mapping_by_type_or_text_id(segments, type="commentary")
+        
+        # Should return empty list
+        assert len(result) == 0
+        assert result == []
+
+
+@pytest.mark.asyncio
+async def test_filter_segment_mapping_by_type_with_text_id_filter():
+    """Test filtering by both type and specific text_id."""
+    commentary_text_id_1 = "commentary-1"
+    commentary_text_id_2 = "commentary-2"
+    
+    segments = [
+        SegmentDTO(
+            id="seg-1",
+            text_id=commentary_text_id_1,
+            content="Commentary 1 content",
+            mapping=[],
+            type=SegmentType.SOURCE,
+        ),
+        SegmentDTO(
+            id="seg-2",
+            text_id=commentary_text_id_2,
+            content="Commentary 2 content",
+            mapping=[],
+            type=SegmentType.SOURCE,
+        ),
+    ]
+    
+    text_details = {
+        commentary_text_id_1: TextDTO(
+            id=commentary_text_id_1,
+            title="Commentary One",
+            language="bo",
+            type="commentary",
+            group_id="g1",
+            is_published=True,
+            created_date="",
+            updated_date="",
+            published_date="",
+            published_by="",
+            categories=[],
+            views=0,
+        ),
+        commentary_text_id_2: TextDTO(
+            id=commentary_text_id_2,
+            title="Commentary Two",
+            language="bo",
+            type="commentary",
+            group_id="g1",
+            is_published=True,
+            created_date="",
+            updated_date="",
+            published_date="",
+            published_by="",
+            categories=[],
+            views=0,
+        )
+    }
+
+    with patch("pecha_api.texts.segments.segments_utils.TextUtils.get_text_details_by_ids", new_callable=AsyncMock, return_value=text_details):
+        # Filter by commentary type AND specific text_id
+        result = await SegmentUtils.filter_segment_mapping_by_type_or_text_id(
+            segments, 
+            type="commentary",
+            text_id=commentary_text_id_1
+        )
+        
+        # Should return only 1 commentary matching the text_id
+        assert len(result) == 1
+        assert isinstance(result[0], SegmentCommentry)
+        assert result[0].text_id == commentary_text_id_1
+        assert result[0].title == "Commentary One"
+        assert len(result[0].segments) == 1
+        assert result[0].segments[0].segment_id == "seg-1"
+
+
+@pytest.mark.asyncio
+async def test_filter_segment_mapping_by_type_multiple_segments_same_text_grouped():
+    """Test that multiple segments from same text_id are properly grouped with correct count."""
+    text_id = "commentary-grouped"
+    
+    segments = [
+        SegmentDTO(
+            id="seg-1",
+            text_id=text_id,
+            content="Content 1",
+            mapping=[],
+            type=SegmentType.SOURCE,
+        ),
+        SegmentDTO(
+            id="seg-2",
+            text_id=text_id,
+            content="Content 2",
+            mapping=[],
+            type=SegmentType.SOURCE,
+        ),
+        SegmentDTO(
+            id="seg-3",
+            text_id=text_id,
+            content="Content 3",
+            mapping=[],
+            type=SegmentType.SOURCE,
+        ),
+    ]
+    
+    text_details = {
+        text_id: TextDTO(
+            id=text_id,
+            title="Grouped Commentary",
+            language="bo",
+            type="commentary",
+            group_id="g1",
+            is_published=True,
+            created_date="",
+            updated_date="",
+            published_date="",
+            published_by="",
+            categories=[],
+            views=0,
+        )
+    }
+
+    with patch("pecha_api.texts.segments.segments_utils.TextUtils.get_text_details_by_ids", new_callable=AsyncMock, return_value=text_details):
+        result = await SegmentUtils.filter_segment_mapping_by_type_or_text_id(segments, type="commentary")
+        
+        # Should return 1 grouped commentary
+        assert len(result) == 1
+        commentary = result[0]
+        
+        # Verify all 3 segments are in the commentary
+        assert len(commentary.segments) == 3
+        assert commentary.count == 3
+        
+        # Verify segment IDs and content
+        assert commentary.segments[0].segment_id == "seg-1"
+        assert commentary.segments[0].content == "Content 1"
+        assert commentary.segments[1].segment_id == "seg-2"
+        assert commentary.segments[1].content == "Content 2"
+        assert commentary.segments[2].segment_id == "seg-3"
+        assert commentary.segments[2].content == "Content 3"
+
 
 @pytest.mark.asyncio
 async def test_mapped_segment_content_for_table_of_content_with_version_id_success():
@@ -634,3 +841,164 @@ async def test_validate_segments_exists_success():
             "efb26a06-f373-450b-ba57-e7a8d4dd5b64",
             "efb26a06-f373-450b-ba57-e7a8d4dd5b65",
         ]) is True
+
+
+def test_apply_bophono_with_tibetan_text():
+    """Test apply_bophono with Tibetan text input."""
+    from unittest.mock import Mock
+    
+    # Mock the tokenizer and its tokens
+    mock_token1 = type('Token', (), {'text': 'བཀྲ་ཤིས་'})()
+    mock_token2 = type('Token', (), {'text': 'བདེ་ལེགས་'})()
+    mock_tokens = [mock_token1, mock_token2]
+    
+    # Mock the converter
+    mock_converter = Mock()
+    mock_converter.get_api.side_effect = ['tra.shi', 'de.legs']
+    
+    with patch("pecha_api.texts.segments.segments_utils.WordTokenizer") as mock_tokenizer_class, \
+         patch("pecha_api.texts.segments.segments_utils.bophono.UnicodeToApi") as mock_converter_class:
+        
+        # Setup mocks
+        mock_tokenizer = Mock()
+        mock_tokenizer.tokenize.return_value = mock_tokens
+        mock_tokenizer_class.return_value = mock_tokenizer
+        mock_converter_class.return_value = mock_converter
+        
+        # Test the method
+        result = SegmentUtils.apply_bophono("བཀྲ་ཤིས་བདེ་ལེགས་")
+        
+        # Verify the result
+        assert result == "tra.shi de.legs"
+        
+        # Verify method calls
+        mock_tokenizer.tokenize.assert_called_once_with("བཀྲ་ཤིས་བདེ་ལེགས་")
+        mock_converter_class.assert_called_once_with(schema="KVP", options={'aspirateLowTones': True})
+        assert mock_converter.get_api.call_count == 2
+        mock_converter.get_api.assert_any_call('བཀྲ་ཤིས་')
+        mock_converter.get_api.assert_any_call('བདེ་ལེགས་')
+
+
+def test_apply_bophono_with_empty_string():
+    """Test apply_bophono with empty string input."""
+    from unittest.mock import Mock
+    
+    mock_tokenizer = Mock()
+    mock_tokenizer.tokenize.return_value = []
+    mock_converter = Mock()
+    
+    with patch("pecha_api.texts.segments.segments_utils.WordTokenizer") as mock_tokenizer_class, \
+         patch("pecha_api.texts.segments.segments_utils.bophono.UnicodeToApi") as mock_converter_class:
+        
+        mock_tokenizer_class.return_value = mock_tokenizer
+        mock_converter_class.return_value = mock_converter
+        
+        result = SegmentUtils.apply_bophono("")
+        
+        assert result == ""
+        mock_tokenizer.tokenize.assert_called_once_with("")
+        mock_converter_class.assert_called_once_with(schema="KVP", options={'aspirateLowTones': True})
+        mock_converter.get_api.assert_not_called()
+
+
+def test_apply_bophono_with_single_word():
+    """Test apply_bophono with single Tibetan word."""
+    from unittest.mock import Mock
+    
+    mock_token = type('Token', (), {'text': 'ཨོཾ'})()
+    mock_tokens = [mock_token]
+    
+    mock_tokenizer = Mock()
+    mock_tokenizer.tokenize.return_value = mock_tokens
+    mock_converter = Mock()
+    mock_converter.get_api.return_value = 'om'
+    
+    with patch("pecha_api.texts.segments.segments_utils.WordTokenizer") as mock_tokenizer_class, \
+         patch("pecha_api.texts.segments.segments_utils.bophono.UnicodeToApi") as mock_converter_class:
+        
+        mock_tokenizer_class.return_value = mock_tokenizer
+        mock_converter_class.return_value = mock_converter
+        
+        result = SegmentUtils.apply_bophono("ཨོཾ")
+        
+        assert result == "om"
+        mock_tokenizer.tokenize.assert_called_once_with("ཨོཾ")
+        mock_converter.get_api.assert_called_once_with('ཨོཾ')
+
+
+def test_apply_bophono_with_mixed_content():
+    """Test apply_bophono with mixed Tibetan and punctuation."""
+    from unittest.mock import Mock
+    
+    mock_token1 = type('Token', (), {'text': 'མཆོད་'})()
+    mock_token2 = type('Token', (), {'text': '།'})()
+    mock_token3 = type('Token', (), {'text': 'རྟེན་'})()
+    mock_tokens = [mock_token1, mock_token2, mock_token3]
+    
+    mock_tokenizer = Mock()
+    mock_tokenizer.tokenize.return_value = mock_tokens
+    mock_converter = Mock()
+    mock_converter.get_api.side_effect = ['chö', '།', 'ten']
+    
+    with patch("pecha_api.texts.segments.segments_utils.WordTokenizer") as mock_tokenizer_class, \
+         patch("pecha_api.texts.segments.segments_utils.bophono.UnicodeToApi") as mock_converter_class:
+        
+        mock_tokenizer_class.return_value = mock_tokenizer
+        mock_converter_class.return_value = mock_converter
+        
+        result = SegmentUtils.apply_bophono("མཆོད་། རྟེན་")
+        
+        assert result == "chö ། ten"
+        mock_tokenizer.tokenize.assert_called_once_with("མཆོད་། རྟེན་")
+        assert mock_converter.get_api.call_count == 3
+        mock_converter.get_api.assert_any_call('མཆོད་')
+        mock_converter.get_api.assert_any_call('།')
+        mock_converter.get_api.assert_any_call('རྟེན་')
+
+
+def test_apply_bophono_converter_options():
+    """Test that apply_bophono uses correct converter options."""
+    from unittest.mock import Mock
+    
+    mock_token = type('Token', (), {'text': 'དཀར་'})()
+    mock_tokens = [mock_token]
+    
+    mock_tokenizer = Mock()
+    mock_tokenizer.tokenize.return_value = mock_tokens
+    mock_converter = Mock()
+    mock_converter.get_api.return_value = 'kar'
+    
+    with patch("pecha_api.texts.segments.segments_utils.WordTokenizer") as mock_tokenizer_class, \
+         patch("pecha_api.texts.segments.segments_utils.bophono.UnicodeToApi") as mock_converter_class:
+        
+        mock_tokenizer_class.return_value = mock_tokenizer
+        mock_converter_class.return_value = mock_converter
+        
+        SegmentUtils.apply_bophono("དཀར་")
+        
+        # Verify that the converter was initialized with correct options
+        mock_converter_class.assert_called_once_with(
+            schema="KVP", 
+            options={'aspirateLowTones': True}
+        )
+
+
+def test_apply_bophono_with_whitespace_only():
+    """Test apply_bophono with whitespace-only input."""
+    from unittest.mock import Mock
+    
+    mock_tokenizer = Mock()
+    mock_tokenizer.tokenize.return_value = []
+    mock_converter = Mock()
+    
+    with patch("pecha_api.texts.segments.segments_utils.WordTokenizer") as mock_tokenizer_class, \
+         patch("pecha_api.texts.segments.segments_utils.bophono.UnicodeToApi") as mock_converter_class:
+        
+        mock_tokenizer_class.return_value = mock_tokenizer
+        mock_converter_class.return_value = mock_converter
+        
+        result = SegmentUtils.apply_bophono("   ")
+        
+        assert result == ""
+        mock_tokenizer.tokenize.assert_called_once_with("   ")
+        mock_converter.get_api.assert_not_called()
