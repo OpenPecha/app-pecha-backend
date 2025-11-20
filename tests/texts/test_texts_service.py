@@ -17,7 +17,8 @@ from pecha_api.texts.texts_service import (
     get_table_of_content_by_sheet_id,
     get_table_of_content_by_type,
     _validate_text_detail_request,
-    get_root_text_by_collection_id
+    get_root_text_by_collection_id,
+    get_commentaries_by_text_id
 )
 from pecha_api.terms.terms_response_models import TermsModel
 from pecha_api.texts.texts_response_models import (
@@ -1732,9 +1733,8 @@ async def test_get_root_text_by_collection_id_success_with_root_text():
         )
     ]
     
-    # Mock the filtered result with root text found
     mock_filtered_result = {
-        "root_text": mock_texts[0],  # First text matches the language
+        "root_text": mock_texts[0],  
         "versions": [mock_texts[1]]
     }
     
@@ -1746,11 +1746,9 @@ async def test_get_root_text_by_collection_id_success_with_root_text():
         
         result = await get_root_text_by_collection_id(collection_id=collection_id, language=language)
         
-        # Verify the function calls
         mock_get_all_texts.assert_called_once_with(collection_id=collection_id)
         mock_filter.assert_called_once_with(texts=mock_texts, language=language)
         
-        # Verify the result
         assert result is not None
         assert isinstance(result, tuple)
         assert len(result) == 2
