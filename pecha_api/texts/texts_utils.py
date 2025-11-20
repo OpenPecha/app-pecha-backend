@@ -78,6 +78,7 @@ class TextUtils:
     async def validate_text_exists(text_id: str):
         uuid_text_id = UUID(text_id)
         is_exists = await check_text_exists(text_id=uuid_text_id)
+        print(f"is_exists: {is_exists} ahahhahah")
         if not is_exists:
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND, 
@@ -217,7 +218,7 @@ class TextUtils:
         versions = []
         for text in texts:
             text_type_value = text.type if isinstance(text.type, str) else text.type.value
-            if text.language == language and text_type_value == TextType.VERSION.value and filtered_text[TextType.ROOT_TEXT.value] is None:
+            if text.language == language and filtered_text[TextType.ROOT_TEXT.value] is None:
                 filtered_text[TextType.ROOT_TEXT.value] = text
             else:
                 versions.append(text)
