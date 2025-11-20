@@ -213,6 +213,7 @@ def complete_sub_task_service(token: str, id: UUID) -> None:
     current_user = validate_and_extract_user_details(token=token)
     with SessionLocal() as db:
         existing_sub_task = get_sub_task_by_subtask_id(db=db, id=id)
+        task = get_task_by_id(db=db, task_id=existing_sub_task.task_id)
         if not existing_sub_task:
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,
@@ -230,6 +231,14 @@ def complete_sub_task_service(token: str, id: UUID) -> None:
                 task_id=existing_sub_task.task_id
             )   
             save_user_task_completion(db=db, user_task_completion=new_task_completion)
+        is_day_completed = check_day_completion(db=db, user_id=current_user.id, day_id=task.plan_item_id)
+        if is_day_completed:
+            new_day_completion = UserDayCompletion(
+                user_id=current_user.id,
+                day_id=task.plan_item_id
+            )
+            save_user_day_completion(db=db, user_day_completion=new_day_completion)
+
 
 def _check_all_subtasks_completed(user_id: UUID, task_id: UUID) -> bool:
     with SessionLocal() as db:
