@@ -3,7 +3,7 @@ from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session, joinedload
 from sqlalchemy import func
 from pecha_api.plans.users.plan_users_response_models import EnrolledUserPlan
-from .plan_users_models import UserPlanProgress
+from .plan_users_models import UserPlanProgress, UserTaskCompletion, UserDayCompletion, UserSubTaskCompletion
 from pecha_api.plans.plans_models import Plan
 from pecha_api.plans.items.plan_items_models import PlanItem
 from fastapi import HTTPException
@@ -11,6 +11,8 @@ from starlette import status
 from pecha_api.plans.auth.plan_auth_models import ResponseError
 from pecha_api.plans.response_message import BAD_REQUEST
 from typing import List, Optional, Tuple
+from pecha_api.plans.tasks.plan_tasks_models import PlanTask
+from pecha_api.plans.tasks.sub_tasks.plan_sub_tasks_models import PlanSubTask
 
 def save_plan_progress(db: Session, plan_progress: EnrolledUserPlan):
     try:
@@ -30,7 +32,7 @@ def get_plan_progress_by_user_id_and_plan_id(db: Session, user_id: UUID, plan_id
 
 
 def delete_user_plan_progress(db: Session, user_id: UUID, plan_id: UUID) -> None:
-
+    
     plan_progress = db.query(UserPlanProgress).filter(
         UserPlanProgress.user_id == user_id,
         UserPlanProgress.plan_id == plan_id
@@ -41,14 +43,34 @@ def delete_user_plan_progress(db: Session, user_id: UUID, plan_id: UUID) -> None
         message=f"User is not enrolled in plan with ID {plan_id}").model_dump())
     
     try:
+        db.query(UserTaskCompletion).filter(
+            UserTaskCompletion.user_id == user_id,
+            UserTaskCompletion.task_id.in_(
+                db.query(PlanTask.id).join(PlanItem).filter(PlanItem.plan_id == plan_id)
+            )
+        ).delete(synchronize_session=False)
+        
+        db.query(UserSubTaskCompletion).filter(
+            UserSubTaskCompletion.user_id == user_id,
+            UserSubTaskCompletion.sub_task_id.in_(
+                db.query(PlanSubTask.id).join(PlanTask).join(PlanItem).filter(PlanItem.plan_id == plan_id)
+            )
+        ).delete(synchronize_session=False)
+        
+        db.query(UserDayCompletion).filter(
+            UserDayCompletion.user_id == user_id,
+            UserDayCompletion.day_id.in_(
+                db.query(PlanItem.id).filter(PlanItem.plan_id == plan_id)
+            )
+        ).delete(synchronize_session=False)
+        
         db.delete(plan_progress)
         db.commit()
     except IntegrityError as e:
         db.rollback()
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,detail=ResponseError(error=BAD_REQUEST,
-            message=f"Database integrity error: {e.orig}").model_dump()
-        )
+            message=f"Database integrity error: {e.orig}").model_dump())
 
 
 def get_user_enrolled_plans_with_details(db: Session,user_id: UUID, status: Optional[str] = None,skip: int = 0, limit: int = 20,order_by_field = None,order_desc: bool = True
