@@ -1,5 +1,6 @@
 from fastapi import HTTPException
 from starlette import status
+from rich import print
 
 from pecha_api.error_contants import ErrorConstants
 from .texts_repository import (
@@ -513,6 +514,23 @@ async def _get_table_of_content_by_version_text_id(versions: List[TextDTO]) -> D
         versions_table_of_content_id_dict[str(version.id)] = list_of_table_of_contents_ids
     return versions_table_of_content_id_dict
 
+
+async def get_commentaries_by_text_id(text_id: str, skip: int, limit: int) -> List[TextDTO]:
+    is_valid_text = await TextUtils.validate_text_exists(text_id=text_id)
+    if not is_valid_text:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=ErrorConstants.TEXT_NOT_FOUND_MESSAGE)
+    
+    root_text = await TextUtils.get_text_detail_by_id(text_id=text_id)
+    group_id = root_text.group_id
+
+    commentaries = await TextUtils.get_commentaries_by_text_type(text_type="commentary", language=root_text.language, skip=skip, limit=limit)
+    final_commentary = []
+    for commentary in commentaries:
+        if commentary.categories and group_id in commentary.categories:
+            final_commentary.append(commentary)
+    return final_commentary
+
+
 def _get_list_of_text_version_response_model(versions: List[TextDTO], versions_table_of_content_id_dict: Dict[str, List[str]]) -> List[TextVersion]:
     list_of_version = [
         TextVersion(
@@ -718,4 +736,4 @@ def _search_table_of_content_where_segment_id_exists(table_of_contents: List[Tab
     raise HTTPException(
         status_code=status.HTTP_404_NOT_FOUND,
         detail=ErrorConstants.TABLE_OF_CONTENT_NOT_FOUND_MESSAGE
-    )
+    )   

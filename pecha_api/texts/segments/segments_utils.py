@@ -1,6 +1,5 @@
 from typing import Dict, List, Optional, Union
 from uuid import UUID
-
 from fastapi import HTTPException
 from starlette import status
 import bophono
@@ -16,6 +15,9 @@ from .segments_repository import (
     get_segment_by_id,
     get_related_mapped_segments,
 )
+from ..texts_response_models import TextDTO
+
+
 from ..groups.groups_service import (
     get_group_details
 )
@@ -81,7 +83,7 @@ class SegmentUtils:
     @staticmethod
     async def get_count_of_each_commentary_and_version(
         segments: List[SegmentDTO],
-        group_id: str
+        parent_text: TextDTO
     ) -> Dict[str, int]:
         """
         Count the number of commentary and version segments in the provided list.
@@ -98,7 +100,7 @@ class SegmentUtils:
             text_detail = text_details_dict.get(text_id)
             if text_detail and text_detail.type == "commentary":
                 count["commentary"] += 1
-            elif text_detail and text_detail.type == "version" and text_detail.group_id == group_id:
+            elif text_detail and text_detail.type == "version" and text_detail.type == parent_text.type:
                 count["version"] += 1
         return count
 
@@ -121,54 +123,12 @@ class SegmentUtils:
             if not text_detail:
                 continue
 
-            if text_detail.type == TextType.VERSION.value and type == TextType.VERSION.value:
-                if text_id is not None and text_id != segment.text_id:
-                    continue
-                
-                filtered_segments.append(
-                    SegmentRecitation(
-                        segment_id=str(segment.id),
-                        text_id=segment.text_id,
-                        title=text_detail.title,
-                        source=text_detail.published_by,
-                        language=text_detail.language,
-                        content=segment.content
-                    )
-                )
-
             elif text_detail.type == TextType.VERSION.value and type == TextType.VERSION.value:
                 if text_id is not None and text_id != segment.text_id:
                     continue
 
                 filtered_segments.append(
                     SegmentTranslation(
-                        segment_id=str(segment.id),
-                        text_id=segment.text_id,
-                        title=text_detail.title,
-                        source=text_detail.published_by,
-                        language=text_detail.language,
-                        content=segment.content
-                    )
-                )
-            elif text_detail.type == TextType.VERSION.value and type == TextType.VERSION.value:
-                mapped_segments=[]
-                if text_id is not None and text_id != segment.text_id:
-                    continue
-                filtered_segments.append(
-                    SegmentTransliteration(
-                        segment_id=str(segment.id),
-                        text_id=segment.text_id,
-                        title=text_detail.title,
-                        source=text_detail.published_by,
-                        language=text_detail.language,
-                        content=segment.content
-                    )
-                )
-            elif text_detail.type == TextType.VERSION.value and type == TextType.VERSION.value:
-                if text_id is not None and text_id != segment.text_id:
-                    continue
-                filtered_segments.append(
-                    SegmentAdaptation(
                         segment_id=str(segment.id),
                         text_id=segment.text_id,
                         title=text_detail.title,
@@ -211,7 +171,12 @@ class SegmentUtils:
         group_detail = await get_group_details(group_id=group_id)
         if group_detail.type == "text":
             return 0
-        root_mapping_count = len(segment.mapping)
+        root_mapping_count = 0
+        for mapping in segment.mapping:
+            text_detail = await TextUtils.get_text_details_by_id(text_id=mapping.text_id)
+            if text_detail.type == "commentary":
+                continue
+            root_mapping_count += 1
         return root_mapping_count
 
     @staticmethod
@@ -292,7 +257,7 @@ class SegmentUtils:
         return detail_table_of_content
     
     @staticmethod
-    async def get_segment_root_mapping_details(segments: List[SegmentDTO]) -> List[SegmentRootMapping]:
+    async def get_segment_root_mapping_details(segments: List[SegmentDTO], parent_segment_text: TextDTO) -> List[SegmentRootMapping]:
         list_of_text_ids = [
             segment.text_id
             for segment in segments
@@ -314,6 +279,8 @@ class SegmentUtils:
                         content=segment_item.content,
                         language=text_detail.language
                     ))
+                if text_detail.type == parent_segment_text.type:
+                    continue
                 list_of_segment_root_mapping.append(
                     SegmentRootMapping(
                         text_id=segment.text_id,

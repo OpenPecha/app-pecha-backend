@@ -160,7 +160,7 @@ async def get_info_by_segment_id(segment_id: str) -> SegmentInfoResponse:
     segment = await get_segment_by_id(segment_id=segment_id)
     text_detail=await TextUtils.get_text_details_by_id(text_id=segment.text_id)
     mapped_segments = await get_related_mapped_segments(parent_segment_id=segment_id)
-    counts = await SegmentUtils.get_count_of_each_commentary_and_version(mapped_segments,group_id=text_detail.group_id)
+    counts = await SegmentUtils.get_count_of_each_commentary_and_version(mapped_segments,parent_text=text_detail)
     segment_root_mapping_count = await SegmentUtils.get_root_mapping_count(segment_id=segment_id)
     response = SegmentInfoResponse(
         segment_info= SegmentInfo(
@@ -187,13 +187,14 @@ async def get_root_text_mapping_by_segment_id(segment_id: str) -> SegmentRootMap
     is_valid_segment = await SegmentUtils.validate_segment_exists(segment_id=segment_id)
     if not is_valid_segment:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=ErrorConstants.SEGMENT_NOT_FOUND_MESSAGE)
-    segment = await get_segment_by_id(segment_id=segment_id)
+    parent_segment = await get_segment_by_id(segment_id=segment_id)
+    parent_text = await TextUtils.get_text_details_by_id(text_id=parent_segment.text_id)
     mapped_segments = await get_related_mapped_segments(parent_segment_id=segment_id)
-    segment_root_mapping = await SegmentUtils.get_segment_root_mapping_details(segments=mapped_segments)
+    segment_root_mapping = await SegmentUtils.get_segment_root_mapping_details(segments=mapped_segments, parent_segment_text=parent_text)
     response = SegmentRootMappingResponse(
         parent_segment=ParentSegment(
             segment_id=segment_id,
-            content=segment.content
+            content=parent_segment.content
         ),
         segment_root_mapping=segment_root_mapping
     )

@@ -139,7 +139,7 @@ async def test_delete_task_by_id_success():
     token = "valid_token_123"
     author_email = "author@example.com"
 
-    mock_author = SimpleNamespace(email=author_email)
+    mock_author = SimpleNamespace(email=author_email, is_admin=False)
 
     mock_task = SimpleNamespace(
         id=task_id,
@@ -198,7 +198,7 @@ async def test_delete_task_by_id_unauthorized():
     author_email = "author@example.com"
     different_author_email = "different@example.com"
 
-    mock_author = SimpleNamespace(email=author_email)
+    mock_author = SimpleNamespace(email=author_email, is_admin=False)
 
     mock_task = SimpleNamespace(
         id=task_id,
@@ -213,7 +213,7 @@ async def test_delete_task_by_id_unauthorized():
 
     with patch(
         "pecha_api.plans.tasks.plan_tasks_services.validate_and_extract_author_details",
-        return_value=SimpleNamespace(email=author_email),
+        return_value=SimpleNamespace(email=author_email, is_admin=False),
     ) as mock_validate, patch(
         "pecha_api.plans.tasks.plan_tasks_services.SessionLocal",
         return_value=session_cm,
@@ -272,7 +272,7 @@ async def test_get_task_subtasks_service_image_content_uses_presigned_url():
 
     with patch(
         "pecha_api.plans.tasks.plan_tasks_services.validate_and_extract_author_details",
-        return_value=SimpleNamespace(email="creator@example.com"),
+        return_value=SimpleNamespace(email="creator@example.com", is_admin=False),
     ) as mock_validate, patch(
         "pecha_api.plans.tasks.plan_tasks_services.SessionLocal",
         return_value=session_cm,
@@ -318,7 +318,7 @@ async def test_delete_task_by_id_task_not_found():
     token = "valid_token_123"
     author_email = "author@example.com"
 
-    mock_author = SimpleNamespace(email=author_email)
+    mock_author = SimpleNamespace(email=author_email, is_admin=False)
 
     db_mock = MagicMock()
     session_cm = MagicMock()
@@ -393,7 +393,7 @@ async def test_delete_task_by_id_database_error():
     token = "valid_token_123"
     author_email = "author@example.com"
 
-    mock_author = SimpleNamespace(email=author_email)
+    mock_author = SimpleNamespace(email=author_email, is_admin=False)
 
     mock_task = SimpleNamespace(
         id=task_id,
@@ -576,7 +576,7 @@ async def test_get_task_subtasks_service_success():
 
     with patch(
         "pecha_api.plans.tasks.plan_tasks_services.validate_and_extract_author_details",
-        return_value=SimpleNamespace(email="creator@example.com"),
+        return_value=SimpleNamespace(email="creator@example.com", is_admin=False),
     ) as mock_validate, patch(
         "pecha_api.plans.tasks.plan_tasks_services.SessionLocal",
         return_value=session_cm,
@@ -632,7 +632,7 @@ async def test_get_task_subtasks_service_forbidden_when_not_creator():
 
     with patch(
         "pecha_api.plans.tasks.plan_tasks_services.validate_and_extract_author_details",
-        return_value=SimpleNamespace(email="current_user@example.com"),
+        return_value=SimpleNamespace(email="current_user@example.com", is_admin=False),
     ) as mock_validate, patch(
         "pecha_api.plans.tasks.plan_tasks_services.SessionLocal",
         return_value=session_cm,
@@ -766,6 +766,7 @@ async def test_update_task_title_service_success():
         email=author_email,
         first_name="John",
         last_name="Doe",
+        is_admin=False,
     )
     
     mock_task = SimpleNamespace(
@@ -836,6 +837,7 @@ async def test_update_task_title_service_unauthorized():
         email=different_email,
         first_name="Jane",
         last_name="Smith",
+        is_admin=False,
     )
     
     db_mock = MagicMock()
@@ -880,6 +882,7 @@ async def test_update_task_title_service_task_not_found():
         email="author@example.com",
         first_name="John",
         last_name="Doe",
+        is_admin=False,
     )
     
     db_mock = MagicMock()
@@ -955,6 +958,7 @@ async def test_update_task_title_service_database_error():
         email=author_email,
         first_name="John",
         last_name="Doe",
+        is_admin=False,
     )
     
     mock_task = SimpleNamespace(
@@ -1067,14 +1071,14 @@ def test__check_duplicate_task_order_with_duplicates_raises_400():
 def test__get_author_task_success():
     db = MagicMock()
     task_id = uuid.uuid4()
-    current_author = SimpleNamespace(email="owner@example.com")
+    current_author = SimpleNamespace(email="owner@example.com", is_admin=False)
 
     # Return a task owned by current_author
     with patch(
         "pecha_api.plans.tasks.plan_tasks_services.get_task_by_id",
         return_value=SimpleNamespace(id=task_id, created_by="owner@example.com"),
     ) as mock_get:
-        task = _get_author_task(db=db, task_id=task_id, current_author=current_author)
+        task = _get_author_task(db=db, task_id=task_id, current_author=current_author, is_admin=False)
 
     assert task.id == task_id
     assert mock_get.call_count == 1
@@ -1083,14 +1087,14 @@ def test__get_author_task_success():
 def test__get_author_task_not_found_raises_404():
     db = MagicMock()
     task_id = uuid.uuid4()
-    current_author = SimpleNamespace(email="owner@example.com")
+    current_author = SimpleNamespace(email="owner@example.com", is_admin=False)
 
     with patch(
         "pecha_api.plans.tasks.plan_tasks_services.get_task_by_id",
         return_value=None,
     ):
         with pytest.raises(HTTPException) as exc_info:
-            _get_author_task(db=db, task_id=task_id, current_author=current_author)
+            _get_author_task(db=db, task_id=task_id, current_author=current_author, is_admin=False)
 
     assert exc_info.value.status_code == 404
     assert exc_info.value.detail["error"] == BAD_REQUEST
@@ -1100,14 +1104,14 @@ def test__get_author_task_not_found_raises_404():
 def test__get_author_task_unauthorized_raises_403():
     db = MagicMock()
     task_id = uuid.uuid4()
-    current_author = SimpleNamespace(email="owner@example.com")
+    current_author = SimpleNamespace(email="owner@example.com", is_admin=False)
 
     with patch(
         "pecha_api.plans.tasks.plan_tasks_services.get_task_by_id",
         return_value=SimpleNamespace(id=task_id, created_by="other@example.com"),
     ):
         with pytest.raises(HTTPException) as exc_info:
-            _get_author_task(db=db, task_id=task_id, current_author=current_author)
+            _get_author_task(db=db, task_id=task_id, current_author=current_author, is_admin=False)
 
     assert exc_info.value.status_code == 403
     assert exc_info.value.detail["error"] == FORBIDDEN
@@ -1126,6 +1130,7 @@ async def test_update_task_title_service_empty_title():
         email=author_email,
         first_name="John",
         last_name="Doe",
+        is_admin=False,
     )
     
     mock_task = SimpleNamespace(
