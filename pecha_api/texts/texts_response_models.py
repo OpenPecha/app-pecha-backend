@@ -1,5 +1,6 @@
 from typing import List, Optional, Dict, Union
 from uuid import UUID
+from enum import Enum
 
 from pecha_api.collections.collections_response_models import CollectionModel
 
@@ -88,7 +89,8 @@ class DetailTableOfContentResponse(BaseModel):
     total_segments: int
 
 class TextSegment(BaseModel):
-    segment_id: str
+    segment_id: Optional[str] = None
+    pecha_segment_id: Optional[str] = None
     segment_number: int
 
 class Section(BaseModel):
@@ -102,8 +104,12 @@ class Section(BaseModel):
     updated_date: Optional[str] = None
     published_date: Optional[str] = None
 
+class TableOfContentType(Enum):
+    TEXT = "text"
+    SHEET = "sheet"
 class TableOfContent(BaseModel):
     id: Optional[str] = None
+    type: TableOfContentType
     text_id: str
     sections: List[Section]
 

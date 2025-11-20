@@ -17,7 +17,7 @@ from pecha_api.recitations.recitations_response_models import (
     RecitationSegment,
     Segment,
 )
-from pecha_api.texts.texts_response_models import TableOfContent, Section, TextSegment, TextDTO
+from pecha_api.texts.texts_response_models import TableOfContent, TableOfContentType, Section, TextSegment, TextDTO
 from pecha_api.texts.segments.segments_response_models import (
     SegmentDTO,
     SegmentTranslation,
@@ -237,6 +237,7 @@ class TestSegmentsMappingByToc:
         
         return TableOfContent(
             id=str(uuid4()),
+            type=TableOfContentType.TEXT,
             text_id=text_id,
             sections=[section]
         )
@@ -543,7 +544,7 @@ class TestGetRecitationDetailsServiceSuccess:
         )
         mock_filter_texts.return_value = {TextType.ROOT_TEXT.value: root_text}
         
-        toc = [TableOfContent(id=str(uuid4()), text_id=root_text_id, sections=[])]
+        toc = [TableOfContent(id=str(uuid4()), type=TableOfContentType.TEXT, text_id=root_text_id, sections=[])]
         mock_get_contents.return_value = toc
         
         mock_segments = [RecitationSegment()]
@@ -594,6 +595,7 @@ class TestSegmentsMappingByTocWithData:
         toc = [
             TableOfContent(
                 id=str(uuid4()),
+                type=TableOfContentType.TEXT,
                 text_id=text_id,
                 sections=[
                     Section(
@@ -662,6 +664,7 @@ class TestSegmentsMappingByTocWithData:
         toc = [
             TableOfContent(
                 id=str(uuid4()),
+                type=TableOfContentType.TEXT,
                 text_id=text_id,
                 sections=[
                     Section(
@@ -726,6 +729,7 @@ class TestSegmentsMappingByTocWithData:
         toc = [
             TableOfContent(
                 id=str(uuid4()),
+                type=TableOfContentType.TEXT,
                 text_id=text_id,
                 sections=[
                     Section(
@@ -812,6 +816,7 @@ class TestSegmentsMappingByTocWithData:
         toc = [
             TableOfContent(
                 id=str(uuid4()),
+                type=TableOfContentType.TEXT,
                 text_id=text_id,
                 sections=[
                     Section(

@@ -25,9 +25,8 @@ from pecha_api.texts.segments.segments_response_models import (
 )
 from pecha_api.texts.texts_response_models import (
     TableOfContent,
+    TableOfContentType,
     Section,
-    TextSegment,
-    TextDTO,
     TextSegment,
     TextDTO
 )
@@ -193,6 +192,7 @@ async def test_create_new_sheet_success():
     mock_table_of_content_response = TableOfContent(
         id="table_of_content_id",
         text_id="text_id",
+        type=TableOfContentType.SHEET,
         sections=[
             Section(
                 id="section_id",
@@ -379,6 +379,7 @@ async def test_get_sheet_by_id_success():
     )
     mock_table_of_content_response = TableOfContent(
                 text_id=sheet_id,
+                type=TableOfContentType.SHEET,
                 sections=[
                     Section(
                         id="section_id",
@@ -731,6 +732,7 @@ async def test_generate_sheet_summary_success():
     # Mock table of content with sections and segments
     mock_table_of_content = TableOfContent(
         text_id=sheet_id,
+        type=TableOfContentType.SHEET,
         sections=[
             Section(
                 id="section_1",
@@ -768,6 +770,7 @@ async def test_generate_sheet_summary_with_html_tags():
     
     mock_table_of_content = TableOfContent(
         text_id=sheet_id,
+        type=TableOfContentType.SHEET,
         sections=[
             Section(
                 id="section_1",
@@ -805,6 +808,7 @@ async def test_generate_sheet_summary_exceeds_max_words():
     
     mock_table_of_content = TableOfContent(
         text_id=sheet_id,
+        type=TableOfContentType.SHEET,
         sections=[
             Section(
                 id="section_1",
@@ -844,6 +848,7 @@ async def test_generate_sheet_summary_custom_max_words():
     
     mock_table_of_content = TableOfContent(
         text_id=sheet_id,
+        type=TableOfContentType.SHEET,
         sections=[
             Section(
                 id="section_1",
@@ -890,6 +895,7 @@ async def test_generate_sheet_summary_empty_sections():
     
     mock_table_of_content = TableOfContent(
         text_id=sheet_id,
+        type=TableOfContentType.SHEET,
         sections=[]
     )
     
@@ -907,6 +913,7 @@ async def test_generate_sheet_summary_no_segments():
     
     mock_table_of_content = TableOfContent(
         text_id=sheet_id,
+        type=TableOfContentType.SHEET,
         sections=[
             Section(
                 id="section_1",
@@ -930,6 +937,7 @@ async def test_generate_sheet_summary_no_content_segments():
     
     mock_table_of_content = TableOfContent(
         text_id=sheet_id,
+        type=TableOfContentType.SHEET,
         sections=[
             Section(
                 id="section_1",
@@ -957,6 +965,7 @@ async def test_generate_sheet_summary_empty_content():
     
     mock_table_of_content = TableOfContent(
         text_id=sheet_id,
+        type=TableOfContentType.SHEET,
         sections=[
             Section(
                 id="section_1",
@@ -1004,6 +1013,7 @@ async def test_generate_sheet_summary_segment_not_found():
     
     mock_table_of_content = TableOfContent(
         text_id=sheet_id,
+        type=TableOfContentType.SHEET,
         sections=[
             Section(
                 id="section_1",
@@ -1362,6 +1372,7 @@ async def test_generate_and_upload_sheet_table_of_content():
     
     mock_table_of_content = TableOfContent(
         text_id=text_id,
+        type=TableOfContentType.SHEET,
         sections=[]
     )
     
@@ -1701,6 +1712,7 @@ async def test_delete_sheet_table_of_content_cache_success():
     sheet_id = "test_sheet_id"
     mock_table_of_content = TableOfContent(
         text_id=sheet_id,
+        type=TableOfContentType.SHEET,
         sections=[]
     )
     
@@ -1734,6 +1746,7 @@ async def test_delete_sheet_segments_cache_with_content():
     #Test _delete_sheet_segments_cache_ with valid table of content#
     mock_table_of_content = TableOfContent(
         text_id="test_id",
+        type=TableOfContentType.SHEET,
         sections=[
             Section(
                 id="section_1",

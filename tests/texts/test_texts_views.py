@@ -13,6 +13,7 @@ from pecha_api.texts.texts_response_models import (
     TextVersionResponse,
     TextVersion,
     TableOfContent,
+    TableOfContentType,
     Section
 )
 
@@ -55,6 +56,7 @@ mock_section = Section(
 MOCK_TABLE_OF_CONTENT = TableOfContent(
     id="123e4567-e89b-12d3-a456-426614174001",
     text_id="123e4567-e89b-12d3-a456-426614174000",
+    type=TableOfContentType.TEXT,
     sections=[mock_section]
 )
 
@@ -280,6 +282,7 @@ async def test_create_table_of_content_success(mocker):
     toc_data = {
         "id": "123e4567-e89b-12d3-a456-426614174001",
         "text_id": "123e4567-e89b-12d3-a456-426614174000",
+        "type": "text",
         "sections": [
             {
                 "id": "123e4567-e89b-12d3-a456-426614174002",
