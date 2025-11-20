@@ -170,6 +170,7 @@ async def create_text(create_text_request: CreateTextRequest) -> Text:
 async def create_table_of_content_detail(table_of_content_request: TableOfContent):
     new_table_of_content = TableOfContent(
         text_id=table_of_content_request.text_id,
+        type=table_of_content_request.type,
         sections=table_of_content_request.sections
     )
     saved_table_of_content = await new_table_of_content.insert()

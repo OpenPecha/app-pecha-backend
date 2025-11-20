@@ -21,7 +21,8 @@ from pecha_api.texts.texts_response_models import (
     DetailTableOfContent,
     Section,
     TextSegment,
-    TableOfContent
+    TableOfContent,
+    TableOfContentType
 )
 from pecha_api.texts.segments.segments_enum import SegmentType
 
@@ -29,6 +30,21 @@ from pecha_api.texts.groups.groups_response_models import GroupDTO
 
 @pytest.mark.asyncio
 async def test_get_count_of_each_commentary_and_version_success():
+    parent_text = TextDTO(
+        id="parent_text_id",
+        title="parent title",
+        language="language",
+        group_id="group_id",
+        type="root_text",
+        is_published=True,
+        created_date="created_date",
+        updated_date="updated_date",
+        published_date="published_date",
+        published_by="published_by",
+        categories=["categories"],
+        views=0
+    )
+    
     text_details = {
         "efb26a06-f373-450b-ba57-e7a8d4dd5b64": TextDTO(
             id="efb26a06-f373-450b-ba57-e7a8d4dd5b64",
@@ -202,6 +218,22 @@ async def test_get_root_mapping_count_success():
     segment_id = "efb26a06-f373-450b-ba57-e7a8d4dd5b64"
     text_id = "efb26a06-f373-450b-ba57-e7a8d4dd5b64"
     group_id = "efb26a06-f373-450b-ba57-e7a8d4dd5b65"
+    
+    parent_text = TextDTO(
+        id="parent_text_id",
+        title="parent title",
+        language="language",
+        type="root_text",
+        group_id="parent_group_id",
+        is_published=True,
+        created_date="created_date",
+        updated_date="updated_date",
+        published_date="published_date",
+        published_by="published_by",
+        categories=["categories"],
+        views=0
+    )
+    
     segment = SegmentDTO(
         id=segment_id,
         text_id=text_id,
@@ -217,6 +249,7 @@ async def test_get_root_mapping_count_success():
         ],
         type=SegmentType.SOURCE
     )
+    
     text_details = TextDTO(
         id=text_id,
         title="title",
@@ -231,12 +264,34 @@ async def test_get_root_mapping_count_success():
         categories=["categories"],
         views=0
     )
+    
+    # Create mapped text details with different type/group to pass the filter
+    mapped_text_details = {
+        f"text_id_{i}": TextDTO(
+            id=f"text_id_{i}",
+            title=f"title_{i}",
+            language="language",
+            type="version",  # Different type from parent
+            group_id="different_group_id",  # Different group from parent
+            is_published=True,
+            created_date="created_date",
+            updated_date="updated_date",
+            published_date="published_date",
+            published_by="published_by",
+            categories=["categories"],
+            views=0
+        )
+        for i in range(1, 6)
+    }
+    
     mock_group_details = GroupDTO(
         id=group_id,
         type="COMMENTARY"
     )
+    
     with patch("pecha_api.texts.segments.segments_utils.get_segment_by_id", new_callable=AsyncMock, return_value=segment), \
         patch("pecha_api.texts.segments.segments_utils.TextUtils.get_text_details_by_id", new_callable=AsyncMock, return_value=text_details), \
+        patch("pecha_api.texts.segments.segments_utils.TextUtils.get_text_details_by_ids", new_callable=AsyncMock, return_value=mapped_text_details), \
         patch("pecha_api.texts.segments.segments_utils.get_group_details", new_callable=AsyncMock, return_value=mock_group_details):
         response = await SegmentUtils.get_root_mapping_count(segment_id=segment_id)
         assert response == 5
@@ -264,8 +319,8 @@ async def test_get_segment_root_mapping_details_success():
             id="text_id_1",
             title="title",
             language="language",
-            group_id="group_id",
-            type="commentary",
+            group_id="different_group_id",
+            type="commentary",  # Different type
             is_published=True,
             created_date="created_date",
             updated_date="updated_date",
@@ -290,6 +345,7 @@ async def test_mapped_segment_content_for_table_of_content_without_version_id_su
     table_of_content = TableOfContent(
         id="efb26a06-f373-450b-ba57-e7a8d4dd5b64",
         text_id="5f3c2e9d-9b7a-4f5e-8e2a-6a8b7c9d4e0f",
+        type=TableOfContentType.TEXT,
         sections=[
             Section(
                 id="123e4567-e89b-12d3-a456-426614174000",
@@ -363,6 +419,22 @@ async def test_validate_segments_exists_invalid_uuid_in_list():
 async def test_get_root_mapping_count_group_type_text_returns_zero():
     segment_id = "efb26a06-f373-450b-ba57-e7a8d4dd5b64"
     text_id = "text-id-1"
+    
+    parent_text = TextDTO(
+        id="parent_text_id",
+        title="parent title",
+        language="en",
+        type="root_text",
+        group_id="parent_group_id",
+        is_published=True,
+        created_date="",
+        updated_date="",
+        published_date="",
+        published_by="",
+        categories=[],
+        views=0,
+    )
+    
     segment = SegmentDTO(
         id=segment_id,
         text_id=text_id,
@@ -386,12 +458,31 @@ async def test_get_root_mapping_count_group_type_text_returns_zero():
         categories=[],
         views=0,
     )
+    
+    mapped_text_details = {
+        "t1": TextDTO(
+            id="t1",
+            title="title",
+            language="en",
+            type="version",
+            group_id="different_group",
+            is_published=True,
+            created_date="",
+            updated_date="",
+            published_date="",
+            published_by="",
+            categories=[],
+            views=0,
+        )
+    }
+    
     group_detail = GroupDTO(id="g1", type="text")
 
     with patch("pecha_api.texts.segments.segments_utils.get_segment_by_id", new_callable=AsyncMock, return_value=segment), \
         patch("pecha_api.texts.segments.segments_utils.TextUtils.get_text_details_by_id", new_callable=AsyncMock, return_value=text_details), \
+        patch("pecha_api.texts.segments.segments_utils.TextUtils.get_text_details_by_ids", new_callable=AsyncMock, return_value=mapped_text_details), \
         patch("pecha_api.texts.segments.segments_utils.get_group_details", new_callable=AsyncMock, return_value=group_detail):
-        count = await SegmentUtils.get_root_mapping_count(segment_id)
+        count = await SegmentUtils.get_root_mapping_count(segment_id=segment_id)
         assert count == 0
 
 
@@ -644,6 +735,7 @@ async def test_mapped_segment_content_for_table_of_content_with_version_id_succe
     table_of_content = TableOfContent(
         id="efb26a06-f373-450b-ba57-e7a8d4dd5b64",
         text_id="5f3c2e9d-9b7a-4f5e-8e2a-6a8b7c9d4e0f",
+        type=TableOfContentType.TEXT,
         sections=[
             Section(
                 id="123e4567-e89b-12d3-a456-426614174000",

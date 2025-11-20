@@ -13,7 +13,7 @@ from pecha_api.sheets.sheets_response_models import (
     Publisher
 )
 
-from pecha_api.texts.texts_response_models import TableOfContent, Section, TextSegment
+from pecha_api.texts.texts_response_models import TableOfContent, TableOfContentType, Section, TextSegment
 
 @pytest.mark.asyncio
 async def test_create_sheet_success():
@@ -26,6 +26,7 @@ async def test_create_sheet_success():
     mock_table_of_content_response = TableOfContent(
         id="table_of_content_id",
         text_id="text_id",
+        type=TableOfContentType.SHEET,
         sections=[
             Section(
                 id="section_id",
