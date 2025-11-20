@@ -126,6 +126,25 @@ async def get_texts_by_group_id(group_id: str, skip: int, limit: int) -> List[Te
         )
         for text in texts
     ]
+async def get_all_texts_by_group_id(group_id: str) -> List[TextDTO]:
+    texts = await Text.get_all_texts_by_group_id(group_id=group_id)
+    return [
+        TextDTO(
+            id=str(text.id),
+            title=text.title,
+            language=text.language,
+            group_id=text.group_id,
+            type=text.type,
+            is_published=text.is_published,
+            created_date=text.created_date,
+            updated_date=text.updated_date,
+            published_date=text.published_date,
+            published_by=text.published_by,
+            categories=text.categories,
+            views=text.views
+        )
+        for text in texts
+    ]
 
 async def create_text(create_text_request: CreateTextRequest) -> Text:
     new_text = Text(
