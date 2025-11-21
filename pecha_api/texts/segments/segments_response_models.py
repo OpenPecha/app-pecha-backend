@@ -1,5 +1,7 @@
 from pydantic import BaseModel
 from typing import List, Optional
+
+from sqlalchemy.orm import strategies
 from .segments_models import Mapping
 
 from .segments_enum import SegmentType
@@ -7,13 +9,14 @@ from pecha_api.texts.texts_response_models import TextDTO
 
 
 class CreateSegment(BaseModel):
+    pecha_segment_id: Optional[str] = None
     content: str
+    pecha_segment_id: Optional[str] = None
     type: SegmentType
     mapping: Optional[List[Mapping]] = []
 
 
 class CreateSegmentRequest(BaseModel):
-    pecha_segment_id: Optional[str] = None
     text_id: str
     segments: List[CreateSegment]
 
@@ -31,6 +34,9 @@ class SegmentDTO(BaseModel):
     mapping: Optional[List[MappingResponse]] = None
     text: Optional[TextDTO] = None
 
+class MappedSegmentDTO(BaseModel):
+    segment_id: str
+    content: str
 
 class SegmentResponse(BaseModel):
     segments: List[SegmentDTO]
@@ -48,16 +54,39 @@ class SegmentTranslation(BaseModel):
     language: str
     content: str
 
+class SegmentRecitation(BaseModel):
+    segment_id: str
+    text_id: str
+    title: str
+    source: str
+    language: str
+    content: str
+
+class SegmentTransliteration(BaseModel):
+    segment_id: str
+    text_id: str
+    title: str
+    source: str
+    language: str
+    content: str
+
+class SegmentAdaptation(BaseModel):
+    segment_id: str
+    text_id: str
+    title: str
+    source: str
+    language: str
+    content: str
+
 class SegmentTranslationsResponse(BaseModel):
     parent_segment: ParentSegment
     translations: List[SegmentTranslation]
 
 # segment commentary models
 class SegmentCommentry(BaseModel):
-    segment_id: str
     text_id: str
     title: str
-    content: List[str]
+    segments: List[MappedSegmentDTO]
     language: str
     count: int
 
@@ -79,6 +108,7 @@ class Resources(BaseModel):
 
 class SegmentInfo(BaseModel):
     segment_id: str
+    text_id: str
     translations: Optional[int] = 0
     related_text: RelatedText
     resources: Resources
@@ -88,12 +118,15 @@ class SegmentInfoResponse(BaseModel):
 
 # segment's root mapping models
 
-class SegmentRootMapping(BaseModel):
+class MappedSegmentResponseDTO(BaseModel):
     segment_id: str
+    content: str
+
+class SegmentRootMapping(BaseModel):
     text_id: str
     title: str
-    content: str
     language: str
+    segments: List[MappedSegmentResponseDTO]
 
 class SegmentRootMappingResponse(BaseModel):
     parent_segment: ParentSegment

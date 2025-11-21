@@ -1,13 +1,15 @@
 import os, uuid
 from fastapi import UploadFile, HTTPException, status
 from typing import Optional
+from PIL import Image
+import io
 
 
 from ...config import get, get_int
 from ...image_utils import ImageUtils
 from ...uploads.S3_utils import upload_bytes, generate_presigned_access_url
 from ...plans.authors.plan_authors_service import validate_and_extract_author_details
-from .media_response_models import PlanUploadResponse
+from .media_response_models import PlanUploadResponse, ImageUrlModel
 from ...plans.response_message import (
     IMAGE_UPLOAD_SUCCESS,
     INVALID_FILE_FORMAT,
@@ -24,26 +26,154 @@ def validate_file(file: UploadFile) -> None:
         raise HTTPException(status_code=status.HTTP_413_REQUEST_ENTITY_TOO_LARGE, detail=FILE_TOO_LARGE)
 
 
+def convert_to_rgb(image: Image.Image) -> Image.Image:
+    """
+    Convert image to RGB mode for JPEG compatibility.
+    Handles transparency by adding white background.
+    """
+    if image.mode in ('RGBA', 'LA') or (image.mode == 'P' and 'transparency' in image.info):
+        background = Image.new('RGB', image.size, (255, 255, 255))
+        if image.mode == 'P':
+            image = image.convert('RGBA')
+        background.paste(image, mask=image.split()[3] if image.mode == 'RGBA' else image.split()[1])
+        return background
+    elif image.mode != 'RGB':
+        return image.convert('RGB')
+    return image
+
+
+def compress_image_to_size(image: Image.Image, max_width: int, quality: int = 85) -> io.BytesIO:
+    """
+    Resize and compress image to specified width while maintaining aspect ratio.
+    
+    Args:
+        image: PIL Image object
+        max_width: Maximum width in pixels
+        quality: JPEG quality (1-100)
+    
+    Returns:
+        BytesIO object containing compressed image
+    """
+    # Calculate new dimensions maintaining aspect ratio
+    aspect_ratio = image.height / image.width
+    new_width = min(image.width, max_width)
+    new_height = int(new_width * aspect_ratio)
+    
+    # Resize image using high-quality LANCZOS resampling
+    resized_image = image.resize((new_width, new_height), Image.Resampling.LANCZOS)
+    
+    # Convert to RGB if necessary
+    resized_image = convert_to_rgb(resized_image)
+    
+    # Save to BytesIO with compression
+    output = io.BytesIO()
+    resized_image.save(output, format='JPEG', quality=quality, optimize=True)
+    output.seek(0)
+    return output
+
+
+def compress_image_original_size(image: Image.Image, quality: int = 90) -> io.BytesIO:
+    """
+    Compress image at original dimensions without resizing.
+    
+    Args:
+        image: PIL Image object
+        quality: JPEG quality (1-100)
+    
+    Returns:
+        BytesIO object containing compressed image
+    """
+    # Convert to RGB if necessary
+    rgb_image = convert_to_rgb(image)
+    
+    # Save to BytesIO with compression
+    output = io.BytesIO()
+    rgb_image.save(output, format='JPEG', quality=quality, optimize=True)
+    output.seek(0)
+    return output
+
+
 def upload_plan_image(token: str, plan_id: Optional[str], file: UploadFile) -> PlanUploadResponse:
+    """
+    Upload plan image in 3 versions:
+    - Thumbnail: 200px width (quality 80)
+    - Medium: 800px width (quality 85)
+    - Original: Same dimensions as uploaded, but compressed (quality 90)
+    
+    Args:
+        token: Authentication token
+        plan_id: Optional plan ID for organizing images
+        file: Uploaded image file
+    
+    Returns:
+        PlanUploadResponse with URLs for all three versions
+    """
     validate_and_extract_author_details(token=token)
     validate_file(file)
-    image_utils = ImageUtils()
-    compressed_image = image_utils.validate_and_compress_image(file=file, content_type=file.content_type)
-    file_name, ext = os.path.splitext(file.filename)
+    
+    # Read and validate the original image
+    file.file.seek(0)
+    try:
+        original_image = Image.open(file.file)
+    except Exception:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Invalid image file"
+        )
+    
+    # Generate unique identifier and paths
+    file_name, _ = os.path.splitext(file.filename)
     unique_id = str(uuid.uuid4())
     path = "images/plan_images"
     image_path_full = f"{path}/{plan_id}/{unique_id}" if plan_id is not None else f"{path}/{unique_id}"
-    plan_image_name = f"{image_path_full}/{file_name}{ext}"
-    upload_key = upload_bytes(
-        bucket_name=get("AWS_BUCKET_NAME"),
-        s3_key=plan_image_name,
-        file=compressed_image,
-        content_type=file.content_type or 'image/jpeg'
+    
+    # Create compressed versions
+    thumbnail_image = compress_image_to_size(original_image.copy(), 200, quality=80)
+    medium_image = compress_image_to_size(original_image.copy(), 800, quality=85)
+    original_compressed = compress_image_original_size(original_image.copy(), quality=90)
+    
+    # Define image versions to upload
+    image_versions = [
+        ('thumbnail', thumbnail_image),
+        ('medium', medium_image),
+        ('original', original_compressed)
+    ]
+    
+    # Upload all versions and collect URLs
+    image_urls = {}
+    upload_keys = []
+    
+    for version_name, compressed_image in image_versions:
+        # Generate S3 key with version as folder
+        s3_key = f"{image_path_full}/{version_name}/{file_name}.jpg"
+        
+        # Upload to S3
+        upload_key = upload_bytes(
+            bucket_name=get("AWS_BUCKET_NAME"),
+            s3_key=s3_key,
+            file=compressed_image,
+            content_type='image/jpeg'
+        )
+        upload_keys.append(upload_key)
+        
+        # Generate presigned URL
+        presigned_url = generate_presigned_access_url(
+            bucket_name=get("AWS_BUCKET_NAME"),
+            s3_key=upload_key
+        )
+        
+        image_urls[version_name] = presigned_url
+    
+    # Create response with all image URLs
+    image_url_model = ImageUrlModel(
+        thumbnail=image_urls['thumbnail'],
+        medium=image_urls['medium'],
+        original=image_urls['original']
     )
-
-    presigned_url = generate_presigned_access_url(
-        bucket_name=get("AWS_BUCKET_NAME"),
-        s3_key=upload_key
+    
+    return PlanUploadResponse(
+        image=image_url_model,
+        key=upload_keys[2],  # Use original image key as primary key
+        path=image_path_full,
+        message=IMAGE_UPLOAD_SUCCESS
     )
-
-    return PlanUploadResponse(url=presigned_url, key=upload_key, path=image_path_full, message=IMAGE_UPLOAD_SUCCESS)

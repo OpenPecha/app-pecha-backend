@@ -4,12 +4,18 @@ from uuid import uuid4
 from fastapi import HTTPException
 from fastapi.security import HTTPAuthorizationCredentials
 from starlette import status
-
+from pecha_api.plans.users.recitation.user_recitations_views import (
+    create_user_recitation, 
+    get_user_recitations,
+    update_recitation_order
+)
 from pecha_api.plans.users.recitation.user_recitations_views import create_user_recitation, get_user_recitations, delete_user_recitation
 from pecha_api.plans.users.recitation.user_recitations_response_models import (
     CreateUserRecitationRequest,
     UserRecitationsResponse,
-    UserRecitationDTO
+    UserRecitationDTO,
+    UpdateRecitationOrderRequest,
+    RecitationOrderItem
 )
 
 from pecha_api.error_contants import ErrorConstants
@@ -40,12 +46,24 @@ class TestDataFactory:
         )
 
     @staticmethod
-    def create_user_recitation_dto(title="Test Text", text_id=None) -> UserRecitationDTO:
+    def create_user_recitation_dto(title="Test Text", text_id=None, language="bo", display_order=1) -> UserRecitationDTO:
         """Create a UserRecitationDTO with specified attributes."""
         return UserRecitationDTO(
             title=title,
-            text_id=text_id or uuid4()
+            text_id=text_id or uuid4(),
+            language=language,
+            display_order=display_order
         )
+
+    @staticmethod
+    def create_update_recitation_order_request(recitations=None) -> UpdateRecitationOrderRequest:
+        """Create an UpdateRecitationOrderRequest with specified recitations."""
+        if recitations is None:
+            recitations = [
+                RecitationOrderItem(id=uuid4(), display_order=1),
+                RecitationOrderItem(id=uuid4(), display_order=2)
+            ]
+        return UpdateRecitationOrderRequest(recitations=recitations)
 
 
 class TestCreateUserRecitationView:
@@ -269,6 +287,145 @@ class TestDeleteUserRecitationView:
             text_id=text_id
         )
 
+
+class TestUpdateRecitationOrderView:
+    """Test cases for update_recitation_order view function."""
+
+    @patch('pecha_api.plans.users.recitation.user_recitations_views.update_recitation_order_service')
+    @pytest.mark.asyncio
+    async def test_update_recitation_order_success(
+        self,
+        mock_service
+    ):
+        """Test successful update of recitation order."""
+        token = "valid_token"
+        recitation_id_1 = uuid4()
+        recitation_id_2 = uuid4()
+        recitation_id_3 = uuid4()
+        
+        auth_credentials = TestDataFactory.create_auth_credentials(token=token)
+        
+        recitations = [
+            RecitationOrderItem(text_id=recitation_id_1, display_order=1),
+            RecitationOrderItem(text_id=recitation_id_2, display_order=2),
+            RecitationOrderItem(text_id=recitation_id_3, display_order=3)
+        ]
+        update_order_request = UpdateRecitationOrderRequest(recitations=recitations)
+        
+        mock_service.return_value = None
+        
+        result = await update_recitation_order(
+            authentication_credential=auth_credentials,
+            update_order_request=update_order_request
+        )
+        
+        assert result is None
+        mock_service.assert_awaited_once_with(
+            token=token,
+            update_order_request=update_order_request
+        )
+        
+
+    @patch('pecha_api.plans.users.recitation.user_recitations_views.update_recitation_order_service')
+    @pytest.mark.asyncio
+    async def test_update_recitation_order_move_up(
+        self,
+        mock_service
+    ):
+        """Test moving a recitation up in the order (from position 5 to position 2)."""
+        token = "valid_token"
+        recitation_ids = [uuid4() for _ in range(5)]
+        
+        auth_credentials = TestDataFactory.create_auth_credentials(token=token)
+        
+        recitations = [
+            RecitationOrderItem(text_id=recitation_ids[0], display_order=1),
+            RecitationOrderItem(text_id=recitation_ids[4], display_order=2), 
+            RecitationOrderItem(text_id=recitation_ids[1], display_order=3),
+            RecitationOrderItem(text_id=recitation_ids[2], display_order=4),
+            RecitationOrderItem(text_id=recitation_ids[3], display_order=5)
+        ]
+        update_order_request = UpdateRecitationOrderRequest(recitations=recitations)
+        
+        mock_service.return_value = None
+        
+        result = await update_recitation_order(
+            authentication_credential=auth_credentials,
+            update_order_request=update_order_request
+        )
+        
+        assert result is None
+        mock_service.assert_awaited_once_with(
+            token=token,
+            update_order_request=update_order_request
+        )
+
+    @patch('pecha_api.plans.users.recitation.user_recitations_views.update_recitation_order_service')
+    @pytest.mark.asyncio
+    async def test_update_recitation_order_move_down(
+        self,
+        mock_service
+    ):
+        """Test moving a recitation down in the order (from position 2 to position 5)."""
+        token = "valid_token"
+        recitation_ids = [uuid4() for _ in range(5)]
+        
+        auth_credentials = TestDataFactory.create_auth_credentials(token=token)
+        
+        recitations = [
+            RecitationOrderItem(text_id=recitation_ids[0], display_order=1),
+            RecitationOrderItem(text_id=recitation_ids[2], display_order=2),
+            RecitationOrderItem(text_id=recitation_ids[3], display_order=3),
+            RecitationOrderItem(text_id=recitation_ids[4], display_order=4),
+            RecitationOrderItem(text_id=recitation_ids[1], display_order=5)
+        ]
+        update_order_request = UpdateRecitationOrderRequest(recitations=recitations)
+        
+        mock_service.return_value = None
+        
+        result = await update_recitation_order(
+            authentication_credential=auth_credentials,
+            update_order_request=update_order_request
+        )
+        
+        assert result is None
+        mock_service.assert_awaited_once_with(
+            token=token,
+            update_order_request=update_order_request
+        )
+
+    @patch('pecha_api.plans.users.recitation.user_recitations_views.update_recitation_order_service')
+    @pytest.mark.asyncio
+    async def test_update_recitation_order_to_first_position(
+        self,
+        mock_service
+    ):
+        """Test moving a recitation to the first position."""
+        token = "valid_token"
+        recitation_ids = [uuid4() for _ in range(3)]
+        
+        auth_credentials = TestDataFactory.create_auth_credentials(token=token)
+        
+        recitations = [
+            RecitationOrderItem(text_id=recitation_ids[2], display_order=1),
+            RecitationOrderItem(text_id=recitation_ids[0], display_order=2),
+            RecitationOrderItem(text_id=recitation_ids[1], display_order=3)
+        ]
+        update_order_request = UpdateRecitationOrderRequest(recitations=recitations)
+        
+        mock_service.return_value = None
+        
+        result = await update_recitation_order(
+            authentication_credential=auth_credentials,
+            update_order_request=update_order_request
+        )
+        
+        assert result is None
+        mock_service.assert_awaited_once_with(
+            token=token,
+            update_order_request=update_order_request
+        )
+    
     @patch('pecha_api.plans.users.recitation.user_recitations_views.delete_user_recitation_service')
     @pytest.mark.asyncio
     async def test_delete_user_recitation_not_found(
@@ -327,7 +484,36 @@ class TestDeleteUserRecitationView:
         
         assert exc_info.value.status_code == status.HTTP_401_UNAUTHORIZED
         assert exc_info.value.detail == "Invalid authentication credentials"
+        
+        mock_service.assert_awaited_once_with(
+            token=token,
+            text_id=text_id
+        )
 
+    @patch('pecha_api.plans.users.recitation.user_recitations_views.update_recitation_order_service')
+    @pytest.mark.asyncio
+    async def test_update_recitation_order_empty_list(
+        self,
+        mock_service
+    ):
+        """Test update_recitation_order with empty recitations list."""
+        token = "valid_token"
+        
+        auth_credentials = TestDataFactory.create_auth_credentials(token=token)
+        update_order_request = UpdateRecitationOrderRequest(recitations=[])
+        
+        mock_service.return_value = None
+        
+        result = await update_recitation_order(
+            authentication_credential=auth_credentials,
+            update_order_request=update_order_request
+        )
+        
+        assert result is None
+        mock_service.assert_awaited_once_with(
+            token=token,
+            update_order_request=update_order_request
+        )
     @patch('pecha_api.plans.users.recitation.user_recitations_views.delete_user_recitation_service')
     @pytest.mark.asyncio
     async def test_delete_user_recitation_database_error(

@@ -8,7 +8,7 @@ from fastapi import HTTPException
 from pecha_api.db.database import SessionLocal
 from pecha_api.error_contants import ErrorConstants
 from pecha_api.plans.items.plan_items_repository import get_days_by_plan_id, get_plan_day_with_tasks_and_subtasks
-from pecha_api.plans.public.plan_response_models import PublicPlansResponse, PublicPlanDTO, PlanDayDTO, AuthorDTO,PlanDaysResponse, PlanDayBasic, SubTaskDTO, TaskDTO
+from pecha_api.plans.public.plan_response_models import PublicPlansResponse, PublicPlanDTO, PlanDayDTO, AuthorDTO,PlanDaysResponse, PlanDayBasic, SubTaskDTO, TaskDTO, ImageUrlModel
 from pecha_api.plans.items.plan_items_models import PlanItem
 from pecha_api.plans.tasks.sub_tasks.plan_sub_tasks_models import PlanSubTask
 from pecha_api.users.users_service import validate_and_extract_user_details
@@ -18,7 +18,18 @@ from pecha_api.plans.public.plan_repository import (get_published_plans_from_db,
 
 logger = logging.getLogger(__name__)
 
-
+async def get_image_url(image_url: Optional[str]) -> Optional[ImageUrlModel]:
+    if not image_url:
+        return None
+        
+    thumbnail_url = image_url.replace("original", "thumbnail")
+    medium_url = image_url.replace("original", "medium")
+    original_url = image_url
+    return ImageUrlModel(
+        thumbnail=generate_presigned_access_url(bucket_name=get("AWS_BUCKET_NAME"), s3_key=thumbnail_url),
+        medium=generate_presigned_access_url(bucket_name=get("AWS_BUCKET_NAME"), s3_key=medium_url),
+        original=generate_presigned_access_url(bucket_name=get("AWS_BUCKET_NAME"), s3_key=original_url)
+    )
 
 async def get_published_plans(
     search: Optional[str] = None, 
@@ -38,19 +49,16 @@ async def get_published_plans(
             for plan_aggregate in plan_aggregates:
                 plan = plan_aggregate.plan
                 
-                plan_image_url = generate_presigned_access_url(bucket_name=get("AWS_BUCKET_NAME"), s3_key=plan.image_url)
+                plan_image = await get_image_url(image_url=plan.image_url)
                 
                 author_dto = None
                 if plan.author:
-                    author_avatar_url = generate_presigned_access_url(
-                        bucket_name=get("AWS_BUCKET_NAME"), 
-                        s3_key=plan.author.image_url
-                    )
+                    author_image = await get_image_url(image_url=plan.author.image_url)
                     author_dto = AuthorDTO(
                         id=plan.author.id, 
                         firstname=plan.author.first_name, 
                         lastname=plan.author.last_name, 
-                        image_url=author_avatar_url, 
+                        image=author_image 
                     )
                 
                 plan_dto = PublicPlanDTO(
@@ -59,7 +67,7 @@ async def get_published_plans(
                     description=plan.description,
                     language=plan.language.value if hasattr(plan.language, 'value') else plan.language,
                     difficulty_level=plan.difficulty_level,
-                    image_url=plan_image_url,
+                    image=plan_image,
                     total_days=plan_aggregate.total_days,
                     tags=plan.tags if plan.tags else [],
                     author=author_dto
@@ -87,18 +95,17 @@ async def get_published_plan(plan_id: UUID) -> PublicPlanDTO:
             if not plan:
                 raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=ErrorConstants.PLAN_NOT_FOUND)
             
-            plan_image_url = generate_presigned_access_url(
-                bucket_name=get("AWS_BUCKET_NAME"), 
-                s3_key=plan.image_url
-            )
+            plan_image= await get_image_url(image_url=plan.image_url)
             
             author_dto = None
             if plan.author:
-                author_avatar_url = generate_presigned_access_url(
-                    bucket_name=get("AWS_BUCKET_NAME"), 
-                    s3_key=plan.author.image_url
+                author_image = await get_image_url(image_url=plan.author.image_url)
+                author_dto = AuthorDTO(
+                    id=plan.author.id, 
+                    firstname=plan.author.first_name, 
+                    lastname=plan.author.last_name, 
+                    image=author_image
                 )
-                author_dto = AuthorDTO(id=plan.author.id, firstname=plan.author.first_name, lastname=plan.author.last_name, image_url=author_avatar_url, image_key=plan.author.image_url)
             
             
             total_days = db.query(PlanItem).filter(PlanItem.plan_id == plan_id).count()  
@@ -109,7 +116,7 @@ async def get_published_plan(plan_id: UUID) -> PublicPlanDTO:
                 description=plan.description,
                 language=plan.language.value if hasattr(plan.language, 'value') else plan.language,
                 difficulty_level=plan.difficulty_level,
-                image_url=plan_image_url,  
+                image=plan_image,  
                 total_days=total_days,
                 tags=plan.tags if plan.tags else [],
                 author=author_dto

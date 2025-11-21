@@ -13,11 +13,12 @@ from pecha_api.sheets.sheets_enum import (
 )
 
 from .texts_enums import TextType
-from .texts_response_models import TextDTO
+from .texts_response_models import TextDTO, TableOfContentType
 
 class TableOfContent(Document):
     id: uuid.UUID = Field(default_factory=uuid.uuid4)
     text_id: str
+    type: Optional[TableOfContentType] = None
     sections: List[Section]
 
     class Settings:
@@ -71,6 +72,10 @@ class Text(Document):
 
     class Settings:
         collection = "texts"
+
+    @classmethod
+    async def get_texts_by_pecha_text_ids(cls, pecha_text_ids: List[str]) -> List["Text"]:
+        return await cls.find({cls.pecha_text_id: {"$in": pecha_text_ids}}).to_list()
 
     @classmethod
     async def get_text(cls, text_id: str) -> Optional["Text"]:
@@ -151,6 +156,17 @@ class Text(Document):
         )
         return texts
     
+    @classmethod
+    async def get_all_texts_by_group_id(cls, group_id: str) -> List["Text"]:
+        query = {
+            "group_id": group_id
+        }
+        texts = (
+            await cls.find(query)
+            .to_list()
+        )
+        return texts
+
     @classmethod
     async def update_text_details_by_id(cls, text_id: UUID, text_details: TextDTO):
         return await cls.update_all(cls.id == text_id, {"$set": text_details.model_dump()})

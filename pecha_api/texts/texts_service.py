@@ -1,5 +1,6 @@
 from fastapi import HTTPException
 from starlette import status
+from rich import print
 
 from pecha_api.error_contants import ErrorConstants
 from .texts_repository import (
@@ -18,9 +19,11 @@ from .texts_repository import (
 )
 from .texts_response_models import (
     TableOfContent,
+    TableOfContentType,
     DetailTableOfContentResponse,
     TableOfContentResponse,
     TextDTO,
+    TextSegment,
     TextVersionResponse,
     TextVersion,
     TextsCategoryResponse,
@@ -34,6 +37,7 @@ from .texts_response_models import (
 from .groups.groups_service import (
     validate_group_exists
 )
+from .segments.segments_models import Segment
 from pecha_api.texts.texts_cache_service import (
     set_text_details_cache,
     get_text_details_cache,
@@ -49,6 +53,7 @@ from pecha_api.texts.texts_cache_service import (
     update_text_details_cache,
     invalidate_text_cache_on_update
 )
+from .segments.segments_repository import get_segments_by_text_id
 from pecha_api.sheets.sheets_enum import (
     SortBy,
     SortOrder
@@ -96,6 +101,7 @@ async def get_text_by_text_id_or_collection(
     if collection_id is not None:
         collection = await get_collection(collection_id=collection_id, language=language)
         texts = await _get_texts_by_collection_id(collection_id=collection_id, language=language, skip=skip, limit=limit)
+
         response = TextsCategoryResponse(
             collection=collection,
             texts=texts,
@@ -165,6 +171,7 @@ async def get_table_of_contents_by_text_id(text_id: str, language: str = None, s
     texts: List[TextDTO] = await get_texts_by_group_id(group_id=group_id, skip=skip, limit=limit)
     filtered_text_on_root_and_version = TextUtils.filter_text_on_root_and_version(texts=texts, language=language)
     root_text: TextDTO = filtered_text_on_root_and_version["root_text"]
+    print(f"root_text: {root_text} ahahhahah")
     if root_text is None:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=ErrorConstants.TEXT_NOT_FOUND_MESSAGE)
     table_of_contents: List[TableOfContent] = await get_contents_by_id(text_id=root_text.id)
@@ -175,6 +182,7 @@ async def get_table_of_contents_by_text_id(text_id: str, language: str = None, s
             TableOfContent(
                 id=str(content.id),
                 text_id=content.text_id,
+                type=content.type if content.type else TableOfContentType.TEXT,
                 sections=_get_paginated_sections(sections=content.sections, skip=skip, limit=limit)
             )
             for content in table_of_contents
@@ -283,11 +291,8 @@ async def get_text_versions_by_group_id(text_id: str, language: str, skip: int, 
     filtered_text_on_root_and_version = TextUtils.filter_text_on_root_and_version(texts=texts, language=language)
     root_text = filtered_text_on_root_and_version["root_text"]
     versions = filtered_text_on_root_and_version["versions"]
-
     versions_table_of_content_id_dict: Dict[str, List[str]] = await _get_table_of_content_by_version_text_id(versions=versions)
-
     list_of_version = _get_list_of_text_version_response_model(versions=versions, versions_table_of_content_id_dict=versions_table_of_content_id_dict)
-
     response = TextVersionResponse(
         text=root_text,
         versions=list_of_version
@@ -339,17 +344,62 @@ async def create_new_text(
 
 async def create_table_of_content(table_of_content_request: TableOfContent, token: str):
     is_valid_user = validate_user_exists(token=token)
+    
     if is_valid_user:
         await TextUtils.validate_text_exists(text_id=table_of_content_request.text_id)
-        segment_ids = TextUtils.get_all_segment_ids(table_of_content=table_of_content_request)
+        new_table_of_content = await get_table_of_content_by_type(table_of_content=table_of_content_request)
+        segment_ids = TextUtils.get_all_segment_ids(table_of_content=new_table_of_content)
         await SegmentUtils.validate_segments_exists(segment_ids=segment_ids)
-        table_of_content = await create_table_of_content_detail(table_of_content_request=table_of_content_request)
+        table_of_content = await create_table_of_content_detail(table_of_content_request=new_table_of_content)
         return table_of_content
     else:
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail=ErrorConstants.TOKEN_ERROR_MESSAGE)
+    
+
 
 
 # PRIVATE FUNCTIONS
+
+async def get_table_of_content_by_type(table_of_content: TableOfContent):
+    if table_of_content.type == TableOfContentType.TEXT:
+        new_table_of_content = await replace_pecha_segment_id_with_segment_id(table_of_content=table_of_content)
+    else: 
+        new_table_of_content = table_of_content
+    
+    return new_table_of_content
+    
+
+
+async def replace_pecha_segment_id_with_segment_id(table_of_content: TableOfContent) -> TableOfContent:
+    text_segments = await get_segments_by_text_id(text_id=table_of_content.text_id)
+    segments_dict = {segment.pecha_segment_id: segment.id for segment in text_segments}
+    print(segments_dict)
+
+    new_toc = TableOfContent(
+        text_id=table_of_content.text_id,
+        type=table_of_content.type,
+        sections=[]
+    )
+    new_sections = []
+    for section in table_of_content.sections:
+        new_segments = []
+        for segment in section.segments:
+            # db_segment = await Segment.get_segment_by_pecha_segment_id(pecha_segment_id=segment.pecha_segment_id)
+            new_segments.append(
+                TextSegment(
+                    segment_id=str(segments_dict[segment.segment_id]),
+                    segment_number=segment.segment_number
+                )
+            )
+        new_section = Section(
+            id=section.id,
+            title=section.title,
+            section_number=section.section_number,
+            segments=new_segments
+        )
+        new_sections.append(new_section)
+    new_toc.sections = new_sections
+    return new_toc
 
 async def _mapping_table_of_content(
         text: TextDTO, 
@@ -405,55 +455,40 @@ async def get_root_text_by_collection_id(collection_id: str, language: str) -> O
         return root_text.id, root_text.title
     return None, None
 
+def _group_texts_by_group_id(texts: List[TextDTO]) -> Dict[str, List[TextDTO]]:
+    texts_by_group_id = {}
+    for text in texts:
+        group_id = str(text.group_id)
+        if group_id not in texts_by_group_id:
+            texts_by_group_id[group_id] = []
+        texts_by_group_id[group_id].append(text)
+    return texts_by_group_id
+
 async def _get_texts_by_collection_id(collection_id: str, language: str, skip: int, limit: int) -> List[TextDTO]:
     texts = await get_texts_by_collection(collection_id=collection_id, language=language, skip=skip, limit=limit)
-    filter_text_base_on_group_id_type = await TextUtils.filter_text_base_on_group_id_type(texts=texts,
-                                                                                          language=language)
-    root_text = filter_text_base_on_group_id_type["root_text"]
-    commentary = filter_text_base_on_group_id_type["commentary"]
-    text_list = [
-        TextDTO(
-            id=str(text.id),
-            pecha_text_id=str(text.pecha_text_id),
-            title=text.title,
-            language=text.language,
-            group_id=text.group_id,
-            type="commentary",
-            is_published=text.is_published,
-            created_date=text.created_date,
-            updated_date=text.updated_date,
-            published_date=text.published_date,
-            published_by=text.published_by,
-            categories=text.categories,
-            views=text.views,
-            source_link=text.source_link,
-            ranking=text.ranking,
-            license=text.license
-        )
-        for text in commentary
-    ]
-    if root_text is not None:
-        text_list.append(
-            TextDTO(
-                id=str(root_text.id),
-                pecha_text_id=str(root_text.pecha_text_id),
-                title=root_text.title,
-                language=root_text.language,
-                group_id=root_text.group_id,
-                type="root_text",
-                is_published=root_text.is_published,
-                created_date=root_text.created_date,
-                updated_date=root_text.updated_date,
-                published_date=root_text.published_date,
-                published_by=root_text.published_by,
-                categories=root_text.categories,
-                views=root_text.views,
-                source_link=root_text.source_link,
-                ranking=root_text.ranking,
-                license=root_text.license
-            )
-        )
+    grouped_texts = _group_texts_by_group_id(texts=texts)
+    text_list = []
+
+    for texts in grouped_texts.values():
+        filter_text_base_on_group_id_type = await TextUtils.filter_text_base_on_group_id_type(texts=texts,
+                                                                                              language=language)
+        root_text = filter_text_base_on_group_id_type["root_text"]
+        if root_text is not None:
+            text_list.append(TextDTO(
+            id=str(root_text.id),
+            pecha_text_id=str(root_text.pecha_text_id),
+            title=root_text.title,
+            language=root_text.language,
+            group_id=root_text.group_id,
+            type="root_text",
+            is_published=root_text.is_published,
+            created_date=root_text.created_date,
+            updated_date=root_text.updated_date,
+            published_date=root_text.published_date,
+            published_by=root_text.published_by,
+        ))
     return text_list
+
 
 async def _get_table_of_content_by_version_text_id(versions: List[TextDTO]) -> Dict[str, List[str]]:
     versions_table_of_content_id_dict = {}
@@ -464,6 +499,23 @@ async def _get_table_of_content_by_version_text_id(versions: List[TextDTO]) -> D
             list_of_table_of_contents_ids.append(str(table_of_content.id))
         versions_table_of_content_id_dict[str(version.id)] = list_of_table_of_contents_ids
     return versions_table_of_content_id_dict
+
+
+async def get_commentaries_by_text_id(text_id: str, skip: int, limit: int) -> List[TextDTO]:
+    is_valid_text = await TextUtils.validate_text_exists(text_id=text_id)
+    if not is_valid_text:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=ErrorConstants.TEXT_NOT_FOUND_MESSAGE)
+    
+    root_text = await TextUtils.get_text_detail_by_id(text_id=text_id)
+    group_id = root_text.group_id
+
+    commentaries = await TextUtils.get_commentaries_by_text_type(text_type="commentary", language=root_text.language, skip=skip, limit=limit)
+    final_commentary = []
+    for commentary in commentaries:
+        if commentary.categories and group_id in commentary.categories:
+            final_commentary.append(commentary)
+    return final_commentary
+
 
 def _get_list_of_text_version_response_model(versions: List[TextDTO], versions_table_of_content_id_dict: Dict[str, List[str]]) -> List[TextVersion]:
     list_of_version = [
@@ -478,7 +530,10 @@ def _get_list_of_text_version_response_model(versions: List[TextDTO], versions_t
             created_date=version.created_date,
             updated_date=version.updated_date,
             published_date=version.published_date,
-            published_by=version.published_by
+            published_by=version.published_by,
+            source_link=version.source_link,
+            ranking=version.ranking,
+            license=version.license
         )
         for version in versions
     ]
@@ -562,6 +617,7 @@ def _generate_paginated_table_of_content_by_segments_(
     paginated_table_of_content = TableOfContent(
         id=str(table_of_content.id),
         text_id=table_of_content.text_id,
+        type=table_of_content.type,
         sections=filtered_sections
     )
     
@@ -666,4 +722,4 @@ def _search_table_of_content_where_segment_id_exists(table_of_contents: List[Tab
     raise HTTPException(
         status_code=status.HTTP_404_NOT_FOUND,
         detail=ErrorConstants.TABLE_OF_CONTENT_NOT_FOUND_MESSAGE
-    )
+    )   

@@ -2,7 +2,7 @@ from fastapi import APIRouter, Query, Depends
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from starlette import status
 
-from typing import Optional, Annotated
+from typing import Optional, Annotated, List
 
 from .texts_service import (
     get_table_of_contents_by_text_id,
@@ -11,7 +11,8 @@ from .texts_service import (
     get_text_by_text_id_or_collection,
     get_text_details_by_text_id,
     create_table_of_content,
-    get_text_details_by_text_id
+    get_text_details_by_text_id,
+    get_commentaries_by_text_id
 )
 from .texts_response_models import (
     CreateTextRequest,
@@ -96,3 +97,10 @@ async def create_table_of_content_request(
 ):
     return await create_table_of_content(table_of_content_request=table_of_content_request, token=authentication_credential.credentials)
 
+@text_router.get("/{text_id}/commentaries", status_code=status.HTTP_200_OK)
+async def get_commentaries(
+        text_id: str,
+        skip: int = Query(default=0, ge=0),
+        limit: int = Query(default=10, le=100)
+) -> List[TextDTO]:
+    return await get_commentaries_by_text_id(text_id=text_id, skip=skip, limit=limit)
