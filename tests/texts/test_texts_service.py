@@ -2745,6 +2745,7 @@ async def test_get_table_of_content_by_sheet_id_with_cache():
     cached_toc = TableOfContent(
         id="toc_id_1",
         text_id=sheet_id,
+        type=TableOfContentType.SHEET,
         sections=[]
     )
     

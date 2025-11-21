@@ -658,7 +658,6 @@ async def test_get_commentaries_service_error(mocker):
     
     assert response.status_code == status.HTTP_500_INTERNAL_SERVER_ERROR
     assert response.json()["detail"] == "Internal server error"
-    assert response.status_code == 404
 
 
 @pytest.mark.asyncio
