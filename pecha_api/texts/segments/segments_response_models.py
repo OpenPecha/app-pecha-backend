@@ -108,6 +108,7 @@ class Resources(BaseModel):
 
 class SegmentInfo(BaseModel):
     segment_id: str
+    text_id: str
     translations: Optional[int] = 0
     related_text: RelatedText
     resources: Resources

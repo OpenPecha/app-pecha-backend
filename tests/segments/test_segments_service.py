@@ -554,6 +554,7 @@ async def test_get_info_by_segment_id_cache_hit():
     cached_response = SegmentInfoResponse(
         segment_info=SegmentInfo(
             segment_id=segment_id,
+            text_id="text_id_1",
             translations=0,
             related_text=RelatedText(commentaries=0, root_text=0),
             resources=Resources(sheets=0),
