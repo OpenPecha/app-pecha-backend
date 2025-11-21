@@ -350,16 +350,18 @@ async def call_external_search_api(
         )
 
 
-async def build_multilingual_sources(segments: List[Segment], results_map: Dict[str, Dict]) -> List[MultilingualSourceResult]:
+def group_segments_by_text(segments: List[Segment]) -> Dict[str, List[Segment]]:
     text_segments_map: Dict[str, List[Segment]] = {}
-    text_info_map: Dict[str, TextIndex] = {}
-    
     for segment in segments:
         if segment.text_id not in text_segments_map:
             text_segments_map[segment.text_id] = []
         text_segments_map[segment.text_id].append(segment)
-    
-    for text_id in text_segments_map.keys():
+    return text_segments_map
+
+
+async def fetch_text_info(text_ids: List[str]) -> Dict[str, TextIndex]:
+    text_info_map: Dict[str, TextIndex] = {}
+    for text_id in text_ids:
         text = await Text.get_text(text_id)
         if text:
             text_info_map[text_id] = TextIndex(
@@ -368,26 +370,36 @@ async def build_multilingual_sources(segments: List[Segment], results_map: Dict[
                 title=text.title,
                 published_date=str(text.created_at) if hasattr(text, 'created_at') else ""
             )
+    return text_info_map
+
+
+def build_segment_matches(segments: List[Segment], results_map: Dict[str, Dict]) -> List[MultilingualSegmentMatch]:
+    segment_matches = []
+    for segment in segments:
+        pecha_id = segment.pecha_segment_id
+        if pecha_id and pecha_id in results_map:
+            segment_matches.append(
+                MultilingualSegmentMatch(
+                    segment_id=str(segment.id),
+                    content=segment.content,
+                    relevance_score=results_map[pecha_id]["distance"],
+                    pecha_segment_id=pecha_id
+                )
+            )
+    segment_matches.sort(key=lambda x: x.relevance_score)
+    return segment_matches
+
+
+async def build_multilingual_sources(segments: List[Segment], results_map: Dict[str, Dict]) -> List[MultilingualSourceResult]:
+    text_segments_map = group_segments_by_text(segments)
+    text_info_map = await fetch_text_info(list(text_segments_map.keys()))
     
     sources = []
     for text_id, text_segments in text_segments_map.items():
         if text_id not in text_info_map:
             continue
         
-        segment_matches = []
-        for segment in text_segments:
-            pecha_id = segment.pecha_segment_id
-            if pecha_id and pecha_id in results_map:
-                segment_matches.append(
-                    MultilingualSegmentMatch(
-                        segment_id=str(segment.id),
-                        content=segment.content,
-                        relevance_score=results_map[pecha_id]["distance"],
-                        pecha_segment_id=pecha_id
-                    )
-                )
-        
-        segment_matches.sort(key=lambda x: x.relevance_score)
+        segment_matches = build_segment_matches(text_segments, results_map)
         
         sources.append(
             MultilingualSourceResult(
