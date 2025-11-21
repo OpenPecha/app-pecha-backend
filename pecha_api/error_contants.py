@@ -28,6 +28,7 @@ class ErrorConstants:
     PLAN_NOT_FOUND ="Plan not found"
     USER_NOT_FOUND ="User not found"
     BAD_REQUEST_FOLLOW_YOURSELF ="Bad Request - Cannot follow yourself"
+    AUTHOR_NOT_FOUND = "Author not found"
 
     USER_NOT_FOUND = "User not found"
     USER_ALREADY_EXISTS = "User with this email or username already exists"
@@ -35,3 +36,4 @@ class ErrorConstants:
     INVALID_UPDATE_REQUEST = "Invalid update request"
     TASK_NOT_FOUND = "Task not found"
     SUB_TASK_NOT_FOUND = "Sub task not found"
+    COLLECTION_NOT_FOUND = "Collection not found"

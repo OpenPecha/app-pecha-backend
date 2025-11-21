@@ -24,6 +24,15 @@ async def get_collections_by_parent(
         logging.debug(e)
         return []
 
+async def get_all_collections_by_parent(
+        parent_id: Optional[str]) -> list[Collection]:
+    try:
+        topic_parent_id = Utils.get_parent_id(parent_id=parent_id)
+        collections = await Collection.get_all_children_by_id(parent_id=topic_parent_id)
+        return collections
+    except CollectionWasNotInitialized as e:
+        logging.debug(e)
+        return []
 
 async def get_child_count(parent_id: Optional[str]) -> int:
     topic_parent_id = Utils.get_parent_id(parent_id=parent_id)
@@ -35,10 +44,10 @@ async def create_collection(create_collection_request: CreateCollectionRequest) 
     try:
         existing_collection = await Collection.find_one(Collection.slug == create_collection_request.slug)
         if existing_collection:
-            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Collection with this slug already exists")
+            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=f"Collection with this slug {create_collection_request.slug} already exists")
     except AttributeError as e:
         logging.debug(e)
-    new_collection = Collection(slug=create_collection_request.slug, titles=create_collection_request.titles,
+    new_collection = Collection(pecha_collection_id=create_collection_request.pecha_collection_id, slug=create_collection_request.slug, titles=create_collection_request.titles,
                     descriptions=create_collection_request.descriptions, parent_id=create_collection_request.parent_id)
     saved_collection = await new_collection.insert()
     if create_collection_request.parent_id is not None:
@@ -83,3 +92,9 @@ async def delete_collection(collection_id: str):
     if parent_id is not None:
         await update_collection_child_status(collection_id=str(parent_id))
     return existing_collection
+
+async def get_collection_id_by_slug(slug: str) -> Optional[str]:
+    collection = await Collection.get_by_slug(slug=slug)
+    if collection:
+        return str(collection.id)
+    return None

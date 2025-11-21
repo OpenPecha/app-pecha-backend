@@ -61,6 +61,7 @@ from pecha_api.texts.texts_enums import TextType
 from pecha_api.texts.texts_response_models import (
     TextDTO,
     TableOfContent,
+    TableOfContentType,
     Section,
     TextSegment
 )
@@ -563,6 +564,7 @@ def _generate_sheet_table_of_content_(create_sheet_request: CreateSheetRequest, 
 
     table_of_content = TableOfContent(
         text_id=text_id,
+        type=TableOfContentType.SHEET,
         sections=[section]
     )
     

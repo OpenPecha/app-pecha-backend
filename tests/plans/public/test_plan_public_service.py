@@ -4,10 +4,11 @@ from unittest.mock import patch, MagicMock, Mock
 from fastapi import HTTPException
 from starlette import status
 
-from pecha_api.plans.public.plan_service import get_published_plans, get_published_plan
-from pecha_api.plans.public.plan_response_models import PublicPlansResponse, PublicPlanDTO
+from pecha_api.plans.public.plan_service import get_published_plans, get_published_plan,get_plan_days, get_plan_day_details
+from pecha_api.plans.public.plan_response_models import PublicPlansResponse, PublicPlanDTO, PlanDaysResponse, PlanDayDTO
 from pecha_api.plans.plans_enums import PlanStatus, DifficultyLevel, LanguageCode
-
+from pecha_api.error_contants import ErrorConstants
+from pecha_api.plans.plans_enums import ContentType
 
 @pytest.fixture
 def sample_author():
@@ -20,6 +21,12 @@ def sample_author():
     author.is_verified = True
     return author
 
+def _mock_session_local(mock_session_local):
+    """Helper function to mock SessionLocal context manager"""
+    mock_db_session = MagicMock()
+    mock_session_local.return_value.__enter__.return_value = mock_db_session
+    mock_session_local.return_value.__exit__.return_value = False
+    return mock_db_session
 
 @pytest.fixture
 def sample_plan(sample_author):
@@ -80,15 +87,24 @@ async def test_get_published_plans_success(sample_plan_aggregate, mock_db_sessio
         assert plan_dto.title == "Introduction to Meditation"
         assert plan_dto.language == "EN"
         assert plan_dto.total_days == 30
-        assert plan_dto.image_url == "https://bucket.s3.amazonaws.com/presigned-url"
-        assert plan_dto.author is None
+        assert plan_dto.image is not None
+        assert plan_dto.image.thumbnail == "https://bucket.s3.amazonaws.com/presigned-url"
+        assert plan_dto.image.medium == "https://bucket.s3.amazonaws.com/presigned-url"
+        assert plan_dto.image.original == "https://bucket.s3.amazonaws.com/presigned-url"
+        
+        assert plan_dto.author is not None
+        assert plan_dto.author.id == sample_plan_aggregate.plan.author.id
+        assert plan_dto.author.firstname == "John"
+        assert plan_dto.author.lastname == "Doe"
+        assert plan_dto.author.image is not None
+        assert plan_dto.author.image.thumbnail == "https://bucket.s3.amazonaws.com/presigned-url"
         
         mock_repo.assert_called_once_with(
             db=mock_db_session.__enter__.return_value,
             skip=0,
             limit=20,
             search=None,
-            language="EN",  # Service converts to uppercase before calling repository
+            language="EN",  
             sort_by="title",
             sort_order="asc"
         )
@@ -99,7 +115,7 @@ async def test_get_published_plans_with_search(sample_plan_aggregate, mock_db_se
     with patch("pecha_api.plans.public.plan_service.SessionLocal", return_value=mock_db_session), \
          patch("pecha_api.plans.public.plan_service.get_published_plans_from_db", return_value=[sample_plan_aggregate]) as mock_repo, \
          patch("pecha_api.plans.public.plan_service.get_published_plans_count", return_value=1), \
-         patch("pecha_api.plans.public.plan_service.generate_presigned_access_url", return_value=None):
+         patch("pecha_api.plans.public.plan_service.generate_presigned_access_url", return_value="https://bucket.s3.amazonaws.com/presigned-url"):
         
         result = await get_published_plans(
             search="meditation",
@@ -116,7 +132,7 @@ async def test_get_published_plans_with_search(sample_plan_aggregate, mock_db_se
             skip=0,
             limit=20,
             search="meditation",
-            language="EN",  # Service converts to uppercase before calling repository
+            language="EN", 
             sort_by="title",
             sort_order="asc"
         )
@@ -127,7 +143,7 @@ async def test_get_published_plans_with_language_filter(sample_plan_aggregate, m
     with patch("pecha_api.plans.public.plan_service.SessionLocal", return_value=mock_db_session), \
          patch("pecha_api.plans.public.plan_service.get_published_plans_from_db", return_value=[sample_plan_aggregate]) as mock_repo, \
          patch("pecha_api.plans.public.plan_service.get_published_plans_count", return_value=1), \
-         patch("pecha_api.plans.public.plan_service.generate_presigned_access_url", return_value=None):
+         patch("pecha_api.plans.public.plan_service.generate_presigned_access_url", return_value="https://bucket.s3.amazonaws.com/presigned-url"):
         
         result = await get_published_plans(
             search=None,
@@ -144,7 +160,7 @@ async def test_get_published_plans_with_language_filter(sample_plan_aggregate, m
             skip=0,
             limit=20,
             search=None,
-            language="EN",  # Service converts to uppercase before calling repository
+            language="EN", 
             sort_by="title",
             sort_order="asc"
         )
@@ -374,7 +390,7 @@ async def test_get_published_plans_without_author(mock_db_session):
     with patch("pecha_api.plans.public.plan_service.SessionLocal", return_value=mock_db_session), \
          patch("pecha_api.plans.public.plan_service.get_published_plans_from_db", return_value=[aggregate]), \
          patch("pecha_api.plans.public.plan_service.get_published_plans_count", return_value=1), \
-         patch("pecha_api.plans.public.plan_service.generate_presigned_access_url", return_value=None):
+         patch("pecha_api.plans.public.plan_service.generate_presigned_access_url", return_value="https://bucket.s3.amazonaws.com/presigned-url"):
         
         result = await get_published_plans()
         
@@ -387,7 +403,7 @@ async def test_get_published_plans_with_pagination(sample_plan_aggregate, mock_d
     with patch("pecha_api.plans.public.plan_service.SessionLocal", return_value=mock_db_session), \
          patch("pecha_api.plans.public.plan_service.get_published_plans_from_db", return_value=[sample_plan_aggregate]) as mock_repo, \
          patch("pecha_api.plans.public.plan_service.get_published_plans_count", return_value=1), \
-         patch("pecha_api.plans.public.plan_service.generate_presigned_access_url", return_value=None):
+         patch("pecha_api.plans.public.plan_service.generate_presigned_access_url", return_value="https://bucket.s3.amazonaws.com/presigned-url"):
         
         result = await get_published_plans(skip=10, limit=5)
         
@@ -408,12 +424,13 @@ async def test_get_published_plans_with_pagination(sample_plan_aggregate, mock_d
 async def test_get_published_plans_image_url_generation_failure(sample_plan_aggregate, mock_db_session):
     with patch("pecha_api.plans.public.plan_service.SessionLocal", return_value=mock_db_session), \
          patch("pecha_api.plans.public.plan_service.get_published_plans_from_db", return_value=[sample_plan_aggregate]), \
-         patch("pecha_api.plans.public.plan_service.generate_presigned_access_url", return_value=None):
+         patch("pecha_api.plans.public.plan_service.get_published_plans_count", return_value=1), \
+         patch("pecha_api.plans.public.plan_service.generate_presigned_access_url", return_value="https://bucket.s3.amazonaws.com/presigned-url"):
         
         result = await get_published_plans()
         
         assert len(result.plans) == 1
-        assert result.plans[0].image_url is None
+        assert result.plans[0].image is not None
 
 
 @pytest.mark.asyncio
@@ -447,13 +464,16 @@ async def test_get_published_plan_success(sample_plan, sample_author, mock_db_se
         assert result.title == "Introduction to Meditation"
         assert result.language == "EN" 
         assert result.total_days == 30
-        assert result.image_url == "https://bucket.s3.amazonaws.com/presigned-url"
+        assert result.image is not None
+        assert result.image.thumbnail == "https://bucket.s3.amazonaws.com/presigned-url"
+        assert result.image.medium == "https://bucket.s3.amazonaws.com/presigned-url"
+        assert result.image.original == "https://bucket.s3.amazonaws.com/presigned-url"
         
         assert result.author is not None
         assert result.author.firstname == "John"
         assert result.author.lastname == "Doe"
-        assert result.author.image_url == "https://bucket.s3.amazonaws.com/presigned-url"
-        assert result.author.image_key == "images/author_avatars/author-id/avatar.jpg"
+        assert result.author.image is not None
+        assert result.author.image.thumbnail == "https://bucket.s3.amazonaws.com/presigned-url"
         
         mock_repo.assert_called_once_with(db=mock_db_session.__enter__.return_value, plan_id=plan_id)
 
@@ -492,7 +512,7 @@ async def test_get_published_plan_without_author(mock_db_session):
     
     with patch("pecha_api.plans.public.plan_service.SessionLocal", return_value=mock_db_session), \
          patch("pecha_api.plans.public.plan_service.get_published_plan_by_id", return_value=plan_no_author), \
-         patch("pecha_api.plans.public.plan_service.generate_presigned_access_url", return_value=None):
+         patch("pecha_api.plans.public.plan_service.generate_presigned_access_url", return_value="https://bucket.s3.amazonaws.com/presigned-url"):
         
         result = await get_published_plan(plan_id=plan_no_author.id)
         
@@ -511,11 +531,11 @@ async def test_get_published_plan_image_url_generation_failure(sample_plan, mock
     
     with patch("pecha_api.plans.public.plan_service.SessionLocal", return_value=mock_db_session), \
          patch("pecha_api.plans.public.plan_service.get_published_plan_by_id", return_value=sample_plan), \
-         patch("pecha_api.plans.public.plan_service.generate_presigned_access_url", return_value=None):
+         patch("pecha_api.plans.public.plan_service.generate_presigned_access_url", return_value="https://bucket.s3.amazonaws.com/presigned-url"):
         
         result = await get_published_plan(plan_id=plan_id)
         
-        assert result.image_url is None
+        assert result.image is not None
 
 
 @pytest.mark.asyncio
@@ -543,7 +563,7 @@ async def test_get_published_plan_with_empty_tags(sample_plan, mock_db_session):
     
     with patch("pecha_api.plans.public.plan_service.SessionLocal", return_value=mock_db_session), \
          patch("pecha_api.plans.public.plan_service.get_published_plan_by_id", return_value=sample_plan), \
-         patch("pecha_api.plans.public.plan_service.generate_presigned_access_url", return_value=None):
+         patch("pecha_api.plans.public.plan_service.generate_presigned_access_url", return_value="https://bucket.s3.amazonaws.com/presigned-url"):
         
         result = await get_published_plan(plan_id=sample_plan.id)
         
@@ -553,15 +573,183 @@ async def test_get_published_plan_with_empty_tags(sample_plan, mock_db_session):
 @pytest.mark.asyncio
 async def test_get_published_plan_zero_subscriptions(sample_plan, mock_db_session):
     mock_query = MagicMock()
-    mock_db_session.__enter__.return_value.query.return_value = mock_query
+    mock_db_session.__enter__.return_value.query.return_value = mock_db_session
     mock_query.filter.return_value.count.return_value = 15
     mock_query.filter.return_value.distinct.return_value.count.return_value = 0
     
     with patch("pecha_api.plans.public.plan_service.SessionLocal", return_value=mock_db_session), \
          patch("pecha_api.plans.public.plan_service.get_published_plan_by_id", return_value=sample_plan), \
-         patch("pecha_api.plans.public.plan_service.generate_presigned_access_url", return_value=None):
+         patch("pecha_api.plans.public.plan_service.generate_presigned_access_url", return_value="https://bucket.s3.amazonaws.com/presigned-url"):
         
         result = await get_published_plan(plan_id=sample_plan.id)
         
         assert result.title == sample_plan.title
         assert result.id == sample_plan.id
+
+@pytest.mark.asyncio
+async def test_get_plan_days_success():
+    """Test successful retrieval of plan days"""
+    token = "valid_token_123"
+    plan_id = uuid4()
+    
+    mock_plan = MagicMock()
+    mock_plan.id = plan_id
+    mock_plan.title = "Test Plan"
+    
+    mock_day_1 = MagicMock()
+    mock_day_1.id = uuid4()
+    mock_day_1.day_number = 1
+    
+    mock_day_2 = MagicMock()
+    mock_day_2.id = uuid4()
+    mock_day_2.day_number = 2
+    
+    mock_plan_days = [mock_day_1, mock_day_2]
+    
+    mock_user = MagicMock()
+    mock_user.id = uuid4()
+    mock_user.email = "test@example.com"
+
+    with patch("pecha_api.plans.public.plan_service.SessionLocal") as mock_session_local, \
+         patch("pecha_api.plans.public.plan_service.validate_and_extract_user_details") as mock_validate_user, \
+         patch("pecha_api.plans.public.plan_service.get_plan_by_id") as mock_get_plan, \
+         patch("pecha_api.plans.public.plan_service.get_days_by_plan_id") as mock_get_days:
+        
+        db_session = _mock_session_local(mock_session_local)
+        mock_validate_user.return_value = mock_user
+        mock_get_plan.return_value = mock_plan
+        mock_get_days.return_value = mock_plan_days
+
+        response = await get_plan_days(token=token, plan_id=plan_id)
+
+        mock_validate_user.assert_called_once_with(token=token)
+        
+        mock_get_plan.assert_called_once_with(db=db_session, plan_id=plan_id)
+        mock_get_days.assert_called_once_with(db=db_session, plan_id=plan_id)
+
+        assert isinstance(response, PlanDaysResponse)
+        assert len(response.days) == 2
+        
+        assert response.days[0].id == str(mock_day_1.id)
+        assert response.days[0].day_number == 1
+        assert response.days[1].id == str(mock_day_2.id)
+        assert response.days[1].day_number == 2
+
+
+@pytest.mark.asyncio
+async def test_get_plan_days_empty_days():
+    """Test retrieval when plan has no days"""
+    token = "valid_token_456"
+    plan_id = uuid4()
+    
+    mock_plan = MagicMock()
+    mock_plan.id = plan_id
+    mock_plan.title = "Empty Plan"
+    
+    mock_user = MagicMock()
+    mock_user.id = uuid4()
+
+    with patch("pecha_api.plans.public.plan_service.SessionLocal") as mock_session_local, \
+         patch("pecha_api.plans.public.plan_service.validate_and_extract_user_details") as mock_validate_user, \
+         patch("pecha_api.plans.public.plan_service.get_plan_by_id") as mock_get_plan, \
+         patch("pecha_api.plans.public.plan_service.get_days_by_plan_id") as mock_get_days:
+        
+        db_session = _mock_session_local(mock_session_local)
+        mock_validate_user.return_value = mock_user
+        mock_get_plan.return_value = mock_plan
+        mock_get_days.return_value = []
+
+        response = await get_plan_days(token=token, plan_id=plan_id)
+
+        mock_validate_user.assert_called_once_with(token=token)
+        mock_get_plan.assert_called_once_with(db=db_session, plan_id=plan_id)
+        mock_get_days.assert_called_once_with(db=db_session, plan_id=plan_id)
+
+        assert isinstance(response, PlanDaysResponse)
+        assert len(response.days) == 0
+
+
+@pytest.mark.asyncio
+async def test_get_plan_days_plan_not_found():
+    """Test when plan does not exist"""
+    token = "valid_token_789"
+    plan_id = uuid4()
+    
+    mock_user = MagicMock()
+    mock_user.id = uuid4()
+
+    with patch("pecha_api.plans.public.plan_service.SessionLocal") as mock_session_local, \
+         patch("pecha_api.plans.public.plan_service.validate_and_extract_user_details") as mock_validate_user, \
+         patch("pecha_api.plans.public.plan_service.get_plan_by_id") as mock_get_plan:
+        
+        db_session = _mock_session_local(mock_session_local)
+        mock_validate_user.return_value = mock_user
+        mock_get_plan.return_value = None 
+
+        with pytest.raises(HTTPException) as exc_info:
+            await get_plan_days(token=token, plan_id=plan_id)
+
+        assert exc_info.value.status_code == status.HTTP_404_NOT_FOUND
+        assert exc_info.value.detail == ErrorConstants.PLAN_NOT_FOUND
+
+        mock_validate_user.assert_called_once_with(token=token)
+        mock_get_plan.assert_called_once_with(db=db_session, plan_id=plan_id)
+
+@pytest.mark.asyncio
+async def test_get_plan_day_details_success():
+    """Test successful retrieval of plan day details with tasks and subtasks"""
+    token = "valid_token_123"
+    plan_id = uuid4()
+    day_number = 1
+    
+    mock_subtask_1 = MagicMock()
+    mock_subtask_1.id = uuid4()
+    mock_subtask_1.content_type = ContentType.TEXT
+    mock_subtask_1.content = "Subtask content 1"
+    mock_subtask_1.display_order = 1
+    
+    mock_task = MagicMock()
+    mock_task.id = uuid4()
+    mock_task.title = "Test Task"
+    mock_task.estimated_time = 30
+    mock_task.display_order = 1
+    mock_task.sub_tasks = [mock_subtask_1]
+    
+    mock_plan_item = MagicMock()
+    mock_plan_item.id = uuid4()
+    mock_plan_item.day_number = day_number
+    mock_plan_item.tasks = [mock_task]
+    
+    mock_user = MagicMock()
+    mock_user.id = uuid4()
+    mock_user.email = "test@example.com"
+
+    with patch("pecha_api.plans.public.plan_service.SessionLocal") as mock_session_local, \
+         patch("pecha_api.plans.public.plan_service.validate_and_extract_user_details") as mock_validate_user, \
+         patch("pecha_api.plans.public.plan_service.get_plan_day_with_tasks_and_subtasks") as mock_get_plan_day:
+        
+        db_session = _mock_session_local(mock_session_local)
+        mock_validate_user.return_value = mock_user
+        mock_get_plan_day.return_value = mock_plan_item
+
+        response = await get_plan_day_details(token=token, plan_id=plan_id, day_number=day_number)
+
+        mock_validate_user.assert_called_once_with(token=token)
+        mock_get_plan_day.assert_called_once_with(db=db_session, plan_id=plan_id, day_number=day_number)
+
+        assert isinstance(response, PlanDayDTO)
+        assert response.id == mock_plan_item.id
+        assert response.day_number == day_number
+        assert len(response.tasks) == 1
+        
+        task = response.tasks[0]
+        assert task.id == mock_task.id
+        assert task.title == "Test Task"
+        assert task.estimated_time == 30
+        assert task.display_order == 1
+        assert len(task.subtasks) == 1
+        
+        assert task.subtasks[0].id == mock_subtask_1.id
+        assert task.subtasks[0].content_type == ContentType.TEXT
+        assert task.subtasks[0].content == "Subtask content 1"
+        assert task.subtasks[0].display_order == 1

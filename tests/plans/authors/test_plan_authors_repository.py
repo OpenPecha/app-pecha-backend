@@ -1,11 +1,20 @@
 import uuid
 from unittest.mock import MagicMock
+import sys
+import types
 from uuid import UUID
 
 import pytest
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 from starlette import status
+
+# Stub ORM models to avoid SQLAlchemy mapper initialization during import
+_stub_models = types.ModuleType("pecha_api.plans.authors.plan_authors_model")
+_stub_models.Author = MagicMock(name="Author")
+_stub_models.AuthorSocialMediaAccount = MagicMock(name="AuthorSocialMediaAccount")
+_stub_models.AuthorPasswordReset = MagicMock(name="AuthorPasswordReset")
+sys.modules["pecha_api.plans.authors.plan_authors_model"] = _stub_models
 
 from pecha_api.plans.authors.plan_authors_repository import (
     save_author,

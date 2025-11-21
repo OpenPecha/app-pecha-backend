@@ -20,6 +20,13 @@ from .texts_models import Text, TableOfContent
 from datetime import datetime, timezone
 from pecha_api.utils import Utils
 
+async def get_texts_by_pecha_text_ids(pecha_text_ids: List[str]) -> List[Text]:
+    try:
+        return await Text.get_texts_by_pecha_text_ids(pecha_text_ids=pecha_text_ids)
+    except CollectionWasNotInitialized as e:
+        logging.debug(e)
+        return None
+
 async def get_sections_count_of_table_of_content(content_id: str) -> int:
     return await TableOfContent.get_sections_count(content_id=content_id)
 
@@ -36,6 +43,7 @@ async def get_texts_by_ids(text_ids: List[str]) -> Dict[str, TextDTO]:
     return {
         str(text.id): TextDTO(
             id=str(text.id),
+            pecha_text_id=str(text.pecha_text_id),
             title=text.title,
             language=text.language,
             type=text.type,
@@ -46,7 +54,10 @@ async def get_texts_by_ids(text_ids: List[str]) -> Dict[str, TextDTO]:
             published_date=text.published_date,
             published_by=text.published_by,
             categories=text.categories,
-            views=text.views
+            views=text.views,
+            source_link=text.source_link,
+            ranking=text.ranking,
+            license=text.license
         )
         for text in list_of_texts_detail
     }
@@ -89,8 +100,34 @@ async def check_all_text_exists(text_ids: List[UUID]) -> bool:
 async def get_texts_by_collection(collection_id: str, language: str, skip: int, limit: int) -> List[Text]:
     return await Text.get_texts_by_collection_id(collection_id=collection_id, language=language, skip=skip, limit=limit)
 
+async def get_all_texts_by_collection(collection_id: str) -> List[Text]:
+    return await Text.get_all_texts_by_collection_id(collection_id=collection_id)
+
 async def get_texts_by_group_id(group_id: str, skip: int, limit: int) -> List[TextDTO]:
     texts = await Text.get_texts_by_group_id(group_id=group_id, skip=skip, limit=limit)
+    return [
+        TextDTO(
+            id=str(text.id),
+            pecha_text_id=str(text.pecha_text_id),
+            title=text.title,
+            language=text.language,
+            group_id=text.group_id,
+            type=text.type,
+            is_published=text.is_published,
+            created_date=text.created_date,
+            updated_date=text.updated_date,
+            published_date=text.published_date,
+            published_by=text.published_by,
+            categories=text.categories,
+            views=text.views,
+            source_link=text.source_link,
+            ranking=text.ranking,
+            license=text.license
+        )
+        for text in texts
+    ]
+async def get_all_texts_by_group_id(group_id: str) -> List[TextDTO]:
+    texts = await Text.get_all_texts_by_group_id(group_id=group_id)
     return [
         TextDTO(
             id=str(text.id),
@@ -111,6 +148,7 @@ async def get_texts_by_group_id(group_id: str, skip: int, limit: int) -> List[Te
 
 async def create_text(create_text_request: CreateTextRequest) -> Text:
     new_text = Text(
+        pecha_text_id=create_text_request.pecha_text_id,
         title=create_text_request.title,
         language=create_text_request.language,
         group_id=create_text_request.group_id,
@@ -121,7 +159,10 @@ async def create_text(create_text_request: CreateTextRequest) -> Text:
         published_by=create_text_request.published_by,
         type=create_text_request.type,
         categories=create_text_request.categories,
-        views=create_text_request.views
+        views=create_text_request.views,
+        source_link=create_text_request.source_link,
+        ranking=create_text_request.ranking,
+        license=create_text_request.license
     )
     saved_text = await new_text.insert()
     return saved_text
@@ -129,6 +170,7 @@ async def create_text(create_text_request: CreateTextRequest) -> Text:
 async def create_table_of_content_detail(table_of_content_request: TableOfContent):
     new_table_of_content = TableOfContent(
         text_id=table_of_content_request.text_id,
+        type=table_of_content_request.type,
         sections=table_of_content_request.sections
     )
     saved_table_of_content = await new_table_of_content.insert()

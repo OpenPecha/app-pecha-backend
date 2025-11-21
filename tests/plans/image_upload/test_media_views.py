@@ -2,12 +2,12 @@ import io
 import pytest
 from unittest.mock import patch, MagicMock
 from fastapi.testclient import TestClient
+from fastapi import FastAPI
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from fastapi import UploadFile, HTTPException
 from starlette import status
 
-from pecha_api.app import api
-from pecha_api.plans.media.media_response_models import PlanUploadResponse
+from pecha_api.plans.media.media_response_models import PlanUploadResponse, ImageUrlModel
 from pecha_api.plans.response_message import (
     IMAGE_UPLOAD_SUCCESS,
     INVALID_FILE_FORMAT,
@@ -51,10 +51,19 @@ class TestDataFactory:
         message: str = IMAGE_UPLOAD_SUCCESS
     ) -> PlanUploadResponse:
         uuid_part = "uuid"  # Simplified for testing
+        base_name = filename.rsplit('.', 1)[0]
+        path = f"images/plan_images/{plan_id}/{uuid_part}"
+        
+        image_urls = ImageUrlModel(
+            thumbnail=f"{TEST_BUCKET_URL}/{path}/thumbnail/{base_name}.jpg",
+            medium=f"{TEST_BUCKET_URL}/{path}/medium/{base_name}.jpg",
+            original=f"{TEST_BUCKET_URL}/{path}/original/{base_name}.jpg"
+        )
+        
         return PlanUploadResponse(
-            url=f"{TEST_BUCKET_URL}/images/plan_images/{plan_id}/{uuid_part}/{filename}",
-            key=f"images/plan_images/{plan_id}/{uuid_part}/{filename}",
-            path=f"images/plan_images/{plan_id}/{uuid_part}",
+            image=image_urls,
+            key=f"{path}/original/{base_name}.jpg",
+            path=path,
             message=message
         )
     
@@ -97,32 +106,41 @@ def mock_upload_service(mock_success_response):
 
 
 @pytest.fixture
-def authenticated_client():
-    """Test client with authentication override"""
-    from pecha_api.plans.media.media_views import oauth2_scheme
-    
-    original_dependency = api.dependency_overrides.copy()
-    
-    def get_token_override():
-        return HTTPAuthorizationCredentials(scheme="Bearer", credentials=VALID_TOKEN)
-    
-    api.dependency_overrides[oauth2_scheme] = get_token_override
-    test_client = TestClient(api)
-    
-    yield test_client
-    
-    api.dependency_overrides = original_dependency
+def media_app():
+    """Create a minimal FastAPI app including only the media router."""
+    from pecha_api.plans.media import media_views
+    app = FastAPI()
+    app.include_router(media_views.media_router)
+    return app
 
 
 @pytest.fixture
-def unauthenticated_client():
-    """Test client without authentication"""
-    original_dependency = api.dependency_overrides.copy()
-    test_client = TestClient(api)
-    
+def authenticated_client(media_app):
+    """Test client with authentication override"""
+    from pecha_api.plans.media.media_views import oauth2_scheme
+
+    original_dependency = media_app.dependency_overrides.copy()
+
+    def get_token_override():
+        return HTTPAuthorizationCredentials(scheme="Bearer", credentials=VALID_TOKEN)
+
+    media_app.dependency_overrides[oauth2_scheme] = get_token_override
+    test_client = TestClient(media_app)
+
     yield test_client
-    
-    api.dependency_overrides = original_dependency
+
+    media_app.dependency_overrides = original_dependency
+
+
+@pytest.fixture
+def unauthenticated_client(media_app):
+    """Test client without authentication"""
+    original_dependency = media_app.dependency_overrides.copy()
+    test_client = TestClient(media_app)
+
+    yield test_client
+
+    media_app.dependency_overrides = original_dependency
 
 
 # Test Classes for Better Organization
@@ -140,7 +158,10 @@ class TestMediaUploadSuccess:
         assert response.status_code == status.HTTP_201_CREATED
         response_data = response.json()
         assert response_data["message"] == IMAGE_UPLOAD_SUCCESS
-        assert "url" in response_data
+        assert "image" in response_data
+        assert "thumbnail" in response_data["image"]
+        assert "medium" in response_data["image"]
+        assert "original" in response_data["image"]
         assert "key" in response_data
         assert "path" in response_data
     
@@ -346,13 +367,20 @@ class TestMediaUploadResponseStructure:
             response_data = response.json()
             
             # Verify all required fields are present
-            required_fields = ["url", "key", "path", "message"]
+            required_fields = ["image", "key", "path", "message"]
             for field in required_fields:
                 assert field in response_data, f"Missing required field: {field}"
             
+            # Verify image object structure
+            assert "thumbnail" in response_data["image"]
+            assert "medium" in response_data["image"]
+            assert "original" in response_data["image"]
+            
             # Verify field formats
-            assert response_data["url"].startswith("https://"), "URL should use HTTPS"
-            assert TEST_BUCKET_URL in response_data["url"], "URL should contain bucket name"
+            assert response_data["image"]["thumbnail"].startswith("https://"), "Thumbnail URL should use HTTPS"
+            assert response_data["image"]["medium"].startswith("https://"), "Medium URL should use HTTPS"
+            assert response_data["image"]["original"].startswith("https://"), "Original URL should use HTTPS"
+            assert TEST_BUCKET_URL in response_data["image"]["original"], "URL should contain bucket name"
             assert "images" in response_data["key"], "Key should contain images path"
             assert response_data["message"] == IMAGE_UPLOAD_SUCCESS
     
@@ -366,9 +394,11 @@ class TestMediaUploadResponseStructure:
             response = authenticated_client.post("/cms/media/upload", files=files, headers=headers, params=params)
             
             response_data = response.json()
-            url = response_data["url"]
             
-            # Verify URL structure
-            assert url.startswith("https://"), "URL should use HTTPS protocol"
-            assert "s3.amazonaws.com" in url, "URL should contain S3 domain"
-            assert "images/plan_images" in url, "URL should contain correct path structure"
+            # Verify all image URLs structure
+            for version in ["thumbnail", "medium", "original"]:
+                url = response_data["image"][version]
+                assert url.startswith("https://"), f"{version} URL should use HTTPS protocol"
+                assert "s3.amazonaws.com" in url, f"{version} URL should contain S3 domain"
+                assert "images/plan_images" in url, f"{version} URL should contain correct path structure"
+                assert version in url, f"URL should contain {version} folder"

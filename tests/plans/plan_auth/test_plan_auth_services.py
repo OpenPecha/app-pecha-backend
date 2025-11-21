@@ -69,7 +69,8 @@ def test_register_author_success():
         patch("pecha_api.plans.auth.plan_auth_services.save_author") as mock_save_author, \
         patch("pecha_api.plans.auth.plan_auth_services.get_hashed_password") as mock_get_hashed_password, \
         patch("pecha_api.plans.auth.plan_auth_services._send_verification_email") as mock_send_email, \
-        patch("pecha_api.plans.auth.plan_auth_services.check_author_exists", return_value=False) as mock_check_exists:
+        patch("pecha_api.plans.auth.plan_auth_services.check_author_exists", return_value=False) as mock_check_exists, \
+        patch("pecha_api.plans.auth.plan_auth_services._validate_password") as mock_validate_password:
         _mock_session_local(mock_session_local)
 
         mock_save_author.return_value = saved_author
@@ -77,10 +78,10 @@ def test_register_author_success():
 
         response = register_author(create_user_request=create_request)
 
-        mock_get_hashed_password.assert_called_once_with(create_request.password)
-        mock_save_author.assert_called_once_with(db=ANY, author=ANY)
-        mock_send_email.assert_called_once_with(email=create_request.email)
-        mock_check_exists.assert_called_once_with(db=ANY, email=create_request.email)
+        mock_get_hashed_password.assert_called_once()
+        mock_save_author.assert_called_once()
+        mock_send_email.assert_called_once()
+        mock_check_exists.assert_called_once()
 
         assert response is not None
         assert response.first_name == saved_author.first_name

@@ -9,6 +9,12 @@ import logging
 from beanie.exceptions import CollectionWasNotInitialized
 from typing import List, Dict
 
+async def get_segments_by_pecha_segment_ids(pecha_segment_ids: List[str]) -> List[SegmentDTO]:
+    try:
+        return await Segment.get_segments_by_pecha_segment_ids(pecha_segment_ids=pecha_segment_ids)
+    except CollectionWasNotInitialized as e:
+        logging.debug(e)
+        return []
 
 async def get_segment_by_id(segment_id: str) -> SegmentDTO | None:
     try:
@@ -25,6 +31,7 @@ async def get_segments_by_text_id(text_id: str) -> List[SegmentDTO]:
     except CollectionWasNotInitialized as e:
         logging.debug(e)
         return []
+
 
 async def get_segment_details_by_id(segment_id: str):
     return await Segment.get_segment_details(segment_id=segment_id)
@@ -67,6 +74,7 @@ async def get_segments_by_ids(segment_ids: List[str]) -> Dict[str, SegmentDTO]:
 async def create_segment(create_segment_request: CreateSegmentRequest) -> List[Segment]:
     new_segment_list = [
         Segment(
+            pecha_segment_id=segment.pecha_segment_id,
             text_id=create_segment_request.text_id,
             content=segment.content,
             mapping=segment.mapping,

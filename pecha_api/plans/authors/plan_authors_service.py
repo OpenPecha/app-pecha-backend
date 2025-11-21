@@ -1,5 +1,5 @@
 import logging
-from typing import List, Dict
+from typing import List, Dict, Optional
 from uuid import UUID
 
 from fastapi import HTTPException
@@ -18,13 +18,17 @@ from pecha_api.plans.authors.plan_authors_repository import get_author_by_email,
 import jose
 
 from pecha_api.plans.authors.plan_authors_response_models import AuthorInfoResponse, SocialMediaProfile, \
-    AuthorsResponse, AuthorInfoRequest, AuthorUpdateResponse
+    AuthorsResponse, AuthorInfoRequest, AuthorUpdateResponse, AuthorPlanDTO, AuthorPlansResponse, \
+    ImageUrlModel, AuthorInfoPublicResponse
 from pecha_api.plans.plans_response_models import PlansResponse
+
 from pecha_api.plans.shared.utils import load_plans_from_json
 from pecha_api.uploads.S3_utils import generate_presigned_access_url
 from pecha_api.users.users_service import get_social_profile
 from pecha_api.plans.shared.utils import convert_plan_model_to_dto
 from pecha_api.utils import Utils
+
+from pecha_api.plans.public.plan_repository import get_published_plans_by_author_id
 
 
 async def get_authors() -> AuthorsResponse:
@@ -103,44 +107,63 @@ async def update_author_info(token: str, author_info_request: AuthorInfoRequest)
             logging.error(f"Failed to update user info: {e}")
             raise HTTPException(status_code=500, detail="Internal Server Error")
 
+def get_image_url(image_url: Optional[str]) -> Optional[ImageUrlModel]:
+    if not image_url:
+        return None
+        
+    thumbnail_url = image_url.replace("original", "thumbnail")
+    medium_url = image_url.replace("original", "medium")
+    original_url = image_url
+    return ImageUrlModel(
+        thumbnail=generate_presigned_access_url(bucket_name=get("AWS_BUCKET_NAME"), s3_key=thumbnail_url),
+        medium=generate_presigned_access_url(bucket_name=get("AWS_BUCKET_NAME"), s3_key=medium_url),
+        original=generate_presigned_access_url(bucket_name=get("AWS_BUCKET_NAME"), s3_key=original_url)
+    )
 
-async def get_selected_author_details(author_id: UUID) -> AuthorInfoResponse:
+async def get_selected_author_details(author_id: UUID) -> AuthorInfoPublicResponse:
     author = await _get_author_details_by_id(author_id=author_id)
+    author_image: Optional[ImageUrlModel] = get_image_url(image_url=author.image_url)
     social_media_profiles = _get_author_social_profile(author=author)
-    return AuthorInfoResponse(
+    return AuthorInfoPublicResponse(
         id=author.id,
         firstname=author.first_name,
         lastname=author.last_name,
         email=author.email,
-        image_url=generate_presigned_access_url(bucket_name=get("AWS_BUCKET_NAME"), s3_key= author.image_url),
+        image=author_image,
         bio=author.bio,
         social_profiles=social_media_profiles
     )
 
-async def get_plans_by_author(author_id: UUID,skip: int = 0, limit: int = 20) -> PlansResponse:
+async def get_plans_by_author(author_id: UUID,skip: int, limit: int) -> AuthorPlansResponse:
     await _get_author_details_by_id(author_id=author_id)
-    # Load plans from JSON file
-    plan_listing = load_plans_from_json()
-    # Filter published plans by author_id and convert to DTOs
-    published_plans = [
-        convert_plan_model_to_dto(p) 
-        for p in plan_listing.plans 
-        if p.status == "PUBLISHED" and p.author and p.author.id == str(author_id)
-    ]
-     # Apply pagination
-    total = len(published_plans)
-    paginated_plans = published_plans[skip:skip + limit]
-    
-    return PlansResponse(
-        plans=paginated_plans,
-        skip=skip,
-        limit=limit,
-        total=total
-    )
+    with SessionLocal() as db_session:
+        published_plans, total = get_published_plans_by_author_id(db=db_session, author_id=author_id, skip=skip, limit=limit)
+
+        author_plan_dtos = [
+            AuthorPlanDTO(
+                id=aggregate.plan.id,
+                title=aggregate.plan.title,
+                description=aggregate.plan.description,
+                language=aggregate.plan.language,
+                total_days=aggregate.total_days,
+                subscription_count=aggregate.subscription_count,
+                image=get_image_url(aggregate.plan.image_url),
+            )
+            for aggregate in published_plans
+        ]
+
+        return AuthorPlansResponse(
+            plans=author_plan_dtos,
+            skip=skip,
+            limit=limit,
+            total=total,
+        )
 
 async def _get_author_details_by_id(author_id: UUID) -> Author:
     with SessionLocal() as db_session:
         author = get_author_by_id(db=db_session,author_id=author_id)
+        if author is None:
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=ErrorConstants.AUTHOR_NOT_FOUND)
         return author
 
 def _get_author_social_profile(author: Author) -> List[SocialMediaProfile]:
