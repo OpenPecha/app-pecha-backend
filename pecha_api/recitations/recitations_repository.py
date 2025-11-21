@@ -1,9 +1,12 @@
 from typing import List, Tuple, Optional
+from pecha_api.recitations.recitations_response_models import RecitationDTO
 
-def apply_search_recitation_title_filter(text_title: str, search: Optional[str]):
-    if search:
-        if search.lower() in text_title.lower():
-            return text_title
+def apply_search_recitation_title_filter(texts: List[RecitationDTO], search: Optional[str]) -> List[RecitationDTO]:
+    filtered_texts = []
+    for text in texts:
+        if search:
+            if search.lower() in text.title.lower():
+                filtered_texts.append(text)
         else:
-            return None
-    return text_title
+            filtered_texts.append(text)
+    return filtered_texts
