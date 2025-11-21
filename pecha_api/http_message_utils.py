@@ -1,3 +1,10 @@
+from fastapi import HTTPException
+import logging
+import httpx
+
+logger = logging.getLogger(__name__)    
+
+
 def handle_http_status_error(e: httpx.HTTPStatusError) -> None:
     logger.error(f"External API error: {e.response.status_code} - {e.response.text}")
     raise HTTPException(
