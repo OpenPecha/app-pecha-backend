@@ -23,6 +23,7 @@ from pecha_api.texts.segments.segments_response_models import (
     SegmentTranslation,
     SegmentTransliteration,
     SegmentAdaptation,
+    SegmentRecitation,
 )
 from pecha_api.texts.segments.segments_enum import SegmentType
 from pecha_api.recitations.recitations_enum import RecitationListTextType, LanguageCode
@@ -50,8 +51,10 @@ class TestGetListOfRecitationsService:
         
         text_id = str(uuid4())
         text_title = "Test Recitation"
-        mock_get_root_text.return_value = (text_id, text_title)
-        mock_apply_search_filter.return_value = text_title
+        recitation_dto = RecitationDTO(text_id=UUID(text_id), title=text_title)
+        mock_recitations_response = RecitationsResponse(recitations=[recitation_dto])
+        mock_get_root_text.return_value = mock_recitations_response
+        mock_apply_search_filter.return_value = [recitation_dto]
         
         # Execute
         result = await get_list_of_recitations_service(language="en")
@@ -68,7 +71,7 @@ class TestGetListOfRecitationsService:
         # Verify mock calls
         mock_get_collection_id.assert_called_once_with(slug="Liturgy")
         mock_get_root_text.assert_called_once_with(collection_id=liturgy_collection_id, language="en")
-        mock_apply_search_filter.assert_called_once_with(text_title=text_title, search=None)
+        mock_apply_search_filter.assert_called_once_with(texts=[recitation_dto], search=None)
 
     @patch('pecha_api.recitations.recitations_services.get_collection_id_by_slug')
     @pytest.mark.asyncio
@@ -102,8 +105,10 @@ class TestGetListOfRecitationsService:
         
         text_id = str(uuid4())
         text_title = "Test Recitation"
-        mock_get_root_text.return_value = (text_id, text_title)
-        mock_apply_search_filter.return_value = None
+        recitation_dto = RecitationDTO(text_id=UUID(text_id), title=text_title)
+        mock_recitations_response = RecitationsResponse(recitations=[recitation_dto])
+        mock_get_root_text.return_value = mock_recitations_response
+        mock_apply_search_filter.return_value = []
         
         result = await get_list_of_recitations_service(search="nonexistent", language="en")
         
@@ -113,7 +118,7 @@ class TestGetListOfRecitationsService:
         
         mock_get_collection_id.assert_called_once_with(slug="Liturgy")
         mock_get_root_text.assert_called_once_with(collection_id=liturgy_collection_id, language="en")
-        mock_apply_search_filter.assert_called_once_with(text_title=text_title, search="nonexistent")
+        mock_apply_search_filter.assert_called_once_with(texts=[recitation_dto], search="nonexistent")
 
     @patch('pecha_api.recitations.recitations_services.get_collection_id_by_slug')
     @patch('pecha_api.recitations.recitations_services.get_root_text_by_collection_id')
@@ -131,8 +136,10 @@ class TestGetListOfRecitationsService:
         
         text_id = str(uuid4())
         text_title = "Morning Prayer Recitation"
-        mock_get_root_text.return_value = (text_id, text_title)
-        mock_apply_search_filter.return_value = text_title
+        recitation_dto = RecitationDTO(text_id=UUID(text_id), title=text_title)
+        mock_recitations_response = RecitationsResponse(recitations=[recitation_dto])
+        mock_get_root_text.return_value = mock_recitations_response
+        mock_apply_search_filter.return_value = [recitation_dto]
         
         result = await get_list_of_recitations_service(search="morning", language="en")
         
@@ -143,7 +150,7 @@ class TestGetListOfRecitationsService:
         
         mock_get_collection_id.assert_called_once_with(slug="Liturgy")
         mock_get_root_text.assert_called_once_with(collection_id=liturgy_collection_id, language="en")
-        mock_apply_search_filter.assert_called_once_with(text_title=text_title, search="morning")
+        mock_apply_search_filter.assert_called_once_with(texts=[recitation_dto], search="morning")
 
     @patch('pecha_api.recitations.recitations_services.get_collection_id_by_slug')
     @patch('pecha_api.recitations.recitations_services.get_root_text_by_collection_id')
@@ -161,8 +168,10 @@ class TestGetListOfRecitationsService:
         
         text_id = str(uuid4())
         text_title = "Tibetan Recitation"
-        mock_get_root_text.return_value = (text_id, text_title)
-        mock_apply_search_filter.return_value = text_title
+        recitation_dto = RecitationDTO(text_id=UUID(text_id), title=text_title)
+        mock_recitations_response = RecitationsResponse(recitations=[recitation_dto])
+        mock_get_root_text.return_value = mock_recitations_response
+        mock_apply_search_filter.return_value = [recitation_dto]
         
         result = await get_list_of_recitations_service(language="bo")
         
@@ -299,6 +308,18 @@ class TestSegmentsMappingByToc:
             segment_id=segment_id,
             text_id=str(uuid4()),
             title="Adaptation Title",
+            source="test_source",
+            language=language,
+            content=content
+        )
+
+    @staticmethod
+    def create_mock_segment_recitation(segment_id: str, language: str = "en", content: str = "Recitation content") -> SegmentRecitation:
+        """Create a mock SegmentRecitation object."""
+        return SegmentRecitation(
+            segment_id=segment_id,
+            text_id=str(uuid4()),
+            title="Recitation Title",
             source="test_source",
             language=language,
             content=content
@@ -460,6 +481,65 @@ class TestFilterByTypeAndLanguage:
         
         assert len(result) == 0
         assert result == {}
+
+    def test_filter_by_type_and_language_recitations(self):
+        """Test filtering recitations by language."""
+        segment_id = str(uuid4())
+        items = [
+            SegmentRecitation(
+                segment_id=segment_id,
+                text_id=str(uuid4()),
+                title="English Recitation",
+                source="test",
+                language="en",
+                content="English recitation content"
+            ),
+            SegmentRecitation(
+                segment_id=segment_id,
+                text_id=str(uuid4()),
+                title="Tibetan Recitation",
+                source="test",
+                language="bo",
+                content="Tibetan recitation content"
+            )
+        ]
+        languages = ["en"]
+        
+        result = filter_by_type_and_language(
+            type=RecitationListTextType.RECITATIONS.value,
+            segments=items,
+            languages=languages
+        )
+        
+        assert len(result) == 1
+        assert "en" in result
+        assert "bo" not in result
+        assert result["en"].content == "English recitation content"
+
+    def test_filter_by_type_and_language_adaptations(self):
+        """Test filtering adaptations by language."""
+        segment_id = str(uuid4())
+        items = [
+            SegmentAdaptation(
+                segment_id=segment_id,
+                text_id=str(uuid4()),
+                title="English Adaptation",
+                source="test",
+                language="en",
+                content="English adaptation content"
+            )
+        ]
+        languages = ["en", "bo"]
+        
+        result = filter_by_type_and_language(
+            type=RecitationListTextType.ADAPTATIONS.value,
+            segments=items,
+            languages=languages
+        )
+        
+        assert len(result) == 1
+        assert "en" in result
+        assert result["en"].content == "English adaptation content"
 
 
 class TestGetTextDetailsByTextId:
