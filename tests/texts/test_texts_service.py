@@ -99,7 +99,8 @@ async def test_get_text_by_collection_id():
             published_date="2025-03-21 09:40:34.025038",
             published_by="pecha",
             categories=[],
-            views=0
+            views=0,
+            pecha_text_id="pecha_1"
         ),
         TextDTO(
             id="032b9a5f-0712-40d8-b7ec-73c8c94f1c15",
@@ -113,7 +114,8 @@ async def test_get_text_by_collection_id():
             published_date="2025-03-20 09:26:16.571536",
             published_by="pecha",
             categories=[],
-            views=0
+            views=0,
+            pecha_text_id="pecha_2"
         )
     ]
 
@@ -132,15 +134,14 @@ async def test_get_text_by_collection_id():
         assert collection.slug == "bodhicaryavatara"
         assert response.texts is not None
         texts: List[TextDTO] = response.texts
-        assert len(texts) == 2
-        index = 0
-        assert texts[index] is not None
-        assert isinstance(texts[index], TextDTO)
-        assert texts[index].id == mock_texts_by_category[index].id
-        assert texts[index].title == mock_texts_by_category[index].title
-        assert texts[index].language == mock_texts_by_category[index].language
-        assert texts[index].type == mock_texts_by_category[index].type
-        assert response.total == 2
+        assert len(texts) == 1
+        assert texts[0] is not None
+        assert isinstance(texts[0], TextDTO)
+        assert texts[0].id == mock_texts_by_category[1].id
+        assert texts[0].title == mock_texts_by_category[1].title
+        assert texts[0].language == mock_texts_by_category[1].language
+        assert texts[0].type == "root_text"
+        assert response.total == 1
         assert response.skip == 0
         assert response.limit == 10
 

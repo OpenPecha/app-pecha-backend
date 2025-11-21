@@ -165,6 +165,7 @@ async def get_info_by_segment_id(segment_id: str) -> SegmentInfoResponse:
     response = SegmentInfoResponse(
         segment_info= SegmentInfo(
             segment_id=segment_id,
+            text_id=text_detail.id,
             translations=counts["version"],
             related_text=RelatedText(
                 commentaries=counts["commentary"],
