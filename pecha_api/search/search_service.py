@@ -346,12 +346,12 @@ async def get_multilingual_search_results(
         if not segments:
             return create_empty_search_response(query, search_type, skip, limit)
         
-        sources = await build_multilingual_sources(segments, results_map)
+        final_display_sources = await build_multilingual_sources(segments, results_map)
         
         return MultilingualSearchResponse(
             query=query,
             search_type=search_type,
-            sources=sources,
+            sources=final_display_sources,
             skip=skip,
             limit=limit,
             total=len(segments)

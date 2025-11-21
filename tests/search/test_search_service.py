@@ -622,13 +622,13 @@ async def test_build_multilingual_sources_success():
     
     with patch("pecha_api.search.search_service.Text.get_text", new_callable=AsyncMock, return_value=mock_text):
         
-        sources = await build_multilingual_sources(segments, results_map)
+        final_display_sources = await build_multilingual_sources(segments, results_map)
         
-        assert len(sources) == 1
-        assert isinstance(sources[0], MultilingualSourceResult)
-        assert sources[0].text.text_id == "text_123"
-        assert len(sources[0].segment_matches) == 2
-        assert sources[0].segment_matches[0].relevance_score <= sources[0].segment_matches[1].relevance_score
+        assert len(final_display_sources) == 1
+        assert isinstance(final_display_sources[0], MultilingualSourceResult)
+        assert final_display_sources[0].text.text_id == "text_123"
+        assert len(final_display_sources[0].segment_matches) == 2
+        assert final_display_sources[0].segment_matches[0].relevance_score <= final_display_sources[0].segment_matches[1].relevance_score
 
 
 @pytest.mark.asyncio
@@ -665,11 +665,11 @@ async def test_build_multilingual_sources_multiple_texts():
     
     with patch("pecha_api.search.search_service.Text.get_text", new_callable=AsyncMock, side_effect=[mock_text_1, mock_text_2]):
         
-        sources = await build_multilingual_sources(segments, results_map)
+        final_display_sources = await build_multilingual_sources(segments, results_map)
         
-        assert len(sources) == 2
-        assert sources[0].text.text_id == "text_123"
-        assert sources[1].text.text_id == "text_456"
+        assert len(final_display_sources) == 2
+        assert final_display_sources[0].text.text_id == "text_123"
+        assert final_display_sources[1].text.text_id == "text_456"
 
 
 @pytest.mark.asyncio
@@ -688,9 +688,9 @@ async def test_build_multilingual_sources_missing_text():
     
     with patch("pecha_api.search.search_service.Text.get_text", new_callable=AsyncMock, return_value=None):
         
-        sources = await build_multilingual_sources(segments, results_map)
+        final_display_sources = await build_multilingual_sources(segments, results_map)
         
-        assert len(sources) == 0
+        assert len(final_display_sources) == 0
 
 
 @pytest.mark.asyncio
@@ -714,10 +714,10 @@ async def test_build_multilingual_sources_segment_not_in_results_map():
     
     with patch("pecha_api.search.search_service.Text.get_text", new_callable=AsyncMock, return_value=mock_text):
         
-        sources = await build_multilingual_sources(segments, results_map)
+        final_display_sources = await build_multilingual_sources(segments, results_map)
         
-        assert len(sources) == 1
-        assert len(sources[0].segment_matches) == 0
+        assert len(final_display_sources) == 1
+        assert len(final_display_sources[0].segment_matches) == 0
 
 
 @pytest.mark.asyncio
@@ -746,10 +746,10 @@ async def test_build_multilingual_sources_sorting():
     
     with patch("pecha_api.search.search_service.Text.get_text", new_callable=AsyncMock, return_value=mock_text):
         
-        sources = await build_multilingual_sources(segments, results_map)
+        final_display_sources = await build_multilingual_sources(segments, results_map)
         
-        assert len(sources) == 1
-        assert len(sources[0].segment_matches) == 5
+        assert len(final_display_sources) == 1
+        assert len(final_display_sources[0].segment_matches) == 5
         
-        scores = [match.relevance_score for match in sources[0].segment_matches]
+        scores = [match.relevance_score for match in final_display_sources[0].segment_matches]
         assert scores == sorted(scores)
