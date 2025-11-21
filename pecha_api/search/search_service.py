@@ -166,7 +166,6 @@ def _generate_search_query(
     return search_query
 
 def _sheet_search(query: str, skip: int, limit: int) -> SearchResponse:
-    # TODO: Implement actual sheet search functionality
     return SearchResponse(
         search=Search(
             text=query,
@@ -268,7 +267,6 @@ async def get_text_title_by_id(text_id: Optional[str]) -> Optional[str]:
     if text:
         return text.title
     
-    logger.warning(f"Text with ID {text_id} not found")
     return None
 
 
