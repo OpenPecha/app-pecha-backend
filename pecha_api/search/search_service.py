@@ -1,6 +1,14 @@
 from elastic_transport import ObjectApiResponse
-
 from .search_enums import SearchType
+from .search_client import search_client
+from pecha_api.config import get
+from typing import List, Dict, Optional
+from pecha_api.texts.segments.segments_models import Segment
+from pecha_api.texts.texts_models import Text
+from pecha_api.config import get
+from http_message_utils import handle_http_status_error, handle_request_error
+import httpx
+import logging
 from .search_response_models import (
     SearchResponse,
     TextIndex,
@@ -13,18 +21,6 @@ from .search_response_models import (
     MultilingualSourceResult,
     MultilingualSearchResponse
 )
-from .search_client import search_client
-from pecha_api.config import get
-
-from typing import List, Dict, Optional
-import httpx
-import logging
-
-from pecha_api.texts.segments.segments_models import Segment
-from pecha_api.texts.texts_models import Text
-from pecha_api.config import get
-from fastapi import HTTPException
-from rich import print
 
 logger = logging.getLogger(__name__)
 
@@ -206,101 +202,31 @@ def _mock_sheet_data_():
             )
         ]
 
+def build_language_filter(language: str) -> List[str]:
+    if language == "bo":
+        return ["bo", "tib"]
+    return [language]
 
 
-async def get_multilingual_search_results(
+def build_search_filter(title: Optional[str] = None, language: Optional[str] = None) -> Dict[str, List[str]]:
+    filter_obj = {}
+    
+    if language:
+        filter_obj["language"] = build_language_filter(language)
+    
+    if title:
+        filter_obj["title"] = [title]
+    
+    return filter_obj
+
+
+def build_search_payload(
     query: str,
-    search_type: str = "hybrid",
-    text_id: Optional[str] = None,
-    skip: int = 0,
-    limit: int = 10,
-    language: Optional[str] = None
-) -> MultilingualSearchResponse:
-
-    try:
-        title = None
-        if text_id:
-            text = await Text.get_text(text_id)
-            if text:
-                title = text.title
-            else:
-                logger.warning(f"Text with ID {text_id} not found")
-        
-        external_results = await call_external_search_api(
-            query=query,
-            search_type=search_type,
-            limit=limit,
-            title=title,
-            language=language
-        )
-        
-        segmentation_ids = []
-        print("external_results", external_results.results)
-        results_map = {} 
-        
-        for result in external_results.results:
-            if result.id: 
-                segmentation_ids.append(result.id)
-                results_map[result.id] = {
-                    "distance": result.distance,
-                    "content": result.entity.text if result.entity.text else ""  # Handle None when return_text is false
-                }
-        
-        if not segmentation_ids:
-            logger.info("No segmentation IDs returned from external API")
-            return MultilingualSearchResponse(
-                query=query,
-                search_type=search_type,
-                sources=[],
-                skip=skip,
-                limit=limit,
-                total=0
-            )
-        
-        segments = await Segment.get_segments_by_pecha_ids(
-            pecha_segment_ids=segmentation_ids,
-            text_id=text_id
-        )
-        print("segments", segments)
-        
-        if not segments:
-            logger.warning(f"No internal segments found for {len(segmentation_ids)} segmentation IDs")
-            return MultilingualSearchResponse(
-                query=query,
-                search_type=search_type,
-                sources=[],
-                skip=skip,
-                limit=limit,
-                total=0
-            )
-        
-        sources = await build_multilingual_sources(segments, results_map)
-        
-        return MultilingualSearchResponse(
-            query=query,
-            search_type=search_type,
-            sources=sources,
-            skip=skip,
-            limit=limit,
-            total=len(segments)
-        )
-        
-    except Exception as e:
-        logger.error(f"Error in multilingual search: {str(e)}", exc_info=True)
-        raise
-
-
-async def call_external_search_api(
-    query: str,
-    search_type: str = "hybrid",
-    limit: int = 10,
+    search_type: str,
+    limit: int,
     title: Optional[str] = None,
     language: Optional[str] = None
-) -> ExternalSearchResponse:
-
-    external_api_url = "https://openpecha-search.onrender.com"
-    endpoint = f"{external_api_url}/search"
-    
+) -> Dict:
     payload = {
         "query": query,
         "search_type": search_type,
@@ -311,43 +237,9 @@ async def call_external_search_api(
     }
     
     if language or title:
-        filter_obj = {}
-        
-        if language:
-            if language == "bo":
-                filter_obj["language"] = ["bo", "tib"]
-            else:
-                filter_obj["language"] = [language]
-        
-        if title:
-            filter_obj["title"] = [title]
-        
-        payload["filter"] = filter_obj
+        payload["filter"] = build_search_filter(title, language)
     
-    try:
-        async with httpx.AsyncClient(timeout=30.0) as client:
-            response = await client.post(
-                endpoint,
-                json=payload,
-                headers={"Content-Type": "application/json"}
-            )
-            response.raise_for_status()
-            
-            data = response.json()
-            return ExternalSearchResponse(**data)
-            
-    except httpx.HTTPStatusError as e:
-        logger.error(f"External API error: {e.response.status_code} - {e.response.text}")
-        raise HTTPException(
-            status_code=e.response.status_code,
-            detail=f"External search API error: {e.response.text}"
-        )
-    except httpx.RequestError as e:
-        logger.error(f"Request to external API failed: {str(e)}")
-        raise HTTPException(
-            status_code=500,
-            detail="Failed to connect to the search service. Please try again later."
-        )
+    return payload
 
 
 def group_segments_by_text(segments: List[Segment]) -> Dict[str, List[Segment]]:
@@ -388,6 +280,118 @@ def build_segment_matches(segments: List[Segment], results_map: Dict[str, Dict])
             )
     segment_matches.sort(key=lambda x: x.relevance_score)
     return segment_matches
+
+
+async def get_multilingual_search_results(
+    query: str,
+    search_type: str = "hybrid",
+    text_id: Optional[str] = None,
+    skip: int = 0,
+    limit: int = 10,
+    language: Optional[str] = None
+) -> MultilingualSearchResponse:
+
+    try:
+        title = None
+        if text_id:
+            text = await Text.get_text(text_id)
+            if text:
+                title = text.title
+            else:
+                logger.warning(f"Text with ID {text_id} not found")
+        
+        external_results = await call_external_search_api(
+            query=query,
+            search_type=search_type,
+            limit=limit,
+            title=title,
+            language=language
+        )
+        
+        segmentation_ids = []
+        results_map = {} 
+        
+        for result in external_results.results:
+            if result.id: 
+                segmentation_ids.append(result.id)
+                results_map[result.id] = {
+                    "distance": result.distance,
+                    "content": result.entity.text if result.entity.text else ""  # Handle None when return_text is false
+                }
+        
+        if not segmentation_ids:
+            logger.info("No segmentation IDs returned from external API")
+            return MultilingualSearchResponse(
+                query=query,
+                search_type=search_type,
+                sources=[],
+                skip=skip,
+                limit=limit,
+                total=0
+            )
+        
+        segments = await Segment.get_segments_by_pecha_ids(
+            pecha_segment_ids=segmentation_ids,
+            text_id=text_id
+        )
+        
+        if not segments:
+            logger.warning(f"No internal segments found for {len(segmentation_ids)} segmentation IDs")
+            return MultilingualSearchResponse(
+                query=query,
+                search_type=search_type,
+                sources=[],
+                skip=skip,
+                limit=limit,
+                total=0
+            )
+        
+        sources = await build_multilingual_sources(segments, results_map)
+        
+        return MultilingualSearchResponse(
+            query=query,
+            search_type=search_type,
+            sources=sources,
+            skip=skip,
+            limit=limit,
+            total=len(segments)
+        )
+        
+    except Exception as e:
+        logger.error(f"Error in multilingual search: {str(e)}", exc_info=True)
+        raise
+
+
+async def call_external_search_api(
+    query: str,
+    search_type: str = "hybrid",
+    limit: int = 10,
+    title: Optional[str] = None,
+    language: Optional[str] = None
+) -> ExternalSearchResponse:
+
+    external_api_url = "https://openpecha-search.onrender.com"
+    endpoint = f"{external_api_url}/search"
+    
+    payload = build_search_payload(query, search_type, limit, title, language)
+    
+    try:
+        async with httpx.AsyncClient(timeout=30.0) as client:
+            response = await client.post(
+                endpoint,
+                json=payload,
+                headers={"Content-Type": "application/json"}
+            )
+            response.raise_for_status()
+            
+            data = response.json()
+            return ExternalSearchResponse(**data)
+            
+    except httpx.HTTPStatusError as e:
+        handle_http_status_error(e)
+    except httpx.RequestError as e:
+        handle_request_error(e)
+
 
 
 async def build_multilingual_sources(segments: List[Segment], results_map: Dict[str, Dict]) -> List[MultilingualSourceResult]:
