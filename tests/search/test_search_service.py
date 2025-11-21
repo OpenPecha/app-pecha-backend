@@ -55,40 +55,6 @@ async def test_get_search_results_for_source_success():
         assert response.search.type == SearchType.SOURCE
 
 @pytest.mark.asyncio
-async def test_get_search_results_for_sheet_success():
-    mock_sheet_search = [
-        SheetResultItem(
-            sheet_title=f"sheet_title_{i}",
-            sheet_summary=f"sheet_summary_{i}",
-            publisher_id=i,
-            sheet_id=i,
-            publisher_name=f"publisher_name_{i}",
-            publisher_url=f"publisher_url_{i}",
-            publisher_image=f"publisher_image_{i}",
-            publisher_position=f"publisher_position_{i}",
-            publisher_organization=f"publisher_organization_{i}",
-        )
-        for i in range(1,6)
-    ]
-
-    with patch("pecha_api.search.search_service._mock_sheet_data_", new_callable=Mock, return_value=mock_sheet_search):
-
-        response = await get_search_results(query="query", search_type=SearchType.SHEET)
-
-        assert response is not None
-        assert isinstance(response, SearchResponse)
-        assert response.sources == []
-        assert response.sheets != []
-        assert len(response.sheets) == 5
-        assert response.sheets[0] is not None
-        assert isinstance(response.sheets[0], SheetResultItem)
-        assert response.sheets[0].sheet_title == mock_sheet_search[0].sheet_title
-        assert response.sheets[0].sheet_summary == mock_sheet_search[0].sheet_summary
-        assert response.sheets[0].publisher_id == mock_sheet_search[0].publisher_id
-        assert response.sheets[0].sheet_id == mock_sheet_search[0].sheet_id
-
-
-@pytest.mark.asyncio
 async def test_get_search_results_for_source_within_text_success():
     text_id = "e6370d09-aa0c-4a41-96ef-deffb89c7810"
     mock_elastic_response = _get_mock_elastic_source_within_text_response_()

@@ -166,16 +166,16 @@ def _generate_search_query(
     return search_query
 
 def _sheet_search(query: str, skip: int, limit: int) -> SearchResponse:
-    mock_sheet_data: List[SheetResultItem] = _mock_sheet_data_()
+    # TODO: Implement actual sheet search functionality
     return SearchResponse(
         search=Search(
             text=query,
             type=SearchType.SHEET
         ),
-        sheets=mock_sheet_data,
+        sheets=[],
         skip=skip,
         limit=limit,
-        total=len(mock_sheet_data)
+        total=0
     )
 
 
