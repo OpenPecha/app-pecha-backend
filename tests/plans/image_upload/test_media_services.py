@@ -4,7 +4,7 @@ from unittest.mock import patch, MagicMock
 from fastapi import UploadFile, HTTPException
 from starlette import status
 
-from pecha_api.plans.media.media_response_models import PlanUploadResponse
+from pecha_api.plans.media.media_response_models import PlanUploadResponse, ImageUrlModel
 from pecha_api.plans.response_message import (
     IMAGE_UPLOAD_SUCCESS,
     INVALID_FILE_FORMAT,
@@ -25,6 +25,7 @@ TEST_PRESIGNED_URL = f"https://s3.amazonaws.com/{TEST_BUCKET_NAME}/{TEST_S3_KEY}
 
 # Mock Path Constants
 IMAGE_UTILS_PATH = "pecha_api.plans.media.media_services.ImageUtils"
+IMAGE_OPEN_PATH = "pecha_api.plans.media.media_services.Image.open"
 UPLOAD_BYTES_PATH = "pecha_api.plans.media.media_services.upload_bytes"
 GENERATE_URL_PATH = "pecha_api.plans.media.media_services.generate_presigned_access_url"
 VALIDATE_AUTHOR_PATH = "pecha_api.plans.media.media_services.validate_and_extract_author_details"
@@ -85,11 +86,19 @@ class TestDataFactory:
         plan_id: str = None,
         uuid: str = TEST_UUID
     ) -> PlanUploadResponse:
-        """Create a mock upload response"""
+        """Create a mock upload response with 3 image versions"""
         path_segment = f"images/plan_images/{plan_id}/{uuid}" if plan_id else f"images/plan_images/{uuid}"
+        base_name = filename.rsplit('.', 1)[0]
+        
+        image_urls = ImageUrlModel(
+            thumbnail=f"https://s3.amazonaws.com/{TEST_BUCKET_NAME}/{path_segment}/thumbnail/{base_name}.jpg",
+            medium=f"https://s3.amazonaws.com/{TEST_BUCKET_NAME}/{path_segment}/medium/{base_name}.jpg",
+            original=f"https://s3.amazonaws.com/{TEST_BUCKET_NAME}/{path_segment}/original/{base_name}.jpg"
+        )
+        
         return PlanUploadResponse(
-            url=f"https://s3.amazonaws.com/{TEST_BUCKET_NAME}/{path_segment}/{filename}",
-            key=f"{path_segment}/{filename}",
+            image=image_urls,
+            key=f"{path_segment}/original/{base_name}.jpg",
             path=path_segment,
             message=IMAGE_UPLOAD_SUCCESS
         )
@@ -108,7 +117,7 @@ class MockManager:
         self.patches = {
             'get_config': patch(GET_CONFIG_PATH),
             'get_int_config': patch(GET_INT_CONFIG_PATH),
-            'image_utils': patch(IMAGE_UTILS_PATH),
+            'image_open': patch(IMAGE_OPEN_PATH),
             'upload_bytes': patch(UPLOAD_BYTES_PATH),
             'presigned_url': patch(GENERATE_URL_PATH),
             'validate_author': patch(VALIDATE_AUTHOR_PATH),
@@ -124,9 +133,18 @@ class MockManager:
         # Configure mock behaviors
         self.mocks['get_config'].side_effect = lambda key: self.config.get(key)
         self.mocks['get_int_config'].side_effect = lambda key: self.config.get(key)
-        self.mocks['image_utils'].return_value.validate_and_compress_image.return_value = io.BytesIO(b"compressed_image_content")
-        self.mocks['upload_bytes'].return_value = TEST_S3_KEY
-        self.mocks['presigned_url'].return_value = TEST_PRESIGNED_URL
+        
+        # Mock PIL Image
+        mock_image = MagicMock()
+        mock_image.width = 1920
+        mock_image.height = 1080
+        mock_image.mode = 'RGB'
+        mock_image.copy.return_value = mock_image
+        self.mocks['image_open'].return_value = mock_image
+        
+        # Mock S3 operations - return different keys for different versions
+        self.mocks['upload_bytes'].side_effect = lambda **kwargs: kwargs['s3_key']
+        self.mocks['presigned_url'].side_effect = lambda **kwargs: f"https://s3.amazonaws.com/{TEST_BUCKET_NAME}/{kwargs['s3_key']}"
         self.mocks['validate_author'].return_value = TestDataFactory.create_mock_author()
         self.mocks['uuid'].return_value = TEST_UUID
         
@@ -242,16 +260,20 @@ class TestImageUploadSuccess:
     def _assert_successful_response(self, result: PlanUploadResponse, expected_path_fragment: str):
         """Helper method to assert successful upload response"""
         assert isinstance(result, PlanUploadResponse)
-        assert result.url == TEST_PRESIGNED_URL
+        assert isinstance(result.image, ImageUrlModel)
+        assert result.image.thumbnail is not None
+        assert result.image.medium is not None
+        assert result.image.original is not None
         assert expected_path_fragment in result.path
         assert result.message == IMAGE_UPLOAD_SUCCESS
     
     def _assert_upload_dependencies_called(self, mocks: dict, token: str = VALID_TOKEN):
         """Helper method to assert that all upload dependencies were called"""
         mocks['validate_author'].assert_called_once_with(token=token)
-        mocks['image_utils'].return_value.validate_and_compress_image.assert_called_once()
-        mocks['upload_bytes'].assert_called_once()
-        mocks['presigned_url'].assert_called_once()
+        mocks['image_open'].assert_called_once()
+        # Should be called 3 times (thumbnail, medium, original)
+        assert mocks['upload_bytes'].call_count == 3
+        assert mocks['presigned_url'].call_count == 3
     
     def test_successful_upload_without_plan_id(self, mock_upload_file):
         """Test successful upload without plan_id"""
@@ -266,9 +288,15 @@ class TestImageUploadSuccess:
             
             self._assert_upload_dependencies_called(mock_manager.mocks)
             
-            upload_args = mock_manager.mocks['upload_bytes'].call_args[1]
-            assert upload_args.get("bucket_name") == TEST_BUCKET_NAME
-            assert f"images/plan_images/{TEST_UUID}" in upload_args.get("s3_key")
+            # Check that all 3 versions were uploaded
+            upload_calls = mock_manager.mocks['upload_bytes'].call_args_list
+            assert len(upload_calls) == 3
+            
+            # Verify thumbnail, medium, and original uploads
+            s3_keys = [call[1]['s3_key'] for call in upload_calls]
+            assert any('thumbnail' in key for key in s3_keys)
+            assert any('medium' in key for key in s3_keys)
+            assert any('original' in key for key in s3_keys)
             
             self._assert_successful_response(result, f"images/plan_images/{TEST_UUID}")
     
@@ -283,9 +311,11 @@ class TestImageUploadSuccess:
                 file=mock_upload_file
             )
             
-            upload_args = mock_manager.mocks['upload_bytes'].call_args[1]
-            s3_key = upload_args.get("s3_key")
-            assert f"images/plan_images/{TEST_PLAN_ID}/{TEST_UUID}" in s3_key
+            # Check all upload calls contain plan_id
+            upload_calls = mock_manager.mocks['upload_bytes'].call_args_list
+            for call in upload_calls:
+                s3_key = call[1]['s3_key']
+                assert f"images/plan_images/{TEST_PLAN_ID}/{TEST_UUID}" in s3_key
             assert TEST_PLAN_ID in result.path
     
     def test_upload_with_different_content_types(self, mock_upload_file):
@@ -428,17 +458,13 @@ class TestImageUploadValidation:
 class TestImageUploadErrorHandling:
     """Test cases for error handling during upload process"""
     
-    def test_image_compression_failure(self, mock_upload_file, test_config):
-        """Test handling of image compression failures"""
+    def test_image_open_failure(self, mock_upload_file, test_config):
+        """Test handling of image open failures"""
         with patch(GET_CONFIG_PATH, side_effect=lambda key: test_config.get(key)), \
              patch(GET_INT_CONFIG_PATH, side_effect=lambda key: test_config.get(key)), \
              patch(VALIDATE_AUTHOR_PATH), \
-             patch(IMAGE_UTILS_PATH) as mock_class:
-            mock_instance = mock_class.return_value
-            mock_instance.validate_and_compress_image.side_effect = HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST,
-                detail="Failed to process the image"
-            )
+             patch(IMAGE_OPEN_PATH) as mock_image_open:
+            mock_image_open.side_effect = Exception("Cannot identify image file")
             
             from pecha_api.plans.media.media_services import upload_plan_image
             with pytest.raises(HTTPException) as exc_info:
@@ -449,7 +475,7 @@ class TestImageUploadErrorHandling:
                 )
                 
             assert exc_info.value.status_code == status.HTTP_400_BAD_REQUEST
-            assert exc_info.value.detail == "Failed to process the image"
+            assert exc_info.value.detail == "Invalid image file"
     
     def test_s3_upload_failure(self, mock_upload_file):
         """Test handling of S3 upload failures"""
@@ -498,13 +524,16 @@ class TestImageUploadIntegration:
             
             # Verify all components were called in correct order
             mock_manager.mocks['validate_author'].assert_called_once_with(token=VALID_TOKEN)
-            mock_manager.mocks['image_utils'].return_value.validate_and_compress_image.assert_called_once()
-            mock_manager.mocks['upload_bytes'].assert_called_once()
-            mock_manager.mocks['presigned_url'].assert_called_once()
+            mock_manager.mocks['image_open'].assert_called_once()
+            assert mock_manager.mocks['upload_bytes'].call_count == 3
+            assert mock_manager.mocks['presigned_url'].call_count == 3
             
             # Verify response structure
             assert isinstance(result, PlanUploadResponse)
-            assert result.url == TEST_PRESIGNED_URL
+            assert isinstance(result.image, ImageUrlModel)
+            assert result.image.thumbnail is not None
+            assert result.image.medium is not None
+            assert result.image.original is not None
             assert TEST_PLAN_ID in result.path
             assert TEST_UUID in result.path
             assert result.message == IMAGE_UPLOAD_SUCCESS
@@ -523,11 +552,15 @@ class TestImageUploadIntegration:
                 file=mock_upload_file
             )
             
-            # Verify upload_bytes was called with correct parameters
-            upload_args = mock_manager.mocks['upload_bytes'].call_args[1]
-            assert upload_args['bucket_name'] == TEST_BUCKET_NAME
-            assert upload_args['content_type'] == "image/png"
-            assert TEST_PLAN_ID in upload_args['s3_key']
-            assert "custom_image.png" in upload_args['s3_key']
+            # Verify upload_bytes was called 3 times with correct parameters
+            upload_calls = mock_manager.mocks['upload_bytes'].call_args_list
+            assert len(upload_calls) == 3
+            
+            for call in upload_calls:
+                upload_args = call[1]
+                assert upload_args['bucket_name'] == TEST_BUCKET_NAME
+                assert upload_args['content_type'] == "image/jpeg"  # All converted to JPEG
+                assert TEST_PLAN_ID in upload_args['s3_key']
+                assert "custom_image" in upload_args['s3_key']
             
             assert isinstance(result, PlanUploadResponse)

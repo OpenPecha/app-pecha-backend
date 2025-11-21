@@ -1,10 +1,10 @@
-from fastapi import APIRouter, Query
-from typing import Optional
+from fastapi import APIRouter, Query, Depends
+from typing import Optional, Annotated
 from uuid import UUID
 from starlette import status
 
-from pecha_api.plans.public.plan_response_models import PublicPlansResponse, PublicPlanDTO, PlanDayDTO
-from pecha_api.plans.public.plan_models import PlanDaysResponse
+from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
+from pecha_api.plans.public.plan_response_models import PublicPlansResponse, PublicPlanDTO,PlanDaysResponse , PlanDayDTO
 from pecha_api.plans.public.plan_service import (
     get_published_plans, 
     get_published_plan, 
@@ -12,6 +12,9 @@ from pecha_api.plans.public.plan_service import (
     get_plan_day_details
 )
 
+
+oauth2_scheme = HTTPBearer()
+# Create router for public plan endpoints
 public_plans_router = APIRouter(
     prefix="/plans",
     tags=["Public Plans"]
@@ -36,10 +39,12 @@ async def get_plan_details(plan_id: UUID):
 
 
 @public_plans_router.get("/{plan_id}/days", status_code=status.HTTP_200_OK, response_model=PlanDaysResponse)
-async def get_plan_days_list(plan_id: UUID):
-    return await get_plan_days(plan_id=plan_id)
+async def get_plan_days_list(authentication_credential: Annotated[HTTPAuthorizationCredentials, Depends(oauth2_scheme)],plan_id: UUID):
+    """Get all days for a specific plan"""
+    return await get_plan_days(token=authentication_credential.credentials, plan_id=plan_id)
 
 
 @public_plans_router.get("/{plan_id}/days/{day_number}", status_code=status.HTTP_200_OK, response_model=PlanDayDTO)
-async def get_plan_day_content(plan_id: UUID, day_number: int):
-    return await get_plan_day_details(plan_id=plan_id, day_number=day_number)
+async def get_plan_day_content(authentication_credential: Annotated[HTTPAuthorizationCredentials, Depends(oauth2_scheme)],plan_id: UUID, day_number: int):
+    """Get specific day's content with tasks"""
+    return await get_plan_day_details(token=authentication_credential.credentials, plan_id=plan_id, day_number=day_number)

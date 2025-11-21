@@ -10,6 +10,7 @@ from typing import List, Dict, Union
 from pecha_api.texts.texts_response_models import (
     TextDTO,
     TableOfContent,
+    TableOfContentType,
     Section,
     TextSegment
 )
@@ -150,6 +151,7 @@ async def test_get_table_of_content_id_and_respective_section_by_segment_id_succ
         TableOfContent(
             id="123e4567-e89b-12d3-a456-426614174000",
             text_id="efb26a06-f373-450b-ba57-e7a8d4dd5b64",
+            type=TableOfContentType.TEXT,
             sections=[
                 Section(
                     id="123e4567-e89b-12d3-a456-426614174001",
@@ -188,6 +190,7 @@ async def test_get_table_of_content_id_and_respective_section_by_segment_id_wher
         TableOfContent(
             id="123e4567-e89b-12d3-a456-426614174000",
             text_id="efb26a06-f373-450b-ba57-e7a8d4dd5b64",
+            type=TableOfContentType.TEXT,
             sections=[
                 Section(
                     id="123e4567-e89b-12d3-a456-426614174001",

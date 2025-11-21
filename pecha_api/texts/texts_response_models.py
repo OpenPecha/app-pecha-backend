@@ -1,5 +1,6 @@
 from typing import List, Optional, Dict, Union
 from uuid import UUID
+from enum import Enum
 
 from pecha_api.collections.collections_response_models import CollectionModel
 
@@ -8,6 +9,7 @@ from pydantic import BaseModel
 from .texts_enums import TextType, PaginationDirection
 
 class CreateTextRequest(BaseModel):
+    pecha_text_id:Optional[str] = None
     title: str
     language: Optional[str] = None
     isPublished: bool = False
@@ -16,6 +18,9 @@ class CreateTextRequest(BaseModel):
     type: TextType
     categories: Optional[List[str]] = None
     views: Optional[int] = 0
+    source_link:Optional[str] = None
+    ranking:Optional[int] = None
+    license:Optional[str] = None
 
 class UpdateTextRequest(BaseModel):
     title: str
@@ -23,6 +28,7 @@ class UpdateTextRequest(BaseModel):
 
 class TextDTO(BaseModel):
     id: str
+    pecha_text_id:Optional[str] = None
     title: str
     language: Optional[str] = None
     group_id: str
@@ -36,7 +42,10 @@ class TextDTO(BaseModel):
     categories: Optional[List[str]] = None
     views: Optional[int] = 0
     likes: Optional[List[str]] = []
-
+    source_link:Optional[str] = None
+    ranking:Optional[int] = None
+    license:Optional[str] = None
+    
 class TextDTOResponse(BaseModel):
     texts: List[TextDTO]
     skip: int
@@ -80,7 +89,8 @@ class DetailTableOfContentResponse(BaseModel):
     total_segments: int
 
 class TextSegment(BaseModel):
-    segment_id: str
+    segment_id: Optional[str] = None
+    pecha_segment_id: Optional[str] = None
     segment_number: int
 
 class Section(BaseModel):
@@ -94,8 +104,12 @@ class Section(BaseModel):
     updated_date: Optional[str] = None
     published_date: Optional[str] = None
 
+class TableOfContentType(Enum):
+    TEXT = "text"
+    SHEET = "sheet"
 class TableOfContent(BaseModel):
     id: Optional[str] = None
+    type: TableOfContentType
     text_id: str
     sections: List[Section]
 
@@ -128,6 +142,9 @@ class TextVersion(BaseModel):
     updated_date: str
     published_date: str
     published_by: str
+    source_link:Optional[str] = None
+    ranking:Optional[int] = None
+    license:Optional[str] = None
 
 class TextVersionResponse(BaseModel):
     text: Optional[TextDTO] = None

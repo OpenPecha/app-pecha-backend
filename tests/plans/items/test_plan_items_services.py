@@ -24,6 +24,7 @@ def test_create_plan_item_success():
 
     author = MagicMock()
     author.email = "author@example.com"
+    author.is_admin = False
 
     with patch("pecha_api.plans.items.plan_items_services.SessionLocal") as mock_session_local, \
          patch("pecha_api.plans.items.plan_items_services.validate_and_extract_author_details") as mock_validate_author, \
@@ -45,7 +46,7 @@ def test_create_plan_item_success():
         resp = create_plan_item(token="dummy-token", plan_id=plan_id)
 
         assert mock_validate_author.call_count == 1
-        mock_get_plan_by_id.assert_called_once_with(db=db_session, plan_id=plan_id, created_by=author.email)
+        mock_get_plan_by_id.assert_called_once_with(db=db_session, plan_id=plan_id, created_by=author.email, is_admin=author.is_admin)
         mock_get_last_day_number.assert_called_once_with(db=db_session, plan_id=plan_id)
 
         # Verify PlanItem created with correct fields and passed to repository
@@ -73,12 +74,14 @@ def test_create_plan_item_propagates_repository_error():
 
     author = MagicMock()
     author.email = "author@example.com"
+    author.is_admin = False
 
     with patch("pecha_api.plans.items.plan_items_services.SessionLocal") as mock_session_local, \
          patch("pecha_api.plans.items.plan_items_services.validate_and_extract_author_details") as mock_validate_author, \
          patch("pecha_api.plans.items.plan_items_services.get_plan_by_id_and_created_by") as mock_get_plan_by_id, \
          patch("pecha_api.plans.items.plan_items_services.get_last_day_number") as mock_get_last_day_number, \
-         patch("pecha_api.plans.items.plan_items_services.save_plan_item") as mock_save_plan_item:
+         patch("pecha_api.plans.items.plan_items_services.save_plan_item") as mock_save_plan_item, \
+         patch("pecha_api.plans.items.plan_items_services.PlanItem") as mock_plan_item:
         _ = _mock_session_local(mock_session_local)
 
         mock_validate_author.return_value = author
@@ -114,6 +117,7 @@ def test_delete_plan_day_success_reorders():
 
     author = MagicMock()
     author.email = "author@example.com"
+    author.is_admin = False
 
     with patch("pecha_api.plans.items.plan_items_services.SessionLocal") as mock_session_local, \
          patch("pecha_api.plans.items.plan_items_services.validate_and_extract_author_details") as mock_validate_author, \
@@ -132,7 +136,7 @@ def test_delete_plan_day_success_reorders():
         delete_plan_day_by_id(token="dummy-token", plan_id=plan_id, day_id=day_id)
 
         assert mock_validate_author.call_count == 1
-        mock_get_plan_by_id.assert_called_once_with(db=db_session, plan_id=plan_id, created_by=author.email)
+        mock_get_plan_by_id.assert_called_once_with(db=db_session, plan_id=plan_id, created_by=author.email, is_admin=author.is_admin)
         mock_get_day.assert_called_once_with(db=db_session, plan_id=plan_id, day_id=day_id)
         mock_delete.assert_called_once_with(db=db_session, plan_id=plan_id, day_id=item_to_delete.id)
 
@@ -229,6 +233,7 @@ def test_update_plans_day_number_success_calls_bulk_update():
 
     author = MagicMock()
     author.email = "author@example.com"
+    author.is_admin = False
 
     payload = ReorderDaysRequest(
         days=[
@@ -251,7 +256,7 @@ def test_update_plans_day_number_success_calls_bulk_update():
 
         # validate called once in the service
         assert mock_validate_author.call_count == 1
-        mock_get_plan_by_id.assert_called_once_with(db=db_session, plan_id=plan_id, created_by=author.email)
+        mock_get_plan_by_id.assert_called_once_with(db=db_session, plan_id=plan_id, created_by=author.email, is_admin=author.is_admin)
         mock_bulk_update.assert_called_once()
         called_kwargs = mock_bulk_update.call_args.kwargs
         assert called_kwargs["db"] is db_session

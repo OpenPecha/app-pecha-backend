@@ -1,26 +1,22 @@
-"""
-Test suite for public plan view endpoints.
-
-Tests the following endpoints:
-1. GET /api/v1/public/plans - List published plans with filtering and pagination
-2. GET /api/v1/public/plans/{plan_id} - Get published plan details
-"""
-
 import pytest
 from uuid import uuid4
-from unittest.mock import patch, MagicMock
+from unittest.mock import patch, AsyncMock
 from fastapi import HTTPException
 from fastapi.testclient import TestClient
 from starlette import status
 
 from pecha_api.app import api
-from pecha_api.plans.public.plan_response_models import PublicPlansResponse, PublicPlanDTO, AuthorDTO
-from pecha_api.plans.plans_enums import PlanStatus, DifficultyLevel
+from pecha_api.plans.public.plan_response_models import PublicPlansResponse, PublicPlanDTO, AuthorDTO, PlanDayBasic, PlanDayDTO, TaskDTO, SubTaskDTO,PlanDaysResponse
+from pecha_api.plans.plans_enums import PlanStatus, DifficultyLevel,ContentType
 from pecha_api.error_contants import ErrorConstants
+from pecha_api.plans.public.plan_views import get_plan_days_list, get_plan_day_content
 
 
 client = TestClient(api)
 
+class _Creds:
+    def __init__(self, token: str):
+        self.credentials = token
 
 @pytest.fixture
 def sample_author_dto():
@@ -29,8 +25,7 @@ def sample_author_dto():
         id=uuid4(),
         firstname="John",
         lastname="Doe",
-        image_url="https://bucket.s3.amazonaws.com/presigned-url",
-        image_key="images/author_avatars/author-id/avatar.jpg"
+        image=None
     )
 
 
@@ -43,7 +38,7 @@ def sample_plan_dto(sample_author_dto):
         description="A comprehensive guide to meditation practices",
         language="en",
         difficulty_level=DifficultyLevel.BEGINNER,
-        image_url="https://bucket.s3.amazonaws.com/presigned-url",
+        image=None,
         total_days=30,
         tags=["meditation", "mindfulness", "beginner"],
         author=sample_author_dto
@@ -83,7 +78,13 @@ async def test_get_plans_success(sample_plans_response):
         assert plan["title"] == "Introduction to Meditation"
         assert plan["language"] == "en"
         assert plan["total_days"] == 30
+        
         assert "author" in plan
+        assert plan["author"] is not None
+        assert "id" in plan["author"]
+        assert plan["author"]["firstname"] == "John"
+        assert plan["author"]["lastname"] == "Doe"
+        assert "image" in plan["author"]
         
         mock_service.assert_called_once_with(
             search=None,
@@ -279,9 +280,8 @@ async def test_get_plan_details_success(sample_plan_dto):
         assert data["author"]["firstname"] == "John"
         assert data["author"]["lastname"] == "Doe"
         
-        assert "image_url" in data
-        assert data["author"]["image_url"] is not None
-        assert data["author"]["image_key"] is not None
+        assert "image" in data
+        assert "image" in data["author"]
         
         mock_service.assert_called_once_with(plan_id=plan_id)
 
@@ -318,12 +318,9 @@ async def test_get_plan_details_without_author(sample_plan_dto):
         description="Test Description",
         language="en",
         difficulty_level=DifficultyLevel.BEGINNER,
-        image_url=None,
-        image_key=None,
+        image=None,
         total_days=10,
         tags=[],
-        status=PlanStatus.PUBLISHED,
-        subscription_count=0,
         author=None
     )
     
@@ -348,3 +345,161 @@ async def test_get_plan_details_service_error():
         
         assert response.status_code == status.HTTP_500_INTERNAL_SERVER_ERROR
         assert "Failed to fetch published plan details" in response.json()["detail"]
+
+@pytest.mark.asyncio
+async def test_get_plan_days_list_success():
+    """Test successful retrieval of plan days list"""
+    creds = _Creds(token="valid_token_123")
+    plan_id = uuid4()
+    
+    expected_days = [
+        PlanDayBasic(id=str(uuid4()), day_number=1),
+        PlanDayBasic(id=str(uuid4()), day_number=2),
+    ]
+    expected_response = PlanDaysResponse(days=expected_days)
+
+    with patch(
+        "pecha_api.plans.public.plan_views.get_plan_days",
+        return_value=expected_response,
+        new_callable=AsyncMock,
+    ) as mock_service:
+        response = await get_plan_days_list(
+            authentication_credential=creds,
+            plan_id=plan_id
+        )
+
+        mock_service.assert_called_once_with(
+            token="valid_token_123",
+            plan_id=plan_id
+        )
+
+        assert response == expected_response
+        assert len(response.days) == 2
+        assert response.days[0].day_number == 1
+        assert response.days[1].day_number == 2
+
+
+@pytest.mark.asyncio
+async def test_get_plan_days_list_empty_days():
+    """Test retrieval when plan has no days"""
+    creds = _Creds(token="valid_token_456")
+    plan_id = uuid4()
+    
+    expected_response = PlanDaysResponse(days=[])
+
+    with patch(
+        "pecha_api.plans.public.plan_views.get_plan_days",
+        return_value=expected_response,
+        new_callable=AsyncMock,
+    ) as mock_service:
+        response = await get_plan_days_list(
+            authentication_credential=creds,
+            plan_id=plan_id
+        )
+
+        mock_service.assert_called_once_with(
+            token="valid_token_456",
+            plan_id=plan_id
+        )
+
+        assert response == expected_response
+        assert len(response.days) == 0
+
+@pytest.mark.asyncio
+async def test_get_plan_day_content_success():
+    """Test successful retrieval of plan day content"""
+    creds = _Creds(token="valid_token_123")
+    plan_id = uuid4()
+    day_number = 1
+    
+    expected_subtask = SubTaskDTO(
+        id= uuid4(),
+        content_type=ContentType.TEXT,
+        content="Test subtask content",
+        display_order=1
+    )
+    
+    expected_task = TaskDTO(
+        id=uuid4(),
+        title="Test Task",
+        estimated_time=30,
+        display_order=1,
+        subtasks=[expected_subtask]
+    )
+    
+    expected_response = PlanDayDTO(
+        id=uuid4(),
+        day_number=day_number,
+        tasks=[expected_task]
+    )
+
+    with patch(
+        "pecha_api.plans.public.plan_views.get_plan_day_details",
+        return_value=expected_response,
+        new_callable=AsyncMock,
+    ) as mock_service:
+        response = await get_plan_day_content(
+            authentication_credential=creds,
+            plan_id=plan_id,
+            day_number=day_number
+        )
+
+        mock_service.assert_called_once_with(
+            token="valid_token_123",
+            plan_id=plan_id,
+            day_number=day_number
+        )
+
+        assert response == expected_response
+        assert response.id == expected_response.id
+        assert response.day_number == day_number
+        assert len(response.tasks) == 1
+        
+        task = response.tasks[0]
+        assert task.id == expected_task.id
+        assert task.title == "Test Task"
+        assert task.estimated_time == 30
+        assert task.display_order == 1
+        assert len(task.subtasks) == 1
+        
+        subtask = task.subtasks[0]
+        assert subtask.id == expected_subtask.id
+        assert subtask.content_type == ContentType.TEXT
+        assert subtask.content == "Test subtask content"
+        assert subtask.display_order == 1
+
+
+@pytest.mark.asyncio
+async def test_get_plan_day_content_no_tasks():
+    """Test retrieval of plan day with no tasks"""
+    creds = _Creds(token="valid_token_456")
+    plan_id = uuid4()
+    day_number = 2
+    
+    expected_response = PlanDayDTO(
+        id= uuid4(),
+        day_number=day_number,
+        tasks=[]
+    )
+
+    with patch(
+        "pecha_api.plans.public.plan_views.get_plan_day_details",
+        return_value=expected_response,
+        new_callable=AsyncMock,
+    ) as mock_service:
+        response = await get_plan_day_content(
+            authentication_credential=creds,
+            plan_id=plan_id,
+            day_number=day_number
+        )
+
+        mock_service.assert_called_once_with(
+            token="valid_token_456",
+            plan_id=plan_id,
+            day_number=day_number
+        )
+
+        assert response == expected_response
+        assert response.id == expected_response.id
+        assert response.day_number == day_number
+        assert len(response.tasks) == 0

@@ -25,6 +25,7 @@ from pecha_api.texts.texts_response_models import (
     DetailTextSegment,
     TextDTO,
     TableOfContent,
+    TableOfContentType,
     Section,
     TextVersionResponse,
     TextsCategoryResponse,
@@ -211,6 +212,7 @@ async def test_get_table_of_contents_by_text_id_cache_for_table_of_contents_by_t
     mock_cache_data = TableOfContent(
             id="table_of_content_id",
             text_id="text_id_1",
+            type=TableOfContentType.TEXT,
             sections=[
                 Section(
                     id="id_1",
@@ -242,6 +244,7 @@ async def test_set_table_of_contents_by_text_id_cache_for_table_of_contents_by_t
     mock_cache_data = TableOfContent(
             id="table_of_content_id",
             text_id="text_id_1",
+            type=TableOfContentType.TEXT,
             sections=[
                 Section(
                     id="id_1",
@@ -340,6 +343,7 @@ async def test_set_table_of_contents_by_text_id_cache_success():
     mock_cache_data = TableOfContent(
             id="table_of_content_id",
             text_id="text_id_1",
+            type=TableOfContentType.TEXT,
             sections=[
                 Section(
                     id="id_1",
@@ -640,6 +644,7 @@ async def test_get_table_of_contents_by_text_id_cache_with_dict_response():
         "contents": [{
             "id": "table_of_content_id",
             "text_id": "text_id_1",
+            "type": "text",
             "sections": []
         }]
     }
@@ -692,6 +697,7 @@ async def test_get_table_of_content_by_sheet_id_cache_with_data():
     mock_cache_data = TableOfContent(
         id="table_of_content_id",
         text_id="text_id_1",
+        type=TableOfContentType.SHEET,
         sections=[]
     )
     
@@ -708,6 +714,7 @@ async def test_get_table_of_content_by_sheet_id_cache_with_dict_response():
     mock_cache_dict = {
         "id": "table_of_content_id",
         "text_id": "text_id_1",
+        "type": "sheet",
         "sections": []
     }
     
@@ -723,7 +730,8 @@ async def test_set_table_of_content_by_sheet_id_cache_success():
     #Test set_table_of_content_by_sheet_id_cache success#
     mock_cache_data = TableOfContent(
         id="table_of_content_id",
-        text_id="text_id_1", 
+        text_id="text_id_1",
+        type=TableOfContentType.SHEET,
         sections=[]
     )
     
@@ -842,6 +850,7 @@ async def test_update_text_details_cache_for_sheet_success():
     mock_table_of_content = TableOfContent(
         id="toc_id",
         text_id="sheet_id_1",
+        type=TableOfContentType.SHEET,
         sections=[]
     )
     

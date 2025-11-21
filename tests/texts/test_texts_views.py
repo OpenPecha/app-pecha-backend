@@ -13,6 +13,7 @@ from pecha_api.texts.texts_response_models import (
     TextVersionResponse,
     TextVersion,
     TableOfContent,
+    TableOfContentType,
     Section
 )
 
@@ -21,6 +22,7 @@ client = TestClient(api)
 # Test data
 MOCK_TEXT_DTO = TextDTO(
     id="123e4567-e89b-12d3-a456-426614174000",
+    pecha_text_id="test_pecha_id",
     title="Test Text",
     language="bo",
     group_id="123e4567-e89b-12d3-a456-426614174000",
@@ -31,7 +33,10 @@ MOCK_TEXT_DTO = TextDTO(
     published_date="2025-01-01T00:00:00",
     published_by="test_user",
     categories=[],
-    views=0
+    views=0,
+    source_link="https://test-source.com",
+    ranking=1,
+    license="CC0"
 )
 
 # Create a simple section for the table of contents
@@ -51,6 +56,7 @@ mock_section = Section(
 MOCK_TABLE_OF_CONTENT = TableOfContent(
     id="123e4567-e89b-12d3-a456-426614174001",
     text_id="123e4567-e89b-12d3-a456-426614174000",
+    type=TableOfContentType.TEXT,
     sections=[mock_section]
 )
 
@@ -85,23 +91,19 @@ MOCK_TEXT_VERSION_RESPONSE = TextVersionResponse(
     versions=[MOCK_TEXT_VERSION]
 )
 
-# Mock authentication token
 VALID_TOKEN = "valid_token_123"
 
 @pytest.mark.asyncio
 async def test_get_text_by_text_id(mocker):
     """Test GET /texts with text_id parameter"""
-    # Mock the service function
     mock_get_text = mocker.patch(
         'pecha_api.texts.texts_views.get_text_by_text_id_or_collection',
         new_callable=AsyncMock,
         return_value=MOCK_TEXT_DTO
     )
     
-    # The text ID that will be used in the request
     test_text_id = "123e4567-e89b-12d3-a456-426614174000"
     
-    # Make the request - using query parameter instead of path parameter
     async with AsyncClient(transport=ASGITransport(app=api), base_url="http://test") as ac:
         response = await ac.get(f"/texts?text_id={test_text_id}&language=bo&skip=0&limit=10")
     
@@ -166,13 +168,17 @@ async def test_create_text_success(mocker):
     # Test data - match the CreateTextRequest model
     # Note: The mock returns MOCK_TEXT_DTO which has title="Test Text"
     create_data = {
+        "pecha_text_id": "test_pecha_id",
         "title": "Test Text",  # Match the mock data
         "language": "bo",
         "isPublished": True,
         "group_id": "123e4567-e89b-12d3-a456-426614174000",
         "type": "version",
         "published_by": "test_user",
-        "categories": []
+        "categories": [],
+        "source_link": "https://test-source.com",
+        "ranking": 1,
+        "license": "CC0"
     }
     
     # Make the request
@@ -276,6 +282,7 @@ async def test_create_table_of_content_success(mocker):
     toc_data = {
         "id": "123e4567-e89b-12d3-a456-426614174001",
         "text_id": "123e4567-e89b-12d3-a456-426614174000",
+        "type": "text",
         "sections": [
             {
                 "id": "123e4567-e89b-12d3-a456-426614174002",
@@ -333,11 +340,320 @@ async def test_get_contents_not_found(mocker):
     """Test GET /texts/{text_id}/contents with non-existent text"""
     mocker.patch(
         'pecha_api.texts.texts_views.get_table_of_contents_by_text_id',
-        side_effect=HTTPException(status_code=404, detail="Text not found")
+        side_effect=HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Text not found")
     )
     
     async with AsyncClient(transport=ASGITransport(app=api), base_url="http://test") as ac:
         response = await ac.get("/texts/non_existent_id/contents")
     
-    assert response.status_code == 404
+    assert response.status_code == status.HTTP_404_NOT_FOUND
     assert response.json()["detail"] == "Text not found"
+
+@pytest.mark.asyncio
+async def test_get_commentaries_success(mocker):
+    """Test GET /texts/{text_id}/commentaries with valid text_id"""
+    mock_commentary_1 = TextDTO(
+        id="commentary-1-uuid",
+        pecha_text_id="commentary_pecha_1",
+        title="Commentary on Heart Sutra",
+        language="bo",
+        group_id="123e4567-e89b-12d3-a456-426614174000",
+        type="commentary",
+        is_published=True,
+        created_date="2025-01-01T00:00:00",
+        updated_date="2025-01-01T00:00:00",
+        published_date="2025-01-01T00:00:00",
+        published_by="commentator_1",
+        categories=["123e4567-e89b-12d3-a456-426614174000"],
+        views=100,
+        source_link="https://commentary-source-1.com",
+        ranking=1,
+        license="CC0"
+    )
+    
+    mock_commentary_2 = TextDTO(
+        id="commentary-2-uuid",
+        pecha_text_id="commentary_pecha_2",
+        title="Another Commentary on Heart Sutra",
+        language="bo",
+        group_id="123e4567-e89b-12d3-a456-426614174000",
+        type="commentary",
+        is_published=True,
+        created_date="2025-01-02T00:00:00",
+        updated_date="2025-01-02T00:00:00",
+        published_date="2025-01-02T00:00:00",
+        published_by="commentator_2",
+        categories=["123e4567-e89b-12d3-a456-426614174000"],
+        views=50,
+        source_link="https://commentary-source-2.com",
+        ranking=2,
+        license="CC0"
+    )
+    
+    mock_commentaries = [mock_commentary_1, mock_commentary_2]
+    
+    mock_get_commentaries = mocker.patch(
+        'pecha_api.texts.texts_views.get_commentaries_by_text_id',
+        return_value=mock_commentaries
+    )
+    
+    async with AsyncClient(transport=ASGITransport(app=api), base_url="http://test") as ac:
+        response = await ac.get(
+            "/texts/123e4567-e89b-12d3-a456-426614174000/commentaries",
+            params={"skip": 0, "limit": 10}
+        )
+    
+    assert response.status_code == status.HTTP_200_OK
+    data = response.json()
+    assert len(data) == 2
+    assert data[0]["title"] == "Commentary on Heart Sutra"
+    assert data[0]["type"] == "commentary"
+    assert data[1]["title"] == "Another Commentary on Heart Sutra"
+    
+    mock_get_commentaries.assert_called_once_with(
+        text_id="123e4567-e89b-12d3-a456-426614174000",
+        skip=0,
+        limit=10
+    )
+
+
+@pytest.mark.asyncio
+async def test_get_commentaries_empty_list(mocker):
+    """Test GET /texts/{text_id}/commentaries when no commentaries exist"""
+    mock_get_commentaries = mocker.patch(
+        'pecha_api.texts.texts_views.get_commentaries_by_text_id',
+        return_value=[]
+    )
+    
+    async with AsyncClient(transport=ASGITransport(app=api), base_url="http://test") as ac:
+        response = await ac.get(
+            "/texts/123e4567-e89b-12d3-a456-426614174000/commentaries",
+            params={"skip": 0, "limit": 10}
+        )
+    
+    assert response.status_code == status.HTTP_200_OK
+    data = response.json()
+    assert len(data) == 0
+    assert data == []
+    
+    mock_get_commentaries.assert_called_once()
+
+
+@pytest.mark.asyncio
+async def test_get_commentaries_with_pagination(mocker):
+    """Test GET /texts/{text_id}/commentaries with pagination parameters"""
+    mock_commentary = TextDTO(
+        id="commentary-uuid",
+        pecha_text_id="commentary_pecha",
+        title="Paginated Commentary",
+        language="bo",
+        group_id="123e4567-e89b-12d3-a456-426614174000",
+        type="commentary",
+        is_published=True,
+        created_date="2025-01-01T00:00:00",
+        updated_date="2025-01-01T00:00:00",
+        published_date="2025-01-01T00:00:00",
+        published_by="commentator",
+        categories=["123e4567-e89b-12d3-a456-426614174000"],
+        views=10,
+        source_link="https://commentary-source.com",
+        ranking=1,
+        license="CC0"
+    )
+    
+    mock_get_commentaries = mocker.patch(
+        'pecha_api.texts.texts_views.get_commentaries_by_text_id',
+        return_value=[mock_commentary]
+    )
+    
+    async with AsyncClient(transport=ASGITransport(app=api), base_url="http://test") as ac:
+        response = await ac.get(
+            "/texts/123e4567-e89b-12d3-a456-426614174000/commentaries",
+            params={"skip": 5, "limit": 20}
+        )
+    
+    assert response.status_code == status.HTTP_200_OK
+    data = response.json()
+    assert len(data) == 1
+    
+    mock_get_commentaries.assert_called_once_with(
+        text_id="123e4567-e89b-12d3-a456-426614174000",
+        skip=5,
+        limit=20
+    )
+
+
+@pytest.mark.asyncio
+async def test_get_commentaries_text_not_found(mocker):
+    """Test GET /texts/{text_id}/commentaries with non-existent text"""
+    mock_get_commentaries = mocker.patch(
+        'pecha_api.texts.texts_views.get_commentaries_by_text_id',
+        side_effect=HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Text not found"
+        )
+    )
+    
+    async with AsyncClient(transport=ASGITransport(app=api), base_url="http://test") as ac:
+        response = await ac.get(
+            "/texts/non-existent-text-id/commentaries",
+            params={"skip": 0, "limit": 10}
+        )
+    
+    assert response.status_code == status.HTTP_404_NOT_FOUND
+    assert response.json()["detail"] == "Text not found"
+    
+    mock_get_commentaries.assert_called_once()
+
+
+@pytest.mark.asyncio
+async def test_get_commentaries_default_pagination(mocker):
+    """Test GET /texts/{text_id}/commentaries with default pagination values"""
+    mock_get_commentaries = mocker.patch(
+        'pecha_api.texts.texts_views.get_commentaries_by_text_id',
+        return_value=[]
+    )
+    
+    async with AsyncClient(transport=ASGITransport(app=api), base_url="http://test") as ac:
+        response = await ac.get(
+            "/texts/123e4567-e89b-12d3-a456-426614174000/commentaries"
+        )
+    
+    assert response.status_code == status.HTTP_200_OK
+    
+    mock_get_commentaries.assert_called_once_with(
+        text_id="123e4567-e89b-12d3-a456-426614174000",
+        skip=0,
+        limit=10
+    )
+
+
+@pytest.mark.asyncio
+async def test_get_commentaries_negative_skip(mocker):
+    """Test GET /texts/{text_id}/commentaries with negative skip parameter"""
+    async with AsyncClient(transport=ASGITransport(app=api), base_url="http://test") as ac:
+        response = await ac.get(
+            "/texts/123e4567-e89b-12d3-a456-426614174000/commentaries",
+            params={"skip": -1, "limit": 10}
+        )
+    
+    assert response.status_code == status.HTTP_422_UNPROCESSABLE_ENTITY
+
+
+@pytest.mark.asyncio
+async def test_get_commentaries_limit_exceeds_max(mocker):
+    """Test GET /texts/{text_id}/commentaries with limit exceeding maximum"""
+    async with AsyncClient(transport=ASGITransport(app=api), base_url="http://test") as ac:
+        response = await ac.get(
+            "/texts/123e4567-e89b-12d3-a456-426614174000/commentaries",
+            params={"skip": 0, "limit": 150}
+        )
+    
+    assert response.status_code == status.HTTP_422_UNPROCESSABLE_ENTITY
+
+
+@pytest.mark.asyncio
+async def test_get_commentaries_single_commentary(mocker):
+    """Test GET /texts/{text_id}/commentaries with single commentary"""
+    mock_commentary = TextDTO(
+        id="single-commentary-uuid",
+        pecha_text_id="single_commentary_pecha",
+        title="Single Commentary",
+        language="en",
+        group_id="123e4567-e89b-12d3-a456-426614174000",
+        type="commentary",
+        is_published=True,
+        created_date="2025-01-01T00:00:00",
+        updated_date="2025-01-01T00:00:00",
+        published_date="2025-01-01T00:00:00",
+        published_by="single_commentator",
+        categories=["123e4567-e89b-12d3-a456-426614174000"],
+        views=5,
+        source_link="https://single-commentary.com",
+        ranking=1,
+        license="CC BY"
+    )
+    
+    mock_get_commentaries = mocker.patch(
+        'pecha_api.texts.texts_views.get_commentaries_by_text_id',
+        return_value=[mock_commentary]
+    )
+    
+    async with AsyncClient(transport=ASGITransport(app=api), base_url="http://test") as ac:
+        response = await ac.get(
+            "/texts/123e4567-e89b-12d3-a456-426614174000/commentaries",
+            params={"skip": 0, "limit": 10}
+        )
+    
+    assert response.status_code == status.HTTP_200_OK
+    data = response.json()
+    assert len(data) == 1
+    assert data[0]["id"] == "single-commentary-uuid"
+    assert data[0]["title"] == "Single Commentary"
+    assert data[0]["type"] == "commentary"
+    assert data[0]["language"] == "en"
+    assert data[0]["categories"] == ["123e4567-e89b-12d3-a456-426614174000"]
+
+
+@pytest.mark.asyncio
+async def test_get_commentaries_with_optional_fields_none(mocker):
+    """Test GET /texts/{text_id}/commentaries with optional fields as None"""
+    mock_commentary = TextDTO(
+        id="commentary-optional-none-uuid",
+        pecha_text_id=None,
+        title="Commentary with None fields",
+        language="bo",
+        group_id="123e4567-e89b-12d3-a456-426614174000",
+        type="commentary",
+        is_published=True,
+        created_date="2025-01-01T00:00:00",
+        updated_date="2025-01-01T00:00:00",
+        published_date="2025-01-01T00:00:00",
+        published_by="commentator",
+        categories=["123e4567-e89b-12d3-a456-426614174000"],
+        views=0,
+        source_link=None,
+        ranking=None,
+        license=None
+    )
+    
+    mock_get_commentaries = mocker.patch(
+        'pecha_api.texts.texts_views.get_commentaries_by_text_id',
+        return_value=[mock_commentary]
+    )
+    
+    async with AsyncClient(transport=ASGITransport(app=api), base_url="http://test") as ac:
+        response = await ac.get(
+            "/texts/123e4567-e89b-12d3-a456-426614174000/commentaries",
+            params={"skip": 0, "limit": 10}
+        )
+    
+    assert response.status_code == status.HTTP_200_OK
+    data = response.json()
+    assert len(data) == 1
+    assert data[0]["pecha_text_id"] is None
+    assert data[0]["source_link"] is None
+    assert data[0]["ranking"] is None
+    assert data[0]["license"] is None
+    assert data[0]["views"] == 0
+
+
+@pytest.mark.asyncio
+async def test_get_commentaries_service_error(mocker):
+    """Test GET /texts/{text_id}/commentaries when service raises unexpected error"""
+    mock_get_commentaries = mocker.patch(
+        'pecha_api.texts.texts_views.get_commentaries_by_text_id',
+        side_effect=HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Internal server error"
+        )
+    )
+    
+    async with AsyncClient(transport=ASGITransport(app=api), base_url="http://test") as ac:
+        response = await ac.get(
+            "/texts/123e4567-e89b-12d3-a456-426614174000/commentaries",
+            params={"skip": 0, "limit": 10}
+        )
+    
+    assert response.status_code == status.HTTP_500_INTERNAL_SERVER_ERROR
+    assert response.json()["detail"] == "Internal server error"

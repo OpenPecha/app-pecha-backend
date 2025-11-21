@@ -2,6 +2,7 @@ from uuid import UUID
 from typing import List, Dict, Union, Optional
 from fastapi import HTTPException
 from starlette import status
+from .texts_enums import TextType,TextTypes
 
 from pecha_api.error_contants import ErrorConstants
 from .texts_repository import (
@@ -21,7 +22,7 @@ from .groups.groups_service import (
 )
 from .groups.groups_response_models import GroupDTO
 from .texts_repository import get_contents_by_id, get_texts_by_id
-
+from .texts_models import Text
 from .texts_cache_service import (
     get_text_details_by_id_cache,
     set_text_details_by_id_cache,
@@ -54,6 +55,7 @@ class TextUtils:
         text_detail = await get_texts_by_id(text_id=text_id)
         response = TextDTO(
             id=str(text_detail.id),
+            pecha_text_id=str(text_detail.pecha_text_id),
             title=text_detail.title,
             language=text_detail.language,
             group_id=text_detail.group_id,
@@ -64,7 +66,10 @@ class TextUtils:
             published_date=text_detail.published_date,
             published_by=text_detail.published_by,
             categories=text_detail.categories,
-            views=text_detail.views
+            views=text_detail.views,
+            source_link=text_detail.source_link,
+            ranking=text_detail.ranking,
+            license=text_detail.license
         )
         await set_text_details_by_id_cache(text_id=text_id, cache_type=CacheType.TEXT_DETAIL, data=response)
         return response
@@ -73,6 +78,7 @@ class TextUtils:
     async def validate_text_exists(text_id: str):
         uuid_text_id = UUID(text_id)
         is_exists = await check_text_exists(text_id=uuid_text_id)
+        print(f"is_exists: {is_exists} ahahhahah")
         if not is_exists:
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND, 
@@ -155,6 +161,7 @@ class TextUtils:
             raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=ErrorConstants.TEXT_NOT_FOUND_MESSAGE)
         return TextDTO(
             id=str(text.id),
+            pecha_text_id=str(text.pecha_text_id),
             title=text.title,
             language=text.language,
             group_id=text.group_id,
@@ -165,7 +172,10 @@ class TextUtils:
             published_date=text.published_date,
             published_by=text.published_by,
             categories=text.categories,
-            views=text.views
+            views=text.views,
+            source_link=text.source_link,
+            ranking=text.ranking,
+            license=text.license
         )
         
 
@@ -193,6 +203,7 @@ class TextUtils:
                 filtered_content = TableOfContent(
                     id=str(content.id),
                     text_id=content.text_id,
+                    type=content.type,
                     sections=[found_section]  # Only include the section with the segment_id
                 )
                 return filtered_content
@@ -202,23 +213,24 @@ class TextUtils:
     @staticmethod
     def filter_text_on_root_and_version(texts: List[TextDTO], language: str) -> Dict[str, Union[TextDTO, List[TextDTO]]]:
         filtered_text = {
-            "root_text": None,
-            "versions": []
+            TextType.ROOT_TEXT.value: None,
+            TextTypes.VERSIONS.value: []
         }
         versions = []
         for text in texts:
-            if text.language == language and filtered_text["root_text"] is None:
-                filtered_text["root_text"] = text
+            text_type_value = text.type if isinstance(text.type, str) else text.type.value
+            if text.language == language and filtered_text[TextType.ROOT_TEXT.value] is None:
+                filtered_text[TextType.ROOT_TEXT.value] = text
             else:
                 versions.append(text)
-        filtered_text["versions"] = versions
+        filtered_text[TextTypes.VERSIONS.value] = versions
         return filtered_text
     
     @staticmethod
     async def filter_text_base_on_group_id_type(texts: List[TextDTO], language: str) -> Dict[str, Union[TextDTO, List[TextDTO]]]:
         filtere_text = {
-            "root_text": None,
-            "commentary": []
+            TextType.ROOT_TEXT.value: None,
+            TextType.COMMENTARY.value: []
         }
         if texts:
             group_ids = [text.group_id for text in texts]
@@ -226,12 +238,39 @@ class TextUtils:
 
             commentary = []
             for text in texts:
-                if (group_ids_type_dict.get(text.group_id).type == "text") and (text.language == language) and filtere_text["root_text"] is None:
-                    filtere_text["root_text"] = text
-                elif (group_ids_type_dict.get(text.group_id).type == "commentary" and text.language == language):
+                if (group_ids_type_dict.get(text.group_id).type == "text") and (text.language == language) and filtere_text[TextType.ROOT_TEXT.value] is None:
+                    filtere_text[TextType.ROOT_TEXT.value] = text
+                elif (group_ids_type_dict.get(text.group_id).type == TextType.COMMENTARY.value and text.language == language):
                     commentary.append(text)
-            filtere_text["commentary"] = commentary
+            filtere_text[TextType.COMMENTARY.value] = commentary
         return filtere_text
+
+    @staticmethod
+    async def get_commentaries_by_text_type(text_type: str, language: str, skip: int, limit: int) -> List[TextDTO]:
+        texts = await Text.find({"type": "commentary"}).to_list()
+    
+        return [
+            TextDTO(
+                id=str(text.id),
+                pecha_text_id=str(text.pecha_text_id) if text.pecha_text_id else None,
+                title=text.title,
+                language=text.language,
+                group_id=text.group_id,
+                type=text.type,
+                is_published=text.is_published,
+                created_date=text.created_date,
+                updated_date=text.updated_date,
+                published_date=text.published_date,
+                published_by=text.published_by,
+                categories=text.categories,
+                views=text.views,
+                source_link=text.source_link,
+                ranking=text.ranking,
+                license=text.license
+            )
+            for text in texts
+        ]
+        
     
 
 def _find_section_with_segment(sections, segment_id: str):

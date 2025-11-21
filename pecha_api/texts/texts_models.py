@@ -13,11 +13,12 @@ from pecha_api.sheets.sheets_enum import (
 )
 
 from .texts_enums import TextType
-from .texts_response_models import TextDTO
+from .texts_response_models import TextDTO, TableOfContentType
 
 class TableOfContent(Document):
     id: uuid.UUID = Field(default_factory=uuid.uuid4)
     text_id: str
+    type: Optional[TableOfContentType] = None
     sections: List[Section]
 
     class Settings:
@@ -52,6 +53,7 @@ class TableOfContent(Document):
 
 class Text(Document):
     id: uuid.UUID = Field(default_factory=uuid.uuid4)
+    pecha_text_id: Optional[str] = None
     title: str
     language: Optional[str] = None
     group_id: str
@@ -60,6 +62,9 @@ class Text(Document):
     updated_date: str
     published_date: str
     published_by: str
+    source_link:Optional[str] = None
+    ranking:Optional[int] = None
+    license:Optional[str] = None
     type: TextType
     categories: Optional[List[str]] = None
     views: Optional[int] = 0
@@ -69,12 +74,17 @@ class Text(Document):
         collection = "texts"
 
     @classmethod
+    async def get_texts_by_pecha_text_ids(cls, pecha_text_ids: List[str]) -> List["Text"]:
+        return await cls.find({cls.pecha_text_id: {"$in": pecha_text_ids}}).to_list()
+
+    @classmethod
     async def get_text(cls, text_id: str) -> Optional["Text"]:
         try:
             text_uuid = UUID(text_id)
         except ValueError:
             return None
         return await cls.find_one(cls.id == text_uuid)
+    
     
     @classmethod
     async def get_texts_by_ids(cls, text_ids: List[str]) -> List["Text"]:
@@ -123,6 +133,17 @@ class Text(Document):
         return texts
     
     @classmethod
+    async def get_all_texts_by_collection_id(cls, collection_id: str) -> List["Text"]:
+        query = {
+            "categories": collection_id,
+        }
+        texts = (
+            await cls.find(query)
+            .to_list()
+        )
+        return texts
+
+    @classmethod
     async def get_texts_by_group_id(cls, group_id: str, skip: int, limit: int) -> List["Text"]:
         query = {
             "group_id": group_id
@@ -135,6 +156,17 @@ class Text(Document):
         )
         return texts
     
+    @classmethod
+    async def get_all_texts_by_group_id(cls, group_id: str) -> List["Text"]:
+        query = {
+            "group_id": group_id
+        }
+        texts = (
+            await cls.find(query)
+            .to_list()
+        )
+        return texts
+
     @classmethod
     async def update_text_details_by_id(cls, text_id: UUID, text_details: TextDTO):
         return await cls.update_all(cls.id == text_id, {"$set": text_details.model_dump()})
