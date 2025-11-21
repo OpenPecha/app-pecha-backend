@@ -32,7 +32,10 @@ class Segment(Document):
     @classmethod
     async def get_segment_by_id(cls, segment_id: str) -> Optional["Segment"]:
         return await cls.find_one(cls.id == uuid.UUID(segment_id))
-
+    
+    @classmethod
+    async def update_segment_by_pecha_segment_id(cls, pecha_segment_id: str, content: str) -> Optional["Segment"]:
+        return await cls.find_one(cls.pecha_segment_id == pecha_segment_id).update({"$set": {"content": content}})
     
     @classmethod
     async def get_segment_by_pecha_segment_id(cls, pecha_segment_id: str) -> Optional["Segment"]:

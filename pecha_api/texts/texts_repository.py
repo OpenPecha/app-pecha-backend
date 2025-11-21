@@ -27,6 +27,13 @@ async def get_texts_by_pecha_text_ids(pecha_text_ids: List[str]) -> List[Text]:
         logging.debug(e)
         return None
 
+async def get_text_by_pecha_text_id(pecha_text_id: str) -> Text | None:
+    try:
+        return await Text.get_text_by_pecha_text_id(pecha_text_id=pecha_text_id)
+    except CollectionWasNotInitialized as e:
+        logging.debug(e)
+        return None
+
 async def get_sections_count_of_table_of_content(content_id: str) -> int:
     return await TableOfContent.get_sections_count(content_id=content_id)
 
