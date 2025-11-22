@@ -1,17 +1,17 @@
 from fastapi import APIRouter, Query
-from .search_enums import SearchType
+from .search_enums import SearchType, MultilingualSearchType
 from starlette import status
-
-from .search_enums import SearchType
 
 from typing import Optional
 
 from .search_service import (
-    get_search_results
+    get_search_results,
+    get_multilingual_search_results
 )
 
 from .search_response_models import (
-    SearchResponse
+    SearchResponse,
+    MultilingualSearchResponse
 )
 
 search_router = APIRouter(
@@ -33,4 +33,22 @@ async def search(
         text_id=text_id,
         skip=skip,
         limit=limit
+    )
+
+@search_router.get("/multilingual", status_code=status.HTTP_200_OK)
+async def multilingual_search(
+    query: str = Query(...),
+    search_type: MultilingualSearchType = Query(default=MultilingualSearchType.HYBRID),
+    text_id: Optional[str] = Query(default=None),
+    language: Optional[str] = Query(default=None),
+    skip: int = Query(default=0, ge=0),
+    limit: int = Query(default=10, ge=1, le=100)
+) -> MultilingualSearchResponse:
+
+    return await get_multilingual_search_results(query=query,
+        search_type=search_type.value,
+        text_id=text_id,
+        skip=skip,
+        limit=limit,
+        language=language
     )
