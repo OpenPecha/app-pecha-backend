@@ -34,6 +34,12 @@ from .texts_response_models import (
     Section,
     DetailTableOfContentResponse
 )
+
+from pecha_api.recitations.recitations_response_models import(
+     RecitationDTO, 
+     RecitationsResponse
+)
+
 from .groups.groups_service import (
     validate_group_exists
 )
@@ -448,12 +454,18 @@ async def _validate_text_detail_request(text_id: str, text_details_request: Text
     await TextUtils.validate_text_exists(text_id=text_id)
 
 async def get_root_text_by_collection_id(collection_id: str, language: str) -> Optional[tuple[str, str]]:
+
     texts = await get_all_texts_by_collection(collection_id=collection_id)
-    filtered_text_on_root_and_version = TextUtils.filter_text_on_root_and_version(texts=texts, language=language)
-    root_text = filtered_text_on_root_and_version["root_text"]
-    if root_text is not None:
-        return root_text.id, root_text.title
-    return None, None
+    grouped_texts = _group_texts_by_group_id(texts=texts)
+    recitation_text_list = []
+    for group_texts in grouped_texts.values():
+        filter_text_base_on_group_id_type = await TextUtils.filter_text_base_on_group_id_type(texts=group_texts, language=language)
+        root_text = filter_text_base_on_group_id_type["root_text"]
+        if root_text is None:
+            continue
+        recitation_text_list.append(RecitationDTO(text_id=root_text.id, title=root_text.title))
+    return RecitationsResponse(recitations=recitation_text_list)
+
 
 def _group_texts_by_group_id(texts: List[TextDTO]) -> Dict[str, List[TextDTO]]:
     texts_by_group_id = {}
