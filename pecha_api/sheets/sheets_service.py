@@ -465,9 +465,10 @@ async def _generate_sheet_section_(segments: List[TextSegment], segments_dict: D
             )
         else:
             s3_key = None
+            presigned_url = None
             if segment_details.type == SegmentType.IMAGE:
                 s3_key = segment_details.content
-                segment_details.content = generate_presigned_access_url(
+                presigned_url = generate_presigned_access_url(
                     bucket_name=get("AWS_BUCKET_NAME"),
                     s3_key=segment_details.content
                 )
@@ -475,9 +476,9 @@ async def _generate_sheet_section_(segments: List[TextSegment], segments_dict: D
                 SheetSegment(
                     segment_id=segment.segment_id,
                     segment_number=segment.segment_number,
-                    content=segment_details.content,
+                    content=presigned_url if presigned_url else segment_details.content,
                     type=segment_details.type,
-                    key=s3_key
+                    key=s3_key 
                 )
             )
 
@@ -617,6 +618,3 @@ async def _create_sheet_group_(token: str) -> str:
     new_group: GroupDTO = await create_new_group(create_group_request=create_group_request, token=token)
 
     return new_group.id
-
-
-
