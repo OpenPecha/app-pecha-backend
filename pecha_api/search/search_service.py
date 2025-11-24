@@ -413,3 +413,19 @@ async def build_multilingual_sources(segments: List[Segment], results_map: Dict[
         )
     
     return sources
+
+async def get_url_link(pecha_segment_id: str) -> str:
+
+    try:
+        segment = await Segment.get_segment_by_pecha_segment_id(pecha_segment_id=pecha_segment_id)
+        
+        if not segment:
+            logger.warning(f"Segment not found for pecha_segment_id: {pecha_segment_id}")
+            return ""
+        
+        url = f"/chapter?text_id={segment.text_id}&segment_id={str(segment.id)}"
+        return url
+        
+    except Exception as e:
+        logger.error(f"Error generating URL for pecha_segment_id {pecha_segment_id}: {str(e)}", exc_info=True)
+        return "" 
