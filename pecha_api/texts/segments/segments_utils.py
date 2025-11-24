@@ -144,12 +144,12 @@ class SegmentUtils:
                     continue
                 grouped = grouped_segments.get(segment.text_id, [])
                 if grouped:
+                    merged_content = "".join([seg.content for seg in grouped])
                     mapped_segments = [
                         MappedSegmentDTO(
-                            segment_id=str(seg.id),
-                            content=seg.content
+                            segment_id=str(grouped[0].id),
+                            content=merged_content
                         )
-                        for seg in grouped
                     ]
                 else:
                     mapped_segments = []
