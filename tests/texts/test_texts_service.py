@@ -2693,15 +2693,15 @@ async def test_get_table_of_content_by_sheet_id_no_content():
 @pytest.mark.asyncio
 async def test_get_root_text_by_collection_id_no_root_text():
     """Test get_root_text_by_collection_id when no root text is found"""
-    collection_id = "collection_id_1"
+    collection_id = "efb26a06-f373-450b-ba57-e7a8d4dd5b64"
     language = "bo"
     
     mock_texts = [
         TextDTO(
-            id="text_id_1",
+            id="efb26a06-f373-450b-ba57-e7a8d4dd5b61",
             title="Test Text",
             language="en",
-            group_id="group_id_1",
+            group_id="efb26a06-f373-450b-ba57-e7a8d4dd5b62",
             type="version",
             is_published=True,
             created_date="2025-03-20 09:26:16.571522",
@@ -2716,31 +2716,30 @@ async def test_get_root_text_by_collection_id_no_root_text():
     # Mock the filtered result with no root text
     mock_filtered_result = {
         "root_text": None,
-        "versions": mock_texts
+        "commentary": []
     }
     
     with patch("pecha_api.texts.texts_service.get_all_texts_by_collection", new_callable=AsyncMock) as mock_get_all_texts, \
-         patch("pecha_api.texts.texts_service.TextUtils.filter_text_on_root_and_version") as mock_filter:
+         patch("pecha_api.texts.texts_service.TextUtils.filter_text_base_on_group_id_type", new_callable=AsyncMock) as mock_filter:
         
         mock_get_all_texts.return_value = mock_texts
         mock_filter.return_value = mock_filtered_result
         
         result = await get_root_text_by_collection_id(collection_id=collection_id, language=language)
         
-        # Verify the result is a tuple with None values when no root text
+        # Verify the result is RecitationsResponse with empty list when no root text
         assert result is not None
-        assert isinstance(result, tuple)
-        assert result[0] is None
-        assert result[1] is None
+        assert isinstance(result, RecitationsResponse)
+        assert len(result.recitations) == 0
 
 
 @pytest.mark.asyncio
 async def test_get_text_by_text_id_or_collection_with_cache():
-    """Test get_text_by_text_id_or_collection when cache is available"""
+    """Test get_text_by_text_id_or_collection returns text and sets cache"""
     text_id = "efb26a06-f373-450b-ba57-e7a8d4dd5b64"
-    cached_text = TextDTO(
+    mock_text = TextDTO(
         id=text_id,
-        title="Cached Text",
+        title="Test Text",
         language="bo",
         group_id="group_id_1",
         type="commentary",
@@ -2753,13 +2752,14 @@ async def test_get_text_by_text_id_or_collection_with_cache():
         views=0
     )
     
-    with patch("pecha_api.texts.texts_service.get_text_by_text_id_or_collection_cache", new_callable=AsyncMock, return_value=cached_text):
+    with patch("pecha_api.texts.texts_service.TextUtils.get_text_detail_by_id", new_callable=AsyncMock, return_value=mock_text), \
+         patch("pecha_api.texts.texts_service.set_text_by_text_id_or_collection_cache", new_callable=AsyncMock):
         response = await get_text_by_text_id_or_collection(text_id=text_id, collection_id=None)
         
         assert response is not None
         assert isinstance(response, TextDTO)
         assert response.id == text_id
-        assert response.title == "Cached Text"
+        assert response.title == "Test Text"
 
 
 @pytest.mark.asyncio
@@ -2897,3 +2897,191 @@ async def test_get_text_by_collection_id_empty_result():
         assert isinstance(response, TextsCategoryResponse)
         assert response.total == 0
         assert len(response.texts) == 0
+
+
+@pytest.mark.asyncio
+async def test_get_commentaries_by_text_id_success():
+    """Test get_commentaries_by_text_id returns commentaries successfully"""
+    text_id = "text_id_1"
+    group_id = "group_id_1"
+    
+    mock_root_text = TextDTO(
+        id=text_id,
+        title="Root Text",
+        language="bo",
+        group_id=group_id,
+        type="root_text",
+        is_published=True,
+        created_date="2025-03-21 09:40:34.025024",
+        updated_date="2025-03-21 09:40:34.025035",
+        published_date="2025-03-21 09:40:34.025038",
+        published_by="pecha",
+        categories=[],
+        views=0
+    )
+    
+    mock_commentary_1 = TextDTO(
+        id="commentary_id_1",
+        title="Commentary 1",
+        language="bo",
+        group_id="group_id_2",
+        type="commentary",
+        is_published=True,
+        created_date="2025-03-21 09:40:34.025024",
+        updated_date="2025-03-21 09:40:34.025035",
+        published_date="2025-03-21 09:40:34.025038",
+        published_by="pecha",
+        categories=[group_id, "other_group"],
+        views=0
+    )
+    
+    mock_commentary_2 = TextDTO(
+        id="commentary_id_2",
+        title="Commentary 2",
+        language="bo",
+        group_id="group_id_3",
+        type="commentary",
+        is_published=True,
+        created_date="2025-03-21 09:40:34.025024",
+        updated_date="2025-03-21 09:40:34.025035",
+        published_date="2025-03-21 09:40:34.025038",
+        published_by="pecha",
+        categories=[group_id],
+        views=0
+    )
+    
+    mock_commentary_3 = TextDTO(
+        id="commentary_id_3",
+        title="Commentary 3",
+        language="bo",
+        group_id="group_id_4",
+        type="commentary",
+        is_published=True,
+        created_date="2025-03-21 09:40:34.025024",
+        updated_date="2025-03-21 09:40:34.025035",
+        published_date="2025-03-21 09:40:34.025038",
+        published_by="pecha",
+        categories=["other_group"],
+        views=0
+    )
+    
+    with patch("pecha_api.texts.texts_service.TextUtils.validate_text_exists", new_callable=AsyncMock, return_value=True), \
+         patch("pecha_api.texts.texts_service.TextUtils.get_text_detail_by_id", new_callable=AsyncMock, return_value=mock_root_text), \
+         patch("pecha_api.texts.texts_service.TextUtils.get_commentaries_by_text_type", new_callable=AsyncMock, return_value=[mock_commentary_1, mock_commentary_2, mock_commentary_3]):
+        
+        result = await get_commentaries_by_text_id(text_id=text_id, skip=0, limit=10)
+        
+        assert result is not None
+        assert isinstance(result, list)
+        assert len(result) == 2
+        assert result[0].id == "commentary_id_1"
+        assert result[1].id == "commentary_id_2"
+        assert group_id in result[0].categories
+        assert group_id in result[1].categories
+
+
+@pytest.mark.asyncio
+async def test_get_commentaries_by_text_id_invalid_text_id():
+    """Test get_commentaries_by_text_id raises exception for invalid text_id"""
+    text_id = "invalid_text_id"
+    
+    with patch("pecha_api.texts.texts_service.TextUtils.validate_text_exists", new_callable=AsyncMock, return_value=False):
+        with pytest.raises(HTTPException) as exc_info:
+            await get_commentaries_by_text_id(text_id=text_id, skip=0, limit=10)
+        
+        assert exc_info.value.status_code == 404
+        assert exc_info.value.detail == ErrorConstants.TEXT_NOT_FOUND_MESSAGE
+
+
+@pytest.mark.asyncio
+async def test_get_commentaries_by_text_id_no_matching_commentaries():
+    """Test get_commentaries_by_text_id returns empty list when no commentaries match"""
+    text_id = "text_id_1"
+    group_id = "group_id_1"
+    
+    mock_root_text = TextDTO(
+        id=text_id,
+        title="Root Text",
+        language="bo",
+        group_id=group_id,
+        type="root_text",
+        is_published=True,
+        created_date="2025-03-21 09:40:34.025024",
+        updated_date="2025-03-21 09:40:34.025035",
+        published_date="2025-03-21 09:40:34.025038",
+        published_by="pecha",
+        categories=[],
+        views=0
+    )
+    
+    mock_commentary = TextDTO(
+        id="commentary_id_1",
+        title="Commentary 1",
+        language="bo",
+        group_id="group_id_2",
+        type="commentary",
+        is_published=True,
+        created_date="2025-03-21 09:40:34.025024",
+        updated_date="2025-03-21 09:40:34.025035",
+        published_date="2025-03-21 09:40:34.025038",
+        published_by="pecha",
+        categories=["other_group"],
+        views=0
+    )
+    
+    with patch("pecha_api.texts.texts_service.TextUtils.validate_text_exists", new_callable=AsyncMock, return_value=True), \
+         patch("pecha_api.texts.texts_service.TextUtils.get_text_detail_by_id", new_callable=AsyncMock, return_value=mock_root_text), \
+         patch("pecha_api.texts.texts_service.TextUtils.get_commentaries_by_text_type", new_callable=AsyncMock, return_value=[mock_commentary]):
+        
+        result = await get_commentaries_by_text_id(text_id=text_id, skip=0, limit=10)
+        
+        assert result is not None
+        assert isinstance(result, list)
+        assert len(result) == 0
+
+
+@pytest.mark.asyncio
+async def test_get_commentaries_by_text_id_commentary_without_categories():
+    """Test get_commentaries_by_text_id excludes commentaries without categories"""
+    text_id = "text_id_1"
+    group_id = "group_id_1"
+    
+    mock_root_text = TextDTO(
+        id=text_id,
+        title="Root Text",
+        language="bo",
+        group_id=group_id,
+        type="root_text",
+        is_published=True,
+        created_date="2025-03-21 09:40:34.025024",
+        updated_date="2025-03-21 09:40:34.025035",
+        published_date="2025-03-21 09:40:34.025038",
+        published_by="pecha",
+        categories=[],
+        views=0
+    )
+    
+    mock_commentary = TextDTO(
+        id="commentary_id_1",
+        title="Commentary 1",
+        language="bo",
+        group_id="group_id_2",
+        type="commentary",
+        is_published=True,
+        created_date="2025-03-21 09:40:34.025024",
+        updated_date="2025-03-21 09:40:34.025035",
+        published_date="2025-03-21 09:40:34.025038",
+        published_by="pecha",
+        categories=None,
+        views=0
+    )
+    
+    with patch("pecha_api.texts.texts_service.TextUtils.validate_text_exists", new_callable=AsyncMock, return_value=True), \
+         patch("pecha_api.texts.texts_service.TextUtils.get_text_detail_by_id", new_callable=AsyncMock, return_value=mock_root_text), \
+         patch("pecha_api.texts.texts_service.TextUtils.get_commentaries_by_text_type", new_callable=AsyncMock, return_value=[mock_commentary]):
+        
+        result = await get_commentaries_by_text_id(text_id=text_id, skip=0, limit=10)
+        
+        assert result is not None
+        assert isinstance(result, list)
+        assert len(result) == 0
