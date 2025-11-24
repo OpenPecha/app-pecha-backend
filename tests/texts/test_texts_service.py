@@ -2691,17 +2691,19 @@ async def test_get_table_of_content_by_sheet_id_no_content():
 
 
 @pytest.mark.asyncio
-async def test_get_root_text_by_collection_id_no_root_text():
-    """Test get_root_text_by_collection_id when no root text is found"""
-    collection_id = "collection_id_1"
+async def test_get_root_text_by_collection_id_no_root_text_alternate():
+    """Test get_root_text_by_collection_id when no root text is found (alternate scenario)"""
+    collection_id = str(uuid4())
     language = "bo"
+    text_id_1 = str(uuid4())
+    group_id_1 = str(uuid4())
     
     mock_texts = [
         TextDTO(
-            id="text_id_1",
+            id=text_id_1,
             title="Test Text",
             language="en",
-            group_id="group_id_1",
+            group_id=group_id_1,
             type="version",
             is_published=True,
             created_date="2025-03-20 09:26:16.571522",
@@ -2720,18 +2722,18 @@ async def test_get_root_text_by_collection_id_no_root_text():
     }
     
     with patch("pecha_api.texts.texts_service.get_all_texts_by_collection", new_callable=AsyncMock) as mock_get_all_texts, \
-         patch("pecha_api.texts.texts_service.TextUtils.filter_text_on_root_and_version") as mock_filter:
+         patch("pecha_api.texts.texts_service.TextUtils.filter_text_base_on_group_id_type", new_callable=AsyncMock) as mock_filter:
         
         mock_get_all_texts.return_value = mock_texts
         mock_filter.return_value = mock_filtered_result
         
         result = await get_root_text_by_collection_id(collection_id=collection_id, language=language)
         
-        # Verify the result is a tuple with None values when no root text
+        # Verify the result - should return empty RecitationsResponse
         assert result is not None
-        assert isinstance(result, tuple)
-        assert result[0] is None
-        assert result[1] is None
+        assert isinstance(result, RecitationsResponse)
+        assert len(result.recitations) == 0
+        assert result.recitations == []
 
 
 @pytest.mark.asyncio
