@@ -2,7 +2,7 @@ from uuid import UUID
 from typing import List, Dict, Union, Optional
 from fastapi import HTTPException
 from starlette import status
-from .texts_enums import TextType,TextTypes
+from .texts_enums import TextType,TextTypes, FallbackTextLanguage
 
 from pecha_api.error_contants import ErrorConstants
 from .texts_repository import (
@@ -78,7 +78,7 @@ class TextUtils:
     async def validate_text_exists(text_id: str):
         uuid_text_id = UUID(text_id)
         is_exists = await check_text_exists(text_id=uuid_text_id)
-        print(f"is_exists: {is_exists} ahahhahah")
+
         if not is_exists:
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND, 
@@ -238,10 +238,16 @@ class TextUtils:
 
             commentary = []
             for text in texts:
-                if (group_ids_type_dict.get(text.group_id).type == "text") and (text.language == language) and filtere_text[TextType.ROOT_TEXT.value] is None:
-                    filtere_text[TextType.ROOT_TEXT.value] = text
-                elif (group_ids_type_dict.get(text.group_id).type == TextType.COMMENTARY.value and text.language == language):
+                if (group_ids_type_dict.get(text.group_id).type == TextType.COMMENTARY.value and text.language == language):
                     commentary.append(text)
+                elif (group_ids_type_dict.get(text.group_id).type == "text") and filtere_text[TextType.ROOT_TEXT.value] is None:
+                    if text.language == language:
+                        filtere_text[TextType.ROOT_TEXT.value] = text
+                    elif text.language == FallbackTextLanguage.BO.value:
+                        filtere_text[TextType.ROOT_TEXT.value] = text
+                    else:
+                        continue
+                print(f"filtere_text: {filtere_text}")
             filtere_text[TextType.COMMENTARY.value] = commentary
         return filtere_text
 

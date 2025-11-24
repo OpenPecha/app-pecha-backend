@@ -77,7 +77,7 @@ from .segments.segments_utils import SegmentUtils
 from typing import List, Dict, Optional, Tuple, Set
 from pecha_api.config import get
 from pecha_api.utils import Utils
-from .texts_enums import PaginationDirection
+from .texts_enums import PaginationDirection, FallbackTextLanguage
 
 import logging
 
@@ -92,17 +92,17 @@ async def get_text_by_text_id_or_collection(
     if language is None:
         language = get("DEFAULT_LANGUAGE")
 
-    cached_data: TextsCategoryResponse | TextDTO = await get_text_by_text_id_or_collection_cache(
-        text_id = text_id,
-        collection_id = collection_id,
-        language = language,
-        skip = skip,
-        limit = limit,
-        cache_type = CacheType.TEXTS_BY_ID_OR_COLLECTION
-    )
+    # cached_data: TextsCategoryResponse | TextDTO = await get_text_by_text_id_or_collection_cache(
+    #     text_id = text_id,
+    #     collection_id = collection_id,
+    #     language = language,
+    #     skip = skip,
+    #     limit = limit,
+    #     cache_type = CacheType.TEXTS_BY_ID_OR_COLLECTION
+    # )
 
-    if cached_data is not None:
-        return cached_data
+    # if cached_data is not None:
+    #     return cached_data
 
     if collection_id is not None:
         collection = await get_collection(collection_id=collection_id, language=language)
@@ -177,7 +177,7 @@ async def get_table_of_contents_by_text_id(text_id: str, language: str = None, s
     texts: List[TextDTO] = await get_texts_by_group_id(group_id=group_id, skip=skip, limit=limit)
     filtered_text_on_root_and_version = TextUtils.filter_text_on_root_and_version(texts=texts, language=language)
     root_text: TextDTO = filtered_text_on_root_and_version["root_text"]
-    print(f"root_text: {root_text} ahahhahah")
+ 
     if root_text is None:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=ErrorConstants.TEXT_NOT_FOUND_MESSAGE)
     table_of_contents: List[TableOfContent] = await get_contents_by_id(text_id=root_text.id)
@@ -480,7 +480,7 @@ async def _get_texts_by_collection_id(collection_id: str, language: str, skip: i
     texts = await get_texts_by_collection(collection_id=collection_id, language=language, skip=skip, limit=limit)
     grouped_texts = _group_texts_by_group_id(texts=texts)
     text_list = []
-
+    fallback_language = FallbackTextLanguage.BO.value
     for texts in grouped_texts.values():
         filter_text_base_on_group_id_type = await TextUtils.filter_text_base_on_group_id_type(texts=texts,
                                                                                               language=language)

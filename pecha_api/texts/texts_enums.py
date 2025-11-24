@@ -15,3 +15,8 @@ class TextTypes(Enum):
 class PaginationDirection(Enum):
     NEXT = "next"
     PREVIOUS = "previous"
+
+class FallbackTextLanguage(Enum):
+    EN = "en"
+    BO = "bo"
+    ZH = "zh"
