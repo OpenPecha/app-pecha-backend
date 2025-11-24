@@ -6,7 +6,8 @@ from typing import Optional
 
 from .search_service import (
     get_search_results,
-    get_multilingual_search_results
+    get_multilingual_search_results,
+    get_url_link as get_url_link_service
 )
 
 from .search_response_models import (
@@ -52,3 +53,7 @@ async def multilingual_search(
         limit=limit,
         language=language
     )
+
+@search_router.get("/chat/{pecha_segment_id}", status_code=status.HTTP_200_OK)
+async def get_url_link(pecha_segment_id: str) -> str:
+    return await get_url_link_service(pecha_segment_id)
