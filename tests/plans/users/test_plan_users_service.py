@@ -1717,3 +1717,99 @@ def test_delete_user_plan_progress_repository_with_no_completion_records():
     
     db_mock.delete.assert_called_once_with(mock_plan_progress)
     db_mock.commit.assert_called_once()
+
+
+@pytest.mark.asyncio
+async def test_get_user_plan_days_completion_status_service_success():
+    """Test successful retrieval of plan days completion status"""
+    from pecha_api.plans.users.plan_users_service import get_user_plan_days_completion_status_service
+    
+    user_id = uuid.uuid4()
+    plan_id = uuid.uuid4()
+    day1_id = uuid.uuid4()
+    day2_id = uuid.uuid4()
+    day3_id = uuid.uuid4()
+    
+    mock_user = SimpleNamespace(id=user_id)
+    
+    mock_days = [
+        SimpleNamespace(id=day1_id, day_number=1),
+        SimpleNamespace(id=day2_id, day_number=2),
+        SimpleNamespace(id=day3_id, day_number=3),
+    ]
+    
+    db_mock, session_cm = _mock_session_with_db()
+    
+    with patch(
+        "pecha_api.plans.users.plan_users_service.validate_and_extract_user_details",
+        return_value=mock_user,
+    ) as mock_validate, patch(
+        "pecha_api.plans.users.plan_users_service.SessionLocal",
+        return_value=session_cm,
+    ), patch(
+        "pecha_api.plans.users.plan_users_service.get_days_by_plan_id",
+        return_value=mock_days,
+    ) as mock_get_days, patch(
+        "pecha_api.plans.users.plan_users_service.get_completed_day_ids_by_user_id_and_day_ids",
+        return_value={day1_id},
+    ) as mock_get_completed_day_ids:
+        result = await get_user_plan_days_completion_status_service(
+            token="token123", plan_id=plan_id
+        )
+        
+        mock_validate.assert_called_once_with(token="token123")
+        mock_get_days.assert_called_once_with(db=db_mock, plan_id=plan_id)
+        mock_get_completed_day_ids.assert_called_once_with(
+            db=db_mock,
+            user_id=user_id,
+            day_ids=[day1_id, day2_id, day3_id]
+        )
+        
+        assert len(result.days) == 3
+        assert result.days[0].day_number == 1
+        assert result.days[0].is_completed is True
+        assert result.days[1].day_number == 2
+        assert result.days[1].is_completed is False
+        assert result.days[2].day_number == 3
+        assert result.days[2].is_completed is False
+
+
+@pytest.mark.asyncio
+async def test_get_user_plan_days_completion_status_service_all_completed():
+    """Test when all days are completed"""
+    from pecha_api.plans.users.plan_users_service import get_user_plan_days_completion_status_service
+    
+    user_id = uuid.uuid4()
+    plan_id = uuid.uuid4()
+    
+    day1_id = uuid.uuid4()
+    day2_id = uuid.uuid4()
+    day3_id = uuid.uuid4()
+    
+    mock_days = [
+        SimpleNamespace(id=day1_id, day_number=1),
+        SimpleNamespace(id=day2_id, day_number=2),
+        SimpleNamespace(id=day3_id, day_number=3),
+    ]
+    
+    db_mock, session_cm = _mock_session_with_db()
+    
+    with patch(
+        "pecha_api.plans.users.plan_users_service.validate_and_extract_user_details",
+        return_value=SimpleNamespace(id=user_id),
+    ), patch(
+        "pecha_api.plans.users.plan_users_service.SessionLocal",
+        return_value=session_cm,
+    ), patch(
+        "pecha_api.plans.users.plan_users_service.get_days_by_plan_id",
+        return_value=mock_days,
+    ), patch(
+        "pecha_api.plans.users.plan_users_service.get_completed_day_ids_by_user_id_and_day_ids",
+        return_value={day1_id, day2_id, day3_id},
+    ):
+        result = await get_user_plan_days_completion_status_service(
+            token="token123", plan_id=plan_id
+        )
+        
+        assert len(result.days) == 3
+        assert all(day.is_completed is True for day in result.days)

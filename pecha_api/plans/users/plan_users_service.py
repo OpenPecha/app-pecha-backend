@@ -3,7 +3,6 @@ from uuid import UUID
 from datetime import datetime, timezone
 from fastapi import HTTPException
 from starlette import status
-
 from typing import List
 from typing import Set
 from pecha_api.config import get
@@ -15,6 +14,8 @@ from pecha_api.plans.plans_enums import UserPlanStatus
 from pecha_api.plans.shared.utils import load_plans_from_json, convert_plan_model_to_dto
 from pecha_api.plans.users.plan_users_models import UserPlanProgress, UserSubTaskCompletion, UserTaskCompletion, UserDayCompletion
 from pecha_api.plans.users.plan_users_response_models import (
+    UserPlanDayCompletionStatus,
+    UserPlanDayCompletionStatusResponse,
     UserPlanEnrollRequest, 
     UserPlanDayDetailsResponse, 
     UserTaskDTO, 
@@ -43,7 +44,7 @@ from pecha_api.db.database import SessionLocal
 from pecha_api.plans.cms.cms_plans_repository import get_plan_by_id
 from pecha_api.plans.auth.plan_auth_models import ResponseError
 
-from pecha_api.plans.items.plan_items_repository import get_plan_day_with_tasks_and_subtasks
+from pecha_api.plans.items.plan_items_repository import get_days_by_plan_id, get_plan_day_with_tasks_and_subtasks
 from pecha_api.plans.response_message import (
     ALREADY_COMPLETED_SUB_TASK, 
     BAD_REQUEST, PLAN_NOT_FOUND, 
@@ -53,12 +54,11 @@ from pecha_api.plans.response_message import (
     SUB_TASKS_NOT_COMPLETED
 )
 from pecha_api.plans.tasks.plan_tasks_models import PlanTask
-from pecha_api.plans.users.plan_user_day_repository import save_user_day_completion, delete_user_day_completion, get_user_day_completion_by_user_id_and_day_id
+from pecha_api.plans.users.plan_user_day_repository import get_completed_day_ids_by_user_id_and_day_ids, save_user_day_completion, delete_user_day_completion, get_user_day_completion_by_user_id_and_day_id
 from pecha_api.plans.users.plan_users_subtasks_repository import (
     save_user_sub_task_completions, 
     get_user_subtask_completions_by_user_id_and_sub_task_ids, 
     save_user_sub_task_completions_bulk, delete_user_subtask_completion,
-    get_user_subtask_completion_by_user_id_and_sub_task_id
 )
 
 from pecha_api.plans.users.plan_users_progress_repository import (
@@ -299,6 +299,27 @@ def delete_task_service(token: str, task_id: UUID) -> None:
         delete_user_subtask_completion(db=db, user_id=current_user.id, sub_task_ids=sub_tasks_ids)
 
 
+async def get_user_plan_days_completion_status_service(token: str, plan_id: UUID) ->  UserPlanDayCompletionStatusResponse:
+    current_user = validate_and_extract_user_details(token=token)
+    with SessionLocal() as db:
+        days = get_days_by_plan_id(db=db, plan_id=plan_id)
+        day_ids = [day.id for day in days]
+        completed_day_ids = get_completed_day_ids_by_user_id_and_day_ids(
+            db=db, 
+            user_id=current_user.id, 
+            day_ids=day_ids
+        )
+        
+        days_completion_status: List[UserPlanDayCompletionStatus] = [
+            UserPlanDayCompletionStatus(
+                day_number=day.day_number,
+                is_completed=(day.id in completed_day_ids)
+            )
+            for day in days
+        ]
+        
+        return UserPlanDayCompletionStatusResponse(days=days_completion_status)
+    
 def get_user_plan_day_details_service(token: str, plan_id: UUID, day_number: int) -> UserPlanDayDetailsResponse:
     current_user = validate_and_extract_user_details(token=token)
     with SessionLocal() as db:
