@@ -1756,7 +1756,7 @@ async def test_get_root_text_by_collection_id_success_with_root_text():
         
         result = await get_root_text_by_collection_id(collection_id=collection_id, language=language)
         
-        mock_get_all_texts.assert_called_once_with(collection_id=collection_id)
+        mock_get_all_texts.assert_called_once_with(collection_id=collection_id, language=language)
         
         assert result is not None
         assert isinstance(result, RecitationsResponse)
@@ -1900,7 +1900,7 @@ async def test_get_root_text_by_collection_id_multiple_groups():
         
         result = await get_root_text_by_collection_id(collection_id=collection_id, language=language)
         
-        mock_get_all_texts.assert_called_once_with(collection_id=collection_id)
+        mock_get_all_texts.assert_called_once_with(collection_id=collection_id, language=language)
         
         assert result is not None
         assert isinstance(result, RecitationsResponse)
