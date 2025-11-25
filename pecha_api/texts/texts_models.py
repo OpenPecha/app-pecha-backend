@@ -131,7 +131,9 @@ class Text(Document):
         }
         texts = (
             await cls.find(query)
-            .to_list(length=limit)
+            .skip(skip)
+            .limit(limit)
+            .to_list()
         )
         return texts
     
