@@ -28,6 +28,7 @@ from .texts_cache_service import (
     set_text_details_by_id_cache,
     delete_text_details_by_id_cache
 )
+from pecha_api.constants import Constants
 
 from pecha_api.cache.cache_enums import CacheType
 
@@ -78,7 +79,6 @@ class TextUtils:
     async def validate_text_exists(text_id: str):
         uuid_text_id = UUID(text_id)
         is_exists = await check_text_exists(text_id=uuid_text_id)
-        print(f"is_exists: {is_exists} ahahhahah")
         if not is_exists:
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND, 
@@ -218,6 +218,8 @@ class TextUtils:
         }
         versions = []
         for text in texts:
+            if str(text.id) in Constants.excluded_text_ids:
+                continue
             text_type_value = text.type if isinstance(text.type, str) else text.type.value
             if text.language == language and filtered_text[TextType.ROOT_TEXT.value] is None:
                 filtered_text[TextType.ROOT_TEXT.value] = text
@@ -238,6 +240,8 @@ class TextUtils:
 
             commentary = []
             for text in texts:
+                if str(text.id) in Constants.excluded_text_ids:
+                    continue
                 if (group_ids_type_dict.get(text.group_id).type == "text") and (text.language == language) and filtere_text[TextType.ROOT_TEXT.value] is None:
                     filtere_text[TextType.ROOT_TEXT.value] = text
                 elif (group_ids_type_dict.get(text.group_id).type == TextType.COMMENTARY.value and text.language == language):

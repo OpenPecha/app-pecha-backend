@@ -17,6 +17,7 @@ from .segments_repository import (
 )
 from ..texts_response_models import TextDTO
 from ..texts_repository import get_contents_by_id
+from pecha_api.constants import Constants
 
 
 from ..groups.groups_service import (
@@ -135,8 +136,11 @@ class SegmentUtils:
         appended_commentary_text_ids = []
         for segment in segments:
             text_detail = text_details_dict.get(segment.text_id)
-
+            
             if not text_detail:
+                continue
+
+            if str(text_detail.id) in Constants.excluded_text_ids:
                 continue
 
             elif text_detail.type == TextType.VERSION.value and type == TextType.VERSION.value:
