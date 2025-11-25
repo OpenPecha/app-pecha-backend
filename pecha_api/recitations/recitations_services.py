@@ -116,7 +116,7 @@ def filter_by_type_and_language(type:str,segments: List[Union[SegmentRecitation,
     filtered_segments = {
         segment.language: Segment(
             id=segment.segment_id,
-            content=SegmentUtils.apply_bophono(segmentContent=segment.content) if type == RecitationListTextType.TRANSLITERATIONS.value and segment.language == LanguageCode.BO.value else segment.content
+            content=segment.content 
         )
         for segment in segments
         if segment.language in languages

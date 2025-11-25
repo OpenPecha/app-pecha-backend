@@ -392,12 +392,10 @@ class TestFilterByTypeAndLanguage:
         assert "en" in result
         assert "bo" not in result
         assert result["en"].content == "English content"
+        assert result["en"].id == UUID(segment_id)
 
-    @patch('pecha_api.recitations.recitations_services.SegmentUtils.apply_bophono')
-    def test_filter_by_type_and_language_tibetan_transliteration(self, mock_apply_bophono):
-        """Test filtering with bophono application for Tibetan transliterations."""
-        mock_apply_bophono.return_value = "Bophono applied content"
-        
+    def test_filter_by_type_and_language_tibetan_transliteration(self):
+        """Test filtering Tibetan transliterations by language."""
         segment_id = str(uuid4())
         items = [
             SegmentTransliteration(
@@ -419,11 +417,11 @@ class TestFilterByTypeAndLanguage:
         
         assert len(result) == 1
         assert "bo" in result
-        assert result["bo"].content == "Bophono applied content"
-        mock_apply_bophono.assert_called_once_with(segmentContent="Original Tibetan content")
+        assert result["bo"].content == "Original Tibetan content"
+        assert result["bo"].id == UUID(segment_id)
 
     def test_filter_by_type_and_language_non_tibetan_transliteration(self):
-        """Test filtering transliterations for non-Tibetan languages (no bophono)."""
+        """Test filtering transliterations for non-Tibetan languages."""
         segment_id = str(uuid4())
         items = [
             SegmentTransliteration(
@@ -446,6 +444,7 @@ class TestFilterByTypeAndLanguage:
         assert len(result) == 1
         assert "en" in result
         assert result["en"].content == "English transliteration content"
+        assert result["en"].id == UUID(segment_id)
 
     def test_filter_by_type_and_language_empty_items(self):
         """Test filtering with empty items list."""
@@ -515,6 +514,7 @@ class TestFilterByTypeAndLanguage:
         assert "en" in result
         assert "bo" not in result
         assert result["en"].content == "English recitation content"
+        assert result["en"].id == UUID(segment_id)
 
     def test_filter_by_type_and_language_adaptations(self):
         """Test filtering adaptations by language."""
@@ -540,6 +540,7 @@ class TestFilterByTypeAndLanguage:
         assert len(result) == 1
         assert "en" in result
         assert result["en"].content == "English adaptation content"
+        assert result["en"].id == UUID(segment_id)
 
 
 class TestGetTextDetailsByTextId:
