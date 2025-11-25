@@ -79,7 +79,6 @@ class TextUtils:
     async def validate_text_exists(text_id: str):
         uuid_text_id = UUID(text_id)
         is_exists = await check_text_exists(text_id=uuid_text_id)
-        print(f"is_exists: {is_exists} ahahhahah")
         if not is_exists:
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND, 

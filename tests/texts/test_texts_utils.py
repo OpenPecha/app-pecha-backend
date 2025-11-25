@@ -57,7 +57,9 @@ async def test_get_text_details_by_id_success():
         views=0
     )
     with patch("pecha_api.texts.texts_utils.get_texts_by_id", new_callable=AsyncMock, return_value=text_details),\
-        patch("pecha_api.texts.texts_utils.check_text_exists", new_callable=AsyncMock, return_value=True):
+        patch("pecha_api.texts.texts_utils.check_text_exists", new_callable=AsyncMock, return_value=True),\
+        patch("pecha_api.texts.texts_utils.get_text_details_by_id_cache", new_callable=AsyncMock, return_value=None),\
+        patch("pecha_api.texts.texts_utils.set_text_details_by_id_cache", new_callable=AsyncMock, return_value=None):
         response = await TextUtils.get_text_details_by_id(text_id="efb26a06-f373-450b-ba57-e7a8d4dd5b64")
         assert response.id == "efb26a06-f373-450b-ba57-e7a8d4dd5b64"
         assert response.title == "title"
@@ -65,6 +67,41 @@ async def test_get_text_details_by_id_success():
         assert response.type == "type"
         assert response.is_published == True
         assert response.categories == ["categories"]
+        
+@pytest.mark.asyncio
+async def test_get_text_details_by_id_from_cache():
+    """Test that get_text_details_by_id returns cached data when available."""
+    cached_text_details = TextDTO(
+        id="efb26a06-f373-450b-ba57-e7a8d4dd5b64",
+        title="cached_title",
+        language="cached_language",
+        group_id="group_id",
+        type="type",
+        is_published=True,
+        created_date="created_date",
+        updated_date="updated_date",
+        published_date="published_date",
+        published_by="published_by",
+        categories=["categories"],
+        views=0
+    )
+    with patch("pecha_api.texts.texts_utils.get_text_details_by_id_cache", new_callable=AsyncMock, return_value=cached_text_details):
+        response = await TextUtils.get_text_details_by_id(text_id="efb26a06-f373-450b-ba57-e7a8d4dd5b64")
+        assert response.id == "efb26a06-f373-450b-ba57-e7a8d4dd5b64"
+        assert response.title == "cached_title"
+        assert response.language == "cached_language"
+
+
+@pytest.mark.asyncio
+async def test_get_text_details_by_id_not_found():
+    """Test that get_text_details_by_id raises HTTPException when text doesn't exist."""
+    text_id = "efb26a06-f373-450b-ba57-e7a8d4dd5b64"
+    with patch("pecha_api.texts.texts_utils.get_text_details_by_id_cache", new_callable=AsyncMock, return_value=None), \
+         patch("pecha_api.texts.texts_utils.check_text_exists", new_callable=AsyncMock, return_value=False):
+        with pytest.raises(HTTPException) as exc_info:
+            await TextUtils.get_text_details_by_id(text_id=text_id)
+        assert exc_info.value.status_code == 404
+        assert exc_info.value.detail == ErrorConstants.TEXT_NOT_FOUND_MESSAGE
         
 @pytest.mark.asyncio
 async def test_validate_text_exists_success():
@@ -280,6 +317,172 @@ async def test_filter_text_base_on_group_id_type():
         assert len(response["commentary"]) == 0
         for text_commentary in response["commentary"]:
             assert text_commentary.type == "commentary"
+
+
+def test_get_all_segment_ids_single_level():
+    """Test get_all_segment_ids extracts segment IDs from single-level sections."""
+    table_of_content = TableOfContent(
+        id="toc-1",
+        text_id="text-1",
+        type=TableOfContentType.TEXT,
+        sections=[
+            Section(
+                id="section-1",
+                title="Section 1",
+                section_number=1,
+                parent_id=None,
+                segments=[
+                    TextSegment(segment_id="seg-1", segment_number=1),
+                    TextSegment(segment_id="seg-2", segment_number=2),
+                ],
+                sections=[],
+                created_date="",
+                updated_date="",
+                published_date=""
+            ),
+            Section(
+                id="section-2",
+                title="Section 2",
+                section_number=2,
+                parent_id=None,
+                segments=[
+                    TextSegment(segment_id="seg-3", segment_number=1),
+                ],
+                sections=[],
+                created_date="",
+                updated_date="",
+                published_date=""
+            )
+        ]
+    )
+    
+    result = TextUtils.get_all_segment_ids(table_of_content)
+    
+    # Note: order depends on stack implementation (LIFO), so we check set membership
+    assert len(result) == 3
+    assert set(result) == {"seg-1", "seg-2", "seg-3"}
+
+
+def test_get_all_segment_ids_nested_sections():
+    """Test get_all_segment_ids extracts segment IDs from nested sections."""
+    table_of_content = TableOfContent(
+        id="toc-1",
+        text_id="text-1",
+        type=TableOfContentType.TEXT,
+        sections=[
+            Section(
+                id="section-1",
+                title="Parent Section",
+                section_number=1,
+                parent_id=None,
+                segments=[
+                    TextSegment(segment_id="seg-1", segment_number=1),
+                ],
+                sections=[
+                    Section(
+                        id="section-1-1",
+                        title="Nested Section",
+                        section_number=1,
+                        parent_id="section-1",
+                        segments=[
+                            TextSegment(segment_id="seg-2", segment_number=1),
+                            TextSegment(segment_id="seg-3", segment_number=2),
+                        ],
+                        sections=[],
+                        created_date="",
+                        updated_date="",
+                        published_date=""
+                    )
+                ],
+                created_date="",
+                updated_date="",
+                published_date=""
+            )
+        ]
+    )
+    
+    result = TextUtils.get_all_segment_ids(table_of_content)
+    
+    assert len(result) == 3
+    assert set(result) == {"seg-1", "seg-2", "seg-3"}
+
+
+def test_get_all_segment_ids_empty_sections():
+    """Test get_all_segment_ids handles empty sections."""
+    table_of_content = TableOfContent(
+        id="toc-1",
+        text_id="text-1",
+        type=TableOfContentType.TEXT,
+        sections=[
+            Section(
+                id="section-1",
+                title="Empty Section",
+                section_number=1,
+                parent_id=None,
+                segments=[],
+                sections=[],
+                created_date="",
+                updated_date="",
+                published_date=""
+            )
+        ]
+    )
+    
+    result = TextUtils.get_all_segment_ids(table_of_content)
+    
+    assert len(result) == 0
+    assert result == []
+
+
+def test_get_all_segment_ids_deeply_nested():
+    """Test get_all_segment_ids with deeply nested sections."""
+    table_of_content = TableOfContent(
+        id="toc-1",
+        text_id="text-1",
+        type=TableOfContentType.TEXT,
+        sections=[
+            Section(
+                id="section-1",
+                title="Level 1",
+                section_number=1,
+                parent_id=None,
+                segments=[TextSegment(segment_id="seg-1", segment_number=1)],
+                sections=[
+                    Section(
+                        id="section-2",
+                        title="Level 2",
+                        section_number=1,
+                        parent_id="section-1",
+                        segments=[TextSegment(segment_id="seg-2", segment_number=1)],
+                        sections=[
+                            Section(
+                                id="section-3",
+                                title="Level 3",
+                                section_number=1,
+                                parent_id="section-2",
+                                segments=[TextSegment(segment_id="seg-3", segment_number=1)],
+                                sections=[],
+                                created_date="",
+                                updated_date="",
+                                published_date=""
+                            )
+                        ],
+                        created_date="",
+                        updated_date="",
+                        published_date=""
+                    )
+                ],
+                created_date="",
+                updated_date="",
+                published_date=""
+            )
+        ]
+    )
+    
+    result = TextUtils.get_all_segment_ids(table_of_content)
+    
+    assert len(result) == 3
+    assert set(result) == {"seg-1", "seg-2", "seg-3"}
     
 
 
@@ -328,4 +531,104 @@ def _generate_mock_groups_version_and_commentary(mock_texts: List[TextDTO]) -> D
             type="text" if text.type == "version" else "commentary"
         )
     return mock_groups
+
+
+@pytest.mark.asyncio
+async def test_get_commentaries_by_text_type_success():
+    """Test get_commentaries_by_text_type returns commentary texts."""
+    from uuid import UUID
+    
+    # Create mock text data as plain objects (not actual Text model instances)
+    class MockText:
+        def __init__(self, **kwargs):
+            for key, value in kwargs.items():
+                setattr(self, key, value)
+    
+    mock_text_1 = MockText(
+        id=UUID("efb26a06-f373-450b-ba57-e7a8d4dd5b64"),
+        pecha_text_id="pecha-1",
+        title="Commentary One",
+        language="bo",
+        group_id="g1",
+        type="commentary",
+        is_published=True,
+        created_date="2024-01-01",
+        updated_date="2024-01-01",
+        published_date="2024-01-01",
+        published_by="Publisher",
+        categories=["cat1"],
+        views=10,
+        source_link="http://example.com",
+        ranking=5,
+        license="MIT"
+    )
+    
+    mock_text_2 = MockText(
+        id=UUID("efb26a06-f373-450b-ba57-e7a8d4dd5b65"),
+        pecha_text_id="pecha-2",
+        title="Commentary Two",
+        language="en",
+        group_id="g2",
+        type="commentary",
+        is_published=True,
+        created_date="2024-01-02",
+        updated_date="2024-01-02",
+        published_date="2024-01-02",
+        published_by="Publisher 2",
+        categories=["cat2"],
+        views=20,
+        source_link="http://example2.com",
+        ranking=4,
+        license="Apache"
+    )
+    
+    mock_texts = [mock_text_1, mock_text_2]
+    
+    # Mock the Text.find method at the module level
+    with patch("pecha_api.texts.texts_utils.Text.find") as mock_find:
+        mock_cursor = AsyncMock()
+        mock_cursor.to_list = AsyncMock(return_value=mock_texts)
+        mock_find.return_value = mock_cursor
+        
+        result = await TextUtils.get_commentaries_by_text_type(
+            text_type="commentary",
+            language="bo",
+            skip=0,
+            limit=10
+        )
+        
+        # Verify the result
+        assert len(result) == 2
+        assert all(isinstance(text, TextDTO) for text in result)
+        assert result[0].id == "efb26a06-f373-450b-ba57-e7a8d4dd5b64"
+        assert result[0].title == "Commentary One"
+        assert result[0].language == "bo"
+        assert result[0].type == "commentary"
+        assert result[1].id == "efb26a06-f373-450b-ba57-e7a8d4dd5b65"
+        assert result[1].title == "Commentary Two"
+        
+        # Verify the find method was called correctly
+        mock_find.assert_called_once_with({"type": "commentary"})
+
+
+@pytest.mark.asyncio
+async def test_get_commentaries_by_text_type_empty_result():
+    """Test get_commentaries_by_text_type returns empty list when no commentaries found."""
+    # Mock the Text.find method at the module level to return empty list
+    with patch("pecha_api.texts.texts_utils.Text.find") as mock_find:
+        mock_cursor = AsyncMock()
+        mock_cursor.to_list = AsyncMock(return_value=[])
+        mock_find.return_value = mock_cursor
+        
+        result = await TextUtils.get_commentaries_by_text_type(
+            text_type="commentary",
+            language="bo",
+            skip=0,
+            limit=10
+        )
+        
+        # Verify empty result
+        assert len(result) == 0
+        assert result == []
+        mock_find.assert_called_once_with({"type": "commentary"})
     
