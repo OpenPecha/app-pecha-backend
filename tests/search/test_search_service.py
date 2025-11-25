@@ -778,11 +778,13 @@ async def test_get_url_link_success():
 async def test_get_url_link_segment_not_found():
     """Test get_url_link service when segment is not found"""
     from pecha_api.search.search_service import get_url_link
+    from pecha_api.plans.response_message import PECHA_SEGMENT_NOT_FOUND
     
     with patch("pecha_api.search.search_service.Segment.get_segment_by_pecha_segment_id", new_callable=AsyncMock, return_value=None):
         result = await get_url_link("nonexistent_segment_id")
         
-        assert result == ""
+        assert result == PECHA_SEGMENT_NOT_FOUND
+        assert result == "Pecha segment not found"
 
 
 @pytest.mark.asyncio
