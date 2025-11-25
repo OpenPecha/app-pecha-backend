@@ -158,17 +158,12 @@ class SegmentUtils:
                     continue
                 if segment.text_id in appended_commentary_text_ids:
                     continue
-                grouped = grouped_segments.get(segment.text_id, [])
-                if grouped:
-                    merged_content = "".join([seg.content for seg in grouped])
-                    mapped_segments = [
-                        MappedSegmentDTO(
-                            segment_id=str(grouped[0].id),
-                            content=merged_content
-                        )
-                    ]
-                else:
-                    mapped_segments = []
+                mapped_segments = []
+                for segment_item in grouped_segments.get(segment.text_id, []):
+                    mapped_segments.append(MappedSegmentDTO(
+                        segment_id=str(segment_item.id),
+                        content=segment_item.content
+                    ))
                 count = len(mapped_segments)
                 filtered_segments.append(
                     SegmentCommentry(

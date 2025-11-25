@@ -562,14 +562,17 @@ async def test_filter_segment_mapping_by_type_commentary_merges_same_text_id():
         assert commentary.title == "Commentary Title"
         assert commentary.language == "bo"
         
-        # Verify segments are merged into a single MappedSegmentDTO
-        # The implementation merges all content from the same text_id into one segment
-        assert len(commentary.segments) == 1
-        assert commentary.count == 1
+        # Verify both segments are merged into this commentary
+        assert len(commentary.segments) == 2
+        assert commentary.count == 2
         
-        # Verify merged segment has first segment's ID and concatenated content
+        # Verify first segment
         assert commentary.segments[0].segment_id == "seg-1"
-        assert commentary.segments[0].content == "First segment contentSecond segment content"
+        assert commentary.segments[0].content == "First segment content"
+        
+        # Verify second segment
+        assert commentary.segments[1].segment_id == "seg-2"
+        assert commentary.segments[1].content == "Second segment content"
 
 
 @pytest.mark.asyncio
@@ -735,14 +738,17 @@ async def test_filter_segment_mapping_by_type_multiple_segments_same_text_groupe
         assert len(result) == 1
         commentary = result[0]
         
-        # Verify segments are merged into a single MappedSegmentDTO
-        # The implementation merges all content from the same text_id into one segment
-        assert len(commentary.segments) == 1
-        assert commentary.count == 1
+        # Verify all 3 segments are in the commentary
+        assert len(commentary.segments) == 3
+        assert commentary.count == 3
         
-        # Verify merged segment has first segment's ID and concatenated content
+        # Verify segment IDs and content
         assert commentary.segments[0].segment_id == "seg-1"
-        assert commentary.segments[0].content == "Content 1Content 2Content 3"
+        assert commentary.segments[0].content == "Content 1"
+        assert commentary.segments[1].segment_id == "seg-2"
+        assert commentary.segments[1].content == "Content 2"
+        assert commentary.segments[2].segment_id == "seg-3"
+        assert commentary.segments[2].content == "Content 3"
 
 
 @pytest.mark.asyncio
