@@ -12,7 +12,8 @@ from pecha_api.texts.segments.segments_service import (
     get_root_text_mapping_by_segment_id,
     remove_segments_by_text_id,
     fetch_segments_by_text_id,
-    get_segments_details_by_ids
+    get_segments_details_by_ids,
+    update_segments_service
 )
 from pecha_api.texts.segments.segments_utils import SegmentUtils
 from pecha_api.texts.segments.segments_response_models import (
@@ -32,7 +33,9 @@ from pecha_api.texts.segments.segments_response_models import (
     Resources,
     SegmentRootMappingResponse,
     SegmentRootMapping,
-    MappedSegmentDTO
+    MappedSegmentDTO,
+    SegmentUpdateRequest,
+    SegmentUpdate
 )
 
 from pecha_api.texts.segments.segments_enum import SegmentType
@@ -686,3 +689,98 @@ async def test_get_info_by_segment_id_sets_cache_on_miss():
         called_kwargs = mock_set.await_args.kwargs
         assert called_kwargs["segment_id"] == segment_id
         assert called_kwargs["cache_type"] == CacheType.SEGMENT_INFO
+
+
+@pytest.mark.asyncio
+async def test_update_segments_service_success():
+    """
+    Test case for successful segment update with admin access
+    """
+    segment_update_request = SegmentUpdateRequest(
+        pecha_text_id="pecha_text_123",
+        segments=[
+            SegmentUpdate(
+                pecha_segment_id="pecha_segment_123",
+                content="Updated content"
+            )
+        ]
+    )
+    
+    mock_text = type('Text', (), {
+        'id': "text_123",
+        'pecha_text_id': "pecha_text_123",
+        'title': "Test Text"
+    })()
+    
+    mock_updated_segment = type('Segment', (), {
+        'id': "segment_id_123",
+        'pecha_segment_id': "pecha_segment_123",
+        'text_id': "text_123",
+        'content': "Updated content",
+        'mapping': [],
+        'type': SegmentType.SOURCE
+    })()
+    
+    with patch('pecha_api.texts.segments.segments_service.verify_admin_access', return_value=True), \
+        patch('pecha_api.texts.segments.segments_service.get_text_by_pecha_text_id', new_callable=AsyncMock, return_value=mock_text), \
+        patch('pecha_api.texts.segments.segments_service.update_segment_by_id', new_callable=AsyncMock) as mock_update:
+        mock_update.return_value = mock_updated_segment
+        
+        result = await update_segments_service(
+            token="admin_token",
+            segment_update_request=segment_update_request
+        )
+        
+        assert result is not None
+        mock_update.assert_awaited_once_with(segment_update_request=segment_update_request)
+
+
+@pytest.mark.asyncio
+async def test_update_segments_service_forbidden():
+    """
+    Test case for segment update with non-admin access
+    """
+    segment_update_request = SegmentUpdateRequest(
+        pecha_text_id="pecha_text_123",
+        segments=[
+            SegmentUpdate(
+                pecha_segment_id="pecha_segment_123",
+                content="Updated content"
+            )
+        ]
+    )
+    
+    with patch('pecha_api.texts.segments.segments_service.verify_admin_access', return_value=False):
+        with pytest.raises(HTTPException) as exc_info:
+            await update_segments_service(
+                token="user_token",
+                segment_update_request=segment_update_request
+            )
+        assert exc_info.value.status_code == 403
+        assert exc_info.value.detail == ErrorConstants.ADMIN_ERROR_MESSAGE
+
+
+@pytest.mark.asyncio
+async def test_update_segments_service_text_not_found():
+    """
+    Test case for segment update with invalid text
+    """
+    segment_update_request = SegmentUpdateRequest(
+        pecha_text_id="invalid_pecha_text_id",
+        segments=[
+            SegmentUpdate(
+                pecha_segment_id="pecha_segment_123",
+                content="Updated content"
+            )
+        ]
+    )
+    
+    with patch('pecha_api.texts.segments.segments_service.verify_admin_access', return_value=True), \
+        patch('pecha_api.texts.segments.segments_service.get_text_by_pecha_text_id', new_callable=AsyncMock, return_value=None):
+        with pytest.raises(HTTPException) as exc_info:
+            await update_segments_service(
+                token="admin_token",
+                segment_update_request=segment_update_request
+            )
+        assert exc_info.value.status_code == 404
+        assert exc_info.value.detail == ErrorConstants.TEXT_NOT_FOUND_MESSAGE

@@ -32,7 +32,10 @@ class Segment(Document):
     @classmethod
     async def get_segment_by_id(cls, segment_id: str) -> Optional["Segment"]:
         return await cls.find_one(cls.id == uuid.UUID(segment_id))
-
+    
+    @classmethod
+    async def update_segment_by_pecha_segment_id(cls, pecha_segment_id: str, content: str) -> Optional["Segment"]:
+        return await cls.find_one(cls.pecha_segment_id == pecha_segment_id).update({"$set": {"content": content}})
     
     @classmethod
     async def get_segment_by_pecha_segment_id(cls, pecha_segment_id: str) -> Optional["Segment"]:
@@ -93,6 +96,29 @@ class Segment(Document):
         }
         return await cls.find(query).to_list()
     
+    @classmethod
+    async def get_segments_by_pecha_ids(
+        cls, 
+        pecha_segment_ids: List[str],
+        text_id: Optional[str] = None
+    ) -> List["Segment"]:
+        """
+        Get segments by their pecha_segment_id (external segmentation IDs).
+        Optionally filter by text_id for individual text search.
+        
+        Args:
+            pecha_segment_ids: List of external segmentation IDs
+            text_id: Optional text_id to filter results
+            
+        Returns:
+            List of Segment documents matching the pecha_segment_ids
+        """
+        query = {"pecha_segment_id": {"$in": pecha_segment_ids}}
+        if text_id:
+            query["text_id"] = text_id
+        
+        return await cls.find(query).to_list()
+
     @classmethod
     async def delete_segment_by_text_id(cls, text_id: str):
         return await cls.find(cls.text_id == text_id).delete()

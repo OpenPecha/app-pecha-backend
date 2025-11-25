@@ -8,7 +8,7 @@ from botok.tokenizers.wordtokenizer import WordTokenizer
 
 from pecha_api.error_contants import ErrorConstants
 from pecha_api.texts.texts_enums import TextType
-from .segments_response_models import MappedSegmentDTO, MappedSegmentResponseDTO, SegmentDTO
+from .segments_response_models import MappedSegmentDTO, MappedSegmentResponseDTO, SegmentDTO, SegmentCommentry, SegmentTranslation, SegmentTransliteration, SegmentAdaptation, SegmentRootMapping, SegmentRecitation
 from .segments_repository import (
     check_segment_exists,
     check_all_segment_exists,
@@ -16,6 +16,7 @@ from .segments_repository import (
     get_related_mapped_segments,
 )
 from ..texts_response_models import TextDTO
+from ..texts_repository import get_contents_by_id
 
 
 from ..groups.groups_service import (
@@ -37,6 +38,21 @@ from .segments_response_models import (
     SegmentRootMapping,
     SegmentRecitation
 )
+
+def _extract_segment_order(section, segment_order_map: Dict[str, int]):
+
+    if section is None:
+        return
+    
+    if section.segments:
+        for segment in section.segments:
+            if segment.segment_id:
+                segment_order_map[segment.segment_id] = segment.segment_number
+    
+    if section.sections:
+        for subsection in section.sections:
+            _extract_segment_order(subsection, segment_order_map)
+
 
 class SegmentUtils:
     """
@@ -114,7 +130,7 @@ class SegmentUtils:
         text_ids = [segment.text_id for segment in segments]
         text_details_dict = await TextUtils.get_text_details_by_ids(text_ids=text_ids)
         
-        grouped_segments = SegmentUtils._group_segment_content_by_text_id(segments=segments)
+        grouped_segments = await SegmentUtils._group_segment_content_by_text_id(segments=segments)
         filtered_segments = []
         appended_commentary_text_ids = []
         for segment in segments:
@@ -142,12 +158,17 @@ class SegmentUtils:
                     continue
                 if segment.text_id in appended_commentary_text_ids:
                     continue
-                mapped_segments = []
-                for segment_item in grouped_segments.get(segment.text_id, []):
-                    mapped_segments.append(MappedSegmentDTO(
-                        segment_id=str(segment_item.id),
-                        content=segment_item.content
-                    ))
+                grouped = grouped_segments.get(segment.text_id, [])
+                if grouped:
+                    merged_content = "".join([seg.content for seg in grouped])
+                    mapped_segments = [
+                        MappedSegmentDTO(
+                            segment_id=str(grouped[0].id),
+                            content=merged_content
+                        )
+                    ]
+                else:
+                    mapped_segments = []
                 count = len(mapped_segments)
                 filtered_segments.append(
                     SegmentCommentry(
@@ -263,7 +284,7 @@ class SegmentUtils:
             for segment in segments
         ]
         texts_dict = await TextUtils.get_text_details_by_ids(text_ids=list_of_text_ids)
-        grouped_segments = SegmentUtils._group_segment_content_by_text_id(segments=segments)
+        grouped_segments = await SegmentUtils._group_segment_content_by_text_id(segments=segments)
         list_of_segment_root_mapping = []
         appended_text_ids = []
         
@@ -293,12 +314,27 @@ class SegmentUtils:
         return list_of_segment_root_mapping
 
     @staticmethod
-    def _group_segment_content_by_text_id(segments: List[SegmentDTO]) -> Dict[str, List[SegmentDTO]]:
+    async def _group_segment_content_by_text_id(segments: List[SegmentDTO]) -> Dict[str, List[SegmentDTO]]:
         grouped_segments = {}
         for segment in segments:
             if segment.text_id not in grouped_segments:
                 grouped_segments[segment.text_id] = []
             grouped_segments[segment.text_id].append(segment)
+        
+        for text_id, segment_list in grouped_segments.items():
+            try:
+                table_of_contents = await get_contents_by_id(text_id=text_id)
+                
+                segment_order_map = {}
+                for toc in table_of_contents:
+                    for section in toc.sections:
+                        _extract_segment_order(section, segment_order_map)
+                
+                segment_list.sort(key=lambda s, order_map=segment_order_map: order_map.get(str(s.id), float('inf')))
+                
+            except Exception:
+                segment_list.sort(key=lambda s: s.pecha_segment_id or "")
+        
         return grouped_segments
     
     @staticmethod

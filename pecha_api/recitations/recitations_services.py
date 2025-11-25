@@ -25,7 +25,8 @@ from pecha_api.recitations.recitations_response_models import (
     RecitationDetailsRequest, 
     RecitationDetailsResponse,
     Segment,
-    RecitationSegment
+    RecitationSegment,  
+    RecitationsResponse
 )
 
 async def get_list_of_recitations_service(search: Optional[str] = None, language: str = "en") -> RecitationsResponse:
@@ -33,13 +34,10 @@ async def get_list_of_recitations_service(search: Optional[str] = None, language
     if collection_id is None:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=ErrorConstants.COLLECTION_NOT_FOUND)
     
-    text_id, text_title = await get_root_text_by_collection_id(collection_id=collection_id, language=language)
+    recitation_list_text_response: RecitationsResponse = await get_root_text_by_collection_id(collection_id=collection_id, language=language)
 
-    text_title=apply_search_recitation_title_filter(text_title=text_title, search=search)
-    if text_title is None:
-        return RecitationsResponse(recitations=[])
-    recitations_dto = [RecitationDTO(title=text_title, text_id=text_id)]
-    return RecitationsResponse(recitations=recitations_dto)
+    serched_texts=apply_search_recitation_title_filter(texts=recitation_list_text_response.recitations, search=search)
+    return RecitationsResponse(recitations=serched_texts)
 
 async def get_recitation_details_service(text_id: str, recitation_details_request: RecitationDetailsRequest) -> RecitationDetailsResponse:
     is_valid_text: bool = await TextUtils.validate_text_exists(text_id=text_id)
