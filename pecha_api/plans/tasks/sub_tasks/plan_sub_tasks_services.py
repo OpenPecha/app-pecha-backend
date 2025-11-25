@@ -50,6 +50,7 @@ async def create_new_sub_tasks(token: str, create_task_request: SubTaskRequest) 
                     task_id=create_task_request.task_id,
                     content_type=sub.content_type,
                     content=sub.content,
+                    duration=sub.duration,
                     display_order=next_display_order + index,
                     created_by=current_author.email,
                 )
@@ -61,6 +62,7 @@ async def create_new_sub_tasks(token: str, create_task_request: SubTaskRequest) 
                     id=item.id,
                     content_type=item.content_type,
                     content=item.content,
+                    duration=item.duration,
                     display_order=item.display_order,
                 )
                 for item in saved_sub_tasks
@@ -84,6 +86,7 @@ async def update_sub_task_by_task_id(token: str, update_sub_task_request: Update
                 task_id=update_sub_task_request.task_id,
                 content_type=subtask.content_type,
                 content=subtask.content,
+                duration=subtask.duration,
                 display_order=subtask.display_order,
                 created_by=current_author.email,
             )
