@@ -15,6 +15,8 @@ from pecha_api.plans.plans_enums import UserPlanStatus
 from pecha_api.plans.shared.utils import load_plans_from_json, convert_plan_model_to_dto
 from pecha_api.plans.users.plan_users_models import UserPlanProgress, UserSubTaskCompletion, UserTaskCompletion, UserDayCompletion
 from pecha_api.plans.users.plan_users_response_models import (
+    UserPlanDayCompletionStatus,
+    UserPlanDayCompletionStatusResponse,
     UserPlanEnrollRequest, 
     UserPlanDayDetailsResponse, 
     UserTaskDTO, 
@@ -43,7 +45,7 @@ from pecha_api.db.database import SessionLocal
 from pecha_api.plans.cms.cms_plans_repository import get_plan_by_id
 from pecha_api.plans.auth.plan_auth_models import ResponseError
 
-from pecha_api.plans.items.plan_items_repository import get_plan_day_with_tasks_and_subtasks
+from pecha_api.plans.items.plan_items_repository import get_days_by_plan_id, get_plan_day_with_tasks_and_subtasks
 from pecha_api.plans.response_message import (
     ALREADY_COMPLETED_SUB_TASK, 
     BAD_REQUEST, PLAN_NOT_FOUND, 
@@ -299,6 +301,16 @@ def delete_task_service(token: str, task_id: UUID) -> None:
         delete_user_subtask_completion(db=db, user_id=current_user.id, sub_task_ids=sub_tasks_ids)
 
 
+async def get_user_plan_days_completion_status_service(token: str, plan_id: UUID) ->  UserPlanDayCompletionStatusResponse:
+    current_user = validate_and_extract_user_details(token=token)
+    with SessionLocal() as db:
+        days = get_days_by_plan_id(db=db, plan_id=plan_id)
+        days_completion_status: List[UserPlanDayCompletionStatus] = []
+        for day in days:    
+            is_completed = is_day_completed(db=db, user_id=current_user.id, day_id=day.id)
+            days_completion_status.append(UserPlanDayCompletionStatus(day_number=day.day_number, is_completed=is_completed))
+        return UserPlanDayCompletionStatusResponse(days=days_completion_status)
+    
 def get_user_plan_day_details_service(token: str, plan_id: UUID, day_number: int) -> UserPlanDayDetailsResponse:
     current_user = validate_and_extract_user_details(token=token)
     with SessionLocal() as db:
