@@ -123,11 +123,14 @@ async def test_get_text_by_collection_id():
 
     with patch('pecha_api.texts.texts_service.get_collection', new_callable=AsyncMock, return_value=mock_collection), \
             patch('pecha_api.texts.texts_service.get_texts_by_collection', new_callable=AsyncMock) as mock_get_texts_by_category, \
+            patch('pecha_api.texts.texts_service.get_all_texts_by_collection', new_callable=AsyncMock) as mock_get_all_texts, \
             patch('pecha_api.texts.texts_service.get_text_by_text_id_or_collection_cache', new_callable=AsyncMock, return_value=None), \
             patch('pecha_api.texts.texts_service.set_text_by_text_id_or_collection_cache', new_callable=AsyncMock, return_value=None), \
             patch('pecha_api.texts.texts_service.TextUtils.filter_text_base_on_group_id_type', new_callable=AsyncMock) as mock_filter_text_base_on_group_id_type:
         mock_filter_text_base_on_group_id_type.return_value = {"root_text": mock_texts_by_category[1], "commentary": [mock_texts_by_category[0]]}
         mock_get_texts_by_category.return_value = mock_texts_by_category
+        # Return only the root text for total count calculation
+        mock_get_all_texts.return_value = [mock_texts_by_category[1]]
         response = await get_text_by_text_id_or_collection(text_id="", collection_id="id_1", language="bo", skip=0, limit=10)
         assert response is not None
         assert response.collection is not None
@@ -2838,6 +2841,7 @@ async def test_get_text_by_collection_id_empty_result():
     with patch("pecha_api.texts.texts_service.get_text_by_text_id_or_collection_cache", new_callable=AsyncMock, return_value=None), \
          patch("pecha_api.texts.texts_service.get_collection", new_callable=AsyncMock, return_value=mock_collection), \
          patch("pecha_api.texts.texts_service._get_texts_by_collection_id", new_callable=AsyncMock, return_value=[]), \
+         patch("pecha_api.texts.texts_service.get_all_texts_by_collection", new_callable=AsyncMock, return_value=[]), \
          patch("pecha_api.texts.texts_service.set_text_by_text_id_or_collection_cache", new_callable=AsyncMock):
         
         response = await get_text_by_text_id_or_collection(
