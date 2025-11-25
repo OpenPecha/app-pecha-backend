@@ -1,5 +1,5 @@
 from elastic_transport import ObjectApiResponse
-from pecha_api.plans.response_message import NO_SEGMENTATION_IDS_RETURNED
+from pecha_api.plans.response_message import NO_SEGMENTATION_IDS_RETURNED, PECHA_SEGMENT_NOT_FOUND
 from .search_enums import SearchType
 from .search_client import search_client
 from pecha_api.config import get
@@ -420,8 +420,7 @@ async def get_url_link(pecha_segment_id: str) -> str:
         segment = await Segment.get_segment_by_pecha_segment_id(pecha_segment_id=pecha_segment_id)
         
         if not segment:
-            logger.warning(f"Segment not found for pecha_segment_id: {pecha_segment_id}")
-            return ""
+            return PECHA_SEGMENT_NOT_FOUND
         
         url = f"/chapter?text_id={segment.text_id}&segment_id={str(segment.id)}"
         return url
