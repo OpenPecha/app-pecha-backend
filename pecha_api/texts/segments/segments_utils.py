@@ -330,9 +330,9 @@ class SegmentUtils:
                     for section in toc.sections:
                         _extract_segment_order(section, segment_order_map)
                 
-                segment_list.sort(key=lambda s: segment_order_map.get(str(s.id), float('inf')))
+                segment_list.sort(key=lambda s, order_map=segment_order_map: order_map.get(str(s.id), float('inf')))
                 
-            except Exception as e:
+            except Exception:
                 segment_list.sort(key=lambda s: s.pecha_segment_id or "")
         
         return grouped_segments
