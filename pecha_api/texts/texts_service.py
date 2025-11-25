@@ -15,7 +15,8 @@ from .texts_repository import (
     delete_table_of_content_by_text_id,
     update_text_details_by_id,
     delete_text_by_id,
-    fetch_sheets_from_db
+    fetch_sheets_from_db,
+    get_all_texts_by_collection
 )
 from .texts_response_models import (
     TableOfContent,
@@ -107,11 +108,11 @@ async def get_text_by_text_id_or_collection(
     if collection_id is not None:
         collection = await get_collection(collection_id=collection_id, language=language)
         texts = await _get_texts_by_collection_id(collection_id=collection_id, language=language, skip=skip, limit=limit)
-
+        all_texts = await get_all_texts_by_collection(collection_id=collection_id, language=language)
         response = TextsCategoryResponse(
             collection=collection,
             texts=texts,
-            total=len(texts),
+            total=len(all_texts),
             skip=skip,
             limit=limit
         )
@@ -480,10 +481,11 @@ async def _get_texts_by_collection_id(collection_id: str, language: str, skip: i
     texts = await get_texts_by_collection(collection_id=collection_id, language=language, skip=skip, limit=limit)
     grouped_texts = _group_texts_by_group_id(texts=texts)
     text_list = []
-
     for texts in grouped_texts.values():
+        
         filter_text_base_on_group_id_type = await TextUtils.filter_text_base_on_group_id_type(texts=texts,
-                                                                                              language=language)
+                                                                            language=language)
+        
         root_text = filter_text_base_on_group_id_type["root_text"]
         if root_text is not None:
             text_list.append(TextDTO(

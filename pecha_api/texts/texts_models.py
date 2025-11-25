@@ -128,23 +128,27 @@ class Text(Document):
     async def get_texts_by_collection_id(cls, collection_id: str, language: str, skip: int, limit: int) -> List["Text"]:
         query = {
             "categories": collection_id,
+            "language": language
         }
         texts = (
-            await cls.find(query)
-            .to_list(length=limit)
+            await cls.find(
+                query
+            )
+            .skip(skip)
+            .limit(limit)
+            .to_list()
         )
         return texts
     
     @classmethod
-    async def get_all_texts_by_collection_id(cls, collection_id: str) -> List["Text"]:
+    async def get_all_texts_by_collection_id(cls, collection_id, language):
         query = {
             "categories": collection_id,
+            "language": language
         }
-        texts = (
-            await cls.find(query)
-            .to_list()
-        )
-        return texts
+        return await cls.find(
+            query
+        ).to_list()
 
     @classmethod
     async def get_texts_by_group_id(cls, group_id: str, skip: int, limit: int) -> List["Text"]:
