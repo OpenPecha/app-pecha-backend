@@ -456,7 +456,7 @@ async def _validate_text_detail_request(text_id: str, text_details_request: Text
 
 async def get_root_text_by_collection_id(collection_id: str, language: str) -> Optional[tuple[str, str]]:
 
-    texts = await get_all_texts_by_collection(collection_id=collection_id)
+    texts = await get_all_texts_by_collection(collection_id=collection_id, language=language)
     grouped_texts = _group_texts_by_group_id(texts=texts)
     recitation_text_list = []
     for group_texts in grouped_texts.values():
