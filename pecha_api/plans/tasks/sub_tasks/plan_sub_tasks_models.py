@@ -15,6 +15,7 @@ class PlanSubTask(Base):
 
     content_type = Column(ContentTypeEnum, nullable=False)
     content = Column(Text, nullable=True)
+    duration=Column(String(255), nullable=True)
 
     display_order = Column(Integer, nullable=False)
 
