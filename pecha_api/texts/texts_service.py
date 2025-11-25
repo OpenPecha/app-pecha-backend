@@ -41,6 +41,8 @@ from pecha_api.recitations.recitations_response_models import(
      RecitationsResponse
 )
 
+from pecha_api.constants import Constants
+
 from .groups.groups_service import (
     validate_group_exists
 )
@@ -482,7 +484,6 @@ async def _get_texts_by_collection_id(collection_id: str, language: str, skip: i
     grouped_texts = _group_texts_by_group_id(texts=texts)
     text_list = []
     for texts in grouped_texts.values():
-        
         filter_text_base_on_group_id_type = await TextUtils.filter_text_base_on_group_id_type(texts=texts,
                                                                             language=language)
         
