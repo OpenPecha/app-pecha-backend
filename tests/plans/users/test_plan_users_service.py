@@ -1750,17 +1750,20 @@ async def test_get_user_plan_days_completion_status_service_success():
         "pecha_api.plans.users.plan_users_service.get_days_by_plan_id",
         return_value=mock_days,
     ) as mock_get_days, patch(
-        "pecha_api.plans.users.plan_users_service.is_day_completed",
-        side_effect=[True, False, False],
-    ) as mock_is_day_completed:
+        "pecha_api.plans.users.plan_users_service.get_completed_day_ids_by_user_id_and_day_ids",
+        return_value={day1_id},
+    ) as mock_get_completed_day_ids:
         result = await get_user_plan_days_completion_status_service(
             token="token123", plan_id=plan_id
         )
         
         mock_validate.assert_called_once_with(token="token123")
         mock_get_days.assert_called_once_with(db=db_mock, plan_id=plan_id)
-        
-        assert mock_is_day_completed.call_count == 3
+        mock_get_completed_day_ids.assert_called_once_with(
+            db=db_mock,
+            user_id=user_id,
+            day_ids=[day1_id, day2_id, day3_id]
+        )
         
         assert len(result.days) == 3
         assert result.days[0].day_number == 1
@@ -1779,10 +1782,14 @@ async def test_get_user_plan_days_completion_status_service_all_completed():
     user_id = uuid.uuid4()
     plan_id = uuid.uuid4()
     
+    day1_id = uuid.uuid4()
+    day2_id = uuid.uuid4()
+    day3_id = uuid.uuid4()
+    
     mock_days = [
-        SimpleNamespace(id=uuid.uuid4(), day_number=1),
-        SimpleNamespace(id=uuid.uuid4(), day_number=2),
-        SimpleNamespace(id=uuid.uuid4(), day_number=3),
+        SimpleNamespace(id=day1_id, day_number=1),
+        SimpleNamespace(id=day2_id, day_number=2),
+        SimpleNamespace(id=day3_id, day_number=3),
     ]
     
     db_mock, session_cm = _mock_session_with_db()
@@ -1797,8 +1804,8 @@ async def test_get_user_plan_days_completion_status_service_all_completed():
         "pecha_api.plans.users.plan_users_service.get_days_by_plan_id",
         return_value=mock_days,
     ), patch(
-        "pecha_api.plans.users.plan_users_service.is_day_completed",
-        return_value=True,
+        "pecha_api.plans.users.plan_users_service.get_completed_day_ids_by_user_id_and_day_ids",
+        return_value={day1_id, day2_id, day3_id},
     ):
         result = await get_user_plan_days_completion_status_service(
             token="token123", plan_id=plan_id
