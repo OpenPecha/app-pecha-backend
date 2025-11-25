@@ -219,6 +219,8 @@ class TextUtils:
         }
         versions = []
         for text in texts:
+            if str(text.id) in Constants.excluded_text_ids:
+                continue
             text_type_value = text.type if isinstance(text.type, str) else text.type.value
             if text.language == language and filtered_text[TextType.ROOT_TEXT.value] is None:
                 filtered_text[TextType.ROOT_TEXT.value] = text
