@@ -252,6 +252,7 @@ async def test_get_task_subtasks_service_image_content_uses_presigned_url():
         id=uuid.uuid4(),
         content_type=ContentType.IMAGE,  # enum to match service comparison
         content=image_key,
+        duration=None,
         display_order=1,
     )
 
@@ -259,6 +260,7 @@ async def test_get_task_subtasks_service_image_content_uses_presigned_url():
         id=task_id,
         title="Task with image",
         display_order=1,
+        duration=None,
         estimated_time=5,
         created_by="creator@example.com",
         sub_tasks=[subtask_image],
@@ -303,6 +305,7 @@ async def test_get_task_subtasks_service_image_content_uses_presigned_url():
                     id=subtask_image.id,
                     content_type=ContentType.IMAGE,
                     content=presigned,
+                    duration=None,
                     image_url=image_key,
                     display_order=subtask_image.display_order,
                 ),
@@ -553,12 +556,14 @@ async def test_get_task_subtasks_service_success():
         content_type=ContentType.TEXT,
         content="Read page 1",
         display_order=1,
+        duration=None,
     )
     subtask2 = SimpleNamespace(
         id=uuid.uuid4(),
         content_type=ContentType.VIDEO,
         content="Watch intro video",
         display_order=2,
+        duration=None,
     )
 
     mock_task = SimpleNamespace(
@@ -600,12 +605,14 @@ async def test_get_task_subtasks_service_success():
                     id=subtask1.id,
                     content_type=subtask1.content_type,
                     content=subtask1.content,
+                    duration=subtask1.duration,
                     display_order=subtask1.display_order,
                 ),
                 SubTaskDTO(
                     id=subtask2.id,
                     content_type=subtask2.content_type,
                     content=subtask2.content,
+                    duration=subtask2.duration,
                     display_order=subtask2.display_order,
                 ),
             ],
