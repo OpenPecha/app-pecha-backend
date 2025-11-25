@@ -3,7 +3,6 @@ from uuid import UUID
 from datetime import datetime, timezone
 from fastapi import HTTPException
 from starlette import status
-
 from typing import List
 from typing import Set
 from pecha_api.config import get
@@ -55,12 +54,11 @@ from pecha_api.plans.response_message import (
     SUB_TASKS_NOT_COMPLETED
 )
 from pecha_api.plans.tasks.plan_tasks_models import PlanTask
-from pecha_api.plans.users.plan_user_day_repository import save_user_day_completion, delete_user_day_completion, get_user_day_completion_by_user_id_and_day_id
+from pecha_api.plans.users.plan_user_day_repository import get_completed_day_ids_by_user_id_and_day_ids, save_user_day_completion, delete_user_day_completion, get_user_day_completion_by_user_id_and_day_id
 from pecha_api.plans.users.plan_users_subtasks_repository import (
     save_user_sub_task_completions, 
     get_user_subtask_completions_by_user_id_and_sub_task_ids, 
     save_user_sub_task_completions_bulk, delete_user_subtask_completion,
-    get_user_subtask_completion_by_user_id_and_sub_task_id
 )
 
 from pecha_api.plans.users.plan_users_progress_repository import (
@@ -305,10 +303,21 @@ async def get_user_plan_days_completion_status_service(token: str, plan_id: UUID
     current_user = validate_and_extract_user_details(token=token)
     with SessionLocal() as db:
         days = get_days_by_plan_id(db=db, plan_id=plan_id)
-        days_completion_status: List[UserPlanDayCompletionStatus] = []
-        for day in days:    
-            is_completed = is_day_completed(db=db, user_id=current_user.id, day_id=day.id)
-            days_completion_status.append(UserPlanDayCompletionStatus(day_number=day.day_number, is_completed=is_completed))
+        day_ids = [day.id for day in days]
+        completed_day_ids = get_completed_day_ids_by_user_id_and_day_ids(
+            db=db, 
+            user_id=current_user.id, 
+            day_ids=day_ids
+        )
+        
+        days_completion_status: List[UserPlanDayCompletionStatus] = [
+            UserPlanDayCompletionStatus(
+                day_number=day.day_number,
+                is_completed=(day.id in completed_day_ids)
+            )
+            for day in days
+        ]
+        
         return UserPlanDayCompletionStatusResponse(days=days_completion_status)
     
 def get_user_plan_day_details_service(token: str, plan_id: UUID, day_number: int) -> UserPlanDayDetailsResponse:
