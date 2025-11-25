@@ -130,6 +130,7 @@ async def get_task_subtasks_service(task_id: UUID, token: str) -> GetTaskRespons
                     id=sub_task.id,
                     content_type=sub_task.content_type,
                     content=content_and_image_url.content,
+                    duration=sub_task.duration,
                     image_url=content_and_image_url.image_url,
                     display_order=sub_task.display_order,
                 )
