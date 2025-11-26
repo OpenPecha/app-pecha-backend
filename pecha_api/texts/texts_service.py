@@ -108,18 +108,12 @@ async def get_text_by_text_id_or_collection(
 
     if collection_id is not None:
         collection = await get_collection(collection_id=collection_id, language=language)
-        texts = await _get_texts_by_collection_id(collection_id=collection_id, language=language, skip=skip, limit=limit)
-        texts.sort(
-                key=lambda text: TextUtils.get_language_priority(text.language, language)
-            )
-        all_texts = await get_all_texts_by_collection(collection_id=collection_id)
-        group_id_set = set()
-        for text in all_texts:
-            group_id_set.add(text.group_id)
+        texts, total_unique_group_ids = await _get_texts_by_collection_id(collection_id=collection_id, language=language, skip=skip, limit=limit)
+    
         response = TextsCategoryResponse(
             collection=collection,
             texts=texts,
-            total=len(group_id_set),
+            total=total_unique_group_ids,
             skip=skip,
             limit=limit
         )
@@ -489,8 +483,16 @@ def _group_texts_by_group_id(texts: List[TextDTO], language: str|None = None) ->
     return texts_by_group_id
 
 
-async def _get_texts_by_collection_id(collection_id: str, language: str, skip: int, limit: int) -> List[TextDTO]:
-    texts = await get_texts_by_collection(collection_id=collection_id, skip=skip, limit=limit)
+async def _get_texts_by_collection_id(collection_id: str, language: str, skip: int, limit: int) -> Tuple[List[TextDTO], int]:
+    texts = await get_all_texts_by_collection(collection_id=collection_id)
+    group_id_set = set()
+    for text in texts:
+        group_id_set.add(text.group_id) 
+    total_unique_group_ids = len(group_id_set)
+    texts.sort(
+                key=lambda text: TextUtils.get_language_priority(text.language, language)
+            )
+    texts = texts[max(0, skip) : min(len(texts) + 1, skip+limit + 1)]
     grouped_texts = _group_texts_by_group_id(texts=texts, language=language)
     text_list = []
     for texts in grouped_texts.values():
@@ -513,7 +515,7 @@ async def _get_texts_by_collection_id(collection_id: str, language: str, skip: i
             published_date=root_text.published_date,
             published_by=root_text.published_by,
         ))
-    return text_list
+    return text_list, total_unique_group_ids
 
 
 async def _get_table_of_content_by_version_text_id(versions: List[TextDTO]) -> Dict[str, List[str]]:
