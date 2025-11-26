@@ -492,7 +492,7 @@ async def _get_texts_by_collection_id(collection_id: str, language: str, skip: i
     texts.sort(
                 key=lambda text: TextUtils.get_language_priority(text.language, language)
             )
-    texts = texts[max(0, skip) : min(len(texts) + 1, skip+limit + 1)]
+    texts = texts[max(0, skip) : min(len(texts), skip+limit)]
     grouped_texts = _group_texts_by_group_id(texts=texts, language=language)
     text_list = []
     for texts in grouped_texts.values():
