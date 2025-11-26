@@ -27,6 +27,7 @@ DEFAULTS = dict(
     MAX_FILE_SIZE = 5 * 1024 * 1024,
     ALLOWED_EXTENSIONS = {'.jpg', '.jpeg', '.png', '.webp'},
     MONGO_CONNECTION_STRING="mongodb://admin:pechaAdmin@localhost:27017/pecha?authSource=admin",
+    # MONGO_CONNECTION_STRING="mongodb+srv://webuddhist_db_user:os9meNVni6FqC7if@webuddhist-prd.stty4w4.mongodb.net/",
 
     WEBUDDHIST_STUDIO_BASE_URL="https://studio.webuddhist.com",
     MONGO_DATABASE_NAME="pecha",
