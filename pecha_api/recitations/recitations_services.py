@@ -39,6 +39,7 @@ async def get_list_of_recitations_service(search: Optional[str] = None, language
     serched_texts=apply_search_recitation_title_filter(texts=recitation_list_text_response.recitations, search=search)
     return RecitationsResponse(recitations=serched_texts)
 
+
 async def get_recitation_details_service(text_id: str, recitation_details_request: RecitationDetailsRequest) -> RecitationDetailsResponse:
     is_valid_text: bool = await TextUtils.validate_text_exists(text_id=text_id)
     if not is_valid_text:

@@ -110,6 +110,9 @@ async def get_texts_by_collection(collection_id: str, skip: int, limit: int) -> 
 async def get_all_texts_by_collection(collection_id: str) -> List[Text]:
     return await Text.get_all_texts_by_collection_id(collection_id=collection_id)
 
+async def get_all_recitation_texts_by_collection(collection_id: str, language: str) -> List[Text]:
+    return await Text.get_all_recitation_texts_by_collection_id(collection_id=collection_id, language=language)
+
 async def get_texts_by_group_id(group_id: str, skip: int, limit: int) -> List[TextDTO]:
     texts = await Text.get_texts_by_group_id(group_id=group_id, skip=skip, limit=limit)
     return [
