@@ -2,6 +2,7 @@ import uuid
 import pytest
 from types import SimpleNamespace
 from unittest.mock import patch, MagicMock
+from sqlalchemy.exc import IntegrityError
 
 from fastapi import HTTPException
 
@@ -16,6 +17,7 @@ from pecha_api.plans.users.plan_users_service import (
     delete_task_service,
     unenroll_user_from_plan,
 )
+from pecha_api.plans.users.plan_users_progress_repository import delete_user_plan_progress
 from pecha_api.plans.response_message import (
     BAD_REQUEST,
     PLAN_NOT_FOUND,
@@ -1211,7 +1213,7 @@ def test_get_user_plan_day_details_service_success():
                 estimated_time=10,
                 display_order=1,
                 sub_tasks=[
-                    SimpleNamespace(id=sub1_id, content_type=ContentType.TEXT, content="A", display_order=1),
+                    SimpleNamespace(id=sub1_id, content_type=ContentType.TEXT, content="A", duration=None, display_order=1),
                 ],
             ),
             SimpleNamespace(
@@ -1220,7 +1222,7 @@ def test_get_user_plan_day_details_service_success():
                 estimated_time=5,
                 display_order=2,
                 sub_tasks=[
-                    SimpleNamespace(id=sub2_id, content_type=ContentType.AUDIO, content="B", display_order=1),
+                    SimpleNamespace(id=sub2_id, content_type=ContentType.AUDIO, content="B", duration=None, display_order=1),
                 ],
             ),
         ],
@@ -1372,6 +1374,7 @@ def test_get_user_plan_day_details_service_image_subtask_presigned():
                         id=sub_image_id,
                         content_type=ContentType.IMAGE,
                         content="images/subtask/image.png",
+                        duration=None,
                         display_order=1,
                     )
                 ],
@@ -1417,6 +1420,30 @@ def test_get_user_plan_day_details_service_image_subtask_presigned():
 
 def test_unenroll_user_from_plan_success():
     """Test successful unenrollment from a plan"""
+    user_id = uuid.uuid4()
+    plan_id = uuid.uuid4()
+
+    db_mock, session_cm = _mock_session_with_db()
+
+    with patch(
+        "pecha_api.plans.users.plan_users_service.validate_and_extract_user_details",
+        return_value=SimpleNamespace(id=user_id),
+    ) as mock_validate, patch(
+        "pecha_api.plans.users.plan_users_service.SessionLocal",
+        return_value=session_cm,
+    ), patch(
+        "pecha_api.plans.users.plan_users_service.delete_user_plan_progress",
+        return_value=None,
+    ) as mock_delete:
+        result = unenroll_user_from_plan(token="token123", plan_id=plan_id)
+
+        assert result is None
+        mock_validate.assert_called_once_with(token="token123")
+        mock_delete.assert_called_once_with(db=db_mock, user_id=user_id, plan_id=plan_id)
+
+
+def test_unenroll_user_from_plan_deletes_all_completion_records():
+    """Test that unenrollment calls delete_user_plan_progress which handles cascade deletion"""
     user_id = uuid.uuid4()
     plan_id = uuid.uuid4()
 
@@ -1537,3 +1564,253 @@ def test_unenroll_user_from_plan_validates_user_first():
         mock_delete.assert_not_called()
 
         assert exc_info.value.status_code == 401
+
+def test_delete_user_plan_progress_repository_deletes_all_completion_records():
+    """Test that delete_user_plan_progress performs all necessary deletions"""
+    user_id = uuid.uuid4()
+    plan_id = uuid.uuid4()
+    
+    db_mock = MagicMock()
+    
+    mock_plan_progress = MagicMock()
+    mock_plan_progress.user_id = user_id
+    mock_plan_progress.plan_id = plan_id
+    
+    mock_query = MagicMock()
+    mock_query.filter.return_value = mock_query
+    mock_query.join.return_value = mock_query
+    mock_query.first.return_value = mock_plan_progress
+    mock_query.delete.return_value = 1  # Return count of deleted records
+    
+    db_mock.query.return_value = mock_query
+    
+    delete_user_plan_progress(db=db_mock, user_id=user_id, plan_id=plan_id)
+    
+    assert db_mock.query.call_count >= 4
+    
+    assert mock_query.delete.call_count >= 3  # At least 3 deletions for task, subtask, day completions
+    
+    db_mock.delete.assert_called_once_with(mock_plan_progress)
+    
+    db_mock.commit.assert_called_once()
+
+
+def test_delete_user_plan_progress_repository_not_enrolled_raises_404():
+    """Test that attempting to delete non-existent enrollment raises 404"""
+    user_id = uuid.uuid4()
+    plan_id = uuid.uuid4()
+    
+    db_mock = MagicMock()
+    
+    mock_query = MagicMock()
+    mock_query.filter.return_value.first.return_value = None
+    db_mock.query.return_value = mock_query
+    
+    with pytest.raises(HTTPException) as exc_info:
+        delete_user_plan_progress(db=db_mock, user_id=user_id, plan_id=plan_id)
+    
+    assert exc_info.value.status_code == 404
+    assert "not enrolled" in str(exc_info.value.detail).lower()
+    
+    db_mock.delete.assert_not_called()
+    db_mock.commit.assert_not_called()
+
+
+def test_delete_user_plan_progress_repository_integrity_error_rolls_back():
+    """Test that database integrity errors trigger rollback"""
+    user_id = uuid.uuid4()
+    plan_id = uuid.uuid4()
+    
+    db_mock = MagicMock()
+    
+    mock_plan_progress = MagicMock()
+    mock_plan_progress.user_id = user_id
+    mock_plan_progress.plan_id = plan_id
+    
+    mock_query = MagicMock()
+    mock_query.filter.return_value.first.return_value = mock_plan_progress
+    db_mock.query.return_value = mock_query
+    
+    db_mock.commit.side_effect = IntegrityError("mock error", None, None)
+    
+    with pytest.raises(HTTPException) as exc_info:
+        delete_user_plan_progress(db=db_mock, user_id=user_id, plan_id=plan_id)
+    
+    assert exc_info.value.status_code == 400
+    assert "integrity error" in str(exc_info.value.detail).lower()
+    
+    db_mock.rollback.assert_called_once()
+
+
+def test_delete_user_plan_progress_repository_deletes_in_correct_order():
+    """Test that deletions happen in correct order: completions first, then progress"""
+    user_id = uuid.uuid4()
+    plan_id = uuid.uuid4()
+    
+    db_mock = MagicMock()
+    
+    mock_plan_progress = MagicMock()
+    
+    mock_query = MagicMock()
+    mock_query.filter.return_value.first.return_value = mock_plan_progress
+    
+    call_order = []
+    
+    def track_query(model):
+        call_order.append(('query', model.__name__ if hasattr(model, '__name__') else str(model)))
+        mock_filter = MagicMock()
+        mock_filter.delete.return_value = 1
+        result = MagicMock()
+        result.filter.return_value = mock_filter
+        return result
+    
+    def track_delete(obj):
+        call_order.append(('delete', 'plan_progress'))
+    
+    def track_commit():
+        call_order.append(('commit', None))
+    
+    db_mock.query.side_effect = track_query
+    db_mock.delete.side_effect = track_delete
+    db_mock.commit.side_effect = track_commit
+    
+    delete_user_plan_progress(db=db_mock, user_id=user_id, plan_id=plan_id)
+    
+    assert ('delete', 'plan_progress') in call_order
+    assert ('commit', None) in call_order
+    
+    delete_index = call_order.index(('delete', 'plan_progress'))
+    commit_index = call_order.index(('commit', None))
+    assert delete_index < commit_index
+
+
+def test_delete_user_plan_progress_repository_with_no_completion_records():
+    """Test deletion when user has no completion records (edge case)"""
+    user_id = uuid.uuid4()
+    plan_id = uuid.uuid4()
+    
+    db_mock = MagicMock()
+    
+    mock_plan_progress = MagicMock()
+    mock_plan_progress.user_id = user_id
+    mock_plan_progress.plan_id = plan_id
+    
+    mock_progress_query = MagicMock()
+    mock_progress_query.filter.return_value.first.return_value = mock_plan_progress
+    
+    mock_completion_query = MagicMock()
+    mock_completion_filter = MagicMock()
+    mock_completion_filter.delete.return_value = 0  # No records deleted
+    mock_completion_query.filter.return_value = mock_completion_filter
+    
+    query_call_count = [0]
+    
+    def query_side_effect(model):
+        query_call_count[0] += 1
+        if query_call_count[0] == 1:
+            return mock_progress_query
+        else:
+            return mock_completion_query
+    
+    db_mock.query.side_effect = query_side_effect
+    
+    delete_user_plan_progress(db=db_mock, user_id=user_id, plan_id=plan_id)
+    
+    db_mock.delete.assert_called_once_with(mock_plan_progress)
+    db_mock.commit.assert_called_once()
+
+
+@pytest.mark.asyncio
+async def test_get_user_plan_days_completion_status_service_success():
+    """Test successful retrieval of plan days completion status"""
+    from pecha_api.plans.users.plan_users_service import get_user_plan_days_completion_status_service
+    
+    user_id = uuid.uuid4()
+    plan_id = uuid.uuid4()
+    day1_id = uuid.uuid4()
+    day2_id = uuid.uuid4()
+    day3_id = uuid.uuid4()
+    
+    mock_user = SimpleNamespace(id=user_id)
+    
+    mock_days = [
+        SimpleNamespace(id=day1_id, day_number=1),
+        SimpleNamespace(id=day2_id, day_number=2),
+        SimpleNamespace(id=day3_id, day_number=3),
+    ]
+    
+    db_mock, session_cm = _mock_session_with_db()
+    
+    with patch(
+        "pecha_api.plans.users.plan_users_service.validate_and_extract_user_details",
+        return_value=mock_user,
+    ) as mock_validate, patch(
+        "pecha_api.plans.users.plan_users_service.SessionLocal",
+        return_value=session_cm,
+    ), patch(
+        "pecha_api.plans.users.plan_users_service.get_days_by_plan_id",
+        return_value=mock_days,
+    ) as mock_get_days, patch(
+        "pecha_api.plans.users.plan_users_service.get_completed_day_ids_by_user_id_and_day_ids",
+        return_value={day1_id},
+    ) as mock_get_completed_day_ids:
+        result = await get_user_plan_days_completion_status_service(
+            token="token123", plan_id=plan_id
+        )
+        
+        mock_validate.assert_called_once_with(token="token123")
+        mock_get_days.assert_called_once_with(db=db_mock, plan_id=plan_id)
+        mock_get_completed_day_ids.assert_called_once_with(
+            db=db_mock,
+            user_id=user_id,
+            day_ids=[day1_id, day2_id, day3_id]
+        )
+        
+        assert len(result.days) == 3
+        assert result.days[0].day_number == 1
+        assert result.days[0].is_completed is True
+        assert result.days[1].day_number == 2
+        assert result.days[1].is_completed is False
+        assert result.days[2].day_number == 3
+        assert result.days[2].is_completed is False
+
+
+@pytest.mark.asyncio
+async def test_get_user_plan_days_completion_status_service_all_completed():
+    """Test when all days are completed"""
+    from pecha_api.plans.users.plan_users_service import get_user_plan_days_completion_status_service
+    
+    user_id = uuid.uuid4()
+    plan_id = uuid.uuid4()
+    
+    day1_id = uuid.uuid4()
+    day2_id = uuid.uuid4()
+    day3_id = uuid.uuid4()
+    
+    mock_days = [
+        SimpleNamespace(id=day1_id, day_number=1),
+        SimpleNamespace(id=day2_id, day_number=2),
+        SimpleNamespace(id=day3_id, day_number=3),
+    ]
+    
+    db_mock, session_cm = _mock_session_with_db()
+    
+    with patch(
+        "pecha_api.plans.users.plan_users_service.validate_and_extract_user_details",
+        return_value=SimpleNamespace(id=user_id),
+    ), patch(
+        "pecha_api.plans.users.plan_users_service.SessionLocal",
+        return_value=session_cm,
+    ), patch(
+        "pecha_api.plans.users.plan_users_service.get_days_by_plan_id",
+        return_value=mock_days,
+    ), patch(
+        "pecha_api.plans.users.plan_users_service.get_completed_day_ids_by_user_id_and_day_ids",
+        return_value={day1_id, day2_id, day3_id},
+    ):
+        result = await get_user_plan_days_completion_status_service(
+            token="token123", plan_id=plan_id
+        )
+        
+        assert len(result.days) == 3
+        assert all(day.is_completed is True for day in result.days)

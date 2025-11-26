@@ -1,3 +1,4 @@
+from typing import List, Set
 from uuid import UUID
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
@@ -26,3 +27,14 @@ def delete_user_day_completion(db: Session, user_id: UUID, day_id: UUID) -> None
 
 def get_user_day_completion_by_user_id_and_day_id(db: Session, user_id: UUID, day_id: UUID) -> UserDayCompletion:
     return db.query(UserDayCompletion).filter(UserDayCompletion.user_id == user_id, UserDayCompletion.day_id == day_id).first()
+
+def get_completed_day_ids_by_user_id_and_day_ids(db: Session, user_id: UUID, day_ids: List[UUID]) -> Set[UUID]:
+    if not day_ids:
+        return set()
+    
+    completed_days = db.query(UserDayCompletion.day_id).filter(
+        UserDayCompletion.user_id == user_id,
+        UserDayCompletion.day_id.in_(day_ids)
+    ).all()
+    
+    return {day_id for (day_id,) in completed_days}

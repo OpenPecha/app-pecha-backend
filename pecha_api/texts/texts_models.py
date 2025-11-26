@@ -78,6 +78,9 @@ class Text(Document):
         return await cls.find({cls.pecha_text_id: {"$in": pecha_text_ids}}).to_list()
 
     @classmethod
+    async def get_text_by_pecha_text_id(cls, pecha_text_id: str) -> Optional["Text"]:
+        return await cls.find_one(cls.pecha_text_id == pecha_text_id)   
+    @classmethod
     async def get_text(cls, text_id: str) -> Optional["Text"]:
         try:
             text_uuid = UUID(text_id)
@@ -121,27 +124,59 @@ class Text(Document):
                 return False  # One or more IDs are missing
         return True  # All IDs exist
     
+    # @classmethod
+    # async def get_texts_by_collection_id(cls, collection_id: str, language: str, skip: int, limit: int) -> List["Text"]:
+    #     query = {
+    #         "categories": collection_id,
+    #         "language": language
+    #     }
+    #     texts = (
+    #         await cls.find(
+    #             query
+    #         )
+    #         .skip(skip)
+    #         .limit(limit)
+    #         .to_list()
+    #     )
+    #     return texts
+
     @classmethod
-    async def get_texts_by_collection_id(cls, collection_id: str, language: str, skip: int, limit: int) -> List["Text"]:
+    async def get_texts_by_collection_id(cls, collection_id: str, skip: int, limit: int, language: str | None = None) -> List["Text"]:
         query = {
-            "categories": collection_id,
+            "categories": collection_id
         }
+        if language is not None:
+            query["language"] = language
         texts = (
-            await cls.find(query)
-            .to_list(length=limit)
-        )
-        return texts
-    
-    @classmethod
-    async def get_all_texts_by_collection_id(cls, collection_id: str) -> List["Text"]:
-        query = {
-            "categories": collection_id,
-        }
-        texts = (
-            await cls.find(query)
+            await cls.find(
+                query
+            )
+            .skip(skip)
+            .limit(limit)
             .to_list()
         )
         return texts
+
+    @classmethod
+    async def get_all_texts_by_collection_id(cls, collection_id):
+        
+        query = {
+            "categories": collection_id
+        }
+        return await cls.find(
+            query
+        ).to_list()
+
+    @classmethod
+    async def get_all_recitation_texts_by_collection_id(cls, collection_id: str, language: str):
+        
+        query = {
+            "categories": collection_id,
+            "language": language
+        }
+        return await cls.find(
+            query
+        ).to_list()
 
     @classmethod
     async def get_texts_by_group_id(cls, group_id: str, skip: int, limit: int) -> List["Text"]:

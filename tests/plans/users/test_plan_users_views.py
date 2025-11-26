@@ -733,3 +733,78 @@ def test_unenroll_from_plan_unauthenticated(unauthenticated_client):
     response = unauthenticated_client.delete(f"/users/me/plans/{plan_id}")
 
     assert response.status_code == status.HTTP_403_FORBIDDEN
+
+
+def test_get_user_plan_days_completion_status_success(authenticated_client):
+    """Test successful retrieval of plan days completion status"""
+    from pecha_api.plans.users.plan_users_response_models import UserPlanDayCompletionStatusResponse, UserPlanDayCompletionStatus
+    
+    plan_id = uuid.uuid4()
+    
+    mock_response = UserPlanDayCompletionStatusResponse(
+        days=[
+            UserPlanDayCompletionStatus(day_number=1, is_completed=True),
+            UserPlanDayCompletionStatus(day_number=2, is_completed=True),
+            UserPlanDayCompletionStatus(day_number=3, is_completed=False),
+            UserPlanDayCompletionStatus(day_number=4, is_completed=False),
+        ]
+    )
+    
+    with patch("pecha_api.plans.users.plan_users_views.get_user_plan_days_completion_status_service", new_callable=AsyncMock, return_value=mock_response) as mock_service:
+        response = authenticated_client.get(
+            f"/users/me/plans/{plan_id}/days/completion_status",
+            headers={"Authorization": f"Bearer {VALID_TOKEN}"}
+        )
+        
+        assert response.status_code == status.HTTP_200_OK
+        data = response.json()
+        
+        assert "days" in data
+        assert len(data["days"]) == 4
+        
+        assert data["days"][0]["day_number"] == 1
+        assert data["days"][0]["is_completed"] is True
+        
+        assert data["days"][1]["day_number"] == 2
+        assert data["days"][1]["is_completed"] is True
+        
+        assert data["days"][2]["day_number"] == 3
+        assert data["days"][2]["is_completed"] is False
+        
+        assert data["days"][3]["day_number"] == 4
+        assert data["days"][3]["is_completed"] is False
+        
+        assert mock_service.call_count == 1
+        assert mock_service.call_args.kwargs.get("token") == VALID_TOKEN
+        assert mock_service.call_args.kwargs.get("plan_id") == plan_id
+
+
+def test_get_user_plan_days_completion_status_all_completed(authenticated_client):
+    """Test retrieval when all days are completed"""
+    from pecha_api.plans.users.plan_users_response_models import UserPlanDayCompletionStatusResponse, UserPlanDayCompletionStatus
+    
+    plan_id = uuid.uuid4()
+    
+    mock_response = UserPlanDayCompletionStatusResponse(
+        days=[
+            UserPlanDayCompletionStatus(day_number=1, is_completed=True),
+            UserPlanDayCompletionStatus(day_number=2, is_completed=True),
+            UserPlanDayCompletionStatus(day_number=3, is_completed=True),
+        ]
+    )
+    
+    with patch("pecha_api.plans.users.plan_users_views.get_user_plan_days_completion_status_service", new_callable=AsyncMock, return_value=mock_response) as mock_service:
+        response = authenticated_client.get(
+            f"/users/me/plans/{plan_id}/days/completion_status",
+            headers={"Authorization": f"Bearer {VALID_TOKEN}"}
+        )
+        
+        assert response.status_code == status.HTTP_200_OK
+        data = response.json()
+        
+        assert len(data["days"]) == 3
+        assert all(day["is_completed"] is True for day in data["days"])
+        
+        assert mock_service.call_count == 1
+        assert mock_service.call_args.kwargs.get("token") == VALID_TOKEN
+        assert mock_service.call_args.kwargs.get("plan_id") == plan_id

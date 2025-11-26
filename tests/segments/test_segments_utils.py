@@ -562,17 +562,14 @@ async def test_filter_segment_mapping_by_type_commentary_merges_same_text_id():
         assert commentary.title == "Commentary Title"
         assert commentary.language == "bo"
         
-        # Verify both segments are merged into this commentary
-        assert len(commentary.segments) == 2
-        assert commentary.count == 2
+        # Verify segments are merged into a single MappedSegmentDTO
+        # The implementation merges all content from the same text_id into one segment
+        assert len(commentary.segments) == 1
+        assert commentary.count == 1
         
-        # Verify first segment
+        # Verify merged segment has first segment's ID and concatenated content
         assert commentary.segments[0].segment_id == "seg-1"
-        assert commentary.segments[0].content == "First segment content"
-        
-        # Verify second segment
-        assert commentary.segments[1].segment_id == "seg-2"
-        assert commentary.segments[1].content == "Second segment content"
+        assert commentary.segments[0].content == "First segment contentSecond segment content"
 
 
 @pytest.mark.asyncio
@@ -738,17 +735,14 @@ async def test_filter_segment_mapping_by_type_multiple_segments_same_text_groupe
         assert len(result) == 1
         commentary = result[0]
         
-        # Verify all 3 segments are in the commentary
-        assert len(commentary.segments) == 3
-        assert commentary.count == 3
+        # Verify segments are merged into a single MappedSegmentDTO
+        # The implementation merges all content from the same text_id into one segment
+        assert len(commentary.segments) == 1
+        assert commentary.count == 1
         
-        # Verify segment IDs and content
+        # Verify merged segment has first segment's ID and concatenated content
         assert commentary.segments[0].segment_id == "seg-1"
-        assert commentary.segments[0].content == "Content 1"
-        assert commentary.segments[1].segment_id == "seg-2"
-        assert commentary.segments[1].content == "Content 2"
-        assert commentary.segments[2].segment_id == "seg-3"
-        assert commentary.segments[2].content == "Content 3"
+        assert commentary.segments[0].content == "Content 1Content 2Content 3"
 
 
 @pytest.mark.asyncio
@@ -1023,3 +1017,281 @@ def test_apply_bophono_with_whitespace_only():
         assert result == ""
         mock_tokenizer.tokenize.assert_called_once_with("   ")
         mock_converter.get_api.assert_not_called()
+
+
+@pytest.mark.asyncio
+async def test_group_segment_content_by_text_id_with_table_of_contents():
+    """Test _group_segment_content_by_text_id groups and sorts segments correctly using TOC."""
+    text_id = "text-id-1"
+    
+    # Create segments in random order
+    segments = [
+        SegmentDTO(
+            id="seg-3",
+            text_id=text_id,
+            content="Third segment",
+            mapping=[],
+            type=SegmentType.SOURCE,
+        ),
+        SegmentDTO(
+            id="seg-1",
+            text_id=text_id,
+            content="First segment",
+            mapping=[],
+            type=SegmentType.SOURCE,
+        ),
+        SegmentDTO(
+            id="seg-2",
+            text_id=text_id,
+            content="Second segment",
+            mapping=[],
+            type=SegmentType.SOURCE,
+        ),
+    ]
+    
+    # Create a table of contents with segment order
+    table_of_contents = [
+        TableOfContent(
+            id="toc-1",
+            text_id=text_id,
+            type=TableOfContentType.TEXT,
+            sections=[
+                Section(
+                    id="section-1",
+                    title="Section 1",
+                    section_number=1,
+                    parent_id=None,
+                    segments=[
+                        TextSegment(segment_id="seg-1", segment_number=1),
+                        TextSegment(segment_id="seg-2", segment_number=2),
+                        TextSegment(segment_id="seg-3", segment_number=3),
+                    ],
+                    sections=[],
+                    created_date="",
+                    updated_date="",
+                    published_date=""
+                )
+            ]
+        )
+    ]
+    
+    with patch("pecha_api.texts.segments.segments_utils.get_contents_by_id", new_callable=AsyncMock, return_value=table_of_contents):
+        result = await SegmentUtils._group_segment_content_by_text_id(segments)
+        
+        # Check that segments are grouped by text_id
+        assert text_id in result
+        assert len(result[text_id]) == 3
+        
+        # Check that segments are ordered correctly according to TOC
+        assert result[text_id][0].id == "seg-1"
+        assert result[text_id][1].id == "seg-2"
+        assert result[text_id][2].id == "seg-3"
+
+
+@pytest.mark.asyncio
+async def test_group_segment_content_by_text_id_fallback_to_pecha_id():
+    """Test _group_segment_content_by_text_id falls back to pecha_segment_id when TOC fails."""
+    text_id = "text-id-1"
+    
+    # Create segments with pecha_segment_id
+    segments = [
+        SegmentDTO(
+            id="seg-c",
+            text_id=text_id,
+            content="Third segment",
+            mapping=[],
+            type=SegmentType.SOURCE,
+            pecha_segment_id="03"
+        ),
+        SegmentDTO(
+            id="seg-a",
+            text_id=text_id,
+            content="First segment",
+            mapping=[],
+            type=SegmentType.SOURCE,
+            pecha_segment_id="01"
+        ),
+        SegmentDTO(
+            id="seg-b",
+            text_id=text_id,
+            content="Second segment",
+            mapping=[],
+            type=SegmentType.SOURCE,
+            pecha_segment_id="02"
+        ),
+    ]
+    
+    # Mock get_contents_by_id to raise an exception (simulating failure)
+    with patch("pecha_api.texts.segments.segments_utils.get_contents_by_id", new_callable=AsyncMock, side_effect=Exception("TOC not found")):
+        result = await SegmentUtils._group_segment_content_by_text_id(segments)
+        
+        # Check that segments are grouped
+        assert text_id in result
+        assert len(result[text_id]) == 3
+        
+        # Check that segments are sorted by pecha_segment_id
+        assert result[text_id][0].pecha_segment_id == "01"
+        assert result[text_id][1].pecha_segment_id == "02"
+        assert result[text_id][2].pecha_segment_id == "03"
+
+
+@pytest.mark.asyncio
+async def test_group_segment_content_by_text_id_multiple_text_ids():
+    """Test _group_segment_content_by_text_id handles multiple text_ids correctly."""
+    text_id_1 = "text-id-1"
+    text_id_2 = "text-id-2"
+    
+    segments = [
+        SegmentDTO(
+            id="seg-1-1",
+            text_id=text_id_1,
+            content="Text 1 Segment 1",
+            mapping=[],
+            type=SegmentType.SOURCE,
+            pecha_segment_id="01"
+        ),
+        SegmentDTO(
+            id="seg-2-1",
+            text_id=text_id_2,
+            content="Text 2 Segment 1",
+            mapping=[],
+            type=SegmentType.SOURCE,
+            pecha_segment_id="01"
+        ),
+        SegmentDTO(
+            id="seg-1-2",
+            text_id=text_id_1,
+            content="Text 1 Segment 2",
+            mapping=[],
+            type=SegmentType.SOURCE,
+            pecha_segment_id="02"
+        ),
+    ]
+    
+    with patch("pecha_api.texts.segments.segments_utils.get_contents_by_id", new_callable=AsyncMock, side_effect=Exception("TOC not found")):
+        result = await SegmentUtils._group_segment_content_by_text_id(segments)
+        
+        # Check that both text_ids are present
+        assert text_id_1 in result
+        assert text_id_2 in result
+        
+        # Check correct grouping
+        assert len(result[text_id_1]) == 2
+        assert len(result[text_id_2]) == 1
+        
+        # Check segments are in correct groups
+        assert all(seg.text_id == text_id_1 for seg in result[text_id_1])
+        assert all(seg.text_id == text_id_2 for seg in result[text_id_2])
+
+
+@pytest.mark.asyncio
+async def test_group_segment_content_by_text_id_nested_sections():
+    """Test _group_segment_content_by_text_id handles nested sections in TOC."""
+    text_id = "text-id-1"
+    
+    segments = [
+        SegmentDTO(id="seg-3", text_id=text_id, content="Third", mapping=[], type=SegmentType.SOURCE),
+        SegmentDTO(id="seg-1", text_id=text_id, content="First", mapping=[], type=SegmentType.SOURCE),
+        SegmentDTO(id="seg-2", text_id=text_id, content="Second", mapping=[], type=SegmentType.SOURCE),
+    ]
+    
+    # Create TOC with nested sections
+    table_of_contents = [
+        TableOfContent(
+            id="toc-1",
+            text_id=text_id,
+            type=TableOfContentType.TEXT,
+            sections=[
+                Section(
+                    id="section-1",
+                    title="Parent Section",
+                    section_number=1,
+                    parent_id=None,
+                    segments=[
+                        TextSegment(segment_id="seg-1", segment_number=1),
+                    ],
+                    sections=[
+                        Section(
+                            id="section-1-1",
+                            title="Nested Section",
+                            section_number=1,
+                            parent_id="section-1",
+                            segments=[
+                                TextSegment(segment_id="seg-2", segment_number=1),
+                                TextSegment(segment_id="seg-3", segment_number=2),
+                            ],
+                            sections=[],
+                            created_date="",
+                            updated_date="",
+                            published_date=""
+                        )
+                    ],
+                    created_date="",
+                    updated_date="",
+                    published_date=""
+                )
+            ]
+        )
+    ]
+    
+    with patch("pecha_api.texts.segments.segments_utils.get_contents_by_id", new_callable=AsyncMock, return_value=table_of_contents):
+        result = await SegmentUtils._group_segment_content_by_text_id(segments)
+        
+        # Check segments are correctly ordered from nested sections
+        assert len(result[text_id]) == 3
+        assert result[text_id][0].id == "seg-1"
+        assert result[text_id][1].id == "seg-2"
+        assert result[text_id][2].id == "seg-3"
+
+
+@pytest.mark.asyncio
+async def test_filter_segment_mapping_uses_grouped_segments():
+    """Test that filter_segment_mapping_by_type_or_text_id correctly uses grouped segments."""
+    text_id = "commentary-text-1"
+    
+    # Create segments that should be grouped and merged
+    segments = [
+        SegmentDTO(
+            id="seg-2",
+            text_id=text_id,
+            content=" content 2",
+            mapping=[],
+            type=SegmentType.SOURCE,
+            pecha_segment_id="02"
+        ),
+        SegmentDTO(
+            id="seg-1",
+            text_id=text_id,
+            content="content 1",
+            mapping=[],
+            type=SegmentType.SOURCE,
+            pecha_segment_id="01"
+        ),
+    ]
+    
+    text_details = {
+        text_id: TextDTO(
+            id=text_id,
+            title="Commentary",
+            language="bo",
+            type="commentary",
+            group_id="g1",
+            is_published=True,
+            created_date="",
+            updated_date="",
+            published_date="",
+            published_by="",
+            categories=[],
+            views=0,
+        )
+    }
+    
+    # Mock to ensure segments are sorted
+    with patch("pecha_api.texts.segments.segments_utils.TextUtils.get_text_details_by_ids", new_callable=AsyncMock, return_value=text_details), \
+         patch("pecha_api.texts.segments.segments_utils.get_contents_by_id", new_callable=AsyncMock, side_effect=Exception("TOC not found")):
+        
+        result = await SegmentUtils.filter_segment_mapping_by_type_or_text_id(segments, type="commentary")
+        
+        # Verify segments are merged in correct order (sorted by pecha_segment_id)
+        assert len(result) == 1
+        assert result[0].segments[0].content == "content 1 content 2"

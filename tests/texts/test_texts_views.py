@@ -14,7 +14,8 @@ from pecha_api.texts.texts_response_models import (
     TextVersion,
     TableOfContent,
     TableOfContentType,
-    Section
+    Section,
+    TextDetailsRequest
 )
 
 client = TestClient(api)
@@ -657,3 +658,170 @@ async def test_get_commentaries_service_error(mocker):
     
     assert response.status_code == status.HTTP_500_INTERNAL_SERVER_ERROR
     assert response.json()["detail"] == "Internal server error"
+
+
+@pytest.mark.asyncio
+async def test_get_contents_with_details_success(mocker):
+    """Test POST /texts/{text_id}/details with valid request"""
+    # Create mock response with all required fields
+    mock_detail_response = {
+        "text_detail": MOCK_TEXT_DTO.model_dump(),
+        "content": {
+            "id": "123e4567-e89b-12d3-a456-426614174001",
+            "text_id": "123e4567-e89b-12d3-a456-426614174000",
+            "sections": []
+        },
+        "size": 10,
+        "pagination_direction": "next",
+        "current_segment_position": 1,
+        "total_segments": 100
+    }
+    
+    # Mock the service function
+    mock_get_details = mocker.patch(
+        'pecha_api.texts.texts_views.get_text_details_by_text_id',
+        new_callable=AsyncMock,
+        return_value=mock_detail_response
+    )
+    
+    # Test data
+    test_text_id = "123e4567-e89b-12d3-a456-426614174000"
+    details_request = {
+        "version_id": "123e4567-e89b-12d3-a456-426614174003",
+        "content_id": "123e4567-e89b-12d3-a456-426614174001",
+        "segment_id": "123e4567-e89b-12d3-a456-426614174005",
+        "size": 10,
+        "direction": "next"
+    }
+    
+    # Make the request
+    async with AsyncClient(transport=ASGITransport(app=api), base_url="http://test") as ac:
+        response = await ac.post(
+            f"/texts/{test_text_id}/details",
+            json=details_request
+        )
+    
+    # Assertions
+    assert response.status_code == 200
+    response_data = response.json()
+    assert "text_detail" in response_data
+    assert "content" in response_data
+    assert "size" in response_data
+    assert "pagination_direction" in response_data
+    assert "current_segment_position" in response_data
+    assert "total_segments" in response_data
+    assert response_data["text_detail"]["id"] == MOCK_TEXT_DTO.id
+    assert response_data["size"] == 10
+    assert response_data["total_segments"] == 100
+    mock_get_details.assert_called_once()
+    call_args = mock_get_details.call_args[1]
+    assert call_args["text_id"] == test_text_id
+    assert isinstance(call_args["text_details_request"], TextDetailsRequest)
+
+
+@pytest.mark.asyncio
+async def test_get_contents_with_details_invalid_text(mocker):
+    """Test POST /texts/{text_id}/details with non-existent text"""
+    mocker.patch(
+        'pecha_api.texts.texts_views.get_text_details_by_text_id',
+        side_effect=HTTPException(status_code=404, detail="Text not found")
+    )
+    
+    details_request = {
+        "version_id": "123e4567-e89b-12d3-a456-426614174003",
+        "content_id": "123e4567-e89b-12d3-a456-426614174001",
+        "segment_id": "123e4567-e89b-12d3-a456-426614174005",
+        "size": 10,
+        "direction": "next"
+    }
+    
+    async with AsyncClient(transport=ASGITransport(app=api), base_url="http://test") as ac:
+        response = await ac.post(
+            "/texts/non_existent_id/details",
+            json=details_request
+        )
+    
+    assert response.status_code == 404
+
+
+@pytest.mark.asyncio
+async def test_get_versions_not_found(mocker):
+    """Test GET /texts/{text_id}/versions with non-existent text"""
+    mocker.patch(
+        'pecha_api.texts.texts_views.get_text_versions_by_group_id',
+        side_effect=HTTPException(status_code=404, detail="Text not found")
+    )
+    
+    async with AsyncClient(transport=ASGITransport(app=api), base_url="http://test") as ac:
+        response = await ac.get("/texts/non_existent_id/versions")
+    
+    assert response.status_code == 404
+
+
+@pytest.mark.asyncio
+async def test_get_text_invalid_parameters(mocker):
+    """Test GET /texts with invalid pagination parameters"""
+    mock_get_text = mocker.patch(
+        'pecha_api.texts.texts_views.get_text_by_text_id_or_collection',
+        new_callable=AsyncMock,
+        return_value=MOCK_TEXT_DTO
+    )
+    
+    # Test with negative skip
+    async with AsyncClient(transport=ASGITransport(app=api), base_url="http://test") as ac:
+        response = await ac.get("/texts?text_id=123&skip=-1&limit=10")
+    
+    # FastAPI will validate and return 422 for invalid parameters
+    assert response.status_code in [200, 422]  # Depends on FastAPI validation
+
+
+@pytest.mark.asyncio
+async def test_create_text_invalid_data():
+    """Test POST /texts with invalid data"""
+    invalid_data = {
+        "title": "Test",
+        # Missing required fields
+    }
+    
+    async with AsyncClient(transport=ASGITransport(app=api), base_url="http://test") as ac:
+        response = await ac.post(
+            "/texts",
+            json=invalid_data,
+            headers={"Authorization": f"Bearer {VALID_TOKEN}"}
+        )
+    
+    # Should return 422 for validation error
+    assert response.status_code == 422
+
+
+@pytest.mark.asyncio
+async def test_create_text_service_error(mocker):
+    """Test POST /texts when service layer raises an error"""
+    mocker.patch(
+        'pecha_api.texts.texts_views.create_new_text',
+        side_effect=HTTPException(status_code=400, detail="Invalid group_id")
+    )
+    
+    create_data = {
+        "pecha_text_id": "test_pecha_id",
+        "title": "Test Text",
+        "language": "bo",
+        "isPublished": True,
+        "group_id": "invalid_group_id",
+        "type": "version",
+        "published_by": "test_user",
+        "categories": [],
+        "source_link": "https://test-source.com",
+        "ranking": 1,
+        "license": "CC0"
+    }
+    
+    async with AsyncClient(transport=ASGITransport(app=api), base_url="http://test") as ac:
+        response = await ac.post(
+            "/texts",
+            json=create_data,
+            headers={"Authorization": f"Bearer {VALID_TOKEN}"}
+        )
+    
+    assert response.status_code == 400
+    assert response.json()["detail"] == "Invalid group_id"

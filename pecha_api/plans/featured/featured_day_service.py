@@ -25,6 +25,7 @@ def build_task_dto(task) -> TaskDTO:
         SubTaskDTO(
             id=subtask.id,
             content_type=subtask.content_type,
+            duration=subtask.duration,
             content=generate_subtask_content_url(subtask.content_type, subtask.content),
             display_order=subtask.display_order
         )

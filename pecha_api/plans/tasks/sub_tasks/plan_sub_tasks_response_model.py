@@ -10,6 +10,7 @@ from uuid import UUID
 class SubTaskRequestFields(BaseModel):
     content_type: str
     content: str
+    duration: Optional[str] = None
 
 
 class SubTaskRequest(BaseModel):
@@ -21,6 +22,7 @@ class SubTaskDTO(BaseModel):
     id: Optional[UUID]
     content_type: ContentType
     content: str
+    duration: Optional[str] = None
     image_url: Optional[str] = None
     display_order: int
 

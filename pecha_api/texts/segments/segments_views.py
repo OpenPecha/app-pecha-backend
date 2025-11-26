@@ -10,7 +10,8 @@ from .segments_service import (
     get_commentaries_by_segment_id,
     get_segment_details_by_id, 
     get_info_by_segment_id,
-    get_root_text_mapping_by_segment_id
+    get_root_text_mapping_by_segment_id,
+    update_segments_service
 )
 from .segments_response_models import (
     CreateSegmentRequest,
@@ -18,7 +19,8 @@ from .segments_response_models import (
     SegmentResponse,
     SegmentInfoResponse,
     SegmentTranslationsResponse,
-    SegmentCommentariesResponse
+    SegmentCommentariesResponse,
+    SegmentUpdateRequest
 )
 
 oauth2_scheme = HTTPBearer()
@@ -70,4 +72,16 @@ async def get_commentaries_for_segment(
 ) -> SegmentCommentariesResponse:
     return await get_commentaries_by_segment_id(
         segment_id=segment_id
+    )
+
+
+@segment_router.put("", status_code=status.HTTP_200_OK)
+async def update_segment(
+    segment_update_request: SegmentUpdateRequest,
+    authentication_credential: Annotated[HTTPAuthorizationCredentials, Depends(oauth2_scheme)],
+):
+    return await update_segments_service(
+        token=authentication_credential.credentials,
+        segment_update_request=segment_update_request,
+
     )

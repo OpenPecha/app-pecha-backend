@@ -10,3 +10,9 @@ class QueryType(Enum):
     PHRASE = "phrase"  # Exact phrase matching
     WILDCARD = "wildcard"  # Pattern matching
     BOOL = "bool"    # Boolean query with exact matching
+
+class MultilingualSearchType(Enum):
+    HYBRID = "hybrid"      # Combined semantic + keyword search
+    BM25 = "bm25"         # Keyword-based ranking algorithm
+    SEMANTIC = "semantic" # Vector similarity search
+    EXACT = "exact"       # Exact text matching

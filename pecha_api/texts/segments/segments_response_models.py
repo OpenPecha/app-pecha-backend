@@ -34,6 +34,14 @@ class SegmentDTO(BaseModel):
     mapping: Optional[List[MappingResponse]] = None
     text: Optional[TextDTO] = None
 
+class SegmentUpdate(BaseModel):
+    pecha_segment_id: str
+    content: str
+
+class SegmentUpdateRequest(BaseModel):
+    pecha_text_id: str
+    segments: List[SegmentUpdate]
+    
 class MappedSegmentDTO(BaseModel):
     segment_id: str
     content: str

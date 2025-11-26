@@ -10,12 +10,14 @@ from pecha_api.plans.users.plan_users_response_models import (
     UserPlanEnrollRequest, 
     UserPlanProgressResponse, 
     UserPlanDayDetailsResponse,
-    UserPlansResponse
+    UserPlansResponse,
+    UserPlanDayCompletionStatusResponse
 )
 
 from pecha_api.plans.users.plan_users_service import (
     get_user_enrolled_plans,
     enroll_user_in_plan,
+    get_user_plan_days_completion_status_service,
     unenroll_user_from_plan,
     get_user_plan_progress,
     complete_task_service,
@@ -73,6 +75,13 @@ async def get_user_plan_progress_details(
         token=authentication_credential.credentials,
         plan_id=plan_id
     )
+
+@user_progress_router.get("/plans/{plan_id}/days/completion_status", status_code=status.HTTP_200_OK, response_model=UserPlanDayCompletionStatusResponse)
+async def get_user_plan_days_completion_status(
+    plan_id: UUID,
+    authentication_credential: Annotated[HTTPAuthorizationCredentials, Depends(oauth2_scheme)]
+):
+    return await get_user_plan_days_completion_status_service(token=authentication_credential.credentials, plan_id=plan_id)
 
 @user_progress_router.post("/sub-tasks/{sub_task_id}/complete", status_code=status.HTTP_204_NO_CONTENT)
 def complete_sub_task(

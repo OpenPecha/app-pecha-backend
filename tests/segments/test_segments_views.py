@@ -9,7 +9,9 @@ from pecha_api.texts.segments.segments_response_models import (
     CreateSegment,
     SegmentTranslationsResponse,
     SegmentTranslation,
-    SegmentDTO
+    SegmentDTO,
+    SegmentUpdateRequest,
+    SegmentUpdate
 )
 from pecha_api.texts.texts_response_models import TextDTO
 
@@ -228,3 +230,112 @@ def test_create_segment_unauthorized():
     )
     
     assert response.status_code == status.HTTP_403_FORBIDDEN
+
+@patch("pecha_api.texts.segments.segments_views.update_segments_service")
+def test_update_segment_success(mock_update_segments_service):
+    # Mock data
+    segment_id = str(uuid4())
+    segment_update_request = SegmentUpdateRequest(
+        pecha_text_id="pecha_text_123",
+        segments=[
+            SegmentUpdate(
+                pecha_segment_id="pecha_segment_123",
+                content="Updated segment content"
+            )
+        ]
+    )
+    
+    mock_response = SegmentDTO(
+        id=segment_id,
+        pecha_segment_id="pecha_segment_123",
+        text_id="text123",
+        content="Updated segment content",
+        mapping=[],
+        type=SegmentType.SOURCE
+    )
+    
+    mock_update_segments_service.return_value = mock_response
+    
+    # Make request with auth token
+    response = client.put(
+        "/api/v1/segments",
+        json=segment_update_request.model_dump(mode="json"),
+        headers={"Authorization": "Bearer admin_token"}
+    )
+    
+    # Assert response
+    assert response.status_code == status.HTTP_200_OK
+
+def test_update_segment_unauthorized():
+    segment_update_request = SegmentUpdateRequest(
+        pecha_text_id="pecha_text_123",
+        segments=[
+            SegmentUpdate(
+                pecha_segment_id="pecha_segment_123",
+                content="Updated segment content"
+            )
+        ]
+    )
+    
+    # Make request without auth token
+    response = client.put(
+        "/api/v1/segments",
+        json=segment_update_request.model_dump(mode="json")
+    )
+    
+    assert response.status_code == status.HTTP_403_FORBIDDEN
+
+@patch("pecha_api.texts.segments.segments_views.update_segments_service")
+def test_update_segment_forbidden(mock_update_segments_service):
+    segment_update_request = SegmentUpdateRequest(
+        pecha_text_id="pecha_text_123",
+        segments=[
+            SegmentUpdate(
+                pecha_segment_id="pecha_segment_123",
+                content="Updated segment content"
+            )
+        ]
+    )
+    
+    # Mock the service to raise a 403 Forbidden exception
+    mock_update_segments_service.side_effect = HTTPException(
+        status_code=status.HTTP_403_FORBIDDEN,
+        detail=ErrorConstants.ADMIN_ERROR_MESSAGE
+    )
+    
+    # Make request with non-admin token
+    response = client.put(
+        "/api/v1/segments",
+        json=segment_update_request.model_dump(mode="json"),
+        headers={"Authorization": "Bearer user_token"}
+    )
+    
+    assert response.status_code == status.HTTP_403_FORBIDDEN
+    assert response.json()["detail"] == ErrorConstants.ADMIN_ERROR_MESSAGE
+
+@patch("pecha_api.texts.segments.segments_views.update_segments_service")
+def test_update_segment_text_not_found(mock_update_segments_service):
+    segment_update_request = SegmentUpdateRequest(
+        pecha_text_id="invalid_pecha_text_id",
+        segments=[
+            SegmentUpdate(
+                pecha_segment_id="pecha_segment_123",
+                content="Updated segment content"
+            )
+        ]
+    )
+    
+    # Mock the service to raise a 404 Not Found exception
+    mock_update_segments_service.side_effect = HTTPException(
+        status_code=status.HTTP_404_NOT_FOUND,
+        detail=ErrorConstants.TEXT_NOT_FOUND_MESSAGE
+    )
+    
+    response = client.put(
+        "/api/v1/segments",
+        json=segment_update_request.model_dump(mode="json"),
+        headers={"Authorization": "Bearer admin_token"}
+    )
+    
+    assert response.status_code == status.HTTP_404_NOT_FOUND
+    assert response.json()["detail"] == ErrorConstants.TEXT_NOT_FOUND_MESSAGE

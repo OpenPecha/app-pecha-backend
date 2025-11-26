@@ -24,6 +24,7 @@ def sample_subtask():
     subtask.id = uuid4()
     subtask.content_type = ContentType.TEXT
     subtask.content = "Practice deep breathing"
+    subtask.duration = "12:00"
     subtask.display_order = 1
     return subtask
 
@@ -79,6 +80,7 @@ async def test_get_featured_day_service_success(sample_plan_item, mock_db_sessio
         assert subtask.id == sample_plan_item.tasks[0].sub_tasks[0].id
         assert subtask.content_type == ContentType.TEXT
         assert subtask.content == "Practice deep breathing"
+        assert subtask.duration == "12:00"
         assert subtask.display_order == 1
         
         mock_repo.assert_called_once_with(mock_db_session.__enter__.return_value, language="EN")
@@ -91,12 +93,14 @@ async def test_get_featured_day_service_multiple_tasks():
     subtask1.id = uuid4()
     subtask1.content_type = ContentType.TEXT
     subtask1.content = "Read introduction"
+    subtask1.duration = None
     subtask1.display_order = 1
     
     subtask2 = MagicMock()
     subtask2.id = uuid4()
     subtask2.content_type = ContentType.VIDEO
     subtask2.content = "https://video.url/meditation"
+    subtask2.duration = None
     subtask2.display_order = 2
     
     task1 = MagicMock()
@@ -241,18 +245,21 @@ async def test_get_featured_day_service_subtask_sorting():
     subtask1.id = uuid4()
     subtask1.content_type = ContentType.TEXT
     subtask1.content = "Subtask 3"
+    subtask1.duration = None
     subtask1.display_order = 3
     
     subtask2 = MagicMock()
     subtask2.id = uuid4()
     subtask2.content_type = ContentType.TEXT
     subtask2.content = "Subtask 1"
+    subtask2.duration = None
     subtask2.display_order = 1
     
     subtask3 = MagicMock()
     subtask3.id = uuid4()
     subtask3.content_type = ContentType.TEXT
     subtask3.content = "Subtask 2"
+    subtask3.duration = None
     subtask3.display_order = 2
     
     task = MagicMock()
@@ -335,24 +342,28 @@ async def test_get_featured_day_service_with_all_content_types():
     subtask_text.id = uuid4()
     subtask_text.content_type = ContentType.TEXT
     subtask_text.content = "Read instructions"
+    subtask_text.duration = None
     subtask_text.display_order = 1
     
     subtask_video = MagicMock()
     subtask_video.id = uuid4()
     subtask_video.content_type = ContentType.VIDEO
     subtask_video.content = "https://video.url"
+    subtask_video.duration = None
     subtask_video.display_order = 2
     
     subtask_audio = MagicMock()
     subtask_audio.id = uuid4()
     subtask_audio.content_type = ContentType.AUDIO
     subtask_audio.content = "https://audio.url"
+    subtask_audio.duration = None
     subtask_audio.display_order = 3
     
     subtask_image = MagicMock()
     subtask_image.id = uuid4()
     subtask_image.content_type = ContentType.IMAGE
     subtask_image.content = "https://image.url"
+    subtask_image.duration = None
     subtask_image.display_order = 4
     
     task = MagicMock()
@@ -396,6 +407,7 @@ async def test_get_featured_day_service_with_optional_fields_none():
     subtask.id = uuid4()
     subtask.content_type = ContentType.TEXT
     subtask.content = None
+    subtask.duration = None
     subtask.display_order = None
     
     task = MagicMock()
@@ -473,6 +485,7 @@ async def test_get_featured_day_service_many_subtasks():
         subtask.id = uuid4()
         subtask.content_type = ContentType.TEXT
         subtask.content = f"Subtask {i}"
+        subtask.duration = None
         subtask.display_order = i
         subtasks.append(subtask)
     
