@@ -15,7 +15,8 @@ from .texts_repository import (
     update_text_details_by_id,
     delete_text_by_id,
     fetch_sheets_from_db,
-    get_all_texts_by_collection
+    get_all_texts_by_collection,
+    get_all_recitation_texts_by_collection
 )
 from .texts_response_models import (
     TableOfContent,
@@ -79,7 +80,7 @@ from .segments.segments_utils import SegmentUtils
 from typing import List, Dict, Optional, Tuple, Set
 from pecha_api.config import get
 from pecha_api.utils import Utils
-from .texts_enums import PaginationDirection, LANGUAGE_ORDERS
+from .texts_enums import PaginationDirection, LANGUAGE_ORDERS, TextType, TextTypes
 
 import logging
 
@@ -177,7 +178,7 @@ async def get_table_of_contents_by_text_id(text_id: str, language: str = None, s
     group_id: str = text_detail.group_id
     texts: List[TextDTO] = await get_texts_by_group_id(group_id=group_id, skip=skip, limit=limit)
     filtered_text_on_root_and_version = TextUtils.filter_text_on_root_and_version(texts=texts, language=language)
-    root_text: TextDTO = filtered_text_on_root_and_version["root_text"]
+    root_text: TextDTO = filtered_text_on_root_and_version[TextType.ROOT_TEXT.value]
     if root_text is None:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=ErrorConstants.TEXT_NOT_FOUND_MESSAGE)
     table_of_contents: List[TableOfContent] = await get_contents_by_id(text_id=root_text.id)
@@ -295,8 +296,8 @@ async def get_text_versions_by_group_id(text_id: str, language: str, skip: int, 
     group_id = root_text.group_id
     texts = await get_texts_by_group_id(group_id=group_id, skip=skip, limit=limit)
     filtered_text_on_root_and_version = TextUtils.filter_text_on_root_and_version(texts=texts, language=language)
-    root_text = filtered_text_on_root_and_version["root_text"]
-    versions = filtered_text_on_root_and_version["versions"]
+    root_text = filtered_text_on_root_and_version[TextType.ROOT_TEXT.value]
+    versions = filtered_text_on_root_and_version[TextTypes.VERSIONS.value]
     versions_table_of_content_id_dict: Dict[str, List[str]] = await _get_table_of_content_by_version_text_id(versions=versions)
     list_of_version = _get_list_of_text_version_response_model(versions=versions, versions_table_of_content_id_dict=versions_table_of_content_id_dict)
     response = TextVersionResponse(
@@ -454,12 +455,12 @@ async def _validate_text_detail_request(text_id: str, text_details_request: Text
 
 async def get_root_text_by_collection_id(collection_id: str, language: str) -> Optional[tuple[str, str]]:
 
-    texts = await get_all_texts_by_collection(collection_id=collection_id, language=language)
+    texts = await get_all_recitation_texts_by_collection(collection_id=collection_id, language=language)
     grouped_texts = _group_texts_by_group_id(texts=texts, language=language)
     recitation_text_list = []
     for group_texts in grouped_texts.values():
         filter_text_base_on_group_id_type = await TextUtils.filter_text_base_on_group_id_type_and_language_preference(texts=group_texts, language=language)
-        root_text = filter_text_base_on_group_id_type["root_text"]
+        root_text = filter_text_base_on_group_id_type[TextType.ROOT_TEXT.value]
         if root_text is None:
             continue
         recitation_text_list.append(RecitationDTO(text_id=root_text.id, title=root_text.title))

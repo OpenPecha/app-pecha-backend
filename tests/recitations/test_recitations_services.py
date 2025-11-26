@@ -214,7 +214,7 @@ class TestGetRecitationDetailsService:
         main_text = MagicMock(id=main_text_id, title="Main Title", group_id="group-1")
         mock_get_text_details_by_text_id.return_value = main_text
         mock_get_all_texts_by_group_id.return_value = [MagicMock()]
-        mock_filter_texts_root_version.return_value = {"root_text": None}
+        mock_filter_texts_root_version.return_value = {TextType.ROOT_TEXT.value: None}
 
         req = RecitationDetailsRequest(language="en", recitation=["en"], translations=[], transliterations=[], adaptations=[])
         with pytest.raises(HTTPException) as exc_info:
