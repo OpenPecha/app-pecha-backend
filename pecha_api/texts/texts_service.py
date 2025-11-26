@@ -492,29 +492,34 @@ async def _get_texts_by_collection_id(collection_id: str, language: str, skip: i
     texts.sort(
                 key=lambda text: TextUtils.get_language_priority(text.language, language)
             )
-    texts = texts[max(0, skip) : min(len(texts), skip+limit)]
-    grouped_texts = _group_texts_by_group_id(texts=texts, language=language)
+    track_skip = 0
+    track_limit = 0
     text_list = []
-    for texts in grouped_texts.values():
-        filter_text_base_on_group_id_type = await TextUtils.filter_text_base_on_group_id_type_and_language_preference(texts=texts,
-                                                                            language=language)
-                                                                            
-        
-        root_text = filter_text_base_on_group_id_type["root_text"]
-        if root_text is not None:
+    visited_group_ids = set()
+    for text in texts:
+        if text.group_id in visited_group_ids:
+            continue
+        elif track_skip < skip:
+            track_skip += 1
+            continue
+        if text is not None:
             text_list.append(TextDTO(
-            id=str(root_text.id),
-            pecha_text_id=str(root_text.pecha_text_id),
-            title=root_text.title,
-            language=root_text.language,
-            group_id=root_text.group_id,
-            type="root_text",
-            is_published=root_text.is_published,
-            created_date=root_text.created_date,
-            updated_date=root_text.updated_date,
-            published_date=root_text.published_date,
-            published_by=root_text.published_by,
-        ))
+                id=str(text.id),
+                pecha_text_id=str(text.pecha_text_id),
+                title=text.title,
+                language=text.language,
+                group_id=text.group_id,
+                type="root_text",
+                is_published=text.is_published,
+                created_date=text.created_date,
+                updated_date=text.updated_date,
+                published_date=text.published_date,
+                published_by=text.published_by,
+            ))
+        track_limit += 1
+        if track_limit >= limit:
+            break;
+        visited_group_ids.add(text.group_id)
     return text_list, total_unique_group_ids
 
 
