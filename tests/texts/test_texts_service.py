@@ -2845,7 +2845,7 @@ async def test_get_text_by_collection_id_empty_result():
     
     with patch("pecha_api.texts.texts_service.get_text_by_text_id_or_collection_cache", new_callable=AsyncMock, return_value=None), \
          patch("pecha_api.texts.texts_service.get_collection", new_callable=AsyncMock, return_value=mock_collection), \
-         patch("pecha_api.texts.texts_service._get_texts_by_collection_id", new_callable=AsyncMock, return_value=[]), \
+         patch("pecha_api.texts.texts_service._get_texts_by_collection_id", new_callable=AsyncMock, return_value=([], 0)), \
          patch("pecha_api.texts.texts_service.get_all_texts_by_collection", new_callable=AsyncMock, return_value=[]), \
          patch("pecha_api.texts.texts_service.set_text_by_text_id_or_collection_cache", new_callable=AsyncMock):
         
