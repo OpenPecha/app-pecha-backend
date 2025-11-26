@@ -1213,7 +1213,7 @@ def test_get_user_plan_day_details_service_success():
                 estimated_time=10,
                 display_order=1,
                 sub_tasks=[
-                    SimpleNamespace(id=sub1_id, content_type=ContentType.TEXT, content="A", display_order=1),
+                    SimpleNamespace(id=sub1_id, content_type=ContentType.TEXT, content="A", duration=None, display_order=1),
                 ],
             ),
             SimpleNamespace(
@@ -1222,7 +1222,7 @@ def test_get_user_plan_day_details_service_success():
                 estimated_time=5,
                 display_order=2,
                 sub_tasks=[
-                    SimpleNamespace(id=sub2_id, content_type=ContentType.AUDIO, content="B", display_order=1),
+                    SimpleNamespace(id=sub2_id, content_type=ContentType.AUDIO, content="B", duration=None, display_order=1),
                 ],
             ),
         ],
@@ -1374,6 +1374,7 @@ def test_get_user_plan_day_details_service_image_subtask_presigned():
                         id=sub_image_id,
                         content_type=ContentType.IMAGE,
                         content="images/subtask/image.png",
+                        duration=None,
                         display_order=1,
                     )
                 ],

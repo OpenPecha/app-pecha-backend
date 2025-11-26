@@ -69,6 +69,7 @@ class UserSubTaskDTO(BaseModel):
     id: UUID
     display_order: Optional[int] = None
     is_completed: bool
+    duration: Optional[str] = None
     content_type: ContentType
     content: str
 

@@ -1,6 +1,5 @@
 from fastapi import HTTPException
 from starlette import status
-from rich import print
 
 from pecha_api.error_contants import ErrorConstants
 from .texts_repository import (
@@ -164,7 +163,6 @@ async def get_table_of_content_by_sheet_id(sheet_id: str) -> Optional[TableOfCon
         table_of_content: TableOfContent = table_of_contents[0]
     
     if table_of_content is not None:
-        print(type(table_of_content))
         await set_table_of_content_by_sheet_id_cache(sheet_id=sheet_id, cache_type=CacheType.SHEET_TABLE_OF_CONTENT, data=table_of_content)
     
     return table_of_content
@@ -384,7 +382,6 @@ async def get_table_of_content_by_type(table_of_content: TableOfContent):
 async def replace_pecha_segment_id_with_segment_id(table_of_content: TableOfContent) -> TableOfContent:
     text_segments = await get_segments_by_text_id(text_id=table_of_content.text_id)
     segments_dict = {segment.pecha_segment_id: segment.id for segment in text_segments}
-    print(segments_dict)
 
     new_toc = TableOfContent(
         text_id=table_of_content.text_id,

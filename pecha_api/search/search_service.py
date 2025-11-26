@@ -10,7 +10,6 @@ from pecha_api.config import get
 from pecha_api.http_message_utils import handle_http_status_error, handle_request_error
 import httpx
 import logging
-from rich import print
 from .search_response_models import (
     SearchResponse,
     TextIndex,
