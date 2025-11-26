@@ -124,12 +124,29 @@ class Text(Document):
                 return False  # One or more IDs are missing
         return True  # All IDs exist
     
+    # @classmethod
+    # async def get_texts_by_collection_id(cls, collection_id: str, language: str, skip: int, limit: int) -> List["Text"]:
+    #     query = {
+    #         "categories": collection_id,
+    #         "language": language
+    #     }
+    #     texts = (
+    #         await cls.find(
+    #             query
+    #         )
+    #         .skip(skip)
+    #         .limit(limit)
+    #         .to_list()
+    #     )
+    #     return texts
+
     @classmethod
-    async def get_texts_by_collection_id(cls, collection_id: str, language: str, skip: int, limit: int) -> List["Text"]:
+    async def get_texts_by_collection_id(cls, collection_id: str, skip: int, limit: int, language: str | None = None) -> List["Text"]:
         query = {
-            "categories": collection_id,
-            "language": language
+            "categories": collection_id
         }
+        if language is not None:
+            query["language"] = language
         texts = (
             await cls.find(
                 query
@@ -143,8 +160,7 @@ class Text(Document):
     @classmethod
     async def get_all_texts_by_collection_id(cls, collection_id, language):
         query = {
-            "categories": collection_id,
-            "language": language
+            "categories": collection_id
         }
         return await cls.find(
             query

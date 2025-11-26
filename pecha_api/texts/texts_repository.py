@@ -104,8 +104,8 @@ async def check_all_text_exists(text_ids: List[UUID]) -> bool:
         logging.debug(e)
         return False
 
-async def get_texts_by_collection(collection_id: str, language: str, skip: int, limit: int) -> List[Text]:
-    return await Text.get_texts_by_collection_id(collection_id=collection_id, language=language, skip=skip, limit=limit)
+async def get_texts_by_collection(collection_id: str, skip: int, limit: int) -> List[Text]:
+    return await Text.get_texts_by_collection_id(collection_id=collection_id, skip=skip, limit=limit)
 
 async def get_all_texts_by_collection(collection_id: str, language: str) -> List[Text]:
     return await Text.get_all_texts_by_collection_id(collection_id=collection_id, language=language)

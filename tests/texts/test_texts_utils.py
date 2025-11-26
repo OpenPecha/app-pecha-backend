@@ -631,4 +631,320 @@ async def test_get_commentaries_by_text_type_empty_result():
         assert len(result) == 0
         assert result == []
         mock_find.assert_called_once_with({"type": "commentary"})
+
+
+@pytest.mark.asyncio
+async def test_filter_text_base_on_group_id_type_and_language_preference_with_sorted_texts():
+    """Test filter_text_base_on_group_id_type_and_language_preference picks first text regardless of language match"""
+    # Create mock texts already sorted by language preference
+    mock_texts = [
+        TextDTO(
+            id="text_id_1",
+            title="English Text",
+            language="en",
+            group_id="group_1",
+            type="version",
+            is_published=True,
+            created_date="2025-03-21 09:40:34.025024",
+            updated_date="2025-03-21 09:40:34.025035",
+            published_date="2025-03-21 09:40:34.025038",
+            published_by="pecha",
+            categories=["categories"],
+            views=0
+        ),
+        TextDTO(
+            id="text_id_2",
+            title="Tibetan Text",
+            language="bo",
+            group_id="group_1",
+            type="version",
+            is_published=True,
+            created_date="2025-03-21 09:40:34.025024",
+            updated_date="2025-03-21 09:40:34.025035",
+            published_date="2025-03-21 09:40:34.025038",
+            published_by="pecha",
+            categories=["categories"],
+            views=0
+        )
+    ]
+    
+    mock_groups = {
+        "group_1": GroupDTO(
+            id="group_1",
+            type="text"
+        )
+    }
+    
+    with patch("pecha_api.texts.texts_utils.get_groups_by_list_of_ids", new_callable=AsyncMock, return_value=mock_groups):
+        result = await TextUtils.filter_text_base_on_group_id_type_and_language_preference(
+            texts=mock_texts,
+            language="bo"
+        )
+        
+        # Should pick the first text (en) since texts are already sorted
+        assert result is not None
+        assert result["root_text"] is not None
+        assert result["root_text"].id == "text_id_1"
+        assert result["root_text"].language == "en"
+        assert len(result["commentary"]) == 0
+
+
+@pytest.mark.asyncio
+async def test_filter_text_base_on_group_id_type_and_language_preference_with_commentary():
+    """Test filter_text_base_on_group_id_type_and_language_preference separates text and commentary"""
+    mock_texts = [
+        TextDTO(
+            id="text_id_1",
+            title="Root Text",
+            language="bo",
+            group_id="group_1",
+            type="version",
+            is_published=True,
+            created_date="2025-03-21 09:40:34.025024",
+            updated_date="2025-03-21 09:40:34.025035",
+            published_date="2025-03-21 09:40:34.025038",
+            published_by="pecha",
+            categories=["categories"],
+            views=0
+        ),
+        TextDTO(
+            id="text_id_2",
+            title="Commentary Text",
+            language="bo",
+            group_id="group_2",
+            type="commentary",
+            is_published=True,
+            created_date="2025-03-21 09:40:34.025024",
+            updated_date="2025-03-21 09:40:34.025035",
+            published_date="2025-03-21 09:40:34.025038",
+            published_by="pecha",
+            categories=["categories"],
+            views=0
+        )
+    ]
+    
+    mock_groups = {
+        "group_1": GroupDTO(
+            id="group_1",
+            type="text"
+        ),
+        "group_2": GroupDTO(
+            id="group_2",
+            type="commentary"
+        )
+    }
+    
+    with patch("pecha_api.texts.texts_utils.get_groups_by_list_of_ids", new_callable=AsyncMock, return_value=mock_groups):
+        result = await TextUtils.filter_text_base_on_group_id_type_and_language_preference(
+            texts=mock_texts,
+            language="bo"
+        )
+        
+        assert result is not None
+        assert result["root_text"] is not None
+        assert result["root_text"].id == "text_id_1"
+        assert len(result["commentary"]) == 1
+        assert result["commentary"][0].id == "text_id_2"
+        assert result["commentary"][0].type == "commentary"
+
+
+@pytest.mark.asyncio
+async def test_filter_text_base_on_group_id_type_and_language_preference_empty_texts():
+    """Test filter_text_base_on_group_id_type_and_language_preference with empty texts"""
+    result = await TextUtils.filter_text_base_on_group_id_type_and_language_preference(
+        texts=[],
+        language="bo"
+    )
+    
+    assert result is not None
+    assert result["root_text"] is None
+    assert len(result["commentary"]) == 0
+
+
+@pytest.mark.asyncio
+async def test_filter_text_base_on_group_id_type_and_language_preference_excludes_excluded_ids():
+    """Test filter_text_base_on_group_id_type_and_language_preference excludes texts in Constants.excluded_text_ids"""
+    from pecha_api.constants import Constants
+    
+    mock_texts = [
+        TextDTO(
+            id=Constants.excluded_text_ids[0] if Constants.excluded_text_ids else "excluded_id",
+            title="Excluded Text",
+            language="bo",
+            group_id="group_1",
+            type="version",
+            is_published=True,
+            created_date="2025-03-21 09:40:34.025024",
+            updated_date="2025-03-21 09:40:34.025035",
+            published_date="2025-03-21 09:40:34.025038",
+            published_by="pecha",
+            categories=["categories"],
+            views=0
+        ),
+        TextDTO(
+            id="text_id_2",
+            title="Valid Text",
+            language="bo",
+            group_id="group_1",
+            type="version",
+            is_published=True,
+            created_date="2025-03-21 09:40:34.025024",
+            updated_date="2025-03-21 09:40:34.025035",
+            published_date="2025-03-21 09:40:34.025038",
+            published_by="pecha",
+            categories=["categories"],
+            views=0
+        )
+    ]
+    
+    mock_groups = {
+        "group_1": GroupDTO(
+            id="group_1",
+            type="text"
+        )
+    }
+    
+    with patch("pecha_api.texts.texts_utils.get_groups_by_list_of_ids", new_callable=AsyncMock, return_value=mock_groups):
+        result = await TextUtils.filter_text_base_on_group_id_type_and_language_preference(
+            texts=mock_texts,
+            language="bo"
+        )
+        
+        # Should pick the second text, not the excluded one
+        assert result is not None
+        assert result["root_text"] is not None
+        assert result["root_text"].id == "text_id_2"
+
+
+@pytest.mark.asyncio
+async def test_filter_text_base_on_group_id_type_and_language_preference_no_language_filtering():
+    """Test filter_text_base_on_group_id_type_and_language_preference doesn't filter by language for root text"""
+    # This test confirms that the function picks the first text regardless of language
+    # as long as it's the correct type
+    mock_texts = [
+        TextDTO(
+            id="text_id_1",
+            title="English Text",
+            language="en",
+            group_id="group_1",
+            type="version",
+            is_published=True,
+            created_date="2025-03-21 09:40:34.025024",
+            updated_date="2025-03-21 09:40:34.025035",
+            published_date="2025-03-21 09:40:34.025038",
+            published_by="pecha",
+            categories=["categories"],
+            views=0
+        ),
+        TextDTO(
+            id="text_id_2",
+            title="Tibetan Text",
+            language="bo",
+            group_id="group_1",
+            type="version",
+            is_published=True,
+            created_date="2025-03-21 09:40:34.025024",
+            updated_date="2025-03-21 09:40:34.025035",
+            published_date="2025-03-21 09:40:34.025038",
+            published_by="pecha",
+            categories=["categories"],
+            views=0
+        )
+    ]
+    
+    mock_groups = {
+        "group_1": GroupDTO(
+            id="group_1",
+            type="text"
+        )
+    }
+    
+    with patch("pecha_api.texts.texts_utils.get_groups_by_list_of_ids", new_callable=AsyncMock, return_value=mock_groups):
+        result = await TextUtils.filter_text_base_on_group_id_type_and_language_preference(
+            texts=mock_texts,
+            language="bo"  # Requesting 'bo' but should get 'en' since it's first
+        )
+        
+        # Should pick the first text (English) not the Tibetan one
+        assert result is not None
+        assert result["root_text"] is not None
+        assert result["root_text"].id == "text_id_1"
+        assert result["root_text"].language == "en"
+
+
+@pytest.mark.asyncio
+async def test_filter_text_base_on_group_id_type_and_language_preference_filters_commentary_by_language():
+    """Test filter_text_base_on_group_id_type_and_language_preference filters commentaries by language"""
+    mock_texts = [
+        TextDTO(
+            id="text_id_1",
+            title="Root Text",
+            language="bo",
+            group_id="group_1",
+            type="version",
+            is_published=True,
+            created_date="2025-03-21 09:40:34.025024",
+            updated_date="2025-03-21 09:40:34.025035",
+            published_date="2025-03-21 09:40:34.025038",
+            published_by="pecha",
+            categories=["categories"],
+            views=0
+        ),
+        TextDTO(
+            id="text_id_2",
+            title="Bo Commentary",
+            language="bo",
+            group_id="group_2",
+            type="commentary",
+            is_published=True,
+            created_date="2025-03-21 09:40:34.025024",
+            updated_date="2025-03-21 09:40:34.025035",
+            published_date="2025-03-21 09:40:34.025038",
+            published_by="pecha",
+            categories=["categories"],
+            views=0
+        ),
+        TextDTO(
+            id="text_id_3",
+            title="En Commentary",
+            language="en",
+            group_id="group_3",
+            type="commentary",
+            is_published=True,
+            created_date="2025-03-21 09:40:34.025024",
+            updated_date="2025-03-21 09:40:34.025035",
+            published_date="2025-03-21 09:40:34.025038",
+            published_by="pecha",
+            categories=["categories"],
+            views=0
+        )
+    ]
+    
+    mock_groups = {
+        "group_1": GroupDTO(
+            id="group_1",
+            type="text"
+        ),
+        "group_2": GroupDTO(
+            id="group_2",
+            type="commentary"
+        ),
+        "group_3": GroupDTO(
+            id="group_3",
+            type="commentary"
+        )
+    }
+    
+    with patch("pecha_api.texts.texts_utils.get_groups_by_list_of_ids", new_callable=AsyncMock, return_value=mock_groups):
+        result = await TextUtils.filter_text_base_on_group_id_type_and_language_preference(
+            texts=mock_texts,
+            language="bo"
+        )
+        
+        # Should only include Tibetan commentary, not English
+        assert result is not None
+        assert result["root_text"] is not None
+        assert len(result["commentary"]) == 1
+        assert result["commentary"][0].id == "text_id_2"
+        assert result["commentary"][0].language == "bo"
     
