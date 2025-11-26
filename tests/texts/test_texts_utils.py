@@ -252,6 +252,32 @@ async def test_get_table_of_content_id_and_respective_section_by_segment_id_wher
         assert response is None
         
 
+def test_get_language_priority():
+    """Test get_language_priority returns correct priority values for Tibetan preference"""
+    # Test with Tibetan preferred language
+    assert TextUtils.get_language_priority("bo", "bo") == 0
+    assert TextUtils.get_language_priority("en", "bo") == 1
+    assert TextUtils.get_language_priority("zh", "bo") == 2
+    assert TextUtils.get_language_priority("unknown", "bo") == 999
+    
+    # Test with English preferred language
+    assert TextUtils.get_language_priority("en", "en") == 0
+    assert TextUtils.get_language_priority("bo", "en") == 1
+    assert TextUtils.get_language_priority("zh", "en") == 2
+    assert TextUtils.get_language_priority("unknown", "en") == 999
+    
+    # Test with Chinese preferred language
+    assert TextUtils.get_language_priority("zh", "zh") == 0
+    assert TextUtils.get_language_priority("en", "zh") == 1
+    assert TextUtils.get_language_priority("bo", "zh") == 2
+    assert TextUtils.get_language_priority("unknown", "zh") == 999
+
+def test_get_language_priority_with_none():
+    """Test get_language_priority handles None text_language"""
+    assert TextUtils.get_language_priority(None, "bo") == 999
+    assert TextUtils.get_language_priority(None, "en") == 999
+    assert TextUtils.get_language_priority(None, "zh") == 999
+
 @pytest.mark.asyncio
 async def test_filter_text_on_root_and_version():
     mock_texts: List[TextDTO] = [

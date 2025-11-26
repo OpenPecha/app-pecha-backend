@@ -156,12 +156,15 @@ class Text(Document):
             .to_list()
         )
         return texts
-    
+
     @classmethod
     async def get_all_texts_by_collection_id(cls, collection_id, language):
+        
         query = {
             "categories": collection_id
         }
+        if language is not None:    
+            query["language"] = language
         return await cls.find(
             query
         ).to_list()

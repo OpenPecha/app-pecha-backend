@@ -110,7 +110,10 @@ async def get_text_by_text_id_or_collection(
     if collection_id is not None:
         collection = await get_collection(collection_id=collection_id, language=language)
         texts = await _get_texts_by_collection_id(collection_id=collection_id, language=language, skip=skip, limit=limit)
-        all_texts = await get_all_texts_by_collection(collection_id=collection_id, language=language)
+        texts.sort(
+                key=lambda text: TextUtils.get_language_priority(text.language, language)
+            )
+        all_texts = await get_all_texts_by_collection(collection_id=collection_id)
         response = TextsCategoryResponse(
             collection=collection,
             texts=texts,
