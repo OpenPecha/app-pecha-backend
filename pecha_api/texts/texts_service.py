@@ -1,6 +1,5 @@
 from fastapi import HTTPException
 from starlette import status
-from rich import print
 
 from pecha_api.error_contants import ErrorConstants
 from .texts_repository import (
@@ -161,7 +160,6 @@ async def get_table_of_content_by_sheet_id(sheet_id: str) -> Optional[TableOfCon
         table_of_content: TableOfContent = table_of_contents[0]
     
     if table_of_content is not None:
-        print(type(table_of_content))
         await set_table_of_content_by_sheet_id_cache(sheet_id=sheet_id, cache_type=CacheType.SHEET_TABLE_OF_CONTENT, data=table_of_content)
     
     return table_of_content
@@ -180,7 +178,6 @@ async def get_table_of_contents_by_text_id(text_id: str, language: str = None, s
     texts: List[TextDTO] = await get_texts_by_group_id(group_id=group_id, skip=skip, limit=limit)
     filtered_text_on_root_and_version = TextUtils.filter_text_on_root_and_version(texts=texts, language=language)
     root_text: TextDTO = filtered_text_on_root_and_version["root_text"]
-    print(f"root_text: {root_text} ahahhahah")
     if root_text is None:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=ErrorConstants.TEXT_NOT_FOUND_MESSAGE)
     table_of_contents: List[TableOfContent] = await get_contents_by_id(text_id=root_text.id)
@@ -382,7 +379,6 @@ async def get_table_of_content_by_type(table_of_content: TableOfContent):
 async def replace_pecha_segment_id_with_segment_id(table_of_content: TableOfContent) -> TableOfContent:
     text_segments = await get_segments_by_text_id(text_id=table_of_content.text_id)
     segments_dict = {segment.pecha_segment_id: segment.id for segment in text_segments}
-    print(segments_dict)
 
     new_toc = TableOfContent(
         text_id=table_of_content.text_id,
