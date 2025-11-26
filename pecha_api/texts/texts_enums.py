@@ -15,3 +15,15 @@ class TextTypes(Enum):
 class PaginationDirection(Enum):
     NEXT = "next"
     PREVIOUS = "previous"
+
+class TextLanguage(Enum):
+    Bo = "bo"
+    En = "en"
+    zh = "zh"
+
+# Language preference orders for sorting
+LANGUAGE_ORDERS = {
+    'bo': {'bo': 0, 'en': 1, 'zh': 2},
+    'en': {'en': 0, 'bo': 1, 'zh': 2},
+    'zh': {'zh': 0, 'en': 1, 'bo': 2}
+}
