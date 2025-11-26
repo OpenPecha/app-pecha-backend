@@ -113,15 +113,18 @@ async def get_text_by_text_id_or_collection(
                 key=lambda text: TextUtils.get_language_priority(text.language, language)
             )
         all_texts = await get_all_texts_by_collection(collection_id=collection_id)
+        group_id_set = set()
+        for text in all_texts:
+            group_id_set.add(text.group_id)
         response = TextsCategoryResponse(
             collection=collection,
             texts=texts,
-            total=len(all_texts),
+            total=len(group_id_set),
             skip=skip,
             limit=limit
         )
     else:
-        response =await TextUtils.get_text_detail_by_id(text_id=text_id)
+        response = await TextUtils.get_text_detail_by_id(text_id=text_id)
     
     await set_text_by_text_id_or_collection_cache(
         text_id = text_id,
