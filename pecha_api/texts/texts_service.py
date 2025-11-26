@@ -504,18 +504,18 @@ async def _get_texts_by_collection_id(collection_id: str, language: str, skip: i
             continue
         if text is not None:
             text_list.append(TextDTO(
-            id=str(text.id),
-            pecha_text_id=str(text.pecha_text_id),
-            title=text.title,
-            language=text.language,
-            group_id=text.group_id,
-            type=text.type,
-            is_published=text.is_published,
-            created_date=text.created_date,
-            updated_date=text.updated_date,
-            published_date=text.published_date,
-            published_by=text.published_by,
-        ))
+                id=str(text.id),
+                pecha_text_id=str(text.pecha_text_id),
+                title=text.title,
+                language=text.language,
+                group_id=text.group_id,
+                type="root_text",
+                is_published=text.is_published,
+                created_date=text.created_date,
+                updated_date=text.updated_date,
+                published_date=text.published_date,
+                published_by=text.published_by,
+            ))
         track_limit += 1
         if track_limit >= limit:
             break;
