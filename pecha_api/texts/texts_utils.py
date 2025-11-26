@@ -17,6 +17,8 @@ from .texts_response_models import (
     TextSegment,
     Section,
 )
+from pecha_api.texts.texts_enums import LANGUAGE_ORDERS
+
 from .groups.groups_service import (
     get_groups_by_list_of_ids
 )
@@ -28,6 +30,7 @@ from .texts_cache_service import (
     set_text_details_by_id_cache,
     delete_text_details_by_id_cache
 )
+
 from pecha_api.constants import Constants
 
 from pecha_api.cache.cache_enums import CacheType
@@ -211,6 +214,11 @@ class TextUtils:
         return None  # Return None if segment not found in any section
 
     @staticmethod
+    def get_language_priority(text_language: Optional[str], preferred_language: str) -> int:
+        order = LANGUAGE_ORDERS.get(preferred_language)
+        return order.get(text_language, 999)
+
+    @staticmethod
     def filter_text_on_root_and_version(texts: List[TextDTO], language: str) -> Dict[str, Union[TextDTO, List[TextDTO]]]:
         filtered_text = {
             TextType.ROOT_TEXT.value: None,
@@ -221,11 +229,25 @@ class TextUtils:
             if str(text.id) in Constants.excluded_text_ids:
                 continue
             text_type_value = text.type if isinstance(text.type, str) else text.type.value
+            # if text.language == language and filtered_text[TextType.ROOT_TEXT.value] is None:
+            #     filtered_text[TextType.ROOT_TEXT.value] = text
             if text.language == language and filtered_text[TextType.ROOT_TEXT.value] is None:
                 filtered_text[TextType.ROOT_TEXT.value] = text
             else:
                 versions.append(text)
+            
         filtered_text[TextTypes.VERSIONS.value] = versions
+
+        if filtered_text[TextType.ROOT_TEXT.value] is None and (len(versions) > 0):
+            for text in versions:
+                versions.sort(
+                    key=lambda text: TextUtils.get_language_priority(text.language, language)
+                )
+            filtered_text[TextType.ROOT_TEXT.value] = versions[0]
+            # Remove the promoted version from the versions list
+            filtered_text[TextTypes.VERSIONS.value] = versions[1:]
+
+
         return filtered_text
     
     @staticmethod
@@ -240,9 +262,35 @@ class TextUtils:
 
             commentary = []
             for text in texts:
+                # remove duplicate text
                 if str(text.id) in Constants.excluded_text_ids:
                     continue
                 if (group_ids_type_dict.get(text.group_id).type == "text") and (text.language == language) and filtere_text[TextType.ROOT_TEXT.value] is None:
+                    filtere_text[TextType.ROOT_TEXT.value] = text
+                elif (group_ids_type_dict.get(text.group_id).type == TextType.COMMENTARY.value and text.language == language):
+                    commentary.append(text)
+            filtere_text[TextType.COMMENTARY.value] = commentary
+        return filtere_text
+
+    @staticmethod
+    async def filter_text_base_on_group_id_type_and_language_preference(texts: List[TextDTO], language: str) -> Dict[str, Union[TextDTO, List[TextDTO]]]:
+        filtere_text = {
+            TextType.ROOT_TEXT.value: None,
+            TextType.COMMENTARY.value: []
+        }
+        if texts:
+            group_ids = [text.group_id for text in texts]
+            group_ids_type_dict: Dict[str, GroupDTO] = await get_groups_by_list_of_ids(group_ids=group_ids)
+    
+            commentary = []
+            for text in texts:
+                # remove duplicate text
+                if str(text.id) in Constants.excluded_text_ids:
+                    continue
+                
+                # Since texts are already sorted by language preference,
+                # just pick the first one that matches the type
+                if (group_ids_type_dict.get(text.group_id).type == "text") and filtere_text[TextType.ROOT_TEXT.value] is None:
                     filtere_text[TextType.ROOT_TEXT.value] = text
                 elif (group_ids_type_dict.get(text.group_id).type == TextType.COMMENTARY.value and text.language == language):
                     commentary.append(text)
