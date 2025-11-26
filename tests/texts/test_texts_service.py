@@ -719,7 +719,7 @@ async def test_get_table_of_contents_by_text_id_root_text_is_none():
     )
     
     # Mock texts that are all in excluded_text_ids so root_text becomes None
-    excluded_id = Constants.excluded_text_ids[0] if Constants.excluded_text_ids else "excluded_text_id"
+    excluded_id = "excluded_text_id_test"
     mock_group_texts = [
         TextDTO(
             id=excluded_id,
@@ -763,7 +763,8 @@ async def test_get_table_of_contents_by_text_id_root_text_is_none():
         patch("pecha_api.texts.texts_service.set_table_of_contents_by_text_id_cache", new_callable=MagicMock, return_value=None),\
         patch("pecha_api.texts.texts_service.TextUtils.get_text_detail_by_id", new_callable=AsyncMock, return_value=mock_text_detail), \
         patch("pecha_api.texts.texts_service.get_texts_by_group_id", new_callable=AsyncMock, return_value=mock_group_texts), \
-        patch("pecha_api.texts.texts_service.get_contents_by_id", new_callable=AsyncMock, return_value=table_of_contents):
+        patch("pecha_api.texts.texts_service.get_contents_by_id", new_callable=AsyncMock, return_value=table_of_contents), \
+        patch("pecha_api.constants.Constants.excluded_text_ids", [excluded_id]):
         
         with pytest.raises(HTTPException) as exc_info:
             await get_table_of_contents_by_text_id(
@@ -1751,7 +1752,7 @@ async def test_get_root_text_by_collection_id_success_with_root_text():
         "versions": [mock_texts[1]]
     }
     
-    with patch("pecha_api.texts.texts_service.get_all_texts_by_collection", new_callable=AsyncMock) as mock_get_all_texts, \
+    with patch("pecha_api.texts.texts_service.get_all_recitation_texts_by_collection", new_callable=AsyncMock) as mock_get_all_texts, \
          patch("pecha_api.texts.texts_service.TextUtils.filter_text_base_on_group_id_type_and_language_preference", new_callable=AsyncMock) as mock_filter:
         
         mock_get_all_texts.return_value = mock_texts
@@ -1799,7 +1800,7 @@ async def test_get_root_text_by_collection_id_no_root_text():
         "versions": mock_texts
     }
     
-    with patch("pecha_api.texts.texts_service.get_all_texts_by_collection", new_callable=AsyncMock) as mock_get_all_texts, \
+    with patch("pecha_api.texts.texts_service.get_all_recitation_texts_by_collection", new_callable=AsyncMock) as mock_get_all_texts, \
          patch("pecha_api.texts.texts_service.TextUtils.filter_text_base_on_group_id_type_and_language_preference", new_callable=AsyncMock) as mock_filter:
         
         mock_get_all_texts.return_value = mock_texts
@@ -1895,7 +1896,7 @@ async def test_get_root_text_by_collection_id_multiple_groups():
             return {"root_text": texts[0], "versions": [texts[1]]}
         return {"root_text": None, "versions": texts}
     
-    with patch("pecha_api.texts.texts_service.get_all_texts_by_collection", new_callable=AsyncMock) as mock_get_all_texts, \
+    with patch("pecha_api.texts.texts_service.get_all_recitation_texts_by_collection", new_callable=AsyncMock) as mock_get_all_texts, \
          patch("pecha_api.texts.texts_service.TextUtils.filter_text_base_on_group_id_type_and_language_preference", new_callable=AsyncMock) as mock_filter:
         
         mock_get_all_texts.return_value = mock_texts

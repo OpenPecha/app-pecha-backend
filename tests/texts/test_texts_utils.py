@@ -16,6 +16,7 @@ from pecha_api.texts.texts_response_models import (
 )
 
 from pecha_api.texts.groups.groups_response_models import GroupDTO
+from pecha_api.texts.texts_enums import TextType, TextTypes
 
 
 @pytest.mark.asyncio
@@ -315,17 +316,17 @@ async def test_filter_text_on_root_and_version():
     )
     response: Dict[str, Union[TextDTO, List[TextDTO]]] = TextUtils.filter_text_on_root_and_version(texts=mock_texts, language="bo")
     assert response is not None
-    assert response["root_text"] is not None
-    assert isinstance(response["root_text"], TextDTO)
-    assert response["root_text"].language == "bo"
-    assert response["root_text"].id == "efb26a06-f373-450b-ba57-e7a8d4dd5b64"
-    assert response["root_text"].title == "bo_1"
-    assert response["versions"] is not None
-    assert len(response["versions"]) == 2
+    assert response[TextType.ROOT_TEXT.value] is not None
+    assert isinstance(response[TextType.ROOT_TEXT.value], TextDTO)
+    assert response[TextType.ROOT_TEXT.value].language == "bo"
+    assert response[TextType.ROOT_TEXT.value].id == "efb26a06-f373-450b-ba57-e7a8d4dd5b64"
+    assert response[TextType.ROOT_TEXT.value].title == "bo_1"
+    assert response[TextTypes.VERSIONS.value] is not None
+    assert len(response[TextTypes.VERSIONS.value]) == 2
     index = 0
-    assert response["versions"][index] is not None
-    assert response["versions"][index].language == "en"
-    assert response["versions"][index].id == "efb26a06-f373-450b-ba57-e7a8d4dd5b61"
+    assert response[TextTypes.VERSIONS.value][index] is not None
+    assert response[TextTypes.VERSIONS.value][index].language == "en"
+    assert response[TextTypes.VERSIONS.value][index].id == "efb26a06-f373-450b-ba57-e7a8d4dd5b61"
     
 @pytest.mark.asyncio
 async def test_filter_text_base_on_group_id_type():
@@ -334,14 +335,14 @@ async def test_filter_text_base_on_group_id_type():
     with patch("pecha_api.texts.texts_utils.get_groups_by_list_of_ids", new_callable=AsyncMock, return_value=mock_groups):
         response = await TextUtils.filter_text_base_on_group_id_type(texts=mock_texts, language="en")
         response is not None
-        assert response["root_text"] is not None
-        assert response["root_text"].id == "ce14bedb-a4ca-402f-b7a0-cbb33efe5181"
-        assert response["root_text"].language == "en"
-        assert response["root_text"].type == "version"
+        assert response[TextType.ROOT_TEXT.value] is not None
+        assert response[TextType.ROOT_TEXT.value].id == "ce14bedb-a4ca-402f-b7a0-cbb33efe5181"
+        assert response[TextType.ROOT_TEXT.value].language == "en"
+        assert response[TextType.ROOT_TEXT.value].type == "version"
         
-        assert response["commentary"] is not None
-        assert len(response["commentary"]) == 0
-        for text_commentary in response["commentary"]:
+        assert response[TextType.COMMENTARY.value] is not None
+        assert len(response[TextType.COMMENTARY.value]) == 0
+        for text_commentary in response[TextType.COMMENTARY.value]:
             assert text_commentary.type == "commentary"
 
 
@@ -709,9 +710,9 @@ async def test_filter_text_base_on_group_id_type_and_language_preference_with_so
         
         # Should pick the first text (en) since texts are already sorted
         assert result is not None
-        assert result["root_text"] is not None
-        assert result["root_text"].id == "text_id_1"
-        assert result["root_text"].language == "en"
+        assert result[TextType.ROOT_TEXT.value] is not None
+        assert result[TextType.ROOT_TEXT.value].id == "text_id_1"
+        assert result[TextType.ROOT_TEXT.value].language == "en"
         assert len(result["commentary"]) == 0
 
 
@@ -767,11 +768,11 @@ async def test_filter_text_base_on_group_id_type_and_language_preference_with_co
         )
         
         assert result is not None
-        assert result["root_text"] is not None
-        assert result["root_text"].id == "text_id_1"
-        assert len(result["commentary"]) == 1
-        assert result["commentary"][0].id == "text_id_2"
-        assert result["commentary"][0].type == "commentary"
+        assert result[TextType.ROOT_TEXT.value] is not None
+        assert result[TextType.ROOT_TEXT.value].id == "text_id_1"
+        assert len(result[TextType.COMMENTARY.value]) == 1
+        assert result[TextType.COMMENTARY.value][0].id == "text_id_2"
+        assert result[TextType.COMMENTARY.value][0].type == "commentary"
 
 
 @pytest.mark.asyncio
@@ -783,7 +784,7 @@ async def test_filter_text_base_on_group_id_type_and_language_preference_empty_t
     )
     
     assert result is not None
-    assert result["root_text"] is None
+    assert result[TextType.ROOT_TEXT.value] is None
     assert len(result["commentary"]) == 0
 
 
@@ -792,9 +793,10 @@ async def test_filter_text_base_on_group_id_type_and_language_preference_exclude
     """Test filter_text_base_on_group_id_type_and_language_preference excludes texts in Constants.excluded_text_ids"""
     from pecha_api.constants import Constants
     
+    excluded_id = "excluded_id_test"
     mock_texts = [
         TextDTO(
-            id=Constants.excluded_text_ids[0] if Constants.excluded_text_ids else "excluded_id",
+            id=excluded_id,
             title="Excluded Text",
             language="bo",
             group_id="group_1",
@@ -830,7 +832,8 @@ async def test_filter_text_base_on_group_id_type_and_language_preference_exclude
         )
     }
     
-    with patch("pecha_api.texts.texts_utils.get_groups_by_list_of_ids", new_callable=AsyncMock, return_value=mock_groups):
+    with patch("pecha_api.texts.texts_utils.get_groups_by_list_of_ids", new_callable=AsyncMock, return_value=mock_groups), \
+         patch("pecha_api.constants.Constants.excluded_text_ids", [excluded_id]):
         result = await TextUtils.filter_text_base_on_group_id_type_and_language_preference(
             texts=mock_texts,
             language="bo"
@@ -838,8 +841,8 @@ async def test_filter_text_base_on_group_id_type_and_language_preference_exclude
         
         # Should pick the second text, not the excluded one
         assert result is not None
-        assert result["root_text"] is not None
-        assert result["root_text"].id == "text_id_2"
+        assert result[TextType.ROOT_TEXT.value] is not None
+        assert result[TextType.ROOT_TEXT.value].id == "text_id_2"
 
 
 @pytest.mark.asyncio
@@ -893,9 +896,9 @@ async def test_filter_text_base_on_group_id_type_and_language_preference_no_lang
         
         # Should pick the first text (English) not the Tibetan one
         assert result is not None
-        assert result["root_text"] is not None
-        assert result["root_text"].id == "text_id_1"
-        assert result["root_text"].language == "en"
+        assert result[TextType.ROOT_TEXT.value] is not None
+        assert result[TextType.ROOT_TEXT.value].id == "text_id_1"
+        assert result[TextType.ROOT_TEXT.value].language == "en"
 
 
 @pytest.mark.asyncio
@@ -969,8 +972,8 @@ async def test_filter_text_base_on_group_id_type_and_language_preference_filters
         
         # Should only include Tibetan commentary, not English
         assert result is not None
-        assert result["root_text"] is not None
-        assert len(result["commentary"]) == 1
-        assert result["commentary"][0].id == "text_id_2"
-        assert result["commentary"][0].language == "bo"
+        assert result[TextType.ROOT_TEXT.value] is not None
+        assert len(result[TextType.COMMENTARY.value]) == 1
+        assert result[TextType.COMMENTARY.value][0].id == "text_id_2"
+        assert result[TextType.COMMENTARY.value][0].language == "bo"
     
