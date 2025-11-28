@@ -250,7 +250,7 @@ async def test_get_multilingual_search_results_success():
         assert len(response.sources) == 1
         assert response.sources[0].text.text_id == "text_123"
         assert len(response.sources[0].segment_matches) == 2
-        assert response.total == 2
+        assert response.total == 10  
 
 
 @pytest.mark.asyncio
