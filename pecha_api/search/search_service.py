@@ -353,7 +353,7 @@ async def get_multilingual_search_results(
             sources=final_display_sources,
             skip=skip,
             limit=limit,
-            total=len(segments)
+            total=external_results.count
         )
         
     except Exception as e:
