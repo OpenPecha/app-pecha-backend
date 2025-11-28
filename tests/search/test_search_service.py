@@ -964,8 +964,8 @@ async def test_get_multilingual_search_external_limit_max_cap():
 
 
 @pytest.mark.asyncio
-async def test_get_multilingual_search_total_is_matched_count():
-    """Test that total reflects matched segments, not external API count"""
+async def test_get_multilingual_search_total_returns_limit():
+    """Test that total returns the set limit value"""
     mock_external_response = ExternalSearchResponse(
         query="test query",
         search_type="hybrid",
@@ -974,10 +974,9 @@ async def test_get_multilingual_search_total_is_matched_count():
             ExternalSearchResult(id="pecha_seg_2", distance=0.8, entity=ExternalSegmentEntity(text="Content 2")),
             ExternalSearchResult(id="pecha_seg_3", distance=0.7, entity=ExternalSegmentEntity(text="Content 3")),
         ],
-        count=100  # External API says 100 total
+        count=100  
     )
     
-    # Only 2 segments match in our database
     mock_segment_1 = Mock()
     mock_segment_1.id = uuid4()
     mock_segment_1.content = "Content 1"
@@ -1008,7 +1007,7 @@ async def test_get_multilingual_search_total_is_matched_count():
             limit=10
         )
         
-        assert response.total == 2
+        assert response.total == 10
 
 
 def test_apply_pagination_to_sources_basic():

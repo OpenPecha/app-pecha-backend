@@ -379,8 +379,6 @@ async def get_multilingual_search_results(
         
         final_display_sources = await build_multilingual_sources(segments, results_map)
         
-        total_matched = sum(len(source.segment_matches) for source in final_display_sources)
-        
         paginated_sources = apply_pagination_to_sources(final_display_sources, skip, limit)
         
         return MultilingualSearchResponse(
@@ -389,7 +387,7 @@ async def get_multilingual_search_results(
             sources=paginated_sources,
             skip=skip,
             limit=limit,
-            total=total_matched
+            total=limit
         )
         
     except Exception as e:
