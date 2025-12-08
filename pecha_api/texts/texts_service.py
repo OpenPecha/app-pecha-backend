@@ -92,20 +92,20 @@ async def get_text_by_text_id_or_collection(
         skip: int = 0,
         limit: int = 10
 ) -> TextsCategoryResponse | TextDTO:
-    # if language is None:
-    #     language = get("DEFAULT_LANGUAGE")
+    if language is None:
+        language = get("DEFAULT_LANGUAGE")
 
-    # cached_data: TextsCategoryResponse | TextDTO = await get_text_by_text_id_or_collection_cache(
-    #     text_id = text_id,
-    #     collection_id = collection_id,
-    #     language = language,
-    #     skip = skip,
-    #     limit = limit,
-    #     cache_type = CacheType.TEXTS_BY_ID_OR_COLLECTION
-    # )
+    cached_data: TextsCategoryResponse | TextDTO = await get_text_by_text_id_or_collection_cache(
+        text_id = text_id,
+        collection_id = collection_id,
+        language = language,
+        skip = skip,
+        limit = limit,
+        cache_type = CacheType.TEXTS_BY_ID_OR_COLLECTION
+    )
 
-    # if cached_data is not None:
-    #     return cached_data
+    if cached_data is not None:
+        return cached_data
 
     if collection_id is not None:
         collection = await get_collection(collection_id=collection_id, language=language)
@@ -130,7 +130,6 @@ async def get_text_by_text_id_or_collection(
         cache_type = CacheType.TEXTS_BY_ID_OR_COLLECTION,
         data = response
     )
-
     return response
 
 
