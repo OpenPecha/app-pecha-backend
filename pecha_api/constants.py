@@ -9,6 +9,7 @@ class Constants:
     MONTH_IN_SECONDS = 2592000
     YEAR_IN_SECONDS = 31536000
 
+
     LANGUAGE_NUMBER = {
         "bo": {
             "0": "༠",
@@ -67,6 +68,8 @@ class Constants:
             "bo": "ལོ།"
         }
     }
+
+    excluded_text_ids = []
 
 
 

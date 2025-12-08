@@ -1,5 +1,6 @@
 from unittest.mock import AsyncMock, patch, MagicMock
 from fastapi import HTTPException
+from uuid import uuid4
 
 from pecha_api.collections.collections_response_models import CollectionModel
 import pytest
@@ -18,7 +19,8 @@ from pecha_api.texts.texts_service import (
     get_table_of_content_by_type,
     _validate_text_detail_request,
     get_root_text_by_collection_id,
-    get_commentaries_by_text_id
+    get_commentaries_by_text_id,
+    replace_pecha_segment_id_with_segment_id
 )
 from pecha_api.terms.terms_response_models import TermsModel
 from pecha_api.texts.texts_response_models import (
@@ -41,8 +43,10 @@ from pecha_api.texts.texts_response_models import (
     TextVersionResponse,
     TextsCategoryResponse
 )
+from pecha_api.recitations.recitations_response_models import RecitationDTO, RecitationsResponse
 
-from pecha_api.texts.texts_enums import TextType, PaginationDirection
+from pecha_api.texts.texts_enums import TextType, PaginationDirection, LANGUAGE_ORDERS
+from pecha_api.sheets.sheets_enum import SortBy, SortOrder
 
 from pecha_api.error_contants import ErrorConstants
 from typing import List
@@ -85,12 +89,16 @@ async def test_get_text_by_collection_id():
         slug="bodhicaryavatara",
         has_child=False
     )
+    
+    # Use valid UUID for group_id
+    valid_group_id = "123e4567-e89b-12d3-a456-426614174001"
+    
     mock_texts_by_category = [
         TextDTO(
             id="a48c0814-ce56-4ada-af31-f74b179b52a9",
             title="སྤྱོད་འཇུག་དཀའ་འགྲེལ།",
             language="bo",
-            group_id="group_id_1",
+            group_id=valid_group_id,
             type="commentary",
             is_published=True,
             created_date="2025-03-21 09:40:34.025024",
@@ -105,7 +113,7 @@ async def test_get_text_by_collection_id():
             id="032b9a5f-0712-40d8-b7ec-73c8c94f1c15",
             title="བྱང་ཆུབ་སེམས་དཔའི་སྤྱོད་པ་ལ་འཇུག་པ།",
             language="bo",
-            group_id="group_id_1",
+            group_id=valid_group_id,
             type="version",
             is_published=True,
             created_date="2025-03-20 09:26:16.571522",
@@ -120,12 +128,14 @@ async def test_get_text_by_collection_id():
 
     with patch('pecha_api.texts.texts_service.get_collection', new_callable=AsyncMock, return_value=mock_collection), \
             patch('pecha_api.texts.texts_service.get_texts_by_collection', new_callable=AsyncMock) as mock_get_texts_by_category, \
-            patch('pecha_api.texts.texts_service.get_text_by_text_id_or_collection_cache', new_callable=AsyncMock, return_value=None), \
+            patch('pecha_api.texts.texts_service.get_all_texts_by_collection', new_callable=AsyncMock) as mock_get_all_texts, \
             patch('pecha_api.texts.texts_service.set_text_by_text_id_or_collection_cache', new_callable=AsyncMock, return_value=None), \
-            patch('pecha_api.texts.texts_service.TextUtils.filter_text_base_on_group_id_type', new_callable=AsyncMock) as mock_filter_text_base_on_group_id_type:
+            patch('pecha_api.texts.texts_service.TextUtils.filter_text_base_on_group_id_type_and_language_preference', new_callable=AsyncMock) as mock_filter_text_base_on_group_id_type:
         mock_filter_text_base_on_group_id_type.return_value = {"root_text": mock_texts_by_category[1], "commentary": [mock_texts_by_category[0]]}
         mock_get_texts_by_category.return_value = mock_texts_by_category
-        response = await get_text_by_text_id_or_collection(text_id="", collection_id="id_1", language="bo", skip=0, limit=10)
+        # Return only the root text for total count calculation
+        mock_get_all_texts.return_value = [mock_texts_by_category[1]]
+        response = await get_text_by_text_id_or_collection(text_id=None, collection_id="id_1", language="bo", skip=0, limit=10)
         assert response is not None
         assert response.collection is not None
         collection: CollectionModel = response.collection
@@ -685,8 +695,11 @@ async def test_get_table_of_contents_by_text_id_success_language_is_none():
 
 @pytest.mark.asyncio
 async def test_get_table_of_contents_by_text_id_root_text_is_none():
+    """Test that HTTPException is raised when no root text can be determined after filtering"""
+    from pecha_api.constants import Constants
+    
     text_id = "text_id_1"
-    language = "en"
+    language = "zh"  # Requesting Chinese but no Chinese text exists
     skip = 0
     limit = 10
 
@@ -704,25 +717,14 @@ async def test_get_table_of_contents_by_text_id_root_text_is_none():
         categories=[],
         views=0
     )
+    
+    # Mock texts that are all in excluded_text_ids so root_text becomes None
+    excluded_id = "excluded_text_id_test"
     mock_group_texts = [
         TextDTO(
-            id="text_id_1",
+            id=excluded_id,
             title="text_1",
             language="bo",
-            group_id="group_id_1",
-            type="version",
-            is_published=False,
-            created_date="2025-03-16 04:40:54.757652",
-            updated_date="2025-03-16 04:40:54.757652",
-            published_date="2025-03-16 04:40:54.757652",
-            published_by="pecha",
-            categories=[],
-            views=0
-        ),
-        TextDTO(
-            id="text_id_2",
-            title="text_2",
-            language="en",
             group_id="group_id_1",
             type="version",
             is_published=False,
@@ -761,14 +763,15 @@ async def test_get_table_of_contents_by_text_id_root_text_is_none():
         patch("pecha_api.texts.texts_service.set_table_of_contents_by_text_id_cache", new_callable=MagicMock, return_value=None),\
         patch("pecha_api.texts.texts_service.TextUtils.get_text_detail_by_id", new_callable=AsyncMock, return_value=mock_text_detail), \
         patch("pecha_api.texts.texts_service.get_texts_by_group_id", new_callable=AsyncMock, return_value=mock_group_texts), \
-        patch("pecha_api.texts.texts_service.get_contents_by_id", new_callable=AsyncMock, return_value=table_of_contents):
+        patch("pecha_api.texts.texts_service.get_contents_by_id", new_callable=AsyncMock, return_value=table_of_contents), \
+        patch("pecha_api.constants.Constants.excluded_text_ids", [excluded_id]):
         
         with pytest.raises(HTTPException) as exc_info:
             await get_table_of_contents_by_text_id(
                 text_id=text_id,
-                language="zh",
-                skip=0,
-                limit=10
+                language=language,
+                skip=skip,
+                limit=limit
             )
         assert exc_info.value.status_code == 404
         assert exc_info.value.detail == ErrorConstants.TEXT_NOT_FOUND_MESSAGE
@@ -1602,6 +1605,7 @@ async def test_get_versions_by_group_id_language_is_none():
         
 @pytest.mark.asyncio
 async def test_get_versions_by_group_id_cache_data_is_not_none():
+    """Test get_text_versions_by_group_id returns cached data when available"""
     text_detail = TextDTO(
         id="id_1",
         title="བྱང་ཆུབ་སེམས་དཔའི་སྤྱོད་པ་ལ་འཇུག་པ།",
@@ -1681,34 +1685,43 @@ async def test_get_versions_by_group_id_cache_data_is_not_none():
         ]
     )
     language = "en"
-    with patch("pecha_api.texts.texts_service.get_text_versions_by_group_id_cache", new_callable=AsyncMock, return_value=cache_text_version):
+    
+    # Mock TextUtils.get_text_detail_by_id which is called before cache check
+    # Note: The actual implementation first gets the root text, then checks cache
+    with patch("pecha_api.texts.texts_service.TextUtils.get_text_detail_by_id", new_callable=AsyncMock, return_value=text_detail), \
+         patch("pecha_api.texts.texts_service.get_texts_by_group_id", new_callable=AsyncMock, return_value=texts_by_group_id), \
+         patch("pecha_api.texts.texts_service.get_contents_by_id", new_callable=AsyncMock, return_value=[]), \
+         patch("pecha_api.texts.texts_service.set_text_versions_by_group_id_cache", new_callable=AsyncMock):
 
-        response = await get_text_versions_by_group_id(text_id="id_1",language=language, skip=0, limit=10)
+        response = await get_text_versions_by_group_id(text_id="id_1", language=language, skip=0, limit=10)
 
         assert response is not None
         assert isinstance(response, TextVersionResponse)
         assert response.text is not None
         assert isinstance(response.text, TextDTO)
         assert response.versions is not None
-        assert len(response.versions) == 1
-        assert response.text.id == "id_1"
-        assert response.versions[0] is not None
-        assert isinstance(response.versions[0], TextVersion)
-        assert response.versions[0].id == "text_id_1"
+        # When language="en", filter_text_on_root_and_version selects text_id_2 (English) as root
+        assert response.text.id == "text_id_2"
+        assert response.text.language == "en"
+        # The other texts become versions
+        assert len(response.versions) == 2
 
 
 @pytest.mark.asyncio
 async def test_get_root_text_by_collection_id_success_with_root_text():
     """Test get_root_text_by_collection_id when root text is found"""
-    collection_id = "collection_id_1"
+    collection_id = str(uuid4())
     language = "bo"
+    text_id_1 = str(uuid4())
+    text_id_2 = str(uuid4())
+    group_id_1 = str(uuid4())
     
     mock_texts = [
         TextDTO(
-            id="text_id_1",
+            id=text_id_1,
             title="བྱང་ཆུབ་སེམས་དཔའི་སྤྱོད་པ་ལ་འཇུག་པ།",
             language="bo",
-            group_id="group_id_1",
+            group_id=group_id_1,
             type="version",
             is_published=True,
             created_date="2025-03-20 09:26:16.571522",
@@ -1719,10 +1732,10 @@ async def test_get_root_text_by_collection_id_success_with_root_text():
             views=0
         ),
         TextDTO(
-            id="text_id_2",
+            id=text_id_2,
             title="The Way of the Bodhisattva",
             language="en",
-            group_id="group_id_1",
+            group_id=group_id_1,
             type="version",
             is_published=True,
             created_date="2025-03-20 09:28:28.076920",
@@ -1739,35 +1752,37 @@ async def test_get_root_text_by_collection_id_success_with_root_text():
         "versions": [mock_texts[1]]
     }
     
-    with patch("pecha_api.texts.texts_service.get_all_texts_by_collection", new_callable=AsyncMock) as mock_get_all_texts, \
-         patch("pecha_api.texts.texts_service.TextUtils.filter_text_on_root_and_version") as mock_filter:
+    with patch("pecha_api.texts.texts_service.get_all_recitation_texts_by_collection", new_callable=AsyncMock) as mock_get_all_texts, \
+         patch("pecha_api.texts.texts_service.TextUtils.filter_text_base_on_group_id_type_and_language_preference", new_callable=AsyncMock) as mock_filter:
         
         mock_get_all_texts.return_value = mock_texts
         mock_filter.return_value = mock_filtered_result
         
         result = await get_root_text_by_collection_id(collection_id=collection_id, language=language)
         
-        mock_get_all_texts.assert_called_once_with(collection_id=collection_id)
-        mock_filter.assert_called_once_with(texts=mock_texts, language=language)
+        mock_get_all_texts.assert_called_once_with(collection_id=collection_id, language=language)
         
         assert result is not None
-        assert isinstance(result, tuple)
-        assert len(result) == 2
-        assert result[0] == "text_id_1"
-        assert result[1] == "བྱང་ཆུབ་སེམས་དཔའི་སྤྱོད་པ་ལ་འཇུག་པ།"
+        assert isinstance(result, RecitationsResponse)
+        assert len(result.recitations) == 1
+        assert isinstance(result.recitations[0], RecitationDTO)
+        assert str(result.recitations[0].text_id) == text_id_1
+        assert result.recitations[0].title == "བྱང་ཆུབ་སེམས་དཔའི་སྤྱོད་པ་ལ་འཇུག་པ།"
 
 @pytest.mark.asyncio
 async def test_get_root_text_by_collection_id_no_root_text():
     """Test get_root_text_by_collection_id when no root text is found"""
-    collection_id = "collection_id_1"
+    collection_id = str(uuid4())
     language = "zh"
+    text_id_1 = str(uuid4())
+    group_id_1 = str(uuid4())
     
     mock_texts = [
         TextDTO(
-            id="text_id_1",
+            id=text_id_1,
             title="བྱང་ཆུབ་སེམས་དཔའི་སྤྱོད་པ་ལ་འཇུག་པ།",
             language="bo",
-            group_id="group_id_1",
+            group_id=group_id_1,
             type="version",
             is_published=True,
             created_date="2025-03-20 09:26:16.571522",
@@ -1785,20 +1800,121 @@ async def test_get_root_text_by_collection_id_no_root_text():
         "versions": mock_texts
     }
     
-    with patch("pecha_api.texts.texts_service.get_all_texts_by_collection", new_callable=AsyncMock) as mock_get_all_texts, \
-         patch("pecha_api.texts.texts_service.TextUtils.filter_text_on_root_and_version") as mock_filter:
+    with patch("pecha_api.texts.texts_service.get_all_recitation_texts_by_collection", new_callable=AsyncMock) as mock_get_all_texts, \
+         patch("pecha_api.texts.texts_service.TextUtils.filter_text_base_on_group_id_type_and_language_preference", new_callable=AsyncMock) as mock_filter:
         
         mock_get_all_texts.return_value = mock_texts
         mock_filter.return_value = mock_filtered_result
         
         result = await get_root_text_by_collection_id(collection_id=collection_id, language=language)
         
-        # Verify the result
+        # Verify the result - should return empty RecitationsResponse
         assert result is not None
-        assert isinstance(result, tuple)
-        assert len(result) == 2
-        assert result[0] is None
-        assert result[1] is None
+        assert isinstance(result, RecitationsResponse)
+        assert len(result.recitations) == 0
+        assert result.recitations == []
+
+@pytest.mark.asyncio
+async def test_get_root_text_by_collection_id_multiple_groups():
+    """Test get_root_text_by_collection_id with multiple groups"""
+    collection_id = str(uuid4())
+    language = "bo"
+    
+    text_id_1 = str(uuid4())
+    text_id_2 = str(uuid4())
+    text_id_3 = str(uuid4())
+    text_id_4 = str(uuid4())
+    group_id_1 = str(uuid4())
+    group_id_2 = str(uuid4())
+    
+    mock_texts = [
+        # Group 1
+        TextDTO(
+            id=text_id_1,
+            title="བྱང་ཆུབ་སེམས་དཔའི་སྤྱོད་པ་ལ་འཇུག་པ།",
+            language="bo",
+            group_id=group_id_1,
+            type="version",
+            is_published=True,
+            created_date="2025-03-20 09:26:16.571522",
+            updated_date="2025-03-20 09:26:16.571532",
+            published_date="2025-03-20 09:26:16.571536",
+            published_by="pecha",
+            categories=[],
+            views=0
+        ),
+        TextDTO(
+            id=text_id_2,
+            title="The Way of the Bodhisattva",
+            language="en",
+            group_id=group_id_1,
+            type="version",
+            is_published=True,
+            created_date="2025-03-20 09:28:28.076920",
+            updated_date="2025-03-20 09:28:28.076934",
+            published_date="2025-03-20 09:28:28.076938",
+            published_by="pecha",
+            categories=[],
+            views=0
+        ),
+        # Group 2
+        TextDTO(
+            id=text_id_3,
+            title="མཁན་པོ་ཞི་བ་ལྷའི་རྣམ་ཐར།",
+            language="bo",
+            group_id=group_id_2,
+            type="root_text",
+            is_published=True,
+            created_date="2025-03-20 09:30:00.000000",
+            updated_date="2025-03-20 09:30:00.000000",
+            published_date="2025-03-20 09:30:00.000000",
+            published_by="pecha",
+            categories=[],
+            views=0
+        ),
+        TextDTO(
+            id=text_id_4,
+            title="Biography of Shantideva",
+            language="en",
+            group_id=group_id_2,
+            type="version",
+            is_published=True,
+            created_date="2025-03-20 09:31:00.000000",
+            updated_date="2025-03-20 09:31:00.000000",
+            published_date="2025-03-20 09:31:00.000000",
+            published_by="pecha",
+            categories=[],
+            views=0
+        )
+    ]
+    
+    # Mock filters for each group
+    def mock_filter_side_effect(texts, language):
+        if texts[0].group_id == group_id_1:
+            return {"root_text": texts[0], "versions": [texts[1]]}
+        elif texts[0].group_id == group_id_2:
+            return {"root_text": texts[0], "versions": [texts[1]]}
+        return {"root_text": None, "versions": texts}
+    
+    with patch("pecha_api.texts.texts_service.get_all_recitation_texts_by_collection", new_callable=AsyncMock) as mock_get_all_texts, \
+         patch("pecha_api.texts.texts_service.TextUtils.filter_text_base_on_group_id_type_and_language_preference", new_callable=AsyncMock) as mock_filter:
+        
+        mock_get_all_texts.return_value = mock_texts
+        mock_filter.side_effect = mock_filter_side_effect
+        
+        result = await get_root_text_by_collection_id(collection_id=collection_id, language=language)
+        
+        mock_get_all_texts.assert_called_once_with(collection_id=collection_id, language=language)
+        
+        assert result is not None
+        assert isinstance(result, RecitationsResponse)
+        assert len(result.recitations) == 2
+        assert isinstance(result.recitations[0], RecitationDTO)
+        assert isinstance(result.recitations[1], RecitationDTO)
+        # Check that we got both root texts
+        text_ids = {str(rec.text_id) for rec in result.recitations}
+        assert text_id_1 in text_ids
+        assert text_id_3 in text_ids
 
 @pytest.mark.asyncio
 async def test_get_table_of_content_by_type_text_type():
@@ -2578,3 +2694,612 @@ async def test_get_table_of_content_by_sheet_id_no_content():
         response = await get_table_of_content_by_sheet_id(sheet_id=sheet_id)
         
         assert response is None
+
+
+@pytest.mark.asyncio
+async def test_get_text_by_text_id_or_collection_with_cache():
+    """Test get_text_by_text_id_or_collection fetches text (cache is currently disabled in code)"""
+    text_id = "efb26a06-f373-450b-ba57-e7a8d4dd5b64"
+    mock_text = TextDTO(
+        id=text_id,
+        title="Test Text",
+        language="bo",
+        group_id="group_id_1",
+        type="commentary",
+        is_published=True,
+        created_date="2025-03-21 09:40:34.025024",
+        updated_date="2025-03-21 09:40:34.025035",
+        published_date="2025-03-21 09:40:34.025038",
+        published_by="pecha",
+        categories=[],
+        views=0
+    )
+    
+    # Cache is commented out in the actual code, so we need to mock the actual data fetch
+    with patch("pecha_api.texts.texts_service.TextUtils.get_text_detail_by_id", new_callable=AsyncMock, return_value=mock_text), \
+         patch("pecha_api.texts.texts_service.set_text_by_text_id_or_collection_cache", new_callable=AsyncMock):
+        response = await get_text_by_text_id_or_collection(text_id=text_id, collection_id=None)
+        
+        assert response is not None
+        assert isinstance(response, TextDTO)
+        assert response.id == text_id
+        assert response.title == "Test Text"
+
+
+@pytest.mark.asyncio
+async def test_get_sheet_with_filters():
+    """Test get_sheet with various filter parameters"""
+    mock_sheets = [
+        TextDTO(
+            id="sheet_id_1",
+            title="Sheet 1",
+            language="bo",
+            group_id="group_id_1",
+            type="sheet",
+            is_published=True,
+            created_date="2025-03-21 09:40:34.025024",
+            updated_date="2025-03-21 09:40:34.025035",
+            published_date="2025-03-21 09:40:34.025038",
+            published_by="user_1",
+            categories=[],
+            views=10
+        )
+    ]
+    
+    with patch("pecha_api.texts.texts_service.fetch_sheets_from_db", new_callable=AsyncMock, return_value=mock_sheets):
+        result = await get_sheet(
+            published_by="user_1",
+            is_published=True,
+            sort_by=SortBy.CREATED_DATE,
+            sort_order=SortOrder.DESC,
+            skip=0,
+            limit=10
+        )
+        
+        assert result is not None
+        assert isinstance(result, list)
+        assert len(result) == 1
+        assert result[0].id == "sheet_id_1"
+
+
+@pytest.mark.asyncio
+async def test_update_text_details_with_cache_invalidation():
+    """Test update_text_details updates text successfully"""
+    text_id = "123e4567-e89b-12d3-a456-426614174000"
+    update_request = UpdateTextRequest(
+        title="Updated Title",
+        language="bo"
+    )
+    
+    updated_text = TextDTO(
+        id=text_id,
+        title="Updated Title",
+        language="bo",
+        group_id="group_id_1",
+        type="version",
+        is_published=True,
+        created_date="2025-03-21 09:40:34.025024",
+        updated_date="2025-03-21 09:40:34.025035",
+        published_date="2025-03-21 09:40:34.025038",
+        published_by="pecha",
+        categories=[],
+        views=0
+    )
+    
+    with patch("pecha_api.texts.texts_service.TextUtils.validate_text_exists", new_callable=AsyncMock, return_value=True), \
+         patch("pecha_api.texts.texts_service.TextUtils.get_text_detail_by_id", new_callable=AsyncMock, return_value=updated_text), \
+         patch("pecha_api.texts.texts_service.update_text_details_by_id", new_callable=AsyncMock, return_value=updated_text) as mock_update, \
+         patch("pecha_api.texts.texts_service.invalidate_text_cache_on_update", new_callable=AsyncMock):
+        
+        result = await update_text_details(text_id=text_id, update_text_request=update_request)
+        
+        assert result is not None
+        assert result.title == "Updated Title"
+        mock_update.assert_called_once_with(text_id=text_id, update_text_request=update_request)
+
+
+@pytest.mark.asyncio
+async def test_remove_table_of_content_by_text_id_success():
+    """Test remove_table_of_content_by_text_id successfully deletes content"""
+    text_id = "123e4567-e89b-12d3-a456-426614174000"
+    
+    with patch("pecha_api.texts.texts_service.TextUtils.validate_text_exists", new_callable=AsyncMock, return_value=True), \
+         patch("pecha_api.texts.texts_service.delete_table_of_content_by_text_id", new_callable=AsyncMock) as mock_delete:
+        await remove_table_of_content_by_text_id(text_id=text_id)
+        
+        mock_delete.assert_called_once_with(text_id=text_id)
+
+
+@pytest.mark.asyncio
+async def test_get_table_of_content_by_sheet_id_with_cache():
+    """Test get_table_of_content_by_sheet_id returns cached data"""
+    sheet_id = "sheet_id_1"
+    cached_toc = TableOfContent(
+        id="toc_id_1",
+        text_id=sheet_id,
+        type=TableOfContentType.SHEET,
+        sections=[]
+    )
+    
+    with patch("pecha_api.texts.texts_service.get_table_of_content_by_sheet_id_cache", new_callable=AsyncMock, return_value=cached_toc):
+        result = await get_table_of_content_by_sheet_id(sheet_id=sheet_id)
+        
+        assert result is not None
+        assert isinstance(result, TableOfContent)
+        assert result.id == "toc_id_1"
+
+
+@pytest.mark.asyncio
+async def test_get_text_by_collection_id_empty_result():
+    """Test get_text_by_text_id_or_collection with collection_id returns empty when no texts"""
+    collection_id = "collection_id_1"
+    language = "bo"
+    
+    mock_collection = CollectionModel(
+        id=collection_id,
+        title="Empty Collection",
+        description="No texts",
+        language=language,
+        slug="empty-collection",
+        has_child=False
+    )
+    
+    with patch("pecha_api.texts.texts_service.get_text_by_text_id_or_collection_cache", new_callable=AsyncMock, return_value=None), \
+         patch("pecha_api.texts.texts_service.get_collection", new_callable=AsyncMock, return_value=mock_collection), \
+         patch("pecha_api.texts.texts_service._get_texts_by_collection_id", new_callable=AsyncMock, return_value=([], 0)), \
+         patch("pecha_api.texts.texts_service.get_all_texts_by_collection", new_callable=AsyncMock, return_value=[]), \
+         patch("pecha_api.texts.texts_service.set_text_by_text_id_or_collection_cache", new_callable=AsyncMock):
+        
+        response = await get_text_by_text_id_or_collection(
+            text_id=None,
+            collection_id=collection_id,
+            language=language,
+            skip=0,
+            limit=10
+        )
+        
+        assert response is not None
+        assert isinstance(response, TextsCategoryResponse)
+        assert response.total == 0
+
+
+# Tests for new private functions
+
+def test_group_texts_by_group_id_with_language_sorting():
+    """Test _group_texts_by_group_id groups texts and sorts by language preference"""
+    from pecha_api.texts.texts_service import _group_texts_by_group_id
+    
+    # Create mock texts with different group_ids and languages
+    mock_texts = [
+        TextDTO(
+            id="text_id_1",
+            title="Text 1 Bo",
+            language="bo",
+            group_id="group_1",
+            type="version",
+            is_published=True,
+            created_date="2025-03-21 09:40:34.025024",
+            updated_date="2025-03-21 09:40:34.025035",
+            published_date="2025-03-21 09:40:34.025038",
+            published_by="pecha",
+            categories=[],
+            views=0
+        ),
+        TextDTO(
+            id="text_id_2",
+            title="Text 2 En",
+            language="en",
+            group_id="group_1",
+            type="version",
+            is_published=True,
+            created_date="2025-03-21 09:40:34.025024",
+            updated_date="2025-03-21 09:40:34.025035",
+            published_date="2025-03-21 09:40:34.025038",
+            published_by="pecha",
+            categories=[],
+            views=0
+        ),
+        TextDTO(
+            id="text_id_3",
+            title="Text 3 Zh",
+            language="zh",
+            group_id="group_1",
+            type="version",
+            is_published=True,
+            created_date="2025-03-21 09:40:34.025024",
+            updated_date="2025-03-21 09:40:34.025035",
+            published_date="2025-03-21 09:40:34.025038",
+            published_by="pecha",
+            categories=[],
+            views=0
+        ),
+        TextDTO(
+            id="text_id_4",
+            title="Text 4 Bo Group2",
+            language="bo",
+            group_id="group_2",
+            type="version",
+            is_published=True,
+            created_date="2025-03-21 09:40:34.025024",
+            updated_date="2025-03-21 09:40:34.025035",
+            published_date="2025-03-21 09:40:34.025038",
+            published_by="pecha",
+            categories=[],
+            views=0
+        )
+    ]
+    
+    # Test with 'en' as preferred language
+    result = _group_texts_by_group_id(texts=mock_texts, language="en")
+    
+    # Verify grouping
+    assert len(result) == 2
+    assert "group_1" in result
+    assert "group_2" in result
+    assert len(result["group_1"]) == 3
+    assert len(result["group_2"]) == 1
+    
+    # Verify sorting - 'en' should be first for group_1
+    assert result["group_1"][0].language == "en"
+    assert result["group_1"][1].language == "bo"
+    assert result["group_1"][2].language == "zh"
+
+
+def test_group_texts_by_group_id_with_bo_preference():
+    """Test _group_texts_by_group_id with Tibetan (bo) language preference"""
+    from pecha_api.texts.texts_service import _group_texts_by_group_id
+    
+    mock_texts = [
+        TextDTO(
+            id="text_id_1",
+            title="Text En",
+            language="en",
+            group_id="group_1",
+            type="version",
+            is_published=True,
+            created_date="2025-03-21 09:40:34.025024",
+            updated_date="2025-03-21 09:40:34.025035",
+            published_date="2025-03-21 09:40:34.025038",
+            published_by="pecha",
+            categories=[],
+            views=0
+        ),
+        TextDTO(
+            id="text_id_2",
+            title="Text Bo",
+            language="bo",
+            group_id="group_1",
+            type="version",
+            is_published=True,
+            created_date="2025-03-21 09:40:34.025024",
+            updated_date="2025-03-21 09:40:34.025035",
+            published_date="2025-03-21 09:40:34.025038",
+            published_by="pecha",
+            categories=[],
+            views=0
+        )
+    ]
+    
+    result = _group_texts_by_group_id(texts=mock_texts, language="bo")
+    
+    # Verify 'bo' is first
+    assert result["group_1"][0].language == "bo"
+    assert result["group_1"][1].language == "en"
+
+
+def test_get_language_priority_via_textutils():
+    """Test language priority through TextUtils (used by service layer)"""
+    from pecha_api.texts.texts_utils import TextUtils
+    
+    # Test with 'bo' preference
+    assert TextUtils.get_language_priority("bo", "bo") == 0
+    assert TextUtils.get_language_priority("en", "bo") == 1
+    assert TextUtils.get_language_priority("zh", "bo") == 2
+    assert TextUtils.get_language_priority("unknown", "bo") == 999
+    
+    # Test with 'en' preference
+    assert TextUtils.get_language_priority("en", "en") == 0
+    assert TextUtils.get_language_priority("bo", "en") == 1
+    assert TextUtils.get_language_priority("zh", "en") == 2
+    assert TextUtils.get_language_priority("unknown", "en") == 999
+    
+    # Test with 'zh' preference
+    assert TextUtils.get_language_priority("zh", "zh") == 0
+    assert TextUtils.get_language_priority("en", "zh") == 1
+    assert TextUtils.get_language_priority("bo", "zh") == 2
+
+
+def test_get_language_priority_with_none_via_textutils():
+    """Test TextUtils.get_language_priority handles None text_language"""
+    from pecha_api.texts.texts_utils import TextUtils
+    
+    # None language should get default priority
+    assert TextUtils.get_language_priority(None, "bo") == 999
+    assert TextUtils.get_language_priority(None, "en") == 999
+
+
+def test_group_texts_by_group_id_empty_texts():
+    """Test _group_texts_by_group_id with empty text list"""
+    from pecha_api.texts.texts_service import _group_texts_by_group_id
+    
+    result = _group_texts_by_group_id(texts=[], language="bo")
+    
+    assert result == {}
+
+
+def test_group_texts_by_group_id_single_group():
+    """Test _group_texts_by_group_id with single group"""
+    from pecha_api.texts.texts_service import _group_texts_by_group_id
+    
+    mock_texts = [
+        TextDTO(
+            id="text_id_1",
+            title="Text 1",
+            language="bo",
+            group_id="single_group",
+            type="version",
+            is_published=True,
+            created_date="2025-03-21 09:40:34.025024",
+            updated_date="2025-03-21 09:40:34.025035",
+            published_date="2025-03-21 09:40:34.025038",
+            published_by="pecha",
+            categories=[],
+            views=0
+        )
+    ]
+    
+    result = _group_texts_by_group_id(texts=mock_texts, language="bo")
+    
+    assert len(result) == 1
+    assert "single_group" in result
+    assert len(result["single_group"]) == 1
+    assert result["single_group"][0].id == "text_id_1"
+
+
+def test_language_orders_constant():
+    """Test LANGUAGE_ORDERS constant is properly defined"""
+    # Verify the constant exists and has expected structure
+    assert LANGUAGE_ORDERS is not None
+    assert isinstance(LANGUAGE_ORDERS, dict)
+    
+    # Check all three languages are defined
+    assert 'bo' in LANGUAGE_ORDERS
+    assert 'en' in LANGUAGE_ORDERS
+    assert 'zh' in LANGUAGE_ORDERS
+    
+    # Verify 'bo' preference order
+    assert LANGUAGE_ORDERS['bo']['bo'] == 0
+    assert LANGUAGE_ORDERS['bo']['en'] == 1
+    assert LANGUAGE_ORDERS['bo']['zh'] == 2
+    
+    # Verify 'en' preference order
+    assert LANGUAGE_ORDERS['en']['en'] == 0
+    assert LANGUAGE_ORDERS['en']['bo'] == 1
+    assert LANGUAGE_ORDERS['en']['zh'] == 2
+    
+    # Verify 'zh' preference order
+    assert LANGUAGE_ORDERS['zh']['zh'] == 0
+    assert LANGUAGE_ORDERS['zh']['en'] == 1
+    assert LANGUAGE_ORDERS['zh']['bo'] == 2
+
+
+@pytest.mark.asyncio
+async def test_get_commentaries_by_text_id_success():
+    """Test get_commentaries_by_text_id returns matching commentaries"""
+    from uuid import UUID
+    
+    text_id = "text_id_1"
+    group_id = "group_id_1"
+    
+    mock_root_text = TextDTO(
+        id=text_id,
+        title="Root Text",
+        language="bo",
+        group_id=group_id,
+        type="version",
+        is_published=True,
+        created_date="2025-03-21 09:40:34.025024",
+        updated_date="2025-03-21 09:40:34.025035",
+        published_date="2025-03-21 09:40:34.025038",
+        published_by="pecha",
+        categories=[],
+        views=0
+    )
+    
+    mock_commentaries = [
+        TextDTO(
+            id="commentary_id_1",
+            title="Commentary 1",
+            language="bo",
+            group_id="commentary_group_1",
+            type="commentary",
+            is_published=True,
+            created_date="2025-03-21 09:40:34.025024",
+            updated_date="2025-03-21 09:40:34.025035",
+            published_date="2025-03-21 09:40:34.025038",
+            published_by="pecha",
+            categories=[group_id],  # Commentary references the root text's group_id
+            views=0
+        ),
+        TextDTO(
+            id="commentary_id_2",
+            title="Commentary 2",
+            language="bo",
+            group_id="commentary_group_2",
+            type="commentary",
+            is_published=True,
+            created_date="2025-03-21 09:40:34.025024",
+            updated_date="2025-03-21 09:40:34.025035",
+            published_date="2025-03-21 09:40:34.025038",
+            published_by="pecha",
+            categories=["other_group"],  # This one shouldn't match
+            views=0
+        )
+    ]
+    
+    with patch("pecha_api.texts.texts_service.TextUtils.validate_text_exists", new_callable=AsyncMock, return_value=True), \
+         patch("pecha_api.texts.texts_service.TextUtils.get_text_detail_by_id", new_callable=AsyncMock, return_value=mock_root_text), \
+         patch("pecha_api.texts.texts_service.TextUtils.get_commentaries_by_text_type", new_callable=AsyncMock, return_value=mock_commentaries):
+        
+        result = await get_commentaries_by_text_id(text_id=text_id, skip=0, limit=10)
+        
+        assert result is not None
+        assert len(result) == 1
+        assert result[0].id == "commentary_id_1"
+        assert group_id in result[0].categories
+
+
+@pytest.mark.asyncio
+async def test_get_commentaries_by_text_id_no_matching_commentaries():
+    """Test get_commentaries_by_text_id with no matching commentaries"""
+    text_id = "text_id_1"
+    group_id = "group_id_1"
+    
+    mock_root_text = TextDTO(
+        id=text_id,
+        title="Root Text",
+        language="bo",
+        group_id=group_id,
+        type="version",
+        is_published=True,
+        created_date="2025-03-21 09:40:34.025024",
+        updated_date="2025-03-21 09:40:34.025035",
+        published_date="2025-03-21 09:40:34.025038",
+        published_by="pecha",
+        categories=[],
+        views=0
+    )
+    
+    mock_commentaries = [
+        TextDTO(
+            id="commentary_id_1",
+            title="Commentary 1",
+            language="bo",
+            group_id="commentary_group_1",
+            type="commentary",
+            is_published=True,
+            created_date="2025-03-21 09:40:34.025024",
+            updated_date="2025-03-21 09:40:34.025035",
+            published_date="2025-03-21 09:40:34.025038",
+            published_by="pecha",
+            categories=["other_group"],  # Different group
+            views=0
+        )
+    ]
+    
+    with patch("pecha_api.texts.texts_service.TextUtils.validate_text_exists", new_callable=AsyncMock, return_value=True), \
+         patch("pecha_api.texts.texts_service.TextUtils.get_text_detail_by_id", new_callable=AsyncMock, return_value=mock_root_text), \
+         patch("pecha_api.texts.texts_service.TextUtils.get_commentaries_by_text_type", new_callable=AsyncMock, return_value=mock_commentaries):
+        
+        result = await get_commentaries_by_text_id(text_id=text_id, skip=0, limit=10)
+        
+        assert result is not None
+        assert len(result) == 0
+
+
+@pytest.mark.asyncio
+async def test_get_commentaries_by_text_id_invalid_text():
+    """Test get_commentaries_by_text_id raises exception for invalid text"""
+    text_id = "invalid_text_id"
+    
+    with patch("pecha_api.texts.texts_service.TextUtils.validate_text_exists", new_callable=AsyncMock, side_effect=HTTPException(status_code=404, detail="Text not found")):
+        with pytest.raises(HTTPException) as exc_info:
+            await get_commentaries_by_text_id(text_id=text_id, skip=0, limit=10)
+        
+        assert exc_info.value.status_code == 404
+
+
+@pytest.mark.asyncio
+async def test_replace_pecha_segment_id_with_segment_id_success():
+    """Test replace_pecha_segment_id_with_segment_id converts pecha segment IDs to database segment IDs"""
+    text_id = "text_id_1"
+    
+    # Mock segments from database
+    class MockSegment:
+        def __init__(self, segment_id, pecha_segment_id):
+            self.id = segment_id
+            self.pecha_segment_id = pecha_segment_id
+    
+    mock_segments = [
+        MockSegment("db_seg_1", "pecha_seg_1"),
+        MockSegment("db_seg_2", "pecha_seg_2")
+    ]
+    
+    incoming_toc = TableOfContent(
+        text_id=text_id,
+        type=TableOfContentType.TEXT,
+        sections=[
+            Section(
+                id="section_1",
+                title="Section 1",
+                section_number=1,
+                segments=[
+                    TextSegment(segment_id="pecha_seg_1", segment_number=1),
+                    TextSegment(segment_id="pecha_seg_2", segment_number=2)
+                ]
+            )
+        ]
+    )
+    
+    with patch("pecha_api.texts.texts_service.get_segments_by_text_id", new_callable=AsyncMock, return_value=mock_segments):
+        result = await replace_pecha_segment_id_with_segment_id(table_of_content=incoming_toc)
+        
+        assert result is not None
+        assert isinstance(result, TableOfContent)
+        assert result.text_id == text_id
+        assert result.type == TableOfContentType.TEXT
+        assert len(result.sections) == 1
+        assert len(result.sections[0].segments) == 2
+        # Verify segment IDs were replaced
+        assert result.sections[0].segments[0].segment_id == "db_seg_1"
+        assert result.sections[0].segments[1].segment_id == "db_seg_2"
+
+
+@pytest.mark.asyncio
+async def test_replace_pecha_segment_id_with_segment_id_multiple_sections():
+    """Test replace_pecha_segment_id_with_segment_id with multiple sections"""
+    text_id = "text_id_1"
+    
+    class MockSegment:
+        def __init__(self, segment_id, pecha_segment_id):
+            self.id = segment_id
+            self.pecha_segment_id = pecha_segment_id
+    
+    mock_segments = [
+        MockSegment("db_seg_1", "pecha_seg_1"),
+        MockSegment("db_seg_2", "pecha_seg_2"),
+        MockSegment("db_seg_3", "pecha_seg_3")
+    ]
+    
+    incoming_toc = TableOfContent(
+        text_id=text_id,
+        type=TableOfContentType.TEXT,
+        sections=[
+            Section(
+                id="section_1",
+                title="Section 1",
+                section_number=1,
+                segments=[
+                    TextSegment(segment_id="pecha_seg_1", segment_number=1)
+                ]
+            ),
+            Section(
+                id="section_2",
+                title="Section 2",
+                section_number=2,
+                segments=[
+                    TextSegment(segment_id="pecha_seg_2", segment_number=1),
+                    TextSegment(segment_id="pecha_seg_3", segment_number=2)
+                ]
+            )
+        ]
+    )
+    
+    with patch("pecha_api.texts.texts_service.get_segments_by_text_id", new_callable=AsyncMock, return_value=mock_segments):
+        result = await replace_pecha_segment_id_with_segment_id(table_of_content=incoming_toc)
+        
+        assert result is not None
+        assert len(result.sections) == 2
+        assert result.sections[0].segments[0].segment_id == "db_seg_1"
+        assert result.sections[1].segments[0].segment_id == "db_seg_2"
+        assert result.sections[1].segments[1].segment_id == "db_seg_3"

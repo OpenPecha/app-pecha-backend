@@ -14,6 +14,13 @@ class UserPlanStatus(BaseModel):
     status: str  # not_started, active, paused, completed, abandoned
 
 
+class UserPlanDayCompletionStatus(BaseModel):
+    day_number: int
+    is_completed: bool
+
+class UserPlanDayCompletionStatusResponse(BaseModel):
+    days: List[UserPlanDayCompletionStatus]
+
 class UserPlanProgressResponse(BaseModel):
     id: UUID
     user_id: UUID
@@ -62,6 +69,7 @@ class UserSubTaskDTO(BaseModel):
     id: UUID
     display_order: Optional[int] = None
     is_completed: bool
+    duration: Optional[str] = None
     content_type: ContentType
     content: str
 

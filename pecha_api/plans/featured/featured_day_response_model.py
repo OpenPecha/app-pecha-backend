@@ -9,6 +9,7 @@ class SubTaskDTO(BaseModel):
     id: UUID
     content_type: ContentType
     content: Optional[str] = None
+    duration: Optional[str] = None
     display_order: Optional[int] = None
 
 class TaskDTO(BaseModel):

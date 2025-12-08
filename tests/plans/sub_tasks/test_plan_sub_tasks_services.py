@@ -27,8 +27,8 @@ async def test_create_new_sub_tasks_builds_and_saves_with_incremented_display_or
     request = SubTaskRequest(
         task_id=task_id,
         sub_tasks=[
-            SubTaskRequestFields(content_type="TEXT", content="First"),
-            SubTaskRequestFields(content_type="TEXT", content="Second"),
+            SubTaskRequestFields(content_type="TEXT", content="First", duration="10"),
+            SubTaskRequestFields(content_type="TEXT", content="Second", duration="10"),
         ]
     )
 
@@ -38,10 +38,10 @@ async def test_create_new_sub_tasks_builds_and_saves_with_incremented_display_or
 
     saved_items = [
         SimpleNamespace(
-            id=uuid.uuid4(), content_type="TEXT", content="First", display_order=6
+            id=uuid.uuid4(), content_type="TEXT", content="First", duration="10", display_order=6
         ),
         SimpleNamespace(
-            id=uuid.uuid4(), content_type="TEXT", content="Second", display_order=7
+            id=uuid.uuid4(), content_type="TEXT", content="Second", duration="10", display_order=7
         ),
     ]
 
@@ -67,6 +67,7 @@ async def test_create_new_sub_tasks_builds_and_saves_with_incremented_display_or
             task_id=task_id,
             content_type="TEXT",
             content="First",
+            duration="10",
             display_order=6,
             created_by="author@example.com",
         )
@@ -74,6 +75,7 @@ async def test_create_new_sub_tasks_builds_and_saves_with_incremented_display_or
             task_id=task_id,
             content_type="TEXT",
             content="Second",
+            duration="10",
             display_order=7,
             created_by="author@example.com",
         )
@@ -100,6 +102,7 @@ async def test_create_new_sub_tasks_builds_and_saves_with_incremented_display_or
             "task_id": task_id,
             "content_type": "TEXT",
             "content": "First",
+            "duration": "10",
             "display_order": 6,
             "created_by": "author@example.com",
         }
@@ -107,6 +110,7 @@ async def test_create_new_sub_tasks_builds_and_saves_with_incremented_display_or
             "task_id": task_id,
             "content_type": "TEXT",
             "content": "Second",
+            "duration": "10",
             "display_order": 7,
             "created_by": "author@example.com",
         }
@@ -122,12 +126,14 @@ async def test_create_new_sub_tasks_builds_and_saves_with_incremented_display_or
                     id=saved_items[0].id,
                     content_type=saved_items[0].content_type,
                     content=saved_items[0].content,
+                    duration=saved_items[0].duration,
                     display_order=saved_items[0].display_order,
                 ),
                 SubTaskDTO(
                     id=saved_items[1].id,
                     content_type=saved_items[1].content_type,
                     content=saved_items[1].content,
+                    duration=saved_items[1].duration,
                     display_order=saved_items[1].display_order,
                 ),
             ]
@@ -182,7 +188,7 @@ async def test_update_sub_task_by_task_id_deletes_missing_and_updates_existing_a
     request = UpdateSubTaskRequest(
         task_id=task_id,
         sub_tasks=[
-            SubTaskDTO(id=existing_to_keep_id, content_type="TEXT", content="First updated", display_order=1),
+            SubTaskDTO(id=existing_to_keep_id, content_type="TEXT", content="First updated", duration="10", display_order=1),
         ],
     )
 
@@ -244,7 +250,7 @@ async def test_update_sub_task_by_task_id_unauthorized_raises_http_exception_403
     request = UpdateSubTaskRequest(
         task_id=task_id,
         sub_tasks=[
-            SubTaskDTO(id=uuid.uuid4(), content_type="TEXT", content="X", display_order=1),
+            SubTaskDTO(id=uuid.uuid4(), content_type="TEXT", content="X", duration="10", display_order=1),
         ],
     )
 
@@ -285,9 +291,9 @@ async def test_update_sub_task_by_task_id_creates_new_sub_tasks_for_none_ids():
     request = UpdateSubTaskRequest(
         task_id=task_id,
         sub_tasks=[
-            SubTaskDTO(id=existing_id, content_type="TEXT", content="Keep updated", display_order=1),
-            SubTaskDTO(id=None, content_type="TEXT", content="New A", display_order=2),
-            SubTaskDTO(id=None, content_type="TEXT", content="New B", display_order=3),
+            SubTaskDTO(id=existing_id, content_type="TEXT", content="Keep updated", duration="10", display_order=1),
+            SubTaskDTO(id=None, content_type="TEXT", content="New A", duration="10", display_order=2),
+            SubTaskDTO(id=None, content_type="TEXT", content="New B", duration="10", display_order=3),
         ],
     )
 
@@ -299,6 +305,7 @@ async def test_update_sub_task_by_task_id_creates_new_sub_tasks_for_none_ids():
         task_id=task_id,
         content_type="TEXT",
         content="New A",
+        duration="10",
         display_order=2,
         created_by="author@example.com",
     )
@@ -306,7 +313,8 @@ async def test_update_sub_task_by_task_id_creates_new_sub_tasks_for_none_ids():
         task_id=task_id,
         content_type="TEXT",
         content="New B",
-        display_order=3,
+        duration="10",
+        cdisplay_order=3,
         created_by="author@example.com",
     )
 
@@ -352,6 +360,7 @@ async def test_update_sub_task_by_task_id_creates_new_sub_tasks_for_none_ids():
             "task_id": task_id,
             "content_type": ContentType.TEXT,
             "content": "New A",
+            "duration": "10",
             "display_order": 2,
             "created_by": "author@example.com",
         }
@@ -359,6 +368,7 @@ async def test_update_sub_task_by_task_id_creates_new_sub_tasks_for_none_ids():
             "task_id": task_id,
             "content_type": ContentType.TEXT,
             "content": "New B",
+            "duration": "10",
             "display_order": 3,
             "created_by": "author@example.com",
         }
