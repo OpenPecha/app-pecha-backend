@@ -48,7 +48,7 @@ async def get_recitation_details_service(text_id: str, recitation_details_reques
     if not is_valid_text:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=ErrorConstants.TEXT_NOT_FOUND_MESSAGE)
         
-    cached_data: RecitationDetailsResponse = await get_recitation_by_text_id_cache(text_id=text_id, language=recitation_details_request.language, cache_type=CacheType.RECITATION_DETAILS)
+    cached_data: RecitationDetailsResponse = await get_recitation_by_text_id_cache(text_id=text_id, recitation_details_request=recitation_details_request, cache_type=CacheType.RECITATION_DETAILS)
     if cached_data is not None:
         return cached_data
 
@@ -72,7 +72,7 @@ async def get_recitation_details_service(text_id: str, recitation_details_reques
 
     await set_recitation_by_text_id_cache(
         text_id=text_id, 
-        language=recitation_details_request.language, 
+        recitation_details_request=recitation_details_request, 
         cache_type=CacheType.RECITATION_DETAILS, 
         data=recitation_details_response
     )
