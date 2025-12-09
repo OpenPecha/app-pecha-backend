@@ -221,7 +221,7 @@ class Text(Document):
         skip: int = 0, 
         limit: int = 10
     ) -> List["Text"]:
-        query = {"type": TextType.SHEET}
+        query = {"type": TextType.SHEET.value}
             
         if published_by is not None:
             query["published_by"] = published_by
