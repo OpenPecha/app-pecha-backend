@@ -251,3 +251,13 @@ class Text(Document):
 
         return texts
 
+
+    @classmethod
+    async def get_published_sheets_count_from_db(
+        cls
+    ) -> int:
+        query = {
+            "type": TextType.SHEET, 
+            "is_published": True
+        }
+        return await cls.find(query).count()
