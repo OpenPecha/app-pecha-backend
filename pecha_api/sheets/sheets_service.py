@@ -162,6 +162,7 @@ async def fetch_sheets(
 ) -> SheetDTOResponse:
 
     if email is None:
+        print("Community page - show all published sheets filtered by language")
         # Case 1: Community page - show all published sheets filtered by language
         sheets = await get_sheet(
             is_published=True,
@@ -180,8 +181,8 @@ async def fetch_sheets(
             limit = limit
         )
     
-
-    sheets: SheetDTOResponse = await _generate_sheet_dto_response_(sheets = sheets, skip = skip, limit = limit)
+    total = await Text.get_published_sheets_count_from_db(email=email)
+    sheets: SheetDTOResponse = await _generate_sheet_dto_response_(sheets = sheets, total = total, skip = skip, limit = limit)
       
     return sheets
 
@@ -413,7 +414,7 @@ async def _fetch_user_sheets_(token: str, email: str, sort_by: SortBy, sort_orde
     )
     return sheets
 
-async def _generate_sheet_dto_response_(sheets, skip: int, limit: int) -> SheetDTOResponse:
+async def _generate_sheet_dto_response_(sheets, total, skip: int, limit: int) -> SheetDTOResponse:
     sheets_dto = [
         SheetDTO(
             id = str(sheet.id),
@@ -431,9 +432,9 @@ async def _generate_sheet_dto_response_(sheets, skip: int, limit: int) -> SheetD
     ]
     return SheetDTOResponse(
         sheets = sheets_dto,
+        total = total,
         skip = skip,
-        limit = limit,
-        total = len(sheets)
+        limit = limit
     )
 
 def _create_publisher_object_(published_by: str) -> Publisher:
