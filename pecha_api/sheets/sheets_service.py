@@ -162,7 +162,6 @@ async def fetch_sheets(
 ) -> SheetDTOResponse:
 
     if email is None:
-        print("Community page - show all published sheets filtered by language")
         # Case 1: Community page - show all published sheets filtered by language
         sheets = await get_sheet(
             is_published=True,
