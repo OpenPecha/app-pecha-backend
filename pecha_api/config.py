@@ -64,6 +64,8 @@ DEFAULTS = dict(
     MAILTRAP_API_KEY = "",
     SENDER_EMAIL="",
     SENDER_NAME=""
+
+    OPENPECHA_SEARCH_API_URL="",
 )
 
 
