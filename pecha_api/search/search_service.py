@@ -6,7 +6,7 @@ from pecha_api.config import get
 from typing import List, Dict, Optional
 from pecha_api.texts.segments.segments_models import Segment
 from pecha_api.texts.texts_models import Text
-from pecha_api.config import get
+
 from pecha_api.http_message_utils import handle_http_status_error, handle_request_error
 import httpx
 import logging
@@ -403,7 +403,7 @@ async def call_external_search_api(
     language: Optional[str] = None
 ) -> ExternalSearchResponse:
 
-    external_api_url = "https://openpecha-search.onrender.com"
+    external_api_url = get("OPENPECHA_SEARCH_API_URL")
     endpoint = f"{external_api_url}/search"
     
     payload = build_search_payload(query, search_type, limit, title, language)
