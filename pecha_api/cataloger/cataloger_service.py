@@ -1,38 +1,69 @@
 import httpx
-from pecha_api.cataloger.cataloger_response_model import CatalogedTextsDetailsResponse, ExternalPechaTextResponse, ExternalPechaInstanceRelatedResponse
-from pecha_api.error_contants import ErrorConstants
+import asyncio
+from pecha_api.cataloger.cataloger_response_model import (
+    CatalogedTextsDetailsResponse,
+    ExternalPechaTextResponse,
+    ExternalPechaInstanceRelatedResponse,
+    Relation,
+    Metadata
+)
 from pecha_api.http_message_utils import handle_http_status_error, handle_request_error
 from ..config import get
-from rich import print
-from fastapi import HTTPException
 from pecha_api.constants import Constants
 
 
 client = httpx.AsyncClient(timeout=httpx.Timeout(30.0))
 
+ACCEPT_JSON_HEADER = {"Accept": "application/json"}
+EXTERNAL_PECHA_API_URL = get("EXTERNAL_PECHA_API_URL")
+
 async def get_cataloged_texts_details(text_id: str) -> CatalogedTextsDetailsResponse | None:
     if text_id is None:
         return None
-    externalpecha_text = await call_external_pecha_api_texts(text_id)
-    print(externalpecha_text)
-    externalpecha_instances = await call_external_pecha_api_instances(text_id)
-    print(externalpecha_instances)
-    for instance in externalpecha_instances:
-        externalpecha_related_instances = await call_external_pecha_api_related_instances(instance)
-        print(externalpecha_related_instances)
     
-    raise HTTPException(status_code=501, detail="Cataloged text details endpoint not fully implemented")
+    text_details, instance_ids = await asyncio.gather(
+        call_external_pecha_api_texts(text_id),
+        call_external_pecha_api_instances(text_id)
+    )
+    
+    all_related_instances = []
+    if instance_ids:
+        related_instances_tasks = [
+            call_external_pecha_api_related_instances(instance_id)
+            for instance_id in instance_ids
+        ]
+        related_instances_results = await asyncio.gather(*related_instances_tasks)
+        for related_instances in related_instances_results:
+            all_related_instances.extend(related_instances)
+    
+    relations = []
+    for related_instance in all_related_instances:
+        metadata = Metadata(
+            text_id=related_instance.text_id,
+            title=related_instance.title,
+            language=related_instance.language
+        )
+        relation = Relation(
+            relation_type=related_instance.relation_type,
+            status=False,
+            metadata=metadata
+        )
+        relations.append(relation)
+    
+    return CatalogedTextsDetailsResponse(
+        title=text_details.title,
+        category_id=text_details.category_id,
+        status=False,
+        relations=relations
+    )
 
 async def call_external_pecha_api_texts(
     text_id: str
 ) -> ExternalPechaTextResponse:
-    external_api_url = get("EXTERNAL_PECHA_API_URL")
-    endpoint = f"{external_api_url}/texts/{text_id}"    
+
+    endpoint = f"{EXTERNAL_PECHA_API_URL}/texts/{text_id}"    
     try:
-        response = await client.get(
-            endpoint,
-            headers={"Accept": "application/json"}
-        )
+        response = await client.get(endpoint, headers=ACCEPT_JSON_HEADER)
         response.raise_for_status()
         data = response.json()
         return ExternalPechaTextResponse(**data)
@@ -45,13 +76,9 @@ async def call_external_pecha_api_texts(
 async def call_external_pecha_api_instances(
     text_id: str
 ) -> list[str]:
-    external_api_url = get("EXTERNAL_PECHA_API_URL")
-    endpoint = f"{external_api_url}/texts/{text_id}/instances?instance_type={Constants.INSTANCE_TYPE}"   
+    endpoint = f"{EXTERNAL_PECHA_API_URL}/texts/{text_id}/instances?instance_type={Constants.INSTANCE_TYPE}"   
     try:
-        response = await client.get(
-            endpoint,
-            headers={"Accept": "application/json"}
-        )
+        response = await client.get(endpoint, headers=ACCEPT_JSON_HEADER)
         response.raise_for_status()
         data = response.json()
         return [item["id"] for item in data if "id" in item]
@@ -64,13 +91,9 @@ async def call_external_pecha_api_instances(
 async def call_external_pecha_api_related_instances(
     id: str
 ) -> list[ExternalPechaInstanceRelatedResponse]:
-    external_api_url = get("EXTERNAL_PECHA_API_URL")
-    endpoint = f"{external_api_url}/instances/{id}/related"   
+    endpoint = f"{EXTERNAL_PECHA_API_URL}/instances/{id}/related"   
     try:
-        response = await client.get(
-            endpoint,
-            headers={"Accept": "application/json"}
-        )
+        response = await client.get(endpoint, headers=ACCEPT_JSON_HEADER)
         response.raise_for_status()
         data = response.json()
         
