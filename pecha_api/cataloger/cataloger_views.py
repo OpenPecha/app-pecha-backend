@@ -14,7 +14,7 @@ cataloger_router = APIRouter(
 )
 
 
-@cataloger_router.get("/texts/{text_id}", status_code=status.HTTP_200_OK)
+@cataloger_router.get("/texts/{text_id}", status_code=status.HTTP_200_OK, response_model=CatalogedTextsDetailsResponse)
 async def read_cataloged_texts_details(
         text_id: str
 )->CatalogedTextsDetailsResponse:

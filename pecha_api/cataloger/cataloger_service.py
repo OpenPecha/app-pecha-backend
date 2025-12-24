@@ -40,7 +40,7 @@ async def get_cataloged_texts_details(text_id: str) -> CatalogedTextsDetailsResp
     for related_instance in all_related_instances:
         metadata = Metadata(
             text_id=related_instance.text_id,
-            title=related_instance.title,
+            title=ensure_dict(related_instance.title),
             language=related_instance.language
         )
         relation = Relation(
@@ -51,7 +51,7 @@ async def get_cataloged_texts_details(text_id: str) -> CatalogedTextsDetailsResp
         relations.append(relation)
     
     return CatalogedTextsDetailsResponse(
-        title=text_details.title,
+        title=ensure_dict(text_details.title),
         category_id=text_details.category_id,
         status=False,
         relations=relations
@@ -114,3 +114,7 @@ async def call_external_pecha_api_related_instances(
         handle_http_status_error(e)
     except httpx.RequestError as e:
         handle_request_error(e)
+
+def ensure_dict(value) -> dict:
+    """Return value if it's a dict, otherwise return an empty dict."""
+    return value if isinstance(value, dict) else {}
