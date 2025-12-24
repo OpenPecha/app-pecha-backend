@@ -26,3 +26,9 @@ class CatalogedTextsDetailsResponse(BaseModel):
 class ExternalPechaTextResponse(BaseModel):
     title:Title
     category_id: str
+
+class ExternalPechaInstanceRelatedResponse(BaseModel):
+    title:Title
+    text_id: str
+    language: str
+    relation_type:str
