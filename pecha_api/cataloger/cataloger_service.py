@@ -28,14 +28,10 @@ async def get_cataloged_texts_details(text_id: str) -> CatalogedTextsDetailsResp
     
     all_related_instances = []
     if instance_ids:
-        related_instances_tasks = [
-            call_external_pecha_api_related_instances(instance_id)
-            for instance_id in instance_ids
-        ]
-        related_instances_results = await asyncio.gather(*related_instances_tasks)
-        for related_instances in related_instances_results:
-            all_related_instances.extend(related_instances)
-    
+        for instance_id in instance_ids:
+            related = await call_external_pecha_api_related_instances(instance_id)
+            all_related_instances.extend(related)
+
     relations = []
     for related_instance in all_related_instances:
         metadata = Metadata(
