@@ -1,11 +1,12 @@
 from pydantic import BaseModel
-from typing import Optional
+from typing import Optional, List
+
 
 class Title(BaseModel):
     bo: Optional[str] = None
     en: Optional[str] = None
     bophono: Optional[str] = None
-    
+
 
 class CatalogedTextsDetailsResponse(BaseModel):
     instance_id: str
@@ -14,3 +15,14 @@ class CatalogedTextsDetailsResponse(BaseModel):
     language: str
     title: Title
     relationship: str
+
+
+class CatalogedTexts(BaseModel):
+    text_id: str
+    title: Title
+    language: str
+    status: bool
+
+
+class CatalogedTextsResponse(BaseModel):
+    texts: List[CatalogedTexts]

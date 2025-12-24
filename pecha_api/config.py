@@ -66,6 +66,7 @@ DEFAULTS = dict(
     SENDER_NAME="",
 
     OPENPECHA_SEARCH_API_URL="",
+    OPENPECHA_TEXTS_API_URL="https://api-aq25662yyq-uc.a.run.app/v2/texts",
 )
 
 

@@ -71,7 +71,7 @@ class Constants:
 
     excluded_text_ids = []
 
-
+    TEXT_TYPE = "root"
 
 
 
