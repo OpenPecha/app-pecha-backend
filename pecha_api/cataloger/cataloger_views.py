@@ -1,10 +1,10 @@
 from __future__ import annotations
 
-from fastapi import APIRouter, Depends, Query
+from fastapi import APIRouter
 from fastapi.security import HTTPBearer
 from starlette import status
-
 from pecha_api.cataloger.cataloger_service import get_cataloged_texts_details
+from pecha_api.cataloger.cataloger_response_model import CatalogedTextsDetailsResponse
 
 
 oauth2_scheme = HTTPBearer()
@@ -16,12 +16,8 @@ cataloger_router = APIRouter(
 
 @cataloger_router.get("/texts/{text_id}", status_code=status.HTTP_200_OK)
 async def read_cataloged_texts_details(
-        text_id: str,
-        skip: int = Query(default=0, ge=0, description="Number of records to skip"),
-        limit: int = Query(default=10, ge=1, le=100, description="Number of records to return")
-):
+        text_id: str
+)->CatalogedTextsDetailsResponse:
     return await get_cataloged_texts_details(
-        text_id=text_id,
-        skip=skip,
-        limit=limit
+        text_id=text_id
     )
