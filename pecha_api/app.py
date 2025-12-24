@@ -30,7 +30,7 @@ from pecha_api.plans.featured import featured_day_views
 from pecha_api.recitations import recitations_view
 from pecha_api.user_follows import user_follow_views
 from pecha_api.plans.users.recitation import user_recitations_views
-
+from pecha_api.cataloger import cataloger_views
 import uvicorn
 
 api = FastAPI(
@@ -65,6 +65,7 @@ api.include_router(featured_day_views.user_follow_router)
 api.include_router(recitations_view.recitation_router)
 api.include_router(user_follow_views.user_follow_router)
 api.include_router(user_recitations_views.user_recitation_router)
+api.include_router(cataloger_views.cataloger_router)
 api.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
