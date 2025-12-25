@@ -1,5 +1,5 @@
-from pydantic import BaseModel
-from typing import Optional, List
+from pydantic import BaseModel, Field
+from typing import Optional, List, Dict
 
 
 class Title(BaseModel):
@@ -19,7 +19,7 @@ class CatalogedTextsDetailsResponse(BaseModel):
 
 class CatalogedTexts(BaseModel):
     text_id: str
-    title: Title
+    title: Dict[str, str] = Field(default_factory=dict)
     language: str
     status: bool
 
