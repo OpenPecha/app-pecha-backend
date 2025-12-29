@@ -66,6 +66,11 @@ DEFAULTS = dict(
     SENDER_NAME="",
 
     OPENPECHA_SEARCH_API_URL="",
+
+    ### text uploader script configuration
+    APPLICATION = "webuddhist",
+    ACCESS_TOKEN="",
+    COLLECTION_LANGUAGES = ["bo", "en", "zh"]
 )
 
 
