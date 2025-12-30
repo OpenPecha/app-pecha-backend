@@ -1,35 +1,41 @@
 from typing import Any
 from text_uploader_script.collections.collections_repository import get_collections, post_collections
-from text_uploader_script.config import OpenPechaAPIURL, COLLECTION_LANGUAGES
+from text_uploader_script.constants import OpenPechaAPIURL, COLLECTION_LANGUAGES
 from text_uploader_script.collections.collection_model import CollectionPayload
 from text_uploader_script.collections.collection_upload_log import (
     log_uploaded_collection,
     get_parent_id_by_pecha_collection_id,
 )
 
+from pecha_api.collections.collections_repository import get_collection_id_by_pecha_collection_id
+
 
 class CollectionService:
 
-    async def upload_collections(self):
+    async def upload_collections(self, destination_url: str, openpecha_api_url: str):
 
-        await self.build_recursive_multilingual_payloads()
+        await self.build_recursive_multilingual_payloads(destination_url=destination_url, openpecha_api_url=openpecha_api_url)
 
 
-    async def get_collections_service(self, parent_id: str | None = None):
+    async def get_collections_service(self, openpecha_api_url: str, parent_id: str | None = None):
         return await get_collections(
-            OpenPechaAPIURL.DEVELOPMENT.value, COLLECTION_LANGUAGES,
+            openpecha_api_url=openpecha_api_url,
+            languages=COLLECTION_LANGUAGES,
             parent_id=parent_id
         )
 
     async def build_recursive_multilingual_payloads(
         self,
+        destination_url: str,
+        openpecha_api_url: str,
         remote_parent_id: str | None = None,
-        local_parent_id: str | None = None,
+        local_parent_id: str | None = None
     ) -> list[dict[str, Any]]:
 
         # Fetch collections for this level from the remote (OpenPecha) API.
         # This `remote_parent_id` is **only** for traversing the source tree.
         collections_by_language = await self.get_collections_service(
+            openpecha_api_url=openpecha_api_url,
             parent_id=remote_parent_id
         )
 
@@ -72,17 +78,19 @@ class CollectionService:
                 # Use the resolved parent_id (from parameter or CSV lookup)
                 parent_id=parent_id_to_use,
             )
+
             
+            existing_collection_id = await get_collection_id_by_pecha_collection_id(pecha_collection_id=payload.get("pecha_collection_id"))
+
             # Upload to webuddhist backend. We send the full multilingual
             # payload body, and use "en" as the request language context.
-            response_data = await post_collections("en", collection_model)
-            if response_data.get("already_exists"):
+            response_data = await post_collections(destination_url=destination_url, language="en", collection_model=collection_model)
+            if not existing_collection_id:
                 print(
-                    f"collection already exists, continuing: slug={payload.get('slug')!r} "
-                    f"pecha_collection_id={payload.get('pecha_collection_id')!r}"
+                    f"collection '{payload.get('slug')!r}' already exists, skipping"
                 )
             else:
-                print("collection uploaded successfully")
+                print(f"collection '{payload.get('slug')!r}' uploaded successfully")
 
             # Extract the newly created destination collection ID so it can be
             # used as the parent for this node's children.
@@ -98,15 +106,6 @@ class CollectionService:
             else:
                 payload["local_id"] = None
 
-            # Log the uploaded collection to CSV
-            if payload["local_id"]:
-                # Get the English title for logging
-                title = payload.get("titles", {}).get("en", "")
-                log_uploaded_collection(
-                    id=payload["local_id"],
-                    pecha_collection_id=payload.get("pecha_collection_id", ""),
-                    title=title,
-                )
 
         # For each payload that has children, fetch and attach them recursively.
         for payload in multilingual_payloads:
