@@ -83,7 +83,6 @@ async def post_collections(destination_url: str, language: str, collection_model
             f"(language={language}) status={response.status_code} "
             f"body={response.text}"
         )
-        response.raise_for_status()
 
     return response.json()
 

@@ -25,7 +25,3 @@ async def pipeline(text_upload_request: TextUploadRequest, token: str):
     collection = CollectionService()
     await collection.upload_collections(text_upload_request=text_upload_request, token=token)
 
-
-
-if __name__ == "__main__":
-    asyncio.run(pipeline(text_upload_request))

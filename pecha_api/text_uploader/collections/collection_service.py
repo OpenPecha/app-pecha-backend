@@ -4,9 +4,9 @@ from pecha_api.text_uploader.constants import OpenPechaAPIURL, COLLECTION_LANGUA
 from pecha_api.text_uploader.collections.collection_model import CollectionPayload
 from pecha_api.text_uploader.text_uploader_response_model import TextUploadRequest
 
-
 from pecha_api.collections.collections_repository import get_collection_id_by_pecha_collection_id
 
+import logging
 
 class CollectionService:
 
@@ -81,23 +81,21 @@ class CollectionService:
                 # Use the resolved parent_id (from parameter or CSV lookup)
                 parent_id=parent_id_to_use,
             )
-            print("collection_model>>>>>>>>>>>>>>>", collection_model)
 
             
             existing_collection_id = await get_collection_id_by_pecha_collection_id(pecha_collection_id=payload.get("pecha_collection_id"))
-            print("existing_collection_id>>>>>>>>>>>>>>>", existing_collection_id)
             # Upload to webuddhist backend. We send the full multilingual
             # payload body, and use "en" as the request language context.
-            response_data = await post_collections(destination_url=destination_url, language="en", collection_model=collection_model, access_token=access_token)
+            response_data = {}
             if not existing_collection_id:
-                print(
-                    f"collection '{payload.get('slug')!r}' already exists, skipping"
-                )
+                response_data = await post_collections(destination_url=destination_url, language="en", collection_model=collection_model, access_token=access_token)
+                logging.info(f" '{payload.get('slug')!r}' uploaded successfully")
             else:
-                print(f"collection '{payload.get('slug')!r}' uploaded successfully")
+                logging.warning(f" '{payload.get('slug')!r}' ALREADY EXIST, skipping")
 
             # Extract the newly created destination collection ID so it can be
             # used as the parent for this node's children.
+
             raw_local_id = (
                 response_data.get("id")
                 or response_data.get("_id")
