@@ -1,7 +1,10 @@
+from typing import Optional
 import httpx
 import asyncio
 from pecha_api.cataloger.cataloger_response_model import (
     CatalogedTextsDetailsResponse,
+    CatalogedTextsResponse,
+    CatalogedTexts,
     ExternalPechaTextResponse,
     ExternalPechaInstanceRelatedResponse,
     Relation,
@@ -16,6 +19,25 @@ client = httpx.AsyncClient(timeout=httpx.Timeout(30.0))
 
 ACCEPT_JSON_HEADER = {"Accept": "application/json"}
 EXTERNAL_PECHA_API_URL = get("EXTERNAL_PECHA_API_URL")
+
+async def get_cataloged_texts(
+    search: Optional[str],
+    skip: int,
+    limit: int,
+) -> CatalogedTextsResponse:
+    data = await call_external_pecha_api_cataloged_texts(search=search, skip=skip, limit=limit)
+
+    texts = [
+        CatalogedTexts(
+            text_id=item["id"],
+            title=ensure_dict(item.get("title")),
+            language=item["language"],
+            status=False,
+        )
+        for item in (data or [])
+    ]
+
+    return CatalogedTextsResponse(texts=texts)
 
 async def get_cataloged_texts_details(text_id: str) -> CatalogedTextsDetailsResponse | None:
     if text_id is None:
@@ -110,6 +132,30 @@ async def call_external_pecha_api_related_instances(
         handle_http_status_error(e)
     except httpx.RequestError as e:
         handle_request_error(e)
+
+async def call_external_pecha_api_cataloged_texts(
+    search: Optional[str],
+    skip: int,
+    limit: int,
+) -> list[dict]:
+    params = {"type": Constants.TEXT_TYPE, "offset": skip, "limit": limit}
+    if search:
+        params["title"] = search
+    endpoint = f"{EXTERNAL_PECHA_API_URL}/texts"   
+    try:
+        response = await client.get(
+            endpoint,
+            headers=ACCEPT_JSON_HEADER,
+            params=params,
+        )
+        response.raise_for_status()
+        return response.json()
+
+    except httpx.HTTPStatusError as e:
+        handle_http_status_error(e)
+    except httpx.RequestError as e:
+        handle_request_error(e)
+
 
 def ensure_dict(value) -> dict:
     """Return value if it's a dict, otherwise return an empty dict."""
