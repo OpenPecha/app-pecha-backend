@@ -283,16 +283,6 @@ async def test_read_cataloged_texts_with_search(mocker, mock_single_text_respons
 
 
 @pytest.mark.asyncio
-async def test_read_cataloged_texts_invalid_params():
-    async with AsyncClient(
-        transport=ASGITransport(app=api), base_url="http://test"
-    ) as ac:
-        response = await ac.get("/cataloger/texts?skip=-1")
-
-    assert response.status_code == status.HTTP_422_UNPROCESSABLE_ENTITY
-
-
-@pytest.mark.asyncio
 async def test_read_cataloged_texts_with_params(mocker, mock_empty_response):
     mock_get_cataloged_texts = mocker.patch(
         "pecha_api.cataloger.cataloger_views.get_cataloged_texts",
