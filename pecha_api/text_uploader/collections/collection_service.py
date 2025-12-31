@@ -1,20 +1,22 @@
 from typing import Any
-from text_uploader_script.collections.collections_repository import get_collections, post_collections
-from text_uploader_script.constants import OpenPechaAPIURL, COLLECTION_LANGUAGES
-from text_uploader_script.collections.collection_model import CollectionPayload
-from text_uploader_script.collections.collection_upload_log import (
-    log_uploaded_collection,
-    get_parent_id_by_pecha_collection_id,
-)
+from pecha_api.text_uploader.collections.collections_repository import get_collections, post_collections
+from pecha_api.text_uploader.constants import OpenPechaAPIURL, COLLECTION_LANGUAGES
+from pecha_api.text_uploader.collections.collection_model import CollectionPayload
+from pecha_api.text_uploader.text_uploader_response_model import TextUploadRequest
+
 
 from pecha_api.collections.collections_repository import get_collection_id_by_pecha_collection_id
 
 
 class CollectionService:
 
-    async def upload_collections(self, destination_url: str, openpecha_api_url: str):
+    async def upload_collections(self, text_upload_request: TextUploadRequest, token: str):
 
-        await self.build_recursive_multilingual_payloads(destination_url=destination_url, openpecha_api_url=openpecha_api_url)
+        await self.build_recursive_multilingual_payloads(
+            destination_url=text_upload_request.destination_url, 
+            openpecha_api_url=text_upload_request.openpecha_api_url,
+            access_token=token
+        )
 
 
     async def get_collections_service(self, openpecha_api_url: str, parent_id: str | None = None):
@@ -28,6 +30,7 @@ class CollectionService:
         self,
         destination_url: str,
         openpecha_api_url: str,
+        access_token: str,
         remote_parent_id: str | None = None,
         local_parent_id: str | None = None
     ) -> list[dict[str, Any]]:
@@ -66,8 +69,8 @@ class CollectionService:
                         parent_pecha_id = str(parent_pecha_id)
                     
                     # Look up parent's destination ID from CSV
-                    if parent_pecha_id:
-                        parent_id_to_use = get_parent_id_by_pecha_collection_id(parent_pecha_id)
+                    # if parent_pecha_id:
+                    #     parent_id_to_use = get_parent_id_by_pecha_collection_id(parent_pecha_id)
             # if payload.get("slug") is None:
                 # continue
             collection_model = CollectionPayload(
@@ -78,13 +81,14 @@ class CollectionService:
                 # Use the resolved parent_id (from parameter or CSV lookup)
                 parent_id=parent_id_to_use,
             )
+            print("collection_model>>>>>>>>>>>>>>>", collection_model)
 
             
             existing_collection_id = await get_collection_id_by_pecha_collection_id(pecha_collection_id=payload.get("pecha_collection_id"))
-
+            print("existing_collection_id>>>>>>>>>>>>>>>", existing_collection_id)
             # Upload to webuddhist backend. We send the full multilingual
             # payload body, and use "en" as the request language context.
-            response_data = await post_collections(destination_url=destination_url, language="en", collection_model=collection_model)
+            response_data = await post_collections(destination_url=destination_url, language="en", collection_model=collection_model, access_token=access_token)
             if not existing_collection_id:
                 print(
                     f"collection '{payload.get('slug')!r}' already exists, skipping"

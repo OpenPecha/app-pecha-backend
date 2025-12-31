@@ -4,6 +4,8 @@ from enum import Enum
 
 APPLICATION = "webuddhist"
 
+ACCESS_TOKEN = "1234567890"
+
 COLLECTION_LANGUAGES = ["bo", "en", "zh"]
 
 class TextType(Enum):
@@ -24,5 +26,6 @@ class SQSURL(Enum):
 
 
 class DestinationURL(Enum):
-    LOCAL = "https://webuddhist-tst-backend.onrender.com/api/v1"
+    STAGING = "https://webuddhist-tst-backend.onrender.com/api/v1"
+    LOCAL = "http://localhost:8000/api/v1"
 
