@@ -73,7 +73,7 @@ class Constants:
     INSTANCE_TYPE="critical"
     TEXT_TYPE = "root"
 
-
+    TEXT_TYPE = "root"
 
 
 
