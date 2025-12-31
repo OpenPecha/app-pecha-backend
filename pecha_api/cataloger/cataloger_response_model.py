@@ -26,3 +26,12 @@ class ExternalPechaInstanceRelatedResponse(BaseModel):
     text_id: str
     language: str
     relation_type: str
+
+class CatalogedTexts(BaseModel):
+    text_id: str
+    title: Dict[str, str] = Field(default_factory=dict)
+    language: str
+    status: bool
+
+class CatalogedTextsResponse(BaseModel):
+    texts: List[CatalogedTexts]
