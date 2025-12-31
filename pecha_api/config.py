@@ -66,7 +66,10 @@ DEFAULTS = dict(
     SENDER_NAME="",
 
     OPENPECHA_SEARCH_API_URL="",
-    OPENPECHA_TEXTS_API_URL="",
+
+    #pecha api configuration
+    EXTERNAL_PECHA_API_URL="",
+
 )
 
 

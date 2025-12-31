@@ -1,28 +1,37 @@
 from pydantic import BaseModel, Field
-from typing import Optional, List, Dict
+from typing import Dict, List
 
+class Metadata(BaseModel):
+    text_id: str
+    title: Dict[str, str] = Field(default_factory=dict)
+    language: str
 
-class Title(BaseModel):
-    bo: Optional[str] = None
-    en: Optional[str] = None
-    bophono: Optional[str] = None
-
+class Relation(BaseModel):
+    relation_type: str
+    status: bool
+    metadata: Metadata
 
 class CatalogedTextsDetailsResponse(BaseModel):
-    instance_id: str
-    instance_type: str
+    title: Dict[str, str] = Field(default_factory=dict)
+    category_id: str
+    status: bool
+    relations: List[Relation]
+
+class ExternalPechaTextResponse(BaseModel):
+    title: Dict[str, str] = Field(default_factory=dict)
+    category_id: str
+
+class ExternalPechaInstanceRelatedResponse(BaseModel):
+    title: Dict[str, str] = Field(default_factory=dict)
     text_id: str
     language: str
-    title: Title
-    relationship: str
-
+    relation_type: str
 
 class CatalogedTexts(BaseModel):
     text_id: str
     title: Dict[str, str] = Field(default_factory=dict)
     language: str
     status: bool
-
 
 class CatalogedTextsResponse(BaseModel):
     texts: List[CatalogedTexts]

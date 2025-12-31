@@ -70,6 +70,8 @@ class Constants:
     }
 
     excluded_text_ids = []
+    INSTANCE_TYPE="critical"
+    TEXT_TYPE = "root"
 
     TEXT_TYPE = "root"
 
