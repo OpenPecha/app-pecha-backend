@@ -45,24 +45,26 @@ class TextMetadataService:
             related_text_ids.append(text_id)
         else:
             commentary_text_ids.append(text_id)
-        await self.get_text_meta_data_service(text_ids=related_text_ids, type="translation", token=token)
-        await self.get_text_meta_data_service(text_ids=commentary_text_ids, type="commentary", token=token)
-
+        new_texts = await self.get_text_meta_data_service(text_ids=related_text_ids, type="translation", text_upload_request=text_upload_request, token=token)
+        new_commentary_texts = await self.get_text_meta_data_service(text_ids=commentary_text_ids, type="commentary", text_upload_request=text_upload_request, token=token)
+        new_texts.update(new_commentary_texts)
         # Reset group ids
         self.version_group_id = None
         self.commentary_group_id = None
 
+        return new_texts
 
-    async def get_text_meta_data_service(self, text_ids: List[str], type: str, token: str):
+    async def get_text_meta_data_service(self, text_ids: List[str], type: str,text_upload_request: TextUploadRequest, token: str):
 
         
 
-        uploaded_texts, uploaded_text_ids = await self.get_uploaded_texts(text_ids)
+        uploaded_texts, uploaded_text_ids, instances = await self.get_uploaded_texts(text_ids)
 
         if len(uploaded_texts) > 0 and type == "translation":
             group_id = uploaded_texts[0].group_id
             self.version_group_id = group_id
 
+        new_texts = {}
         for text_id in text_ids:
             text_metadata = await get_text_metadata(text_id)
             language = text_metadata['language']
@@ -75,21 +77,25 @@ class TextMetadataService:
             
             if type == "translation":
                 if not self.version_group_id:
-                    group_response = await post_group('text')
+                    group_response = await post_group('text', text_upload_request.destination_url, token)
                     self.version_group_id = group_response["id"]
                     logging.info(f"Created new group {group_response['id']} for translation")
 
                 payload = await self.create_textmetada_payload(text_id, text_metadata, category, type="version")
 
             elif type == "commentary":
-                group_response = await post_group('commentary')
+                group_response = await post_group('commentary', text_upload_request.destination_url, token)
                 self.commentary_group_id = group_response["id"]
                 logging.info(f"Created new group {group_response['id']} for commentary")
 
                 payload = await self.create_textmetada_payload(text_id, text_metadata, category, type="commentary")
 
-            text_response = await post_text(payload, token)    
+            text_response = await post_text(payload, token)   
+            id = text_response["id"]
+            new_texts[id] = instances[text_id]
             logging.info(f"Created new text {text_response['title']}")
+        
+        return new_texts
 
             
            
@@ -132,16 +138,18 @@ class TextMetadataService:
 
     async def get_uploaded_texts(self, text_ids: List[str]):
         instances = {}
+        expressions = {}
         for text_id in text_ids:
             text_critical_instance = await self.get_text_critical_instance(text_id)
             instance_id = text_critical_instance.critical_instances[0].id
-            instances[instance_id] = text_id
+            instances[text_id] = instance_id
+            expressions[instance_id] = text_id
         
-        instance_ids = instances.keys()
+        instance_ids = instances.values()
         texts = await get_texts_by_pecha_text_ids(instance_ids)
         pecha_text_ids = [text.pecha_text_id for text in texts]
-        uploaded_pecha_text_ids = [instances[id] for id in instance_ids if id in pecha_text_ids]
+        uploaded_text_ids = [expressions[id] for id in instance_ids if id in pecha_text_ids]
 
-        return texts, uploaded_pecha_text_ids
+        return texts, uploaded_text_ids, instances
 
 

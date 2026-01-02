@@ -50,13 +50,13 @@ async def get_text_instances(text_id: str, type: str) -> list[dict[str, Any]]:
     return response.json()
 
 
-async def post_group(type: str) -> dict[str, Any]:
+async def post_group(type: str, destination_url: str, token: str) -> dict[str, Any]:
     """
     Create a text group in the destination (webuddhist) backend.
     """
-    url = f"{DestinationURL.LOCAL.value}/groups"
+    url = f"{destination_url}/groups"
     headers = {
-        "Authorization": f"Bearer {ACCESS_TOKEN}",
+        "Authorization": f"Bearer {token}",
         "Content-Type": "application/json",
     }
     payload = {
