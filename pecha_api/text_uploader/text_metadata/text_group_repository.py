@@ -5,7 +5,7 @@ import requests
 
 from pecha_api.text_uploader.constants import OpenPechaAPIURL, DestinationURL, ACCESS_TOKEN
 from pecha_api.text_uploader.text_metadata.text_metadata_model import TextGroupPayload
-
+from pecha_api.text_uploader.text_metadata.text_metadata_model import CriticalInstanceResponse
 
 async def get_texts(type: str | None = None, limit: int | None = None, offset: int | None = None) -> list[dict[str, Any]]:
     texts_url = f"{OpenPechaAPIURL.DEVELOPMENT.value}/v2/texts"
@@ -89,18 +89,18 @@ async def post_group(type: str) -> dict[str, Any]:
 
     return response.json()
 
-async def get_critical_instances(text_id: str) -> list[dict[str, Any]]:
-    instances_url = f"{OpenPechaAPIURL.DEVELOPMENT.value}/v2/texts/{text_id}/instances"
+async def get_critical_instances(text_id: str) -> CriticalInstanceResponse:
+    critical_instances_url = f"{OpenPechaAPIURL.DEVELOPMENT.value}/v2/texts/{text_id}/instances"
     params = {"instance_type": "critical"}
 
     response = await asyncio.to_thread(
         requests.get,
-        instances_url,
+        critical_instances_url,
         params=params,
     )
     response.raise_for_status()
-
-    return response.json()
+    critical_instances_list = response.json()
+    return CriticalInstanceResponse(critical_instances=critical_instances_list)
 
 
 async def post_text(text_payload: TextGroupPayload) -> dict[str, Any]:
