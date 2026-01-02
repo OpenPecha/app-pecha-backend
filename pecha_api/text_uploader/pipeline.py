@@ -17,8 +17,8 @@ async def pipeline(text_upload_request: TextUploadRequest, token: str):
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail=ErrorConstants.ADMIN_ERROR_MESSAGE)
 
     # collection upload
-    collection = CollectionService()
-    await collection.upload_collections(text_upload_request=text_upload_request, token=token)
+    # collection = CollectionService()
+    # await collection.upload_collections(text_upload_request=text_upload_request, token=token)
 
     # text metadata upload
     text_metadata = TextMetadataService()
