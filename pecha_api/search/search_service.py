@@ -209,7 +209,6 @@ def build_search_payload(
         "limit": limit,
         "return_text": False,
         "hierarchical": True,
-        "filter": {}
     }
     
     if language or title:
@@ -407,7 +406,7 @@ async def call_external_search_api(
     endpoint = f"{external_api_url}/search"
     
     payload = build_search_payload(query, search_type, limit, title, language)
-    
+    print(payload)
     try:
         async with httpx.AsyncClient(timeout=30.0) as client:
             response = await client.post(
