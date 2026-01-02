@@ -1,3 +1,4 @@
+import logging
 from typing import Any, List
 from pecha_api.text_uploader.segments.segment_respository import (
     get_segments_annotation,
@@ -8,14 +9,16 @@ from pecha_api.text_uploader.segments.segment_respository import (
 from pecha_api.texts.segments.segments_repository import get_segments_by_text_id
 from pecha_api.text_uploader.text_uploader_response_model import TextUploadRequest
 
+logging.basicConfig(level=logging.INFO)
+
 class SegmentService:
 
     async def upload_segments(self, text_upload_request: TextUploadRequest, text_ids: dict[str, Any], token: str):
 
         try:
-            for pecha_text_id, id in text_ids.items():
+            for text_id, pecha_text_id in text_ids.items():
 
-                if await self.is_text_segments_uploaded(id):
+                if await self.is_text_segments_uploaded(text_id):
                     print(f"Segments for text_id {pecha_text_id} already uploaded. Skipping...")
                     continue
 
@@ -29,9 +32,9 @@ class SegmentService:
                 # segments_contents = await self.make_batch_segments_content(segments_ids, pecha_text_id)
                 segments_contents = self.parse_segments_content(annotation_sengments["data"], instance['content'])
 
-                await self.create_segments_payload(pecha_text_id, segments_contents,text_upload_request, token)
+                await self.create_segments_payload(text_id, segments_contents,text_upload_request, token)
         except Exception as e:
-            print("Error in upload_segments >>>>>>>>>>>>>>>>>",e)
+            print("Error: ", e)
 
 
     def parse_segments_content(self, segments_annotation: List[dict[str, Any]], base_text: str) -> List[dict[str, Any]]:
