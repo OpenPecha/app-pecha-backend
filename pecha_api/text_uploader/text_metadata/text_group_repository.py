@@ -49,14 +49,6 @@ async def get_text_instances(text_id: str, type: str) -> list[dict[str, Any]]:
     response.raise_for_status()
     return response.json()
 
-async def get_text_groups(text_id: str) -> list[dict[str, Any]]:
-    groups_url = f"{OpenPechaAPIURL.DEVELOPMENT.value}/v2/texts/{text_id}/group"
-
-    response = await asyncio.to_thread(requests.get, groups_url)
-    response.raise_for_status()
-
-    return response.json()
-
 
 async def post_group(type: str) -> dict[str, Any]:
     """

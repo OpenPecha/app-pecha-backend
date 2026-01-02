@@ -1,23 +1,15 @@
 from typing import Any, List
-from uuid import uuid4 as uuid
-import json
 import logging
 
 from pecha_api.text_uploader.text_uploader_response_model import TextUploadRequest
 from pecha_api.text_uploader.text_metadata.text_metadata_model import CriticalInstanceResponse
 from pecha_api.text_uploader.text_metadata.text_group_repository import (
-    get_texts,
-    get_text_groups,
     post_group,
     get_critical_instances,
     post_text,
-    get_related_texts,
-    get_text_instances,
     get_text_related_by_work,
-    get_text_metadata,
-    get_texts_by_category
+    get_text_metadata
 )
-from pecha_api.text_uploader.constants import TextType
 from pecha_api.text_uploader.text_metadata.text_metadata_model import TextGroupPayload
 from pecha_api.texts.texts_repository import get_texts_by_pecha_text_ids
 
