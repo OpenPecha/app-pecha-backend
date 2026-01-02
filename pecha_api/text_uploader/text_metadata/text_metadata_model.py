@@ -17,4 +17,17 @@ class TextGroupPayload(BaseModel):
     ranking: Optional[int] = None
     license: Optional[str] = None
 
+class CriticalInstance(BaseModel):
+    id: str
+    bdrc: Optional[str] = None
+    wiki: Optional[str] = None
+    type: str
+    source: str
+    colophon: Optional[str] = None
+    incipit_title: Optional[str] = None
+    alt_incipit_titles: List[str] = []
+    biblography_annotation: Optional[str] = None
+
+class CriticalInstanceResponse(BaseModel):
+    critical_instances: List[CriticalInstance]
 

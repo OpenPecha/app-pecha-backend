@@ -3,7 +3,7 @@ from uuid import uuid4 as uuid
 import json
 
 from pecha_api.text_uploader.text_uploader_response_model import TextUploadRequest
-from pecha_api.text_uploader.text_metadata.text_metadata_model import CriticalInstanceResponse
+
 from pecha_api.text_uploader.text_metadata.text_group_repository import (
     get_texts,
     get_text_groups,
@@ -57,10 +57,21 @@ class TextMetadataService:
 
     async def get_text_meta_data_service(self, text_ids: List[str], type: str, category_group_id: str = None):
         
+        # Initialize version_group_id
+        version_group_id = None
+        
+        if type == "translation":
+            # Check if any text_id already has a version_group_id in the CSV
+            for text_id in text_ids:
+                # version_group_id = get_log_group_id_by_pecha_text_id(text_id)
+                if version_group_id:
+                    print(f"Reusing existing version_group_id: {version_group_id} for text_id: {text_id}")
+                    break
+            
+        
         for text_id in text_ids:
             text_metadata = await get_text_metadata(text_id)
-
-            text_critical_instance = await self.get_text_critical_instance(text_id)
+            
             # Extract category from text_metadata
             category = text_metadata.get("category_id", "")
             
@@ -301,6 +312,5 @@ class TextMetadataService:
         }
 
 
-    async def get_text_critical_instance(text_id: str) -> CriticalInstanceResponse:
-        critical_instances_list = await get_critical_instances(text_id)
-        return CriticalInstanceResponse(critical_instances=critical_instances_list)
+    async def get_text_related_by_work_service(text_id: str):
+        pass
