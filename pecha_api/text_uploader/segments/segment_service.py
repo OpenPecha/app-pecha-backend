@@ -75,7 +75,6 @@ class SegmentService:
             logging.info(f"Posting batch {batch_number}/{total_batches} ({len(batch)} segments)...\n")
             await post_segments(payload, text_upload_request.destination_url, token)
 
-
     async def get_segments_annotation_by_pecha_text_id(
         self, text_upload_request: TextUploadRequest, pecha_text_id: str
     ) -> dict[str, Any]:
