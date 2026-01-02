@@ -115,3 +115,21 @@ async def post_segments(
 
     return response.json()
 
+
+
+async def get_segments_by_id(annotation_id: str, openpecha_api_url: str) -> dict[str, Any]:
+    """
+    Fetch a single segmentation annotation by its ID.
+    """
+    url = (
+        f"{openpecha_api_url}/v2/annotations/{annotation_id}"
+    )
+
+    response = await asyncio.to_thread(
+        requests.get,
+        url,
+    )
+    response.raise_for_status()
+
+    return response.json()
+

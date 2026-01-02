@@ -3,7 +3,8 @@ from typing import Any, List
 from pecha_api.text_uploader.segments.segment_respository import (
     get_segments_annotation,
     post_segments,
-    get_segments_id_by_annotation_id
+    get_segments_id_by_annotation_id,
+    get_segments_by_id
 )
 
 from pecha_api.texts.segments.segments_repository import get_segments_by_text_id
@@ -93,4 +94,10 @@ class SegmentService:
     async def is_text_segments_uploaded(self, text_id: str) -> bool:
         segments = await get_segments_by_text_id(text_id)
         return len(segments) > 0
+
+
+    async def get_segments_by_id_list(self, annotation_ids: str, text_upload_request: TextUploadRequest) -> List[dict[str, Any]]:
+        
+        segments = await get_segments_by_id(annotation_ids, text_upload_request.openpecha_api_url)
+        return segments
 
