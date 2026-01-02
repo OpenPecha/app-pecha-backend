@@ -103,11 +103,11 @@ async def get_critical_instances(text_id: str) -> CriticalInstanceResponse:
     return CriticalInstanceResponse(critical_instances=critical_instances_list)
 
 
-async def post_text(text_payload: TextGroupPayload) -> dict[str, Any]:
+async def post_text(text_payload: TextGroupPayload, token: str) -> dict[str, Any]:
 
     url = f"{DestinationURL.LOCAL.value}/texts"
     headers = {
-        "Authorization": f"Bearer {ACCESS_TOKEN}",
+        "Authorization": f"Bearer {token}",
         "Content-Type": "application/json",
     }
     payload = text_payload.model_dump()

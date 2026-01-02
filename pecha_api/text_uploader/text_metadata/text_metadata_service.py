@@ -54,7 +54,11 @@ class TextMetadataService:
         else:
             commentary_text_ids.append(text_id)
         await self.get_text_meta_data_service(text_ids=related_text_ids, type="translation", token=token)
-        # await self.get_text_meta_data_service(text_ids=commentary_text_ids, type="commentary", token=token, category_group_id=version_group_id)
+        await self.get_text_meta_data_service(text_ids=commentary_text_ids, type="commentary", token=token)
+
+        # Reset group ids
+        self.version_group_id = None
+        self.commentary_group_id = None
 
 
     async def get_text_meta_data_service(self, text_ids: List[str], type: str, token: str):
@@ -76,7 +80,7 @@ class TextMetadataService:
             if text_id in uploaded_text_ids:
                 logging.info(f"Skipping already uploaded text: {title}")
                 continue
-
+            
             if type == "translation":
                 if not self.version_group_id:
                     group_response = await post_group('text')
@@ -84,12 +88,16 @@ class TextMetadataService:
                     logging.info(f"Created new group {group_response['id']} for translation")
 
                 payload = await self.create_textmetada_payload(text_id, text_metadata, category, type="version")
-                print("payload:>>>>>>>>>>>" , payload)
 
             elif type == "commentary":
                 group_response = await post_group('commentary')
                 self.commentary_group_id = group_response["id"]
                 logging.info(f"Created new group {group_response['id']} for commentary")
+
+                payload = await self.create_textmetada_payload(text_id, text_metadata, category, type="commentary")
+
+            text_response = await post_text(payload, token)    
+            logging.info(f"Created new text {text_response['title']}")
 
             
            
