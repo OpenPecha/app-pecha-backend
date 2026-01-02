@@ -26,13 +26,12 @@ class SegmentService:
                 annotation_ids = self.get_annotation_ids(instance)
                 annotation_sengments = await get_segments_id_by_annotation_id(annotation_ids[0], text_upload_request.openpecha_api_url)
                 segments_ids = [segment["id"] for segment in annotation_sengments["data"]]
-                print(f"{pecha_text_id} annotation_ids length >>>>>>>>>>>>>>>>>",len(segments_ids))
                 # Process segment_ids in batches to manage batch size
                 
                 # segments_contents = await self.make_batch_segments_content(segments_ids, pecha_text_id)
                 segments_contents = self.parse_segments_content(annotation_sengments["data"], instance['content'])
 
-                await self.create_segments_payload(text_id, segments_contents,text_upload_request, token)
+                await self.upload_bulk_segments(text_id, segments_contents,text_upload_request, token)
         except Exception as e:
             print("Error: ", e)
 
@@ -48,14 +47,14 @@ class SegmentService:
         return segments_content
 
 
-    async def create_segments_payload(self, text_id: str, segments_content: List[dict[str, Any]], text_upload_request, token: str) -> List[dict[str, Any]]:
+    async def upload_bulk_segments(self, text_id: str, segments_content: List[dict[str, Any]], text_upload_request, token: str) -> List[dict[str, Any]]:
         """
         Create and post segments in batches to avoid payload size limits.
         """
         batch_size = 400  # Adjust batch size as needed
         total_segments = len(segments_content)
-        
-        print(f"Posting {total_segments} segments in batches of {batch_size}...")
+
+        print(f"\nPosting {total_segments} segments in batches of {batch_size}...\n")
         
         for i in range(0, total_segments, batch_size):
             batch = segments_content[i:i + batch_size]
@@ -73,27 +72,26 @@ class SegmentService:
                 ]
             }
             
-            print(f"Posting batch {batch_number}/{total_batches} ({len(batch)} segments)...")
+            logging.info(f"Posting batch {batch_number}/{total_batches} ({len(batch)} segments)...\n")
             await post_segments(payload, text_upload_request.destination_url, token)
+
 
     async def get_segments_annotation_by_pecha_text_id(
         self, text_upload_request: TextUploadRequest, pecha_text_id: str
     ) -> dict[str, Any]:
         return await get_segments_annotation(pecha_text_id, text_upload_request.openpecha_api_url)
 
+
     def get_annotation_ids(self, instance: dict[str, Any]) -> list[str]:
         annotations = instance["annotations"] or []
         segmentation_ids: list[str] = []
-
         for annotation in annotations:
             if annotation["type"] == "segmentation":
                 segmentation_ids.append(annotation["annotation_id"])
-
         return segmentation_ids
 
 
     async def is_text_segments_uploaded(self, text_id: str) -> bool:
-        
         segments = await get_segments_by_text_id(text_id)
         return len(segments) > 0
 
