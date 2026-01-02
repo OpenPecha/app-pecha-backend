@@ -16,7 +16,6 @@ from pecha_api.text_uploader.text_metadata.text_group_repository import (
     get_text_metadata,
     get_texts_by_category
 )
-from pecha_api.text_uploader.collections.collections_repository import get_collection_by_pecha_collection_id
 from pecha_api.text_uploader.constants import TextType
 from pecha_api.text_uploader.text_metadata.text_metadata_model import TextGroupPayload
 
@@ -33,7 +32,6 @@ class TextMetadataService:
         text_id = text_upload_request.text_id
         text = await get_text_metadata(text_id)
 
-        
         related_text_ids = []
         commentary_text_ids = []
         work_translation_group = {}

@@ -6,16 +6,10 @@ from pecha_api.error_contants import ErrorConstants
 
 from pecha_api.text_uploader.collections.collection_service import CollectionService
 from pecha_api.text_uploader.text_metadata.text_metadata_service import TextMetadataService
-from pecha_api.text_uploader.constants import DestinationURL, OpenPechaAPIURL, ACCESS_TOKEN
 from pecha_api.text_uploader.text_uploader_response_model import TextUploadRequest
 from pecha_api.users.users_service import verify_admin_access
 
 
-text_upload_request = TextUploadRequest(
-    destination_url=DestinationURL.LOCAL.value,
-    openpecha_api_url=OpenPechaAPIURL.DEVELOPMENT.value,
-    access_token=ACCESS_TOKEN
-)
 async def pipeline(text_upload_request: TextUploadRequest, token: str):
 
     is_admin = verify_admin_access(token=token)
