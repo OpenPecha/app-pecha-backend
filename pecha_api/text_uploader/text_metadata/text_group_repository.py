@@ -1,4 +1,4 @@
-from typing import Any
+from typing import Any, List
 
 import asyncio
 import requests
@@ -7,8 +7,8 @@ from pecha_api.text_uploader.constants import OpenPechaAPIURL, DestinationURL, A
 from pecha_api.text_uploader.text_metadata.text_metadata_model import TextGroupPayload
 from pecha_api.text_uploader.text_metadata.text_metadata_model import CriticalInstanceResponse
 
-async def get_texts(type: str | None = None, limit: int | None = None, offset: int | None = None) -> list[dict[str, Any]]:
-    texts_url = f"{OpenPechaAPIURL.DEVELOPMENT.value}/v2/texts"
+async def get_texts(openpecha_api_url: str, type: str | None = None, limit: int | None = None, offset: int | None = None) -> list[dict[str, Any]]:
+    texts_url = f"{openpecha_api_url}/v2/texts"
 
     # `requests` is synchronous; run it in a thread so callers can still await.
     params = {
@@ -22,8 +22,8 @@ async def get_texts(type: str | None = None, limit: int | None = None, offset: i
     return response.json()
 
 
-async def get_texts_by_category(category_id: str) -> list[dict[str, Any]]:
-    texts_url = f"{OpenPechaAPIURL.DEVELOPMENT.value}/v2/categories/{category_id}/texts"
+async def get_texts_by_category(category_id: str, openpecha_api_url: str) -> list[dict[str, Any]]:
+    texts_url = f"{openpecha_api_url}/v2/categories/{category_id}/texts"
     params = {
         "instance_type": 'critical',
         "limit": 100,
@@ -34,14 +34,14 @@ async def get_texts_by_category(category_id: str) -> list[dict[str, Any]]:
     return response.json()
 
 
-async def get_related_texts(text_id: str) -> list[dict[str, Any]]:
-    related_texts_url = f"{OpenPechaAPIURL.DEVELOPMENT.value}/v2/instances/{text_id}/related"
+async def get_related_texts(text_id: str, openpecha_api_url: str) -> list[dict[str, Any]]:
+    related_texts_url = f"{openpecha_api_url}/v2/instances/{text_id}/related"
     response = await asyncio.to_thread(requests.get, related_texts_url)
     response.raise_for_status()
     return response.json()
 
-async def get_text_instances(text_id: str, type: str) -> list[dict[str, Any]]:
-    instances_url = f"{OpenPechaAPIURL.DEVELOPMENT.value}/v2/texts/{text_id}/instances"
+async def get_text_instances(text_id: str, type: str, openpecha_api_url: str) -> list[dict[str, Any]]:
+    instances_url = f"{openpecha_api_url}/v2/texts/{text_id}/instances"
     params = {
         "type": type,
     }
@@ -81,8 +81,8 @@ async def post_group(type: str, destination_url: str, token: str) -> dict[str, A
 
     return response.json()
 
-async def get_critical_instances(text_id: str) -> CriticalInstanceResponse:
-    critical_instances_url = f"{OpenPechaAPIURL.DEVELOPMENT.value}/v2/texts/{text_id}/instances"
+async def get_critical_instances(text_id: str, openpecha_api_url: str) -> CriticalInstanceResponse:
+    critical_instances_url = f"{openpecha_api_url}/v2/texts/{text_id}/instances"
     params = {"instance_type": "critical"}
 
     response = await asyncio.to_thread(
@@ -95,9 +95,9 @@ async def get_critical_instances(text_id: str) -> CriticalInstanceResponse:
     return CriticalInstanceResponse(critical_instances=critical_instances_list)
 
 
-async def post_text(text_payload: TextGroupPayload, token: str) -> dict[str, Any]:
+async def post_text(text_payload: TextGroupPayload, token: str, destination_url: str) -> dict[str, Any]:
 
-    url = f"{DestinationURL.LOCAL.value}/texts"
+    url = f"{destination_url}/texts"
     headers = {
         "Authorization": f"Bearer {token}",
         "Content-Type": "application/json",
@@ -122,15 +122,29 @@ async def post_text(text_payload: TextGroupPayload, token: str) -> dict[str, Any
     return response.json()
 
 
-async def get_text_related_by_work(text_id: str) -> list[dict[str, Any]]:
-    related_texts_url = f"{OpenPechaAPIURL.DEVELOPMENT.value}/v2/texts/{text_id}/related-by-work"
+async def get_text_related_by_work(text_id: str, openpecha_api_url: str) -> list[dict[str, Any]]:
+    related_texts_url = f"{openpecha_api_url}/v2/texts/{text_id}/related-by-work"
     response = await asyncio.to_thread(requests.get, related_texts_url)
     response.raise_for_status()
     data = response.json()
     return data
 
-async def get_text_metadata(text_id: str) -> list[dict[str, Any]]:
-    text_metadata_url = f"{OpenPechaAPIURL.DEVELOPMENT.value}/v2/texts/{text_id}"
+async def  get_text_metadata(text_id: str, openpecha_api_url: str) -> list[dict[str, Any]]:
+    text_metadata_url = f"{openpecha_api_url}/v2/texts/{text_id}"
     response = await asyncio.to_thread(requests.get, text_metadata_url)
+    response.raise_for_status()
+    return response.json()
+
+
+async def get_texts_by_pecha_text_ids(pecha_text_ids: List[str], destination_url: str) -> list[dict[str, Any]]:
+    url = f"{destination_url}/texts/list"
+    headers = {
+        "Content-Type": "application/json",
+    }
+    instance_ids = list(pecha_text_ids)
+    payload = {
+        "pecha_text_ids": instance_ids
+    }
+    response = await asyncio.to_thread(requests.post, url, headers=headers, json=payload)
     response.raise_for_status()
     return response.json()

@@ -3,6 +3,8 @@ import asyncio
 
 import requests
 
+from typing import Optional
+
 from pecha_api.text_uploader.constants import APPLICATION, DestinationURL, ACCESS_TOKEN
 from pecha_api.text_uploader.collections.collection_model import CollectionPayload
 from pecha_api.collections.collections_repository import create_collection
@@ -57,6 +59,12 @@ async def get_collections(
         )
 
     return all_collections
+
+async def get_collection_by_pecha_collection_id(pecha_collection_id: str, destination_url: str) -> Optional[str]:
+    text_metadata_url = f"{destination_url}/collections/{pecha_collection_id}"
+    response = await asyncio.to_thread(requests.get, text_metadata_url)
+    response.raise_for_status()
+    return response.json()
 
 
 async def post_collections(destination_url: str, language: str, collection_model: CollectionPayload, access_token: str) -> dict[str, Any]:

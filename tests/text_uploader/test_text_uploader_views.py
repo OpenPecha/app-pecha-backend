@@ -15,8 +15,8 @@ class TestTextUploaderViews:
     def mock_text_upload_request(self):
         """Fixture for text upload request data."""
         return {
-            "destination_url": "https://example.com/destination",
-            "openpecha_api_url": "https://api.openpecha.org",
+            "destination_url": "DEVELOPMENT",
+            "openpecha_api_url": "DEVELOPMENT",
             "text_id": "test_text_123"
         }
 
@@ -71,7 +71,7 @@ class TestTextUploaderViews:
     def test_upload_text_invalid_request_missing_destination_url(self, admin_token):
         """Test text upload fails with missing destination_url."""
         invalid_request = {
-            "openpecha_api_url": "https://api.openpecha.org",
+            "openpecha_api_url": "DEVELOPMENT",
             "text_id": "test_text_123"
         }
 
@@ -86,7 +86,7 @@ class TestTextUploaderViews:
     def test_upload_text_invalid_request_missing_openpecha_api_url(self, admin_token):
         """Test text upload fails with missing openpecha_api_url."""
         invalid_request = {
-            "destination_url": "https://example.com/destination",
+            "destination_url": "DEVELOPMENT",
             "text_id": "test_text_123"
         }
 
@@ -101,8 +101,8 @@ class TestTextUploaderViews:
     def test_upload_text_invalid_request_missing_text_id(self, admin_token):
         """Test text upload fails with missing text_id."""
         invalid_request = {
-            "destination_url": "https://example.com/destination",
-            "openpecha_api_url": "https://api.openpecha.org"
+            "destination_url": "DEVELOPMENT",
+            "openpecha_api_url": "DEVELOPMENT"
         }
 
         response = client.post(
@@ -140,8 +140,8 @@ class TestTextUploaderViews:
     def test_upload_text_with_special_characters_in_text_id(self, admin_token):
         """Test text upload with special characters in text_id."""
         request_with_special_chars = {
-            "destination_url": "https://example.com/destination",
-            "openpecha_api_url": "https://api.openpecha.org",
+            "destination_url": "DEVELOPMENT",
+            "openpecha_api_url": "DEVELOPMENT",
             "text_id": "test_text_!@#$%^&*()"
         }
 
@@ -157,32 +157,11 @@ class TestTextUploaderViews:
             assert response.status_code == 200
             assert response.json() == {"message": "Text uploaded successfully"}
 
-    def test_upload_text_with_invalid_url_format(self, admin_token):
-        """Test text upload with invalid URL format (should still pass validation as str)."""
-        request_with_invalid_url = {
-            "destination_url": "not_a_valid_url",
-            "openpecha_api_url": "also_not_valid",
-            "text_id": "test_text_123"
-        }
-
-        with patch("pecha_api.text_uploader.text_uploader_views.pipeline", new_callable=AsyncMock) as mock_pipeline:
-            mock_pipeline.return_value = None
-
-            response = client.post(
-                "/text-uploader",
-                json=request_with_invalid_url,
-                headers={"Authorization": admin_token}
-            )
-
-            # This should succeed as the model accepts any string for URLs
-            assert response.status_code == 200
-            assert response.json() == {"message": "Text uploaded successfully"}
-
     def test_upload_text_with_extra_fields(self, admin_token):
         """Test text upload with extra fields in request (should be ignored by Pydantic)."""
         request_with_extra_fields = {
-            "destination_url": "https://example.com/destination",
-            "openpecha_api_url": "https://api.openpecha.org",
+            "destination_url": "DEVELOPMENT",
+            "openpecha_api_url": "DEVELOPMENT",
             "text_id": "test_text_123",
             "extra_field": "should_be_ignored"
         }

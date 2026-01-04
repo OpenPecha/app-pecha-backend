@@ -4,7 +4,7 @@ from pecha_api.text_uploader.constants import OpenPechaAPIURL, COLLECTION_LANGUA
 from pecha_api.text_uploader.collections.collection_model import CollectionPayload
 from pecha_api.text_uploader.text_uploader_response_model import TextUploadRequest
 
-from pecha_api.collections.collections_repository import get_collection_id_by_pecha_collection_id
+from pecha_api.text_uploader.collections.collections_repository import get_collection_by_pecha_collection_id
 
 import logging
 
@@ -83,7 +83,7 @@ class CollectionService:
             )
 
             
-            existing_collection_id = await get_collection_id_by_pecha_collection_id(pecha_collection_id=payload.get("pecha_collection_id"))
+            existing_collection_id = await get_collection_by_pecha_collection_id(pecha_collection_id=payload.get("pecha_collection_id"), destination_url=destination_url)
             # Upload to webuddhist backend. We send the full multilingual
             # payload body, and use "en" as the request language context.
             response_data = {}

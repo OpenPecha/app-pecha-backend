@@ -12,7 +12,8 @@ from .texts_service import (
     get_text_details_by_text_id,
     create_table_of_content,
     get_text_details_by_text_id,
-    get_commentaries_by_text_id
+    get_commentaries_by_text_id,
+    get_text_by_pecha_text_ids_service
 )
 from .texts_response_models import (
     CreateTextRequest,
@@ -22,7 +23,8 @@ from .texts_response_models import (
     TextDTO,
     TextVersionResponse,
     DetailTableOfContentResponse,
-    TextDetailsRequest
+    TextDetailsRequest,
+    TextsByPechaTextIdsRequest
 )
 
 oauth2_scheme = HTTPBearer()
@@ -104,3 +106,7 @@ async def get_commentaries(
         limit: int = Query(default=10, le=100)
 ) -> List[TextDTO]:
     return await get_commentaries_by_text_id(text_id=text_id, skip=skip, limit=limit)
+
+@text_router.post("/list", status_code=status.HTTP_200_OK)
+async def get_text_by_pecha_text_ids(texts_by_pecha_text_ids_request: TextsByPechaTextIdsRequest) -> Optional[List[TextDTO]]:
+    return await get_text_by_pecha_text_ids_service(texts_by_pecha_text_ids_request=texts_by_pecha_text_ids_request)
