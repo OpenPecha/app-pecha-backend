@@ -2,7 +2,7 @@ from typing import Any, List
 import logging
 
 from pecha_api.text_uploader.text_uploader_response_model import TextUploadRequest
-from pecha_api.text_uploader.text_metadata.text_metadata_model import CriticalInstanceResponse
+from pecha_api.text_uploader.text_metadata.text_metadata_model import CriticalInstanceResponse, TextInstanceIds
 from pecha_api.text_uploader.text_metadata.text_group_repository import (
     post_group,
     get_critical_instances,
@@ -23,6 +23,7 @@ class TextMetadataService:
         self.commentary_group_id: str | None = None
         self.text_ids: list[str] = []
         self.category: dict[str, str] = {}
+        self.all_instance_ids: dict[str, str] = {}
 
 
     async def upload_text_metadata_service(self, text_upload_request: TextUploadRequest, token: str):
@@ -49,11 +50,14 @@ class TextMetadataService:
         new_texts = await self.get_text_meta_data_service(text_ids=related_text_ids, type="translation", text_upload_request=text_upload_request, token=token)
         new_commentary_texts = await self.get_text_meta_data_service(text_ids=commentary_text_ids, type="commentary", text_upload_request=text_upload_request, token=token)
         new_texts.update(new_commentary_texts)
-        # Reset group ids
+        
+        result = TextInstanceIds(new_text=new_texts, all_text=self.all_instance_ids)
+        
+        # Reset
         self.version_group_id = None
         self.commentary_group_id = None
-
-        return new_texts
+        self.all_instance_ids = {}
+        return result
 
     async def get_text_meta_data_service(self, text_ids: List[str], type: str,text_upload_request: TextUploadRequest, token: str):
 
@@ -94,6 +98,7 @@ class TextMetadataService:
             text_response = await post_text(payload, token)   
             id = text_response["id"]
             new_texts[id] = instances[text_id]
+            self.all_instance_ids = instances
             logging.info(f"Created new text {text_response['title']}")
         
         return new_texts

@@ -1,5 +1,5 @@
 from pydantic import BaseModel
-from typing import Optional, List
+from typing import Optional, List, Dict
 
 
 class TextGroupPayload(BaseModel):
@@ -30,4 +30,8 @@ class CriticalInstance(BaseModel):
 
 class CriticalInstanceResponse(BaseModel):
     critical_instances: List[CriticalInstance]
+
+class TextInstanceIds(BaseModel):
+    new_text: Dict[str, str]
+    all_text: Dict[str, str]
 

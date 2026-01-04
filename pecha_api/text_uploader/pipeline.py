@@ -24,12 +24,15 @@ async def pipeline(text_upload_request: TextUploadRequest, token: str):
 
     # text metadata upload
     text_metadata = TextMetadataService()
-    new_texts = await text_metadata.upload_text_metadata_service(text_upload_request=text_upload_request, token=token)
+    instance_ids_response = await text_metadata.upload_text_metadata_service(text_upload_request=text_upload_request, token=token)
+    print(instance_ids_response)
+    new_texts = instance_ids_response.new_text
+    all_text = instance_ids_response.all_text
 
     # segment upload
     segment = SegmentService()
     await segment.upload_segments(text_upload_request=text_upload_request,text_ids = new_texts, token=token)
 
-    # table of content upload
+    # # table of content upload
     toc = TocService()
     await toc.upload_toc(text_ids=new_texts, text_upload_request=text_upload_request, token=token)
