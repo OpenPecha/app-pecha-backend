@@ -70,10 +70,10 @@ DEFAULTS = dict(
     ### text uploader script configuration
     APPLICATION = "webuddhist",
     ACCESS_TOKEN="",
-    COLLECTION_LANGUAGES = ["bo", "en", "zh"]
+    COLLECTION_LANGUAGES = ["bo", "en", "zh"],
 
     #pecha api configuration
-    EXTERNAL_PECHA_API_URL="",
+    EXTERNAL_PECHA_API_URL=""
 
 )
 
