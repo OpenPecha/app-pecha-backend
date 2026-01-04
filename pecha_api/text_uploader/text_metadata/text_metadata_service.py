@@ -12,6 +12,7 @@ from pecha_api.text_uploader.text_metadata.text_group_repository import (
 )
 from pecha_api.text_uploader.text_metadata.text_metadata_model import TextGroupPayload
 from pecha_api.texts.texts_repository import get_texts_by_pecha_text_ids
+from pecha_api.collections.collections_repository import get_collection_id_by_pecha_collection_id
 
 
 logging.basicConfig(level=logging.INFO)
@@ -81,14 +82,14 @@ class TextMetadataService:
                     self.version_group_id = group_response["id"]
                     logging.info(f"Created new group {group_response['id']} for translation")
 
-                payload = await self.create_textmetada_payload(text_id, text_metadata, category, type="version")
+                payload = await self.create_textmetada_payload(text_id, text_metadata, type="version")
 
             elif type == "commentary":
                 group_response = await post_group('commentary', text_upload_request.destination_url, token)
                 self.commentary_group_id = group_response["id"]
                 logging.info(f"Created new group {group_response['id']} for commentary")
 
-                payload = await self.create_textmetada_payload(text_id, text_metadata, category, type="commentary")
+                payload = await self.create_textmetada_payload(text_id, text_metadata, type="commentary")
 
             text_response = await post_text(payload, token)   
             id = text_response["id"]
@@ -101,14 +102,15 @@ class TextMetadataService:
            
 
 
-    async def create_textmetada_payload(self, text_id: str, text_metadata: dict[str, Any], category: str, type: str):
+    async def create_textmetada_payload(self, text_id: str, text_metadata: dict[str, Any], type: str):
         language = text_metadata['language']
         title = text_metadata['title'][language]
         instance = await self.get_text_critical_instance(text_id)
 
         if type == "version":
             category_id = text_metadata.get("category_id", "")
-            category_ids = [category_id]
+            wb_category_id = await self.get_wb_collection_id(pecha_collection_id=category_id)
+            category_ids = [wb_category_id]
             group_id = self.version_group_id
         elif type == "commentary":
             category_ids = [self.version_group_id]
@@ -151,5 +153,11 @@ class TextMetadataService:
         uploaded_text_ids = [expressions[id] for id in instance_ids if id in pecha_text_ids]
 
         return texts, uploaded_text_ids, instances
+
+    async def get_wb_collection_id(self, pecha_collection_id: str) -> str:
+        wb_collection_id = await get_collection_id_by_pecha_collection_id(pecha_collection_id=pecha_collection_id)
+        if wb_collection_id is None:
+            raise ValueError(f"Collection with pecha_collection_id {pecha_collection_id} not found")
+        return wb_collection_id
 
 
