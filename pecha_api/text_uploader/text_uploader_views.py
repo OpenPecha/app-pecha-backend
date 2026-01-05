@@ -17,5 +17,5 @@ async def upload_text(
     text_upload_request: TextUploadRequest,
     authentication_credential: Annotated[HTTPAuthorizationCredentials, Depends(oauth2_scheme)]
     ):
-        await pipeline(text_upload_request=text_upload_request, token=authentication_credential.credentials)
-        return {"message": "Text uploaded successfully"}
+        response = await pipeline(text_upload_request=text_upload_request, token=authentication_credential.credentials)
+        return response

@@ -1,5 +1,5 @@
+from typing import Union
 from pydantic import BaseModel
-from pydantic_core.core_schema import str_schema
 
 
 class TextUploadRequest(BaseModel):
@@ -7,3 +7,6 @@ class TextUploadRequest(BaseModel):
     openpecha_api_url: str
     text_id: str
 
+
+class TextUploadResponse(BaseModel):
+    message: Union[dict[str, str], str]

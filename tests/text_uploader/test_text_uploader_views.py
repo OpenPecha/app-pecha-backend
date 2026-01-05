@@ -4,6 +4,7 @@ import pytest
 
 from pecha_api.app import api
 from pecha_api.error_contants import ErrorConstants
+from pecha_api.text_uploader.text_uploader_response_model import TextUploadResponse
 
 client = TestClient(api)
 
@@ -33,7 +34,7 @@ class TestTextUploaderViews:
     def test_upload_text_success_with_admin_token(self, mock_text_upload_request, admin_token):
         """Test successful text upload with admin token."""
         with patch("pecha_api.text_uploader.text_uploader_views.pipeline", new_callable=AsyncMock) as mock_pipeline:
-            mock_pipeline.return_value = None
+            mock_pipeline.return_value = TextUploadResponse(message={"text_1": "instance_1"})
 
             response = client.post(
                 "/text-uploader",
@@ -42,7 +43,7 @@ class TestTextUploaderViews:
             )
 
             assert response.status_code == 200
-            assert response.json() == {"message": "Text uploaded successfully"}
+            assert response.json() == {"message": {"text_1": "instance_1"}}
             mock_pipeline.assert_called_once()
 
     def test_upload_text_forbidden_with_non_admin_token(self, mock_text_upload_request, non_admin_token):
@@ -146,7 +147,7 @@ class TestTextUploaderViews:
         }
 
         with patch("pecha_api.text_uploader.text_uploader_views.pipeline", new_callable=AsyncMock) as mock_pipeline:
-            mock_pipeline.return_value = None
+            mock_pipeline.return_value = TextUploadResponse(message={"text_special": "instance_special"})
 
             response = client.post(
                 "/text-uploader",
@@ -155,7 +156,7 @@ class TestTextUploaderViews:
             )
 
             assert response.status_code == 200
-            assert response.json() == {"message": "Text uploaded successfully"}
+            assert response.json() == {"message": {"text_special": "instance_special"}}
 
     def test_upload_text_with_extra_fields(self, admin_token):
         """Test text upload with extra fields in request (should be ignored by Pydantic)."""
@@ -167,7 +168,7 @@ class TestTextUploaderViews:
         }
 
         with patch("pecha_api.text_uploader.text_uploader_views.pipeline", new_callable=AsyncMock) as mock_pipeline:
-            mock_pipeline.return_value = None
+            mock_pipeline.return_value = TextUploadResponse(message={"text_extra": "instance_extra"})
 
             response = client.post(
                 "/text-uploader",
@@ -176,5 +177,5 @@ class TestTextUploaderViews:
             )
 
             assert response.status_code == 200
-            assert response.json() == {"message": "Text uploaded successfully"}
+            assert response.json() == {"message": {"text_extra": "instance_extra"}}
 

@@ -13,8 +13,10 @@ from pecha_api.text_uploader.mapping.mapping_services import MappingService
 from pecha_api.users.users_service import verify_admin_access
 from pecha_api.text_uploader.constants import DestinationURL, OpenPechaAPIURL
 
+from pecha_api.text_uploader.text_uploader_response_model import TextUploadResponse
 
-async def pipeline(text_upload_request: TextUploadRequest, token: str):
+
+async def pipeline(text_upload_request: TextUploadRequest, token: str)-> TextUploadResponse:
 
     destination_url_enum = text_upload_request.destination_url
     openpecha_api_url_enum = text_upload_request.openpecha_api_url
@@ -34,8 +36,8 @@ async def pipeline(text_upload_request: TextUploadRequest, token: str):
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail=ErrorConstants.ADMIN_ERROR_MESSAGE)
 
     # collection upload
-    collection = CollectionService()
-    await collection.upload_collections(text_upload_request=text_upload_request_payload, token=token)
+    # collection = CollectionService()
+    # await collection.upload_collections(text_upload_request=text_upload_request_payload, token=token)
 
     # text metadata upload
     text_metadata = TextMetadataService()
@@ -43,6 +45,7 @@ async def pipeline(text_upload_request: TextUploadRequest, token: str):
 
     new_texts = instance_ids_response.new_text
     all_text = instance_ids_response.all_text
+    print("new_texts: >>>>>>>>>>>>>>>>>", all_text)
 
     # segment upload
     segment = SegmentService()
@@ -55,3 +58,9 @@ async def pipeline(text_upload_request: TextUploadRequest, token: str):
     # mapping upload
     mapping = MappingService()
     await mapping.trigger_mapping(text_ids=all_text)
+
+    if len(new_texts) > 0:
+
+        return TextUploadResponse(message=new_texts)
+    else:
+        return TextUploadResponse(message="All texts are already uploaded")
