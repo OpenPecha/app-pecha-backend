@@ -29,8 +29,6 @@ async def pipeline(text_upload_request: TextUploadRequest, token: str)-> TextUpl
         text_id=text_upload_request.text_id,
     )
 
-    print(text_upload_request_payload)
-
     is_admin = verify_admin_access(token=token)
     if not is_admin:
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail=ErrorConstants.ADMIN_ERROR_MESSAGE)
@@ -45,15 +43,14 @@ async def pipeline(text_upload_request: TextUploadRequest, token: str)-> TextUpl
 
     new_texts = instance_ids_response.new_text
     all_text = instance_ids_response.all_text
-    print("new_texts: >>>>>>>>>>>>>>>>>", all_text)
 
     # segment upload
-    segment = SegmentService()
-    await segment.upload_segments(text_upload_request=text_upload_request_payload,text_ids = new_texts, token=token)
+    # segment = SegmentService()
+    # await segment.upload_segments(text_upload_request=text_upload_request_payload,text_ids = new_texts, token=token)
 
-    # table of content upload
-    toc = TocService()
-    await toc.upload_toc(text_ids=new_texts, text_upload_request=text_upload_request_payload, token=token)
+    # # table of content upload
+    # toc = TocService()
+    # await toc.upload_toc(text_ids=new_texts, text_upload_request=text_upload_request_payload, token=token)
 
     # mapping upload
     mapping = MappingService()
