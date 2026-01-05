@@ -34,8 +34,8 @@ async def pipeline(text_upload_request: TextUploadRequest, token: str)-> TextUpl
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail=ErrorConstants.ADMIN_ERROR_MESSAGE)
 
     # collection upload
-    # collection = CollectionService()
-    # await collection.upload_collections(text_upload_request=text_upload_request_payload, token=token)
+    collection = CollectionService()
+    await collection.upload_collections(text_upload_request=text_upload_request_payload, token=token)
 
     # text metadata upload
     text_metadata = TextMetadataService()
@@ -45,12 +45,12 @@ async def pipeline(text_upload_request: TextUploadRequest, token: str)-> TextUpl
     all_text = instance_ids_response.all_text
 
     # segment upload
-    # segment = SegmentService()
-    # await segment.upload_segments(text_upload_request=text_upload_request_payload,text_ids = new_texts, token=token)
+    segment = SegmentService()
+    await segment.upload_segments(text_upload_request=text_upload_request_payload,text_ids = new_texts, token=token)
 
-    # # table of content upload
-    # toc = TocService()
-    # await toc.upload_toc(text_ids=new_texts, text_upload_request=text_upload_request_payload, token=token)
+    # table of content upload
+    toc = TocService()
+    await toc.upload_toc(text_ids=new_texts, text_upload_request=text_upload_request_payload, token=token)
 
     # mapping upload
     mapping = MappingService()
