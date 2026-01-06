@@ -27,6 +27,7 @@ def mock_single_text_data():
             "id": "text_1",
             "title": {"bo": "བོད་ཡིག", "en": "Tibetan Text"},
             "language": "bo",
+            "type": "critical",
         },
     ]
 
@@ -37,11 +38,13 @@ def mock_multiple_texts_data():
             "id": "text_1",
             "title": {"bo": "བོད་ཡིག", "en": "Tibetan Text"},
             "language": "bo",
+            "type": "critical",
         },
         {
             "id": "text_2",
             "title": {"bo": "བོད་ཡིག", "en": "Tibetan Text"},
             "language": "bo",
+            "type": "critical",
         },
     ]
 
@@ -54,6 +57,7 @@ async def test_get_cataloged_texts_details_success():
     
     mock_text_response = ExternalPechaTextResponse(
         title={"en": "Test Title", "bo": "ཡིག་ཆ།"},
+        type="critical",
         category_id="cat_456"
     )
     
@@ -98,6 +102,7 @@ async def test_call_external_pecha_api_texts_success():
     
     mock_response_data = {
         "title": {"en": "Test Title", "bo": "ཡིག་ཆ།"},
+        "type": "critical",
         "category_id": "cat_456"
     }
     
@@ -396,6 +401,7 @@ async def test_get_cataloged_texts_details_with_empty_instances():
     
     mock_text_response = ExternalPechaTextResponse(
         title={"en": "Test Title"},
+        type="critical",
         category_id="cat_456"
     )
     
@@ -421,6 +427,7 @@ async def test_get_cataloged_texts_details_integration():
     
     mock_text_data = {
         "title": {"en": "Integration Test Text", "bo": "འབྲེལ་མཐུད་བརྟག་དཔྱད།"},
+        "type": "critical",
         "category_id": "integration_cat"
     }
     
@@ -557,11 +564,13 @@ async def test_get_cataloged_texts_with_non_dict_title():
             "id": "text_1",
             "title": "String title instead of dict",
             "language": "bo",
+            "type": "critical",
         },
         {
             "id": "text_2",
             "title": None,
             "language": "en",
+            "type": "critical",
         }
     ]
     
@@ -648,11 +657,13 @@ async def test_call_external_pecha_api_cataloged_texts_success():
             "id": "text_1",
             "title": {"bo": "བོད་ཡིག", "en": "Tibetan Text 1"},
             "language": "bo",
+            "type": "critical",
         },
         {
             "id": "text_2",
             "title": {"bo": "བོད་ཡིག", "en": "Tibetan Text 2"},
             "language": "en",
+            "type": "critical",
         }
     ]
     
@@ -691,6 +702,7 @@ async def test_call_external_pecha_api_cataloged_texts_without_search():
             "id": "text_3",
             "title": {"en": "Test Text"},
             "language": "en",
+            "type": "critical",
         }
     ]
     
