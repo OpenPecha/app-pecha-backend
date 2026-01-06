@@ -2,18 +2,14 @@ import pytest
 from unittest.mock import patch, AsyncMock, Mock
 from fastapi import HTTPException
 import httpx
-from pecha_api.cataloger.cataloger_service import get_cataloged_texts
 from pecha_api.constants import Constants
-
-@pytest.fixture
-def mock_api_url():
-    return "https://api.openpecha.org/texts"
-
 from pecha_api.cataloger.cataloger_service import (
+    get_cataloged_texts,
     get_cataloged_texts_details,
     call_external_pecha_api_texts,
     call_external_pecha_api_instances,
     call_external_pecha_api_related_instances,
+    call_external_pecha_api_cataloged_texts,
     ensure_dict
 )
 from pecha_api.cataloger.cataloger_response_model import (
@@ -182,6 +178,48 @@ async def test_call_external_pecha_api_instances_success():
         assert f"/texts/{text_id}/instances" in call_args[0][0]
         assert "instance_type=critical" in call_args[0][0]
 
+
+@pytest.mark.asyncio
+async def test_call_external_pecha_api_instances_http_error():
+    """Test call to external pecha API for instances with HTTP error"""
+    text_id = "text_123"
+    
+    mock_http_response = Mock()
+    mock_http_response.status_code = 404
+    mock_http_response.text = "Instances not found"
+    
+    mock_client = Mock()
+    mock_client.get = AsyncMock(side_effect=httpx.HTTPStatusError(
+        "Not found",
+        request=Mock(),
+        response=mock_http_response
+    ))
+    
+    with patch("pecha_api.cataloger.cataloger_service.client", mock_client):
+        with pytest.raises(HTTPException) as exc_info:
+            await call_external_pecha_api_instances(text_id)
+        
+        assert exc_info.value.status_code == 404
+
+
+@pytest.mark.asyncio
+async def test_call_external_pecha_api_instances_request_error():
+    """Test call to external pecha API for instances with request error"""
+    text_id = "text_123"
+    
+    mock_client = Mock()
+    mock_client.get = AsyncMock(side_effect=httpx.RequestError(
+        "Network error",
+        request=Mock()
+    ))
+    
+    with patch("pecha_api.cataloger.cataloger_service.client", mock_client):
+        with pytest.raises(HTTPException) as exc_info:
+            await call_external_pecha_api_instances(text_id)
+        
+        assert exc_info.value.status_code == 500
+        assert "Failed to connect" in exc_info.value.detail
+
 @pytest.mark.asyncio
 async def test_call_external_pecha_api_related_instances_success():
     """Test successful call to external pecha API for related instances"""
@@ -232,6 +270,80 @@ async def test_call_external_pecha_api_related_instances_success():
         assert f"/instances/{instance_id}/related" in call_args[0][0]
 
 
+@pytest.mark.asyncio
+async def test_call_external_pecha_api_related_instances_http_error():
+    """Test call to external pecha API for related instances with HTTP error"""
+    instance_id = "instance_123"
+    
+    mock_http_response = Mock()
+    mock_http_response.status_code = 500
+    mock_http_response.text = "Internal server error"
+    
+    mock_client = Mock()
+    mock_client.get = AsyncMock(side_effect=httpx.HTTPStatusError(
+        "Server error",
+        request=Mock(),
+        response=mock_http_response
+    ))
+    
+    with patch("pecha_api.cataloger.cataloger_service.client", mock_client):
+        with pytest.raises(HTTPException) as exc_info:
+            await call_external_pecha_api_related_instances(instance_id)
+        
+        assert exc_info.value.status_code == 500
+
+
+@pytest.mark.asyncio
+async def test_call_external_pecha_api_related_instances_request_error():
+    """Test call to external pecha API for related instances with request error"""
+    instance_id = "instance_123"
+    
+    mock_client = Mock()
+    mock_client.get = AsyncMock(side_effect=httpx.RequestError(
+        "Connection failed",
+        request=Mock()
+    ))
+    
+    with patch("pecha_api.cataloger.cataloger_service.client", mock_client):
+        with pytest.raises(HTTPException) as exc_info:
+            await call_external_pecha_api_related_instances(instance_id)
+        
+        assert exc_info.value.status_code == 500
+        assert "Failed to connect" in exc_info.value.detail
+
+
+@pytest.mark.asyncio
+async def test_call_external_pecha_api_related_instances_empty_metadata():
+    """Test call to external pecha API for related instances with empty metadata"""
+    instance_id = "instance_123"
+    
+    mock_response_data = [
+        {
+            "metadata": {},
+            "relationship": "source"
+        }
+    ]
+    
+    mock_http_response = Mock()
+    mock_http_response.status_code = 200
+    mock_http_response.json.return_value = mock_response_data
+    mock_http_response.raise_for_status = Mock()
+    
+    mock_client = Mock()
+    mock_client.get = AsyncMock(return_value=mock_http_response)
+    
+    with patch("pecha_api.cataloger.cataloger_service.client", mock_client):
+        response = await call_external_pecha_api_related_instances(instance_id)
+        
+        assert response is not None
+        assert isinstance(response, list)
+        assert len(response) == 1
+        assert response[0].title == {}
+        assert response[0].text_id == ""
+        assert response[0].language == ""
+        assert response[0].relation_type == "source"
+
+
 def test_ensure_dict_with_dict():
     """Test ensure_dict function with a dictionary"""
     test_dict = {"en": "English", "bo": "བོད་ཡིག"}
@@ -257,6 +369,50 @@ def test_ensure_dict_with_empty_dict():
     """Test ensure_dict function with empty dictionary"""
     result = ensure_dict({})
     assert result == {}
+
+
+def test_ensure_dict_with_none():
+    """Test ensure_dict function with None"""
+    result = ensure_dict(None)
+    assert result == {}
+
+
+def test_ensure_dict_with_string():
+    """Test ensure_dict function with string"""
+    result = ensure_dict("some string")
+    assert result == {}
+
+@pytest.mark.asyncio
+async def test_get_cataloged_texts_details_with_none_text_id():
+    """Test get cataloged texts details with None text_id"""
+    response = await get_cataloged_texts_details(None)
+    assert response is None
+
+
+@pytest.mark.asyncio
+async def test_get_cataloged_texts_details_with_empty_instances():
+    """Test get cataloged texts details when no instances are returned"""
+    text_id = "text_123"
+    
+    mock_text_response = ExternalPechaTextResponse(
+        title={"en": "Test Title"},
+        category_id="cat_456"
+    )
+    
+    mock_instance_ids = []
+    
+    with patch("pecha_api.cataloger.cataloger_service.call_external_pecha_api_texts", new_callable=AsyncMock, return_value=mock_text_response), \
+         patch("pecha_api.cataloger.cataloger_service.call_external_pecha_api_instances", new_callable=AsyncMock, return_value=mock_instance_ids):
+        
+        response = await get_cataloged_texts_details(text_id)
+        
+        assert response is not None
+        assert isinstance(response, CatalogedTextsDetailsResponse)
+        assert response.title == {"en": "Test Title"}
+        assert response.category_id == "cat_456"
+        assert response.status is False
+        assert len(response.relations) == 0
+
 
 @pytest.mark.asyncio
 async def test_get_cataloged_texts_details_integration():
@@ -341,7 +497,8 @@ async def test_get_cataloged_texts_details_integration():
         assert mock_client.get.call_count == 4
 
 @pytest.mark.asyncio
-async def test_get_cataloged_texts_request_error(mock_api_url):
+async def test_get_cataloged_texts_request_error():
+    """Test get cataloged texts with request error"""
     mock_client = Mock()
     mock_client.get = AsyncMock(side_effect=httpx.RequestError("Connection failed", request=Mock()))
 
@@ -354,7 +511,8 @@ async def test_get_cataloged_texts_request_error(mock_api_url):
 
 
 @pytest.mark.asyncio
-async def test_get_cataloged_texts_http_error(mock_api_url):
+async def test_get_cataloged_texts_http_error():
+    """Test get cataloged texts with HTTP error"""
     mock_http_response = Mock()
     mock_http_response.status_code = 500
     mock_http_response.text = "Internal Server Error"
@@ -374,7 +532,8 @@ async def test_get_cataloged_texts_http_error(mock_api_url):
 
 
 @pytest.mark.asyncio
-async def test_get_cataloged_texts_with_search(mock_api_url, mock_single_text_data):
+async def test_get_cataloged_texts_with_search(mock_single_text_data):
+    """Test get cataloged texts with search parameter"""
     mock_http_response = Mock()
     mock_http_response.json.return_value = mock_single_text_data
     mock_http_response.raise_for_status = Mock()
@@ -391,7 +550,76 @@ async def test_get_cataloged_texts_with_search(mock_api_url, mock_single_text_da
 
 
 @pytest.mark.asyncio
-async def test_get_cataloged_texts_success(mock_api_url, mock_multiple_texts_data):
+async def test_get_cataloged_texts_with_non_dict_title():
+    """Test get cataloged texts with non-dict title (ensure_dict handling)"""
+    mock_data = [
+        {
+            "id": "text_1",
+            "title": "String title instead of dict",
+            "language": "bo",
+        },
+        {
+            "id": "text_2",
+            "title": None,
+            "language": "en",
+        }
+    ]
+    
+    mock_http_response = Mock()
+    mock_http_response.json.return_value = mock_data
+    mock_http_response.raise_for_status = Mock()
+    mock_http_response.status_code = 200
+
+    mock_client = Mock()
+    mock_client.get = AsyncMock(return_value=mock_http_response)
+
+    with patch("pecha_api.cataloger.cataloger_service.client", mock_client):
+        response = await get_cataloged_texts(search=None, skip=0, limit=10)
+
+        assert len(response.texts) == 2
+        assert response.texts[0].text_id == "text_1"
+        assert response.texts[0].title == {}
+        assert response.texts[1].text_id == "text_2"
+        assert response.texts[1].title == {}
+
+
+@pytest.mark.asyncio
+async def test_get_cataloged_texts_with_empty_response():
+    """Test get cataloged texts with empty response from API"""
+    mock_http_response = Mock()
+    mock_http_response.json.return_value = []
+    mock_http_response.raise_for_status = Mock()
+    mock_http_response.status_code = 200
+
+    mock_client = Mock()
+    mock_client.get = AsyncMock(return_value=mock_http_response)
+
+    with patch("pecha_api.cataloger.cataloger_service.client", mock_client):
+        response = await get_cataloged_texts(search=None, skip=0, limit=10)
+
+        assert len(response.texts) == 0
+
+
+@pytest.mark.asyncio
+async def test_get_cataloged_texts_with_none_response():
+    """Test get cataloged texts with None response from API"""
+    mock_http_response = Mock()
+    mock_http_response.json.return_value = None
+    mock_http_response.raise_for_status = Mock()
+    mock_http_response.status_code = 200
+
+    mock_client = Mock()
+    mock_client.get = AsyncMock(return_value=mock_http_response)
+
+    with patch("pecha_api.cataloger.cataloger_service.client", mock_client):
+        response = await get_cataloged_texts(search=None, skip=0, limit=10)
+
+        assert len(response.texts) == 0
+
+
+@pytest.mark.asyncio
+async def test_get_cataloged_texts_success(mock_multiple_texts_data):
+    """Test successful retrieval of cataloged texts"""
     mock_http_response = Mock()
     mock_http_response.json.return_value = mock_multiple_texts_data
     mock_http_response.raise_for_status = Mock()
@@ -406,3 +634,122 @@ async def test_get_cataloged_texts_success(mock_api_url, mock_multiple_texts_dat
         assert len(response.texts) == 2
         assert response.texts[0].text_id == "text_1"
         assert response.texts[0].status is False
+
+
+@pytest.mark.asyncio
+async def test_call_external_pecha_api_cataloged_texts_success():
+    """Test successful call to external pecha API for cataloged texts"""
+    search = "Tibetan"
+    skip = 0
+    limit = 10
+    
+    mock_response_data = [
+        {
+            "id": "text_1",
+            "title": {"bo": "བོད་ཡིག", "en": "Tibetan Text 1"},
+            "language": "bo",
+        },
+        {
+            "id": "text_2",
+            "title": {"bo": "བོད་ཡིག", "en": "Tibetan Text 2"},
+            "language": "en",
+        }
+    ]
+    
+    mock_http_response = Mock()
+    mock_http_response.status_code = 200
+    mock_http_response.json.return_value = mock_response_data
+    mock_http_response.raise_for_status = Mock()
+    
+    mock_client = Mock()
+    mock_client.get = AsyncMock(return_value=mock_http_response)
+    
+    with patch("pecha_api.cataloger.cataloger_service.client", mock_client):
+        response = await call_external_pecha_api_cataloged_texts(search=search, skip=skip, limit=limit)
+        
+        assert response is not None
+        assert isinstance(response, list)
+        assert len(response) == 2
+        assert response[0]["id"] == "text_1"
+        assert response[1]["id"] == "text_2"
+        
+        mock_client.get.assert_called_once()
+        call_args = mock_client.get.call_args
+        assert "offset=0" in str(call_args) or call_args.kwargs.get("params", {}).get("offset") == 0
+        assert "limit=10" in str(call_args) or call_args.kwargs.get("params", {}).get("limit") == 10
+        assert "title=Tibetan" in str(call_args) or call_args.kwargs.get("params", {}).get("title") == "Tibetan"
+
+
+@pytest.mark.asyncio
+async def test_call_external_pecha_api_cataloged_texts_without_search():
+    """Test call to external pecha API for cataloged texts without search parameter"""
+    skip = 5
+    limit = 20
+    
+    mock_response_data = [
+        {
+            "id": "text_3",
+            "title": {"en": "Test Text"},
+            "language": "en",
+        }
+    ]
+    
+    mock_http_response = Mock()
+    mock_http_response.status_code = 200
+    mock_http_response.json.return_value = mock_response_data
+    mock_http_response.raise_for_status = Mock()
+    
+    mock_client = Mock()
+    mock_client.get = AsyncMock(return_value=mock_http_response)
+    
+    with patch("pecha_api.cataloger.cataloger_service.client", mock_client):
+        response = await call_external_pecha_api_cataloged_texts(search=None, skip=skip, limit=limit)
+        
+        assert response is not None
+        assert isinstance(response, list)
+        assert len(response) == 1
+        
+        mock_client.get.assert_called_once()
+        call_args = mock_client.get.call_args
+        params = call_args.kwargs.get("params", {})
+        assert params.get("offset") == 5
+        assert params.get("limit") == 20
+        assert "title" not in params
+
+
+@pytest.mark.asyncio
+async def test_call_external_pecha_api_cataloged_texts_http_error():
+    """Test call to external pecha API for cataloged texts with HTTP error"""
+    mock_http_response = Mock()
+    mock_http_response.status_code = 503
+    mock_http_response.text = "Service unavailable"
+    
+    mock_client = Mock()
+    mock_client.get = AsyncMock(side_effect=httpx.HTTPStatusError(
+        "Service unavailable",
+        request=Mock(),
+        response=mock_http_response
+    ))
+    
+    with patch("pecha_api.cataloger.cataloger_service.client", mock_client):
+        with pytest.raises(HTTPException) as exc_info:
+            await call_external_pecha_api_cataloged_texts(search=None, skip=0, limit=10)
+        
+        assert exc_info.value.status_code == 503
+
+
+@pytest.mark.asyncio
+async def test_call_external_pecha_api_cataloged_texts_request_error():
+    """Test call to external pecha API for cataloged texts with request error"""
+    mock_client = Mock()
+    mock_client.get = AsyncMock(side_effect=httpx.RequestError(
+        "Connection timeout",
+        request=Mock()
+    ))
+    
+    with patch("pecha_api.cataloger.cataloger_service.client", mock_client):
+        with pytest.raises(HTTPException) as exc_info:
+            await call_external_pecha_api_cataloged_texts(search=None, skip=0, limit=10)
+        
+        assert exc_info.value.status_code == 500
+        assert "Failed to connect" in exc_info.value.detail
