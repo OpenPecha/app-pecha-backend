@@ -138,7 +138,7 @@ async def call_external_pecha_api_cataloged_texts(
     skip: int,
     limit: int,
 ) -> list[dict]:
-    params = {"type": Constants.TEXT_TYPE, "offset": skip, "limit": limit}
+    params = {"offset": skip, "limit": limit}
     if search:
         params["title"] = search
     endpoint = f"{EXTERNAL_PECHA_API_URL}/texts"   
