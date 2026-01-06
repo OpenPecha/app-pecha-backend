@@ -20,6 +20,7 @@ This document provides usage examples for the OpenPecha API endpoints.
   - [Get Related Texts by Work](#get-related-texts-by-work)
 - [Instances](#instances)
   - [Get Instance](#get-instance)
+  - [Get Instance Content](#get-instance-content)
 - [Annotations](#annotations)
   - [Get Annotation](#get-annotation)
 - [Segments](#segments)
@@ -629,7 +630,6 @@ curl -X 'GET' \
   "type": "segmentation",
   "data": [
     {
-      "order": 1,
       "id": "fHtnFBd02Qfw4xKmvMq0y",
       "span": {
         "start": 0,
@@ -637,7 +637,6 @@ curl -X 'GET' \
       }
     },
     {
-      "order": 2,
       "id": "C5KNoy6WHiEoytrIfQ6ip",
       "span": {
         "start": 51,
@@ -645,7 +644,6 @@ curl -X 'GET' \
       }
     },
     {
-      "order": 3,
       "id": "nKLmwCFlCzigPBHkEabgJ",
       "span": {
         "start": 145,
@@ -665,18 +663,17 @@ curl -X 'GET' \
 |----------|---------|-----------------------------------------------|
 | `id`     | string  | Unique identifier for the annotation          |
 | `type`   | string  | Type of annotation (e.g., `segmentation`)     |
-| `data`   | array   | Array of annotation segment objects (ordered) |
+| `data`   | array   | Array of annotation segment objects (ordered by span) |
 | `total`  | integer | Total number of segments available            |
 | `offset` | integer | Number of segments skipped                    |
 | `limit`  | integer | Maximum segments returned per request         |
 
 **Annotation Segment Object:**
 
-| Field   | Type    | Description                                     |
-|---------|---------|-------------------------------------------------|
-| `order` | integer | Order/position of the segment in the annotation |
-| `id`    | string  | Unique identifier for the segment               |
-| `span`  | object  | Character span information                      |
+| Field   | Type    | Description                                                |
+|---------|---------|------------------------------------------------------------|
+| `id`    | string  | Unique identifier for the segment                          |
+| `span`  | object  | Character span information (defines order by start position)|
 
 **Span Object:**
 
@@ -692,6 +689,72 @@ curl -X 'GET' \
 | `200` | Successful response with annotation details |
 | `404` | Annotation not found                        |
 | `500` | Internal server error                       |
+
+---
+
+### Get Instance Content
+
+Retrieves a portion of the instance content based on character span.
+
+**Endpoint:** `GET /v2/instances/{instance_id}/content`
+
+**Path Parameters:**
+
+| Parameter     | Type   | Required | Description                       |
+|---------------|--------|----------|-----------------------------------|
+| `instance_id` | string | Yes      | The unique identifier of instance |
+
+**Query Parameters:**
+
+| Parameter | Type    | Required | Description                        |
+|-----------|---------|----------|------------------------------------|
+| `start`   | integer | No       | Start character position (0-based) |
+| `end`     | integer | No       | End character position             |
+
+**Headers:**
+
+| Header   | Value              |
+|----------|--------------------|
+| `Accept` | `application/json` |
+
+**Example Request:**
+
+```bash
+curl -X 'GET' \
+  'https://api-aq25662yyq-uc.a.run.app/v2/instances/XVqq55pnANEKri9536Wa4/content?start=0&end=200' \
+  -H 'accept: application/json'
+```
+
+**Example Response:**
+
+```json
+{
+    "id": "XVqq55pnANEKri9536Wa4",
+    "content": "Content here",
+    "span": {
+        "start": 0,
+        "end": 200
+    }
+}
+```
+
+**Response Schema:**
+
+| Field         | Type    | Description                    |
+|---------------|---------|--------------------------------|
+| `id`          | string  | Instance ID                    |
+| `content`     | string  | Text content within the span   |
+| `span`        | object  | Character span object          |
+| `span.start`  | integer | Start character position       |
+| `span.end`    | integer | End character position         |
+
+**Response Codes:**
+
+| Code  | Description                              |
+|-------|------------------------------------------|
+| `200` | Successful response with content         |
+| `404` | Instance not found                       |
+| `500` | Internal server error                    |
 
 ---
 

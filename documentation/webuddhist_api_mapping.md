@@ -24,7 +24,7 @@ The Pecha Backend acts as a middleware that:
 | `/texts`                   | GET    | `/v2/categories/{id}/texts`                                              | Get texts by collection        |
 | `/texts/{id}/versions`     | GET    | `/v2/texts/{id}/related-by-work`, `/v2/texts`                            | Get text versions              |
 | `/texts/{id}/commentaries` | GET    | `/v2/texts/{id}/related-by-work`, `/v2/texts`                            | Get text commentaries          |
-| `/texts/{id}/details`      | POST   | `/v2/texts/{id}/instances`, `/v2/instances/{id}`, `/v2/annotations/{id}` | Get text content details       |
+| `/texts/{id}/details`      | POST   | `/v2/texts/{id}/instances`, `/v2/instances/{id}`, `/v2/annotations/{id}`, `/v2/instances/{id}/content` | Get text content details       |
 | `/segments/{id}/info`      | GET    | `/v2/segments/{id}/related`                                              | Get segment info               |
 
 ---
@@ -100,7 +100,7 @@ curl -X 'GET' \
 
 | Parameter       | Type   | Required | Description                      |
 |-----------------|--------|----------|----------------------------------|
-| `collection_id` | string | No       | Filter texts by collection ID    |
+| `collection_id` | string | No       | Need to be mapped to category_id |
 | `language`      | string | No       | Language code (e.g., `bo`, `en`) |
 | `skip`          | int    | No       | Number of records to skip        |
 | `limit`         | int    | No       | Number of records to return      |
@@ -346,14 +346,49 @@ curl -X 'POST' \
 **Maps to OpenPecha APIs:**
 ```
 1. GET /v2/texts/{text_id}/instances?instance_type=critical  → get instance ID
-2. GET /v2/instances/{instance_id}                           → get text content with annotations
-3. GET /v2/annotations/{annotation_id}                       → get segment span details with order
+2. GET /v2/instances/{instance_id}                           → get annotations
+3. GET /v2/annotations/{annotation_id}                       → get segment span details
+4. GET /v2/instances/{instance_id}/content?start={}&end={}   → get content by span
 ```
 
 **API Call Flow:**
-1. Call `/v2/texts/{text_id}/instances?instance_type=critical` to get instance ID
-2. Call `/v2/instances/{instance_id}` to get instance metadata and annotations list
-3. Call `/v2/annotations/{annotation_id}` for each annotation to get segment content
+
+1. **Get Instance ID**
+   - Call `GET /v2/texts/{text_id}/instances?instance_type=critical`
+   - Extract `instance_id` from response
+
+2. **Get Annotations List**
+   - Call `GET /v2/instances/{instance_id}`
+   - Extract `annotations[]` array containing annotation references with `annotation_id` and `type`
+   - Filter for `type=segmentation` to get the segmentation annotation
+
+3. **Get Segment Span Details**
+   - Call `GET /v2/annotations/{annotation_id}` for the segmentation annotation
+   - Response contains `data[]` array with segment objects:
+     ```json
+     {
+       "id": "segment_id",
+       "span": { "start": 0, "end": 51 }
+     }
+     ```
+   - Use `offset` and `limit` for pagination through segments
+
+4. **Get Content for Pagination Range**
+   - Determine the starting span (`start`) from the first segment and ending span (`end`) from the last segment in the paginated response
+   - Call `GET /v2/instances/{instance_id}/content?start={first_span_start}&end={last_span_end}` once to get all content for the pagination range
+   - Response contains the full text content for the entire range:
+     ```json
+     {
+       "id": "instance_id",
+       "content": "Full text content for the pagination range...",
+       "span": { "start": 0, "end": 500 }
+     }
+     ```
+
+5. **Split Content into Segments**
+   - Apply logic to split the fetched content into individual segment content using each segment's span coordinates
+   - For each segment, extract substring: `content[segment.span.start - range_start : segment.span.end - range_start]`
+   - Combine segment metadata with extracted content to build the final response
 
 **Parameter Mapping:**
 
