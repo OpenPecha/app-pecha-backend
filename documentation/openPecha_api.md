@@ -1,5 +1,7 @@
 # OpenPecha API Documentation
 
+> **Note:** This document describes the **external/upstream OpenPecha API** that the Pecha backend consumes as a data source. The backend fetches data from these endpoints, transforms it, and serves it to the frontend in the desired format.
+
 This document provides usage examples for the OpenPecha API endpoints.
 
 **Base URL:** `https://api-aq25662yyq-uc.a.run.app`
@@ -16,6 +18,8 @@ This document provides usage examples for the OpenPecha API endpoints.
 - [Texts](#texts)
   - [Get Texts](#get-texts)
   - [Get Related Texts by Work](#get-related-texts-by-work)
+- [Instances](#instances)
+  - [Get Instance](#get-instance)
 - [Annotations](#annotations)
   - [Get Annotation](#get-annotation)
 - [Segments](#segments)
@@ -476,6 +480,111 @@ The response is an object where each key is a work ID, and the value contains re
 | `500` | Internal server error                  |
 
 ---
+
+## Instances
+
+### Get Instance
+
+Retrieves instance details including optional annotation and content data.
+
+**Endpoint:** `GET /v2/instances/{instance_id}`
+
+**Path Parameters:**
+
+| Parameter     | Type   | Required  | Description                            |
+|---------------|--------|-----------|----------------------------------------|
+| `instance_id` | string | Yes       | The unique identifier of the instance  |
+
+**Query Parameters:**
+
+| Parameter    | Type    | Required  | Description                                              |
+|--------------|---------|-----------|----------------------------------------------------------|
+| `annotation` | boolean | No        | Include annotation data in response. Defaults to `false` |
+| `content`    | boolean | No        | Include content data in response. Defaults to `false`    |
+
+**Headers:**
+
+| Header   | Value              |
+|----------|--------------------|
+| `Accept` | `application/json` |
+
+**Example Request:**
+
+```bash
+curl -X 'GET' \
+  'https://api-aq25662yyq-uc.a.run.app/v2/instances/XVqq55pnANEKri9536Wa4?annotation=true&content=true' \
+  -H 'accept: application/json'
+```
+
+**Example Response:**
+
+```json
+{
+  "metadata": {
+    "id": "XVqq55pnANEKri9536Wa4",
+    "type": "critical",
+    "source": "openpecha.org",
+    "bdrc": null,
+    "wiki": null,
+    "colophon": null,
+    "incipit_title": null,
+    "alt_incipit_titles": null
+  },
+  "content": "Content here",
+  "annotations": [
+    {
+      "annotation_id": "ulMr4AUAYMLhr3s0ZddVB",
+      "type": "segmentation"
+    },
+    {
+      "annotation_id": "0II1SGf0Obzxxp1Gxx80f",
+      "type": "bibliography"
+    },
+    {
+      "annotation_id": "zyLeUVLOeZnQCH1IFBaWc",
+      "type": "search_segmentation"
+    }
+  ]
+}
+```
+
+**Response Schema:**
+
+| Field         | Type  | Description                              |
+|---------------|-------|------------------------------------------|
+| `metadata`    | object| Instance metadata information            |
+| `annotations` | array | Array of annotation references           |
+
+**Metadata Object:**
+
+| Field              | Type           | Description                                   |
+|--------------------|----------------|-----------------------------------------------|
+| `id`               | string         | Unique identifier for the instance            |
+| `type`             | string         | Edition type (e.g., `critical`, `diplomatic`) |
+| `source`           | string         | Source of the instance                        |
+| `bdrc`             | string \| null | BDRC identifier                               |
+| `wiki`             | string \| null | Wikipedia/Wikidata identifier                 |
+| `colophon`         | string \| null | Colophon text                                 |
+| `incipit_title`    | string \| null | Opening title of the text                     |
+| `alt_incipit_titles` | array \| null | Alternative incipit titles                   |
+
+**Annotation Reference Object:**
+
+| Field           | Type   | Description                                          |
+|-----------------|--------|------------------------------------------------------|
+| `annotation_id` | string | Unique identifier for the annotation                 |
+| `type`          | string | Type of annotation (e.g., `segmentation`, `bibliography`) |
+
+**Response Codes:**
+
+| Code  | Description                           |
+|-------|---------------------------------------|
+| `200` | Successful response with instance     |
+| `404` | Instance not found                    |
+| `500` | Internal server error                 |
+
+---
+
 
 ## Annotations
 
