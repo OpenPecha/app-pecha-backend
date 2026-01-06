@@ -11,8 +11,8 @@ async def trigger_mapping_repo(text_ids: list[str], source: str, destination: st
     }
     timeout = get_int("SQS_TIMEOUT")
 
-    payload = TriggerMappingPayload(text_id=text_ids, source=source, destination=destination).model_dump()
-    
+    payload = TriggerMappingPayload(text_ids=text_ids, source=source, destination=destination).model_dump()
+
     async with httpx.AsyncClient(timeout=timeout) as client:
         response = await client.post(
             url,
