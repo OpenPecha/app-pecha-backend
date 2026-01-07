@@ -44,19 +44,23 @@ async def pipeline(text_upload_request: TextUploadRequest, token: str)-> TextUpl
     new_texts = instance_ids_response.new_text
     all_text = instance_ids_response.all_text
 
-    # segment upload
-    segment = SegmentService()
-    await segment.upload_segments(text_upload_request=text_upload_request_payload,text_ids = new_texts, token=token)
+    new_uploaded_texts_count = len(new_texts)
 
-    # table of content upload
-    toc = TocService()
-    await toc.upload_toc(text_ids=new_texts, text_upload_request=text_upload_request_payload, token=token)
+    if new_uploaded_texts_count > 0:
+        # segment upload
+        segment = SegmentService()
+        await segment.upload_segments(text_upload_request=text_upload_request_payload,text_ids = new_texts, token=token)
+
+        # table of content upload
+        toc = TocService()
+        await toc.upload_toc(text_ids=new_texts, text_upload_request=text_upload_request_payload, token=token)
+    
 
     # mapping upload
     mapping = MappingService()
     await mapping.trigger_mapping(text_ids=all_text, text_upload_request=text_upload_request)
 
-    if len(new_texts) > 0:
+    if new_uploaded_texts_count > 0:
 
         return TextUploadResponse(message=new_texts)
     else:
