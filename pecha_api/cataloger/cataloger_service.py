@@ -55,7 +55,6 @@ async def get_cataloged_texts_details(text_id: str) -> CatalogedTextsDetailsResp
             related = await call_external_pecha_api_related_instances(instance_id)
             all_related_instances.extend(related)
 
-    print("datail>>>>>>>>>>>>>>>>", text_details)
 
     relations = []
     for related_instance in all_related_instances:

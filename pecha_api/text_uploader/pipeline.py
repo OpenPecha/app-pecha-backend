@@ -33,7 +33,7 @@ async def pipeline(text_upload_request: TextUploadRequest, token: str)-> TextUpl
     if not is_admin:
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail=ErrorConstants.ADMIN_ERROR_MESSAGE)
 
-    # collection upload
+    # # collection upload
     collection = CollectionService()
     await collection.upload_collections(text_upload_request=text_upload_request_payload, token=token)
 
@@ -54,11 +54,14 @@ async def pipeline(text_upload_request: TextUploadRequest, token: str)-> TextUpl
         # table of content upload
         toc = TocService()
         await toc.upload_toc(text_ids=new_texts, text_upload_request=text_upload_request_payload, token=token)
-    
 
-    # mapping upload
-    mapping = MappingService()
-    await mapping.trigger_mapping(text_ids=all_text, text_upload_request=text_upload_request)
+   
+
+    #mapping upload
+    if text_upload_request.destination_url != DestinationURL.LOCAL.name:
+        mapping = MappingService()
+        await mapping.trigger_mapping(text_ids=all_text, text_upload_request=text_upload_request_payload)
+
 
     if new_uploaded_texts_count > 0:
 

@@ -23,10 +23,10 @@ class TocService:
             annotation_ids = self.segment_service.get_annotation_ids(instance)
             annotation_segments = await self.segment_service.get_segments_by_id_list(annotation_ids[0], text_upload_request)
             ordered_segments = await self.order_segments_by_annotation_span(annotation_segments)
-            create_toc_payload = await self.create_toc_payload(ordered_segments, text_id)
+            toc_payload = self.create_toc_payload(ordered_segments, text_id)
             
             
-            response = await post_toc(create_toc_payload, text_upload_request.destination_url, token)
+            await post_toc(toc_payload, text_upload_request.destination_url, token)
             logging.info(f'Table of Content  uploaded successfully for text_id: {text_id}')
             
         
@@ -40,7 +40,7 @@ class TocService:
         ]
         return result
 
-    async def create_toc_payload(self, ordered_segments: list[dict[str, Any]], text_id: str):
+    def create_toc_payload(self, ordered_segments: list[dict[str, Any]], text_id: str):
         section_id = str(uuid.uuid4())
         payload = {
             "text_id": text_id,
