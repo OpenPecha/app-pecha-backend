@@ -151,7 +151,8 @@ async def test_pipeline_triggers_mapping_when_destination_is_not_local():
         assert trigger_kwargs["text_ids"] == {"T1": "pecha_instance_1"}
 
         called_payload = trigger_kwargs["text_upload_request"]
-        assert called_payload.destination_url.startswith("http")
-        assert called_payload.openpecha_api_url.startswith("https://")
+        # Mapping is triggered with the original (enum) request values, not the resolved URL payload.
+        assert called_payload.destination_url == "DEVELOPMENT"
+        assert called_payload.openpecha_api_url == "DEVELOPMENT"
         assert called_payload.text_id == "T1"
 
