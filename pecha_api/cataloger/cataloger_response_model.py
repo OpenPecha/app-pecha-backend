@@ -19,6 +19,7 @@ class CatalogedTextsDetailsResponse(BaseModel):
 
 class ExternalPechaTextResponse(BaseModel):
     title: Dict[str, str] = Field(default_factory=dict)
+    type: str
     category_id: str
 
 class ExternalPechaInstanceRelatedResponse(BaseModel):
@@ -31,6 +32,7 @@ class CatalogedTexts(BaseModel):
     text_id: str
     title: Dict[str, str] = Field(default_factory=dict)
     language: str
+    type: str
     status: bool
 
 class CatalogedTextsResponse(BaseModel):

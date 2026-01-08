@@ -65,6 +65,7 @@ def mock_single_text_response():
                 text_id="text_1",
                 title={"bo": "བོད་ཡིག", "en": "Tibetan Text"},
                 language="bo",
+                type="critical",
                 status=False,
             )
         ]
