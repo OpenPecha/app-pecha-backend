@@ -1,4 +1,124 @@
 import pytest
+from unittest.mock import AsyncMock, patch
+
+from pecha_api.text_uploader.collections.collection_service import CollectionService
+
+
+def test_build_multilingual_payload_merges_languages_and_sets_slug_from_en_title():
+    service = CollectionService()
+
+    collections_by_language = [
+        {
+            "language": "en",
+            "collections": [
+                {
+                    "_id": {"$oid": "c1"},
+                    "title": "Liturgy",
+                    "description": "Prayers",
+                    "parent_id": None,
+                    "has_sub_child": False,
+                }
+            ],
+        },
+        {
+            "language": "bo",
+            "collections": [
+                {
+                    "_id": {"$oid": "c1"},
+                    "title": "ཁ་འདོན།",
+                    "description": "ཆོ་ག",
+                    "parent_id": None,
+                    "has_sub_child": False,
+                }
+            ],
+        },
+    ]
+
+    payloads = service.build_multilingual_payload(collections_by_language)
+    assert len(payloads) == 1
+
+    payload = payloads[0]
+    assert payload["pecha_collection_id"] == "c1"
+    assert payload["slug"] == "Liturgy"
+    assert payload["titles"]["en"] == "Liturgy"
+    assert payload["titles"]["bo"] == "ཁ་འདོན།"
+    assert payload["descriptions"]["en"] == "Prayers"
+    assert payload["descriptions"]["bo"] == "ཆོ་ག"
+    # configured languages should always exist as keys
+    assert "zh" in payload["descriptions"]
+
+
+@pytest.mark.asyncio
+async def test_build_recursive_multilingual_payloads_raises_typeerror_when_recurse_children():
+    service = CollectionService()
+
+    root_level = [
+        {
+            "language": "en",
+            "collections": [
+                {
+                    "_id": {"$oid": "c1"},
+                    "title": "Root",
+                    "description": "Root desc",
+                    "parent_id": None,
+                    "has_sub_child": True,
+                }
+            ],
+        },
+        {"language": "bo", "collections": [{"_id": {"$oid": "c1"}, "title": "རྩ་བ།"}]},
+        {"language": "zh", "collections": [{"_id": {"$oid": "c1"}, "title": "根"}]},
+    ]
+    child_level = [
+        {
+            "language": "en",
+            "collections": [
+                {
+                    "_id": {"$oid": "c2"},
+                    "title": "Child",
+                    "description": "Child desc",
+                    "parent_id": {"$oid": "c1"},
+                    "has_sub_child": False,
+                }
+            ],
+        },
+        {"language": "bo", "collections": [{"_id": {"$oid": "c2"}, "title": "བུ།"}]},
+        {"language": "zh", "collections": [{"_id": {"$oid": "c2"}, "title": "子"}]},
+    ]
+
+    async def fake_get_collections_service(*, openpecha_api_url: str, parent_id=None):
+        if parent_id is None:
+            return root_level
+        if parent_id == "c1":
+            return child_level
+        return [{"language": "en", "collections": []}]
+
+    with patch.object(
+        service,
+        "get_collections_service",
+        new=AsyncMock(side_effect=fake_get_collections_service),
+    ), patch(
+        "pecha_api.text_uploader.collections.collection_service.get_collection_by_pecha_collection_id",
+        new_callable=AsyncMock,
+        return_value=None,
+    ), patch(
+        "pecha_api.text_uploader.collections.collection_service.post_collections",
+        new_callable=AsyncMock,
+        side_effect=[
+            {"id": {"$oid": "local_c1"}},
+            {"id": "local_c2"},
+        ],
+    ) as mock_post:
+        with pytest.raises(TypeError):
+            await service.build_recursive_multilingual_payloads(
+                destination_url="https://dest.example/api/v1",
+                openpecha_api_url="https://openpecha.example",
+                access_token="tok",
+            )
+
+    # Root collection is uploaded before the recursive call triggers the error.
+    assert mock_post.await_count == 1
+
+import pytest
 from unittest.mock import AsyncMock, patch, MagicMock
 
 from pecha_api.text_uploader.collections.collection_service import CollectionService
