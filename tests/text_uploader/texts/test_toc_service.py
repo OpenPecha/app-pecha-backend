@@ -25,8 +25,7 @@ async def test_order_segments_by_annotation_span_sorts_and_numbers():
     ]
 
 
-@pytest.mark.asyncio
-async def test_create_toc_payload_uses_uuid_and_wraps_segments():
+def test_create_toc_payload_uses_uuid_and_wraps_segments():
     service = TocService()
     ordered_segments = [
         {"segment_id": "s1", "segment_number": 1},
@@ -37,7 +36,7 @@ async def test_create_toc_payload_uses_uuid_and_wraps_segments():
         "pecha_api.text_uploader.table_of_content.toc_service.uuid.uuid4",
         return_value="fixed-uuid",
     ):
-        payload = await service.create_toc_payload(ordered_segments, text_id="t1")
+        payload = service.create_toc_payload(ordered_segments, text_id="t1")
 
     assert payload == {
         "text_id": "t1",

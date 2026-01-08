@@ -49,7 +49,7 @@ def test_build_multilingual_payload_merges_languages_and_sets_slug_from_en_title
 
 
 @pytest.mark.asyncio
-async def test_build_recursive_multilingual_payloads_raises_typeerror_when_recurse_children():
+async def test_build_recursive_multilingual_payloads_recurse_children_uploads_all_levels():
     service = CollectionService()
 
     root_level = [
@@ -108,15 +108,30 @@ async def test_build_recursive_multilingual_payloads_raises_typeerror_when_recur
             {"id": "local_c2"},
         ],
     ) as mock_post:
-        with pytest.raises(TypeError):
-            await service.build_recursive_multilingual_payloads(
-                destination_url="https://dest.example/api/v1",
-                openpecha_api_url="https://openpecha.example",
-                access_token="tok",
-            )
+        payloads = await service.build_recursive_multilingual_payloads(
+            destination_url="https://dest.example/api/v1",
+            openpecha_api_url="https://openpecha.example",
+            access_token="tok",
+        )
 
-    # Root collection is uploaded before the recursive call triggers the error.
-    assert mock_post.await_count == 1
+    assert mock_post.await_count == 2
+
+    assert len(payloads) == 1
+    root_payload = payloads[0]
+    assert root_payload["pecha_collection_id"] == "c1"
+    assert root_payload["local_id"] == "local_c1"
+
+    assert "children" in root_payload
+    assert len(root_payload["children"]) == 1
+    child_payload = root_payload["children"][0]
+    assert child_payload["pecha_collection_id"] == "c2"
+    assert child_payload["local_id"] == "local_c2"
+
+    # Ensure recursion used the root's local_id as the child's parent_id in POST.
+    first_call = mock_post.await_args_list[0]
+    second_call = mock_post.await_args_list[1]
+    assert first_call.kwargs["collection_model"].parent_id is None
+    assert second_call.kwargs["collection_model"].parent_id == "local_c1"
 
 import pytest
 from unittest.mock import AsyncMock, patch, MagicMock
