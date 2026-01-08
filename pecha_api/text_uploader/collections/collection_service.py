@@ -1,6 +1,6 @@
 from typing import Any
 from pecha_api.text_uploader.collections.collections_repository import get_collections, post_collections
-from pecha_api.text_uploader.constants import OpenPechaAPIURL, COLLECTION_LANGUAGES
+from pecha_api.text_uploader.constants import COLLECTION_LANGUAGES
 from pecha_api.text_uploader.collections.collection_model import CollectionPayload
 from pecha_api.text_uploader.text_uploader_response_model import TextUploadRequest
 
@@ -140,6 +140,9 @@ class CollectionService:
 
             # Recurse asynchronously for the next level.
             payload["children"] = await self.build_recursive_multilingual_payloads(
+                destination_url=destination_url,
+                openpecha_api_url=openpecha_api_url,
+                access_token=access_token,
                 remote_parent_id=next_remote_parent_id,
                 local_parent_id=next_local_parent_id,
             )

@@ -1,4 +1,3 @@
-from typing import Union
 from pydantic import BaseModel
 
 
@@ -9,4 +8,4 @@ class TextUploadRequest(BaseModel):
 
 
 class TextUploadResponse(BaseModel):
-    message: Union[dict[str, str], str]
+    message: dict[str, str] | str

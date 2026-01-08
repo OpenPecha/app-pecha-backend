@@ -75,7 +75,6 @@ class TextMetadataService:
             text_metadata = await get_text_metadata(text_id, text_upload_request.openpecha_api_url)
             language = text_metadata['language']
             title = text_metadata['title'][language]
-            category = text_metadata['category_id']
 
             if text_id in uploaded_text_ids:
                 logging.info(f"Skipping already uploaded text: {title}")
@@ -97,8 +96,8 @@ class TextMetadataService:
                 payload = await self.create_textmetada_payload(text_id, text_metadata, type="commentary", text_upload_request=text_upload_request)
 
             text_response = await post_text(payload, token, text_upload_request.destination_url)   
-            id = text_response["id"]
-            new_texts[id] = instances[text_id]
+            response_text_id = text_response["id"]
+            new_texts[response_text_id] = instances[text_id]
             
             logging.info(f"Created new text {text_response['title']}")
 

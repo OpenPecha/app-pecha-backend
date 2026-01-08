@@ -7,6 +7,9 @@ from pecha_api.text_uploader.constants import OpenPechaAPIURL, DestinationURL, A
 from pecha_api.text_uploader.text_metadata.text_metadata_model import TextGroupPayload
 from pecha_api.text_uploader.text_metadata.text_metadata_model import CriticalInstanceResponse
 
+
+CONTENT_TYPE = "application/json"
+
 async def get_texts(openpecha_api_url: str, type: str | None = None, limit: int | None = None, offset: int | None = None) -> list[dict[str, Any]]:
     texts_url = f"{openpecha_api_url}/v2/texts"
 
@@ -57,7 +60,7 @@ async def post_group(type: str, destination_url: str, token: str) -> dict[str, A
     url = f"{destination_url}/groups"
     headers = {
         "Authorization": f"Bearer {token}",
-        "Content-Type": "application/json",
+        "Content-Type": CONTENT_TYPE,
     }
     payload = {
         "type": type,
@@ -100,7 +103,7 @@ async def post_text(text_payload: TextGroupPayload, token: str, destination_url:
     url = f"{destination_url}/texts"
     headers = {
         "Authorization": f"Bearer {token}",
-        "Content-Type": "application/json",
+        "Content-Type": CONTENT_TYPE,
     }
     payload = text_payload.model_dump()
 
@@ -139,7 +142,7 @@ async def  get_text_metadata(text_id: str, openpecha_api_url: str) -> list[dict[
 async def get_texts_by_pecha_text_ids(pecha_text_ids: List[str], destination_url: str) -> list[dict[str, Any]]:
     url = f"{destination_url}/text-uploader/list"
     headers = {
-        "Content-Type": "application/json",
+        "Content-Type": CONTENT_TYPE,
     }
     instance_ids = list(pecha_text_ids)
     payload = {
