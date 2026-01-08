@@ -830,7 +830,7 @@ async def test_create_text_service_error(mocker):
 
 @pytest.mark.asyncio
 async def test_get_text_by_pecha_text_ids_success(mocker):
-    """Test POST /texts/list with valid pecha_text_ids"""
+    """Test POST /text-uploader/list with valid pecha_text_ids"""
     mock_text_1 = TextDTO(
         id="text-1-uuid",
         pecha_text_id="pecha_text_id_1",
@@ -872,7 +872,7 @@ async def test_get_text_by_pecha_text_ids_success(mocker):
     mock_texts = [mock_text_1, mock_text_2]
     
     mock_get_texts = mocker.patch(
-        'pecha_api.texts.texts_views.get_text_by_pecha_text_ids_service',
+        'pecha_api.text_uploader.text_metadata.text_metadata_views.get_text_by_pecha_text_ids_service',
         new_callable=AsyncMock,
         return_value=mock_texts
     )
@@ -883,7 +883,7 @@ async def test_get_text_by_pecha_text_ids_success(mocker):
     
     async with AsyncClient(transport=ASGITransport(app=api), base_url="http://test") as ac:
         response = await ac.post(
-            "/texts/list",
+            "/text-uploader/list",
             json=request_data
         )
     
@@ -902,9 +902,9 @@ async def test_get_text_by_pecha_text_ids_success(mocker):
 
 @pytest.mark.asyncio
 async def test_get_text_by_pecha_text_ids_empty_list(mocker):
-    """Test POST /texts/list with empty pecha_text_ids list"""
+    """Test POST /text-uploader/list with empty pecha_text_ids list"""
     mock_get_texts = mocker.patch(
-        'pecha_api.texts.texts_views.get_text_by_pecha_text_ids_service',
+        'pecha_api.text_uploader.text_metadata.text_metadata_views.get_text_by_pecha_text_ids_service',
         new_callable=AsyncMock,
         return_value=[]
     )
@@ -915,7 +915,7 @@ async def test_get_text_by_pecha_text_ids_empty_list(mocker):
     
     async with AsyncClient(transport=ASGITransport(app=api), base_url="http://test") as ac:
         response = await ac.post(
-            "/texts/list",
+            "/text-uploader/list",
             json=request_data
         )
     
@@ -929,7 +929,7 @@ async def test_get_text_by_pecha_text_ids_empty_list(mocker):
 
 @pytest.mark.asyncio
 async def test_get_text_by_pecha_text_ids_single_text(mocker):
-    """Test POST /texts/list with single pecha_text_id"""
+    """Test POST /text-uploader/list with single pecha_text_id"""
     mock_text = TextDTO(
         id="single-text-uuid",
         pecha_text_id="pecha_text_id_single",
@@ -950,7 +950,7 @@ async def test_get_text_by_pecha_text_ids_single_text(mocker):
     )
     
     mock_get_texts = mocker.patch(
-        'pecha_api.texts.texts_views.get_text_by_pecha_text_ids_service',
+        'pecha_api.text_uploader.text_metadata.text_metadata_views.get_text_by_pecha_text_ids_service',
         new_callable=AsyncMock,
         return_value=[mock_text]
     )
@@ -961,7 +961,7 @@ async def test_get_text_by_pecha_text_ids_single_text(mocker):
     
     async with AsyncClient(transport=ASGITransport(app=api), base_url="http://test") as ac:
         response = await ac.post(
-            "/texts/list",
+            "/text-uploader/list",
             json=request_data
         )
     
@@ -976,9 +976,9 @@ async def test_get_text_by_pecha_text_ids_single_text(mocker):
 
 @pytest.mark.asyncio
 async def test_get_text_by_pecha_text_ids_none_result(mocker):
-    """Test POST /texts/list when service returns None"""
+    """Test POST /text-uploader/list when service returns None"""
     mock_get_texts = mocker.patch(
-        'pecha_api.texts.texts_views.get_text_by_pecha_text_ids_service',
+        'pecha_api.text_uploader.text_metadata.text_metadata_views.get_text_by_pecha_text_ids_service',
         new_callable=AsyncMock,
         return_value=None
     )
@@ -989,7 +989,7 @@ async def test_get_text_by_pecha_text_ids_none_result(mocker):
     
     async with AsyncClient(transport=ASGITransport(app=api), base_url="http://test") as ac:
         response = await ac.post(
-            "/texts/list",
+            "/text-uploader/list",
             json=request_data
         )
     
@@ -1002,14 +1002,14 @@ async def test_get_text_by_pecha_text_ids_none_result(mocker):
 
 @pytest.mark.asyncio
 async def test_get_text_by_pecha_text_ids_invalid_request():
-    """Test POST /texts/list with invalid request data"""
+    """Test POST /text-uploader/list with invalid request data"""
     invalid_data = {
         "invalid_field": ["pecha_text_id_1"]
     }
     
     async with AsyncClient(transport=ASGITransport(app=api), base_url="http://test") as ac:
         response = await ac.post(
-            "/texts/list",
+            "/text-uploader/list",
             json=invalid_data
         )
     
@@ -1018,9 +1018,9 @@ async def test_get_text_by_pecha_text_ids_invalid_request():
 
 @pytest.mark.asyncio
 async def test_get_text_by_pecha_text_ids_service_error(mocker):
-    """Test POST /texts/list when service raises an error"""
+    """Test POST /text-uploader/list when service raises an error"""
     mock_get_texts = mocker.patch(
-        'pecha_api.texts.texts_views.get_text_by_pecha_text_ids_service',
+        'pecha_api.text_uploader.text_metadata.text_metadata_views.get_text_by_pecha_text_ids_service',
         new_callable=AsyncMock,
         side_effect=HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
@@ -1034,7 +1034,7 @@ async def test_get_text_by_pecha_text_ids_service_error(mocker):
     
     async with AsyncClient(transport=ASGITransport(app=api), base_url="http://test") as ac:
         response = await ac.post(
-            "/texts/list",
+            "/text-uploader/list",
             json=request_data
         )
     
@@ -1044,7 +1044,7 @@ async def test_get_text_by_pecha_text_ids_service_error(mocker):
 
 @pytest.mark.asyncio
 async def test_get_text_by_pecha_text_ids_multiple_texts_with_optional_fields(mocker):
-    """Test POST /texts/list with texts having various optional fields"""
+    """Test POST /text-uploader/list with texts having various optional fields"""
     mock_text_with_all_fields = TextDTO(
         id="text-all-fields-uuid",
         pecha_text_id="pecha_text_id_all",
@@ -1086,7 +1086,7 @@ async def test_get_text_by_pecha_text_ids_multiple_texts_with_optional_fields(mo
     mock_texts = [mock_text_with_all_fields, mock_text_with_minimal_fields]
     
     mock_get_texts = mocker.patch(
-        'pecha_api.texts.texts_views.get_text_by_pecha_text_ids_service',
+        'pecha_api.text_uploader.text_metadata.text_metadata_views.get_text_by_pecha_text_ids_service',
         new_callable=AsyncMock,
         return_value=mock_texts
     )
@@ -1097,7 +1097,7 @@ async def test_get_text_by_pecha_text_ids_multiple_texts_with_optional_fields(mo
     
     async with AsyncClient(transport=ASGITransport(app=api), base_url="http://test") as ac:
         response = await ac.post(
-            "/texts/list",
+            "/text-uploader/list",
             json=request_data
         )
     
