@@ -137,13 +137,13 @@ async def  get_text_metadata(text_id: str, openpecha_api_url: str) -> list[dict[
 
 
 async def get_texts_by_pecha_text_ids(pecha_text_ids: List[str], destination_url: str) -> list[dict[str, Any]]:
-    url = f"{destination_url}/texts/list"
+    url = f"{destination_url}/text-uploader/list"
     headers = {
         "Content-Type": "application/json",
     }
     instance_ids = list(pecha_text_ids)
     payload = {
-        "pecha_text_ids": instance_ids
+        "pecha_text_ids": instance_ids  
     }
     response = await asyncio.to_thread(requests.post, url, headers=headers, json=payload)
     response.raise_for_status()

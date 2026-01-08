@@ -61,7 +61,7 @@ async def get_collections(
     return all_collections
 
 async def get_collection_by_pecha_collection_id(pecha_collection_id: str, destination_url: str) -> Optional[str]:
-    text_metadata_url = f"{destination_url}/collections/{pecha_collection_id}"
+    text_metadata_url = f"{destination_url}/text-uploader/collections/{pecha_collection_id}"
     response = await asyncio.to_thread(requests.get, text_metadata_url)
     response.raise_for_status()
     return response.json()

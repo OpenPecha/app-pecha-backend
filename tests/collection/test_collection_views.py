@@ -276,7 +276,7 @@ async def test_delete_collection_with_children():
         assert response.status_code == status.HTTP_400_BAD_REQUEST
 
 
-# Tests for GET /collections/{pecha_collection_id} endpoint
+# Tests for GET /text-uploader/collections/{pecha_collection_id} endpoint
 
 @pytest.mark.asyncio
 async def test_get_collection_by_pecha_collection_id_success():
@@ -284,10 +284,10 @@ async def test_get_collection_by_pecha_collection_id_success():
     pecha_collection_id = "pecha_60d21b4667d0d8992e610c85"
     expected_collection_id = "60d21b4667d0d8992e610c85"
     
-    with patch("pecha_api.collections.collections_views.get_collection_by_pecha_collection_id_service",
+    with patch("pecha_api.text_uploader.collections.uploader_collections_views.get_collection_by_pecha_collection_id_service",
                new_callable=AsyncMock, return_value=expected_collection_id):
         
-        response = client.get(f"/collections/{pecha_collection_id}")
+        response = client.get(f"/text-uploader/collections/{pecha_collection_id}")
         
         assert response.status_code == status.HTTP_200_OK
         assert response.json() == expected_collection_id
@@ -298,10 +298,10 @@ async def test_get_collection_by_pecha_collection_id_not_found():
     # Test retrieval when pecha_collection_id doesn't exist
     pecha_collection_id = "nonexistent_pecha_id"
     
-    with patch("pecha_api.collections.collections_views.get_collection_by_pecha_collection_id_service",
+    with patch("pecha_api.text_uploader.collections.uploader_collections_views.get_collection_by_pecha_collection_id_service",
                new_callable=AsyncMock, return_value=None):
         
-        response = client.get(f"/collections/{pecha_collection_id}")
+        response = client.get(f"/text-uploader/collections/{pecha_collection_id}")
         
         assert response.status_code == status.HTTP_200_OK
         assert response.json() is None
@@ -312,13 +312,13 @@ async def test_get_collection_by_pecha_collection_id_service_error():
     # Test handling of service errors
     pecha_collection_id = "pecha_error_id"
     
-    with patch("pecha_api.collections.collections_views.get_collection_by_pecha_collection_id_service",
+    with patch("pecha_api.text_uploader.collections.uploader_collections_views.get_collection_by_pecha_collection_id_service",
                new_callable=AsyncMock, side_effect=HTTPException(
                    status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
                    detail="Internal server error"
                )):
         
-        response = client.get(f"/collections/{pecha_collection_id}")
+        response = client.get(f"/text-uploader/collections/{pecha_collection_id}")
         
         assert response.status_code == status.HTTP_500_INTERNAL_SERVER_ERROR
 
