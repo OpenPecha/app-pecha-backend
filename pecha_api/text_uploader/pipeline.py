@@ -57,8 +57,8 @@ async def pipeline(text_upload_request: TextUploadRequest, token: str)-> TextUpl
     
 
     # mapping upload
-    mapping = MappingService()
-    await mapping.trigger_mapping(text_ids=all_text, text_upload_request=text_upload_request)
+    # mapping = MappingService()
+    # await mapping.trigger_mapping(text_ids=all_text, text_upload_request=text_upload_request)
 
     if new_uploaded_texts_count > 0:
 

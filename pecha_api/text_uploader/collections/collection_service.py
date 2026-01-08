@@ -269,4 +269,5 @@ class CollectionService:
         # `pecha_collection_id`, with `titles` and `descriptions` merged across
         # languages that share the same ID.
         return list(combined.values())
+        
 

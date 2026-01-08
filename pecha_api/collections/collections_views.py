@@ -65,8 +65,3 @@ async def delete_collection_by_id(collection_id: str,
         token=authentication_credential.credentials
     )
 
-@collections_router.get("/{pecha_collection_id}", status_code=status.HTTP_200_OK)
-async def get_collection_by_pecha_collection_id(pecha_collection_id: str) -> Optional[str]:
-    return await get_collection_by_pecha_collection_id_service(
-        pecha_collection_id=pecha_collection_id
-    )
